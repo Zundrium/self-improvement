@@ -1,13 +1,15 @@
 <script lang="ts">
+	import { ChevronRight } from '@lucide/svelte';
+
 	import { Button } from '$lib/components/ui/button';
-	import {
-		Card,
-		CardContent,
-		CardDescription,
-		CardFooter,
-		CardHeader,
-		CardTitle
-	} from '$lib/components/ui/card';
+	import { Progress } from '$lib/components/ui/progress';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
+	const calorieGoal = $derived(data.dashboard.calorieGoal);
+	const calorieProgress = $derived(
+		calorieGoal ? Math.min(100, (data.dashboard.calories / calorieGoal) * 100) : 0
+	);
 </script>
 
 <svelte:head>
@@ -19,77 +21,76 @@
 </svelte:head>
 
 <main class="flex min-h-[calc(100svh-4rem)] items-center justify-center p-4 sm:p-6">
-	<section class="w-full max-w-md space-y-8">
-		<header class="space-y-3 px-1">
-			<p class="text-sm font-medium tracking-wide text-(--text)/56 uppercase">Self Improvement</p>
-			<h1 class="text-4xl leading-tight font-semibold tracking-[-0.04em]">
-				Your day, in one place.
-			</h1>
-			<p class="max-w-sm text-base leading-7 text-(--text)/64">
-				A mobile-first home for steps, nutrition, fitness, and meditation.
-			</p>
-		</header>
+	<section class="w-full max-w-md space-y-3" aria-label="Today's dashboard">
+		<Button
+			href="/steps"
+			variant="ghost"
+			class="h-auto w-full justify-between rounded-3xl bg-(--bg-elevated) p-5 text-left whitespace-normal hover:bg-(--bg-elevated) hover:shadow-sm"
+		>
+			<span>
+				<span class="block text-sm font-medium text-(--text)/52">Steps</span>
+				<strong class="mt-1 block text-3xl font-medium tracking-[-0.05em] tabular-nums">
+					{data.dashboard.steps.toLocaleString()}
+				</strong>
+				<span class="mt-1 block text-sm text-(--text)/48">steps today</span>
+			</span>
+			<ChevronRight class="size-5 text-(--text)/32" />
+		</Button>
 
-		<div class="space-y-4">
-			<Card>
-				<CardHeader>
-					<CardTitle>Steps</CardTitle>
-					<CardDescription>Sync daily totals from Android Health Connect.</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<p class="text-sm leading-6 text-(--text)/64">
-						Follow your daily goal and review the last seven days.
-					</p>
-				</CardContent>
-				<CardFooter>
-					<Button href="/steps">Open steps</Button>
-				</CardFooter>
-			</Card>
+		<Button
+			href="/fitness"
+			variant="ghost"
+			class="h-auto w-full justify-between rounded-3xl bg-(--bg-elevated) p-5 text-left whitespace-normal hover:bg-(--bg-elevated) hover:shadow-sm"
+		>
+			<span>
+				<span class="block text-sm font-medium text-(--text)/52">Fitness</span>
+				<strong class="mt-1 block text-xl font-medium tracking-[-0.03em]">
+					{data.dashboard.fitnessDone ? 'Done today' : 'Not done yet'}
+				</strong>
+				<span class="mt-1 block text-sm text-(--text)/48">
+					{data.dashboard.fitnessDone ? 'Workout complete' : 'Start today’s workout'}
+				</span>
+			</span>
+			<ChevronRight class="size-5 text-(--text)/32" />
+		</Button>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Fitness</CardTitle>
-					<CardDescription>Follow a guided 30-day total-body program.</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<p class="text-sm leading-6 text-(--text)/64">
-						Run timed workouts with spoken cues and track completed days.
-					</p>
-				</CardContent>
-				<CardFooter>
-					<Button href="/fitness">Open fitness</Button>
-				</CardFooter>
-			</Card>
+		<Button
+			href="/calories/log/{data.dashboard.today}"
+			variant="ghost"
+			class="h-auto w-full justify-between rounded-3xl bg-(--bg-elevated) p-5 text-left whitespace-normal hover:bg-(--bg-elevated) hover:shadow-sm"
+		>
+			<span class="min-w-0 flex-1 pr-5">
+				<span class="block text-sm font-medium text-(--text)/52">Nutrition</span>
+				<strong class="mt-1 block text-xl font-medium tracking-[-0.03em] tabular-nums">
+					{data.dashboard.calories.toLocaleString()}{#if calorieGoal}
+						<span class="text-(--text)/40"> / {calorieGoal.toLocaleString()}</span>
+					{/if}
+					<span class="text-sm font-normal text-(--text)/48"> kcal</span>
+				</strong>
+				{#if calorieGoal}
+					<Progress value={calorieProgress} class="mt-3 h-1.5" />
+				{:else}
+					<span class="mt-1 block text-sm text-(--text)/48">Set your daily calorie goal</span>
+				{/if}
+			</span>
+			<ChevronRight class="size-5 text-(--text)/32" />
+		</Button>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Nutrition</CardTitle>
-					<CardDescription>Photograph a meal and review its AI calorie estimate.</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<p class="text-sm leading-6 text-(--text)/64">
-						Track calories and macros against your daily goal.
-					</p>
-				</CardContent>
-				<CardFooter>
-					<Button href="/calories">Open calorie estimator</Button>
-				</CardFooter>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Meditation</CardTitle>
-					<CardDescription>Set a timer and mix looping ambient sounds.</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<p class="text-sm leading-6 text-(--text)/64">
-						Completed sessions are saved to your account.
-					</p>
-				</CardContent>
-				<CardFooter>
-					<Button href="/meditate">Open meditation</Button>
-				</CardFooter>
-			</Card>
-		</div>
+		<Button
+			href="/meditate"
+			variant="ghost"
+			class="h-auto w-full justify-between rounded-3xl bg-(--bg-elevated) p-5 text-left whitespace-normal hover:bg-(--bg-elevated) hover:shadow-sm"
+		>
+			<span>
+				<span class="block text-sm font-medium text-(--text)/52">Meditation</span>
+				<strong class="mt-1 block text-xl font-medium tracking-[-0.03em]">
+					{data.dashboard.meditationDone ? 'Done today' : 'Not done yet'}
+				</strong>
+				<span class="mt-1 block text-sm text-(--text)/48">
+					{data.dashboard.meditationDone ? 'Session complete' : 'Start a meditation'}
+				</span>
+			</span>
+			<ChevronRight class="size-5 text-(--text)/32" />
+		</Button>
 	</section>
 </main>

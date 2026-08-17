@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { calculateBmr, calculateTdee } from './calories';
 import { parseMealImageDataUrl } from './server/meal-image';
 import { validateAIResult, validateMealEstimate } from './server/meal-analysis';
-import { validDate } from './server/nutrition';
+import { localDateTime, validDate } from './server/nutrition';
 
 describe('calorie estimates', () => {
 	it('calculates BMR and TDEE with Mifflin-St Jeor', () => {
@@ -60,5 +60,14 @@ describe('meal inputs', () => {
 		expect(validDate('2028-02-29')).toBe(true);
 		expect(validDate('2027-02-29')).toBe(false);
 		expect(validDate('2027-13-01')).toBe(false);
+	});
+
+	it('converts an editable local meal time to an instant', () => {
+		expect(localDateTime('2027-06-15', '12:30', -120).toISOString()).toBe(
+			'2027-06-15T10:30:00.000Z'
+		);
+		expect(() => localDateTime('2027-06-15', '25:00', -120)).toThrow(
+			'A valid date and time are required.'
+		);
 	});
 });

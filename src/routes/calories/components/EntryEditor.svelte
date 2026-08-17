@@ -66,6 +66,7 @@
 	type Props = {
 		entryId: string;
 		date?: string;
+		time?: string;
 		name?: string;
 		notes?: string;
 		meals?: EditableMeal[];
@@ -75,6 +76,7 @@
 	let {
 		entryId,
 		date = $bindable(''),
+		time = $bindable(''),
 		name = $bindable(''),
 		notes = $bindable(''),
 		meals = $bindable<EditableMeal[]>([]),
@@ -265,10 +267,16 @@
 				><span class="text-xs text-(--text)/48">fat</span>
 			</div>
 		</div>
-		<Field class="mx-auto w-full max-w-xl">
-			<FieldLabel for="date">Date</FieldLabel>
-			<Input id="date" name="date" type="date" bind:value={date} required />
-		</Field>
+		<div class="mx-auto grid w-full max-w-xl grid-cols-2 gap-3">
+			<Field>
+				<FieldLabel for="date">Date</FieldLabel>
+				<Input id="date" name="date" type="date" bind:value={date} required />
+			</Field>
+			<Field>
+				<FieldLabel for="time">Time</FieldLabel>
+				<Input id="time" name="time" type="time" bind:value={time} required />
+			</Field>
+		</div>
 		<Field class="mx-auto w-full max-w-xl">
 			<FieldLabel for="entry-name">Log name</FieldLabel>
 			<Input id="entry-name" name="name" bind:value={name} maxlength={120} required />

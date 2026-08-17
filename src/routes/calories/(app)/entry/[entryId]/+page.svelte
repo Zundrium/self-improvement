@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Save, Trash2 } from '@lucide/svelte';
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import type { PageProps } from './$types';
 
 	import EntryEditor, { type EditableMeal } from '../../../components/EntryEditor.svelte';
@@ -21,6 +21,8 @@
 	let { data, form }: PageProps = $props();
 	const initial = untrack(() => data.entry);
 	let date = $state(initial.date);
+	let time = $state('');
+	let timeZoneOffset = $derived(time ? new Date(`${date}T${time}:00`).getTimezoneOffset() : 0);
 	let name = $state(initial.name);
 	let notes = $state(initial.notes);
 	let deleteForm: HTMLFormElement | undefined = $state();
@@ -43,15 +45,26 @@
 			}))
 		}))
 	);
+
+	onMount(() => {
+		time = inputTime(initial.createdAt);
+	});
+
+	function inputTime(value: Date | string) {
+		const dateValue = new Date(value);
+		return `${String(dateValue.getHours()).padStart(2, '0')}:${String(dateValue.getMinutes()).padStart(2, '0')}`;
+	}
 </script>
 
 <svelte:head><title>Review meal · Self Improvement</title></svelte:head>
 
 <main class="mx-auto max-w-4xl px-4 py-8 pb-32 sm:px-6 sm:py-10">
 	<form id="save-entry" method="POST" action="?/save" use:enhance>
+		<input type="hidden" name="timeZoneOffset" value={timeZoneOffset} />
 		<EntryEditor
 			entryId={initial.id}
 			bind:date
+			bind:time
 			bind:name
 			bind:notes
 			bind:meals

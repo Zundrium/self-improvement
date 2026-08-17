@@ -98,7 +98,7 @@ export async function replaceEntry(
 	db: Database,
 	entryId: string,
 	userId: string,
-	input: { date: string; name?: string; notes?: string; meals: MealInput[] }
+	input: { date: string; createdAt: Date; name?: string; notes?: string; meals: MealInput[] }
 ) {
 	if (!validDate(input.date)) throw new Error('A valid date is required.');
 	const ownedEntry = await getOwnedEntry(db, entryId, userId);
@@ -108,6 +108,7 @@ export async function replaceEntry(
 		.update(entry)
 		.set({
 			date: input.date,
+			createdAt: input.createdAt,
 			name: cleanText(input.name, 'Food entry', 120),
 			notes: cleanText(input.notes, '', 500),
 			updatedAt: new Date()
@@ -176,6 +177,18 @@ export function validDate(value: unknown): value is string {
 	if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
 	const date = new Date(`${value}T00:00:00Z`);
 	return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+}
+
+export function localDateTime(date: string, time: string, timeZoneOffset: number) {
+	if (!validDate(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+		throw new Error('A valid date and time are required.');
+	}
+	if (!Number.isInteger(timeZoneOffset) || Math.abs(timeZoneOffset) > 14 * 60) {
+		throw new Error('A valid time zone is required.');
+	}
+	const [year, month, day] = date.split('-').map(Number);
+	const [hours, minutes] = time.split(':').map(Number);
+	return new Date(Date.UTC(year, month - 1, day, hours, minutes) + timeZoneOffset * 60_000);
 }
 
 async function insertMeal(db: Database, entryId: string, sortOrder: number, input: MealInput) {

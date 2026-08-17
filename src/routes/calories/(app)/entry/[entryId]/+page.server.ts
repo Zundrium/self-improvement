@@ -4,6 +4,7 @@ import { requireDb, requireUser } from '$lib/server/guards';
 import {
 	deleteEntry,
 	getEntryWithMeals,
+	localDateTime,
 	replaceEntry,
 	type IngredientInput,
 	type MealInput
@@ -32,8 +33,14 @@ export const actions: Actions = {
 		}
 
 		try {
+			const createdAt = localDateTime(
+				date,
+				readString(form.get('time')),
+				Number(form.get('timeZoneOffset'))
+			);
 			const result = await replaceEntry(requireDb(event.locals), event.params.entryId, user.id, {
 				date,
+				createdAt,
 				name: readString(form.get('name')),
 				notes: readString(form.get('notes')),
 				meals
