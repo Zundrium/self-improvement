@@ -2,6 +2,7 @@
 	import { Check, Clock3, Gauge, Layers3, Play } from '@lucide/svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
 
+	import MobileActionBar from '$lib/components/mobile-action-bar.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
@@ -123,11 +124,9 @@
 		</div>
 	</section>
 
-	<div
-		class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-4 backdrop-blur-xl sm:hidden"
-	>
-		<div class="mx-auto grid w-full max-w-md grid-cols-2 gap-3">
+	<MobileActionBar>
+		<div class="grid grid-cols-2 gap-3">
 			{@render actions()}
 		</div>
-	</div>
+	</MobileActionBar>
 {/if}

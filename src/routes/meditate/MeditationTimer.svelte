@@ -2,8 +2,9 @@
 	import { onDestroy } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { Check, LoaderCircle, Minus, Pause, Play, Plus, RotateCcw, Square } from '@lucide/svelte';
-	import { Button } from '$lib/components/ui/button';
 	import type { AudioManager } from '$lib/audio/audio-manager';
+	import MobileActionBar from '$lib/components/mobile-action-bar.svelte';
+	import { Button } from '$lib/components/ui/button';
 	import {
 		DEFAULT_DURATION_SECONDS,
 		formatTimer,
@@ -204,10 +205,6 @@
 	</div>
 </section>
 
-<div
-	class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-4 backdrop-blur-xl sm:hidden"
->
-	<div class="mx-auto w-full max-w-md">
-		{@render actions()}
-	</div>
-</div>
+<MobileActionBar>
+	{@render actions()}
+</MobileActionBar>

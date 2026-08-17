@@ -3,6 +3,7 @@
 	import type { PageProps } from './$types';
 
 	import DateSelector from '$lib/components/date-selector.svelte';
+	import MobileActionBar from '$lib/components/mobile-action-bar.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
@@ -170,10 +171,8 @@
 	</section>
 </main>
 
-<div
-	class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-4 backdrop-blur-xl sm:hidden"
->
-	<Button href="/calories/track?date={data.date}" size="lg" class="mx-auto flex w-full max-w-md"
-		><Camera class="mr-2 size-5" /> Add a meal</Button
-	>
-</div>
+<MobileActionBar>
+	<Button href="/calories/track?date={data.date}" size="lg" class="w-full">
+		<Camera class="mr-2 size-5" /> Add a meal
+	</Button>
+</MobileActionBar>
