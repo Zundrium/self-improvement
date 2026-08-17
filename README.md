@@ -1,6 +1,6 @@
 # Self Improvement
 
-A mobile-first SvelteKit app that will bring nutrition, fitness, and meditation into one private daily view.
+A mobile-first SvelteKit app that brings nutrition, fitness, and meditation into one private daily view.
 
 ## Stack
 
@@ -19,6 +19,8 @@ A mobile-first SvelteKit app that will bring nutrition, fitness, and meditation 
 - `src/lib/server/guards.ts` protects authenticated and administrator routes.
 - `src/routes/api/auth/[...path]/+server.ts` exposes the Better Auth API.
 - `src/lib/auth-client.ts` provides the browser authentication client.
+- `src/routes/calories/` contains the calorie estimator, meal log, and nutrition feature logic.
+- `src/routes/meditate/` contains the meditation timer, sounds, and completion tracking.
 - `drizzle/` contains versioned D1 migrations.
 - `scripts/create-admin.mjs` creates or promotes the first administrator.
 
@@ -70,8 +72,13 @@ Local runtime values belong in `.dev.vars`. Production values are configured thr
 - `BETTER_AUTH_TRUSTED_ORIGINS`
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
+- `OPENROUTER_API_KEY`
 
 Drizzle Studio or direct remote Drizzle access uses the values documented in `.env.example`.
+
+## Calories
+
+The authenticated `/calories` route includes nutrition onboarding, daily calorie and macro goals, photo-first AI meal estimation, iterative corrections, editable meal details, and a dated food log. Add `OPENROUTER_API_KEY` to `.dev.vars` locally or as a Cloudflare secret remotely.
 
 ## Meditation
 
@@ -126,9 +133,8 @@ Deployment requires an authenticated Wrangler session and explicit approval.
 
 ## Planned integration
 
-The parent workspace contains the remaining source apps that will be reimplemented here:
+The parent workspace contains the remaining source app that will be reimplemented here:
 
-- `../ai-calorie-counter`
 - `../zun-fitness`
 
-The timer and ambient sounds from `../meditate` have been reimplemented under `/meditate`.
+The calorie estimator from `../ai-calorie-counter` is available under `/calories`. The timer and ambient sounds from `../meditate` are available under `/meditate`.

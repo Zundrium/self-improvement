@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { Activity } from '@lucide/svelte';
+	import { untrack } from 'svelte';
 	import { authClient } from '$lib/auth-client';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Avatar } from '$lib/components/ui/avatar';
@@ -9,10 +12,12 @@
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
+	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
+	let { data, form }: PageProps = $props();
+	const initialNutritionProfile = untrack(() => data.nutritionProfile);
 	let name = $state('');
 	let currentPassword = $state('');
 	let newPassword = $state('');
@@ -23,6 +28,21 @@
 	let passwordFailed = $state(false);
 	let savingProfile = $state(false);
 	let savingPassword = $state(false);
+	let gender = $state(initialNutritionProfile?.gender ?? 'male');
+	let activityLevel = $state(initialNutritionProfile?.activityLevel ?? 'sedentary');
+	let goalMode = $state(initialNutritionProfile?.goalMode ?? 'estimated');
+
+	const activityLabel = $derived(
+		(
+			{
+				sedentary: 'Sedentary',
+				light: 'Light activity',
+				moderate: 'Moderate activity',
+				active: 'Active',
+				very_active: 'Very active'
+			} as Record<string, string>
+		)[activityLevel] ?? 'Activity level'
+	);
 
 	$effect.pre(() => {
 		if (!name) name = data.profileUser.name;
@@ -104,6 +124,138 @@
 						{#if savingProfile}<Spinner class="size-4" />{/if} Save profile
 					</Button>
 				</form>
+			</CardContent>
+		</Card>
+
+		<Card>
+			<CardHeader>
+				<CardTitle class="flex items-center gap-2"><Activity class="size-5" /> Nutrition</CardTitle>
+			</CardHeader>
+			<CardContent>
+				{#if data.nutritionProfile}
+					<form
+						class="space-y-5"
+						method="POST"
+						action="?/nutrition"
+						use:enhance={() =>
+							async ({ update }) =>
+								update({ invalidateAll: true })}
+					>
+						<p class="text-sm text-(--text)/64">
+							Your estimated maintenance is {data.estimatedTdee} kcal per day.
+						</p>
+						{#if form?.form === 'nutrition' && form.error}
+							<Alert variant="destructive"><AlertDescription>{form.error}</AlertDescription></Alert>
+						{/if}
+						{#if form?.form === 'nutrition' && form.message}
+							<Alert><AlertDescription>{form.message}</AlertDescription></Alert>
+						{/if}
+						<FieldGroup>
+							<div class="grid gap-4 sm:grid-cols-3">
+								<Field>
+									<FieldLabel for="weightKg">Weight (kg)</FieldLabel>
+									<Input
+										id="weightKg"
+										name="weightKg"
+										type="number"
+										step="0.1"
+										min="20"
+										max="300"
+										value={data.nutritionProfile.weightKg}
+										required
+									/>
+								</Field>
+								<Field>
+									<FieldLabel for="heightCm">Height (cm)</FieldLabel>
+									<Input
+										id="heightCm"
+										name="heightCm"
+										type="number"
+										step="0.1"
+										min="100"
+										max="250"
+										value={data.nutritionProfile.heightCm}
+										required
+									/>
+								</Field>
+								<Field>
+									<FieldLabel for="age">Age</FieldLabel>
+									<Input
+										id="age"
+										name="age"
+										type="number"
+										min="10"
+										max="120"
+										value={data.nutritionProfile.age}
+										required
+									/>
+								</Field>
+							</div>
+							<div class="grid gap-4 sm:grid-cols-2">
+								<Field>
+									<FieldLabel>Gender</FieldLabel>
+									<Select type="single" name="gender" bind:value={gender}>
+										<SelectTrigger class="w-full">
+											{gender === 'male' ? 'Male' : 'Female'}
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="male">Male</SelectItem>
+											<SelectItem value="female">Female</SelectItem>
+										</SelectContent>
+									</Select>
+								</Field>
+								<Field>
+									<FieldLabel>Activity level</FieldLabel>
+									<Select type="single" name="activityLevel" bind:value={activityLevel}>
+										<SelectTrigger class="w-full">{activityLabel}</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="sedentary">Sedentary</SelectItem>
+											<SelectItem value="light">Light activity</SelectItem>
+											<SelectItem value="moderate">Moderate activity</SelectItem>
+											<SelectItem value="active">Active</SelectItem>
+											<SelectItem value="very_active">Very active</SelectItem>
+										</SelectContent>
+									</Select>
+								</Field>
+							</div>
+							<div class="grid gap-4 sm:grid-cols-2">
+								<Field>
+									<FieldLabel>Goal calculation</FieldLabel>
+									<Select type="single" name="goalMode" bind:value={goalMode}>
+										<SelectTrigger class="w-full">
+											{goalMode === 'custom' ? 'Custom goal' : 'Use estimate'}
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="estimated">Use TDEE estimate</SelectItem>
+											<SelectItem value="custom">Custom calorie goal</SelectItem>
+										</SelectContent>
+									</Select>
+								</Field>
+								<Field>
+									<FieldLabel for="customGoal">Daily goal (kcal)</FieldLabel>
+									<Input
+										id="customGoal"
+										name="customGoal"
+										type="number"
+										min="500"
+										max="10000"
+										value={data.nutritionProfile.dailyCalorieGoal}
+										disabled={goalMode !== 'custom'}
+										required={goalMode === 'custom'}
+									/>
+								</Field>
+							</div>
+						</FieldGroup>
+						<Button type="submit">Save nutrition profile</Button>
+					</form>
+				{:else}
+					<div class="space-y-4">
+						<p class="text-sm leading-6 text-(--text)/64">
+							Set a daily calorie goal before tracking meals.
+						</p>
+						<Button href="/calories/onboarding">Set up nutrition</Button>
+					</div>
+				{/if}
 			</CardContent>
 		</Card>
 

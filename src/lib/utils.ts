@@ -11,6 +11,10 @@ export function safeRedirect(value: unknown, fallback = '/') {
 	return value;
 }
 
+export function todayIso() {
+	return new Date().toISOString().slice(0, 10);
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type WithoutChild<T> = T extends { child?: any } ? Omit<T, 'child'> : T;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

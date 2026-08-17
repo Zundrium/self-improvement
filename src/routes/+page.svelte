@@ -27,19 +27,36 @@
 			</p>
 		</header>
 
-		<Card>
-			<CardHeader>
-				<CardTitle>Meditation</CardTitle>
-				<CardDescription>Set a timer and mix looping ambient sounds.</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<p class="text-sm leading-6 text-(--text)/64">
-					Completed sessions are saved to your account.
-				</p>
-			</CardContent>
-			<CardFooter>
-				<Button href="/meditate">Open meditation</Button>
-			</CardFooter>
-		</Card>
+		<div class="space-y-4">
+			<Card>
+				<CardHeader>
+					<CardTitle>Nutrition</CardTitle>
+					<CardDescription>Photograph a meal and review its AI calorie estimate.</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<p class="text-sm leading-6 text-(--text)/64">
+						Track calories and macros against your daily goal.
+					</p>
+				</CardContent>
+				<CardFooter>
+					<Button href="/calories">Open calorie estimator</Button>
+				</CardFooter>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Meditation</CardTitle>
+					<CardDescription>Set a timer and mix looping ambient sounds.</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<p class="text-sm leading-6 text-(--text)/64">
+						Completed sessions are saved to your account.
+					</p>
+				</CardContent>
+				<CardFooter>
+					<Button href="/meditate">Open meditation</Button>
+				</CardFooter>
+			</Card>
+		</div>
 	</section>
 </main>

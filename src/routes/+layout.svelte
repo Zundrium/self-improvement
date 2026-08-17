@@ -3,6 +3,7 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import AppNavbar from '$lib/components/app-navbar.svelte';
+	import { Toaster } from '$lib/components/ui/sonner';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -13,3 +14,4 @@
 	<AppNavbar user={data.user} />
 {/if}
 {@render children()}
+<Toaster position="bottom-center" richColors />

@@ -15,9 +15,11 @@
 
 ## 3. Calorie counter
 
-- Reimplement `../ai-calorie-counter` without changing its UI or behavior.
-- Keep onboarding, calorie targets, meal entry, image analysis, and daily history.
-- Reuse the centralized account and D1 infrastructure instead of its separate auth setup.
+Status: implemented.
+
+- Reimplemented `../ai-calorie-counter` under `/calories` with the shared Lily UI.
+- Kept onboarding, calorie targets, meal entry, image analysis, corrections, and daily history.
+- Reused the centralized account and D1 infrastructure instead of its separate auth setup.
 
 ## 4. Fitness
 
