@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { Dumbbell } from '@lucide/svelte';
 	import { onMount, untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { AudioManager } from '$lib/audio/audio-manager';
+	import DateSelector from '$lib/components/date-selector.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import WorkoutCalendar from './components/WorkoutCalendar.svelte';
-	import WorkoutModal from './components/WorkoutModal.svelte';
+	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
+	import WorkoutDay from './components/WorkoutDay.svelte';
 	import type { Workout } from './fitness';
 	import type { PageProps } from './$types';
 
@@ -13,26 +15,14 @@
 		untrack(() => data.completedDays.map((day) => day.dateKey))
 	);
 	const savingDateKeys = new SvelteSet<string>();
-	let selectedWorkout = $state<Workout | null>(null);
-	let selectedDateKey = $state<string | null>(null);
-	let exerciseSpeeds = $state(
-		untrack(
-			() =>
-				Object.fromEntries(
-					data.program.workouts.flatMap((workout) =>
-						workout.activities.flatMap((activity) =>
-							activity.type === 'reps'
-								? [[activity.exerciseId, activity.speedPercent] as const]
-								: []
-						)
-					)
-				) as Record<number, number>
-		)
-	);
+	let exerciseSpeeds = $state(initialExerciseSpeeds());
 	let errorMessage = $state('');
 	let audioManager = $state<AudioManager>();
 
-	const selectedWorkoutWithSpeeds = $derived<Workout | null>(
+	const selectedWorkout = $derived(
+		data.program.workouts.find((workout) => workout.day === Number(data.date.slice(-2)))
+	);
+	const selectedWorkoutWithSpeeds = $derived<Workout | undefined>(
 		selectedWorkout
 			? {
 					...selectedWorkout,
@@ -45,52 +35,72 @@
 							: activity
 					)
 				}
-			: null
+			: undefined
 	);
+
 	onMount(() => {
 		audioManager = new AudioManager();
 		audioManager.setVolume(1);
 		return () => audioManager?.destroy();
 	});
 
-	function handleDayClick({ day, dateKey }: { day: number; dateKey: string }) {
-		selectedWorkout = data.program.workouts.find((workout) => workout.day === day) ?? null;
-		selectedDateKey = selectedWorkout ? dateKey : null;
+	function initialExerciseSpeeds() {
+		return untrack(
+			() =>
+				Object.fromEntries(
+					data.program.workouts.flatMap((workout) =>
+						workout.activities.flatMap((activity) =>
+							activity.type === 'reps'
+								? [[activity.exerciseId, activity.speedPercent] as const]
+								: []
+						)
+					)
+				) as Record<number, number>
+		);
 	}
 
-	function closeWorkout() {
-		selectedWorkout = null;
-		selectedDateKey = null;
+	function fitnessHref(date: string) {
+		return date === data.today ? '/fitness' : `/fitness?date=${date}`;
 	}
 
 	function handleSpeedChange(exerciseId: number, speedPercent: number) {
 		exerciseSpeeds = { ...exerciseSpeeds, [exerciseId]: speedPercent };
 	}
 
-	async function toggleComplete(workoutId: number, dateKey: string) {
-		if (savingDateKeys.has(dateKey)) return;
+	async function toggleComplete(workoutId: number) {
+		const date = data.date;
+		if (savingDateKeys.has(date)) return;
 		errorMessage = '';
-		const wasCompleted = completedDateKeys.has(dateKey);
-		if (wasCompleted) completedDateKeys.delete(dateKey);
-		else completedDateKeys.add(dateKey);
-		savingDateKeys.add(dateKey);
+		const wasCompleted = completedDateKeys.has(date);
+		setCompleted(date, !wasCompleted);
+		savingDateKeys.add(date);
+		const saved = await saveCompletion(workoutId, date, wasCompleted);
+		savingDateKeys.delete(date);
+		if (!saved) restoreCompletion(date, wasCompleted);
+	}
 
+	function setCompleted(date: string, completed: boolean) {
+		if (completed) completedDateKeys.add(date);
+		else completedDateKeys.delete(date);
+	}
+
+	async function saveCompletion(workoutId: number, date: string, deleting: boolean) {
 		const progressUrl = `/fitness/api/progress/${workoutId}`;
-		const response = await fetch(
-			wasCompleted ? `${progressUrl}?date=${encodeURIComponent(dateKey)}` : progressUrl,
-			{
-				method: wasCompleted ? 'DELETE' : 'PUT',
-				headers: wasCompleted ? undefined : { 'content-type': 'application/json' },
-				body: wasCompleted ? undefined : JSON.stringify({ completedDate: dateKey })
-			}
-		);
-		savingDateKeys.delete(dateKey);
-
-		if (!response.ok) {
-			if (wasCompleted) completedDateKeys.add(dateKey);
-			else completedDateKeys.delete(dateKey);
-			errorMessage = 'Your progress could not be saved. Please try again.';
+		try {
+			const response = await fetch(deleting ? `${progressUrl}?date=${date}` : progressUrl, {
+				method: deleting ? 'DELETE' : 'PUT',
+				headers: deleting ? undefined : { 'content-type': 'application/json' },
+				body: deleting ? undefined : JSON.stringify({ completedDate: date })
+			});
+			return response.ok;
+		} catch {
+			return false;
 		}
+	}
+
+	function restoreCompletion(date: string, completed: boolean) {
+		setCompleted(date, completed);
+		errorMessage = 'Your progress could not be saved. Please try again.';
 	}
 </script>
 
@@ -99,24 +109,37 @@
 	<meta name="description" content={data.program.description} />
 </svelte:head>
 
-<main class="mx-auto min-h-[calc(100vh-7rem)] w-full max-w-2xl px-4 py-10 sm:px-6">
-	<WorkoutCalendar completedDateKeys={[...completedDateKeys]} ondayclick={handleDayClick} />
+<main
+	class="mx-auto min-h-[calc(100vh-7rem)] w-full max-w-3xl space-y-8 px-4 py-8 pb-28 sm:px-6 sm:py-10"
+>
+	<DateSelector
+		date={data.date}
+		today={data.today}
+		markedDates={[...completedDateKeys]}
+		hrefForDate={fitnessHref}
+	/>
 
 	{#if errorMessage}
-		<Alert variant="destructive" class="mx-auto mt-4 max-w-sm">
+		<Alert variant="destructive">
 			<AlertDescription>{errorMessage}</AlertDescription>
 		</Alert>
 	{/if}
-</main>
 
-{#if selectedWorkoutWithSpeeds && selectedDateKey && audioManager}
-	<WorkoutModal
-		{audioManager}
-		workout={selectedWorkoutWithSpeeds}
-		completed={completedDateKeys.has(selectedDateKey)}
-		saving={savingDateKeys.has(selectedDateKey)}
-		onclose={closeWorkout}
-		ontoggle={() => toggleComplete(selectedWorkoutWithSpeeds!.id, selectedDateKey!)}
-		onspeedchange={handleSpeedChange}
-	/>
-{/if}
+	{#if selectedWorkoutWithSpeeds}
+		<WorkoutDay
+			workout={selectedWorkoutWithSpeeds}
+			{audioManager}
+			completed={completedDateKeys.has(data.date)}
+			saving={savingDateKeys.has(data.date)}
+			ontoggle={() => toggleComplete(selectedWorkoutWithSpeeds.id)}
+			onspeedchange={handleSpeedChange}
+		/>
+	{:else}
+		<Empty class="py-20">
+			<EmptyMedia><Dumbbell class="size-6" /></EmptyMedia>
+			<EmptyTitle>Rest day</EmptyTitle>
+			<EmptyDescription>The 30-day program has no workout scheduled for this date.</EmptyDescription
+			>
+		</Empty>
+	{/if}
+</main>

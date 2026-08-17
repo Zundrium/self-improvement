@@ -85,7 +85,7 @@ The authenticated `/calories` route includes nutrition onboarding, daily calorie
 
 ## Fitness
 
-The authenticated `/fitness` route includes the complete 30-day workout calendar, guided timed sessions, screen wake lock, workout cues and voice announcements, completion history, and per-exercise rep speed settings. The source music player, music files, and decorative button sounds are intentionally excluded.
+The authenticated `/fitness` route presents each day's 30-day-program workout as a date-selected daily view, with completion marks in the date picker, guided timed sessions, screen wake lock, workout cues and voice announcements, and per-exercise rep speed settings. The source music player, music files, and decorative button sounds are intentionally excluded.
 
 ## Steps
 
@@ -93,7 +93,7 @@ The authenticated `/steps` route creates a one-time webhook token for the free H
 
 ## Meditation
 
-The authenticated `/meditate` route includes a configurable timer, mixable looping ambient sounds, shared volume controls, and automatic D1 persistence for completed sessions. Meditation pages, components, audio, and feature logic are colocated under `src/routes/meditate/`.
+The authenticated `/meditate` route includes a configurable timer, mixable looping ambient sounds, shared volume controls, automatic D1 persistence, and a dated history with completion marks. Meditation pages, components, audio, and feature logic are colocated under `src/routes/meditate/`.
 
 ## Database changes
 

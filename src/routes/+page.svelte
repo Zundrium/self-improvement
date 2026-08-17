@@ -14,6 +14,12 @@
 	function dashboardHref(date: string) {
 		return date === data.dashboard.today ? '/' : `/?date=${date}`;
 	}
+
+	function datedFeatureHref(path: '/fitness' | '/meditate' | '/steps') {
+		return data.dashboard.date === data.dashboard.today
+			? path
+			: `${path}?date=${data.dashboard.date}`;
+	}
 </script>
 
 <svelte:head>
@@ -45,7 +51,7 @@
 
 		<section class="divide-y divide-(--text)/8" aria-label="Daily dashboard">
 			<Button
-				href="/steps"
+				href={datedFeatureHref('/steps')}
 				variant="ghost"
 				class="h-auto w-full rounded-none bg-transparent px-0 py-5 text-left whitespace-normal hover:bg-transparent"
 				aria-label={`${data.dashboard.steps.toLocaleString()} of ${data.dashboard.stepGoal.toLocaleString()} steps, goal ${stepsDone ? 'complete' : 'not complete'}`}
@@ -66,7 +72,7 @@
 			</Button>
 
 			<Button
-				href="/fitness"
+				href={datedFeatureHref('/fitness')}
 				variant="ghost"
 				class="h-auto w-full rounded-none bg-transparent px-0 py-5 text-left whitespace-normal hover:bg-transparent"
 				aria-label={`Fitness ${data.dashboard.fitnessDone ? 'complete' : 'not complete'}: ${data.dashboard.fitnessWorkoutTitle}`}
@@ -109,16 +115,16 @@
 			</Button>
 
 			<Button
-				href="/meditate"
+				href={datedFeatureHref('/meditate')}
 				variant="ghost"
 				class="h-auto w-full rounded-none bg-transparent px-0 py-5 text-left whitespace-normal hover:bg-transparent"
-				aria-label={`Meditate today, ${data.dashboard.meditationDone ? 'complete' : 'not complete'}`}
+				aria-label={`Meditation, ${data.dashboard.meditationDone ? 'complete' : 'not complete'}`}
 			>
 				<span class="grid w-full grid-cols-[2rem_minmax(0,1fr)_1.25rem] items-center gap-4">
 					<Flower2 class="size-6 text-(--text)/64" />
 					<span class="flex min-w-0 items-center gap-3">
 						{@render statusCheckbox(data.dashboard.meditationDone)}
-						<strong class="text-base font-medium tracking-[-0.02em]">Meditate today</strong>
+						<strong class="text-base font-medium tracking-[-0.02em]">Meditation</strong>
 					</span>
 					<ChevronRight class="size-5 text-(--text)/28" />
 				</span>

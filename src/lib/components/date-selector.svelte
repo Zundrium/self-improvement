@@ -14,10 +14,11 @@
 	interface Props {
 		date: string;
 		today: string;
+		markedDates?: string[];
 		hrefForDate: (date: string) => string;
 	}
 
-	let { date, today, hrefForDate }: Props = $props();
+	let { date, today, markedDates = [], hrefForDate }: Props = $props();
 	let calendarOpen = $state(false);
 	let calendarDate = $state<DateValue | undefined>(untrack(() => parseDate(date)));
 	const previousDate = $derived(parseDate(date).subtract({ days: 1 }).toString());
@@ -64,6 +65,7 @@
 				type="single"
 				bind:value={calendarDate}
 				maxValue={parseDate(today)}
+				{markedDates}
 				onValueChange={chooseDate}
 			/>
 		</PopoverContent>
