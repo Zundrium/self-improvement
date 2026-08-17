@@ -11,7 +11,7 @@ import { requireDb, requireUser } from '$lib/server/guards';
 import { getDailyEntries, sumEntryTotals, validDate } from './calories/server/nutrition';
 import { getProfile } from './calories/server/profiles';
 import { getDailySteps, getStepConnection } from './steps/server/steps';
-import { localDateForInstant } from './steps/steps';
+import { DEFAULT_STEP_GOAL, localDateForInstant } from './steps/steps';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -39,7 +39,7 @@ async function loadDashboard(
 		date,
 		today,
 		steps,
-		stepGoal: connection?.dailyGoal ?? 10_000,
+		stepGoal: connection?.dailyGoal ?? DEFAULT_STEP_GOAL,
 		...fitness,
 		...nutrition,
 		meditationDone

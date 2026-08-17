@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	DEFAULT_STEP_GOAL,
 	dateKeysEndingAt,
 	isLocalDayStart,
 	isValidTimeZone,
@@ -59,7 +60,8 @@ describe('step dates', () => {
 });
 
 describe('step goals', () => {
-	it('accepts useful goals and rejects invalid values', () => {
+	it('uses the standard goal and validates custom values', () => {
+		expect(DEFAULT_STEP_GOAL).toBe(5_000);
 		expect(parseStepGoal('10000')).toBe(10_000);
 		expect(() => parseStepGoal('500')).toThrow('between 1,000 and 100,000');
 	});

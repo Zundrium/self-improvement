@@ -6,24 +6,43 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Progress } from '$lib/components/ui/progress';
-	import { STEP_TOKEN_HEADER } from './steps';
+	import { DEFAULT_STEP_GOAL, STEP_TOKEN_HEADER } from './steps';
 	import type { PageProps } from './$types';
+
+	const pendingTokenStorageKey = 'pending-step-token';
 
 	let { data, form }: PageProps = $props();
 	let timeZone = $state('UTC');
 	let copied = $state('');
+	let pendingToken = $state('');
 	const todaySteps = $derived(data.days.at(-1)?.count ?? 0);
-	const dailyGoal = $derived(data.connection?.dailyGoal ?? 10_000);
+	const dailyGoal = $derived(data.connection?.dailyGoal ?? DEFAULT_STEP_GOAL);
 	const goalProgress = $derived(Math.min(100, Math.round((todaySteps / dailyGoal) * 100)));
 	const generatedToken = $derived(
 		form?.kind === 'connection' && 'token' in form && typeof form.token === 'string'
 			? form.token
 			: ''
 	);
+	const visibleToken = $derived(generatedToken || pendingToken);
 
 	onMount(() => {
 		timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		restorePendingToken();
 	});
+
+	$effect(() => {
+		if (generatedToken) rememberToken(generatedToken);
+	});
+
+	function restorePendingToken() {
+		if (data.connection?.lastReceivedAt) return sessionStorage.removeItem(pendingTokenStorageKey);
+		pendingToken = sessionStorage.getItem(pendingTokenStorageKey) ?? '';
+	}
+
+	function rememberToken(token: string) {
+		pendingToken = token;
+		sessionStorage.setItem(pendingTokenStorageKey, token);
+	}
 
 	async function copyValue(label: string, value: string) {
 		await navigator.clipboard.writeText(value);
@@ -135,10 +154,10 @@
 			<Alert variant="destructive"><AlertDescription>{form.error}</AlertDescription></Alert>
 		{/if}
 
-		{#if generatedToken}
+		{#if visibleToken}
 			<Alert>
 				<AlertDescription>
-					Copy this token now. It is stored securely and cannot be shown again.
+					This token stays visible in this browser session until the first sync.
 				</AlertDescription>
 			</Alert>
 			<div class="space-y-4">
@@ -156,9 +175,9 @@
 				})}
 				{@render Credential({
 					label: 'Custom header value',
-					value: generatedToken,
+					value: visibleToken,
 					copied: copied === 'token',
-					oncopy: () => copyValue('token', generatedToken)
+					oncopy: () => copyValue('token', visibleToken)
 				})}
 			</div>
 		{/if}

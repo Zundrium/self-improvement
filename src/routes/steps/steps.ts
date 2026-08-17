@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const DEFAULT_STEP_GOAL = 10_000;
+export const DEFAULT_STEP_GOAL = 5_000;
 export const STEP_TOKEN_HEADER = 'X-Steps-Token';
 
 const instantSchema = z.iso.datetime();

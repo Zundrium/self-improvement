@@ -48,7 +48,7 @@ export const stepConnection = sqliteTable(
 			.references(() => authSchema.user.id, { onDelete: 'cascade' }),
 		tokenHash: text('token_hash').notNull(),
 		timeZone: text('time_zone').notNull().default('UTC'),
-		dailyGoal: integer('daily_goal').notNull().default(10_000),
+		dailyGoal: integer('daily_goal').notNull().default(5_000),
 		appVersion: text('app_version'),
 		lastReceivedAt: integer('last_received_at', { mode: 'timestamp_ms' }),
 		createdAt: integer('created_at', { mode: 'timestamp_ms' })
