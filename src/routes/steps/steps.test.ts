@@ -3,6 +3,7 @@ import {
 	DEFAULT_STEP_GOAL,
 	dateKeysEndingAt,
 	isLocalDayStart,
+	isValidDateKey,
 	isValidTimeZone,
 	localDateForInstant,
 	parseHealthConnectPayload,
@@ -51,6 +52,11 @@ describe('step dates', () => {
 
 	it('builds an inclusive date range', () => {
 		expect(dateKeysEndingAt('2026-08-17', 3)).toEqual(['2026-08-15', '2026-08-16', '2026-08-17']);
+	});
+
+	it('validates calendar date keys', () => {
+		expect(isValidDateKey('2026-08-17')).toBe(true);
+		expect(isValidDateKey('2026-02-30')).toBe(false);
 	});
 
 	it('validates IANA timezones', () => {

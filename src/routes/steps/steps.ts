@@ -62,6 +62,10 @@ export function isLocalDayStart(instant: string, timeZone: string) {
 	return parts.hour === '00' && parts.minute === '00' && parts.second === '00';
 }
 
+export function isValidDateKey(value: string) {
+	return z.iso.date().safeParse(value).success;
+}
+
 export function dateKeysEndingAt(endDateKey: string, total: number) {
 	const [year, month, day] = endDateKey.split('-').map(Number);
 	const end = new Date(Date.UTC(year, month - 1, day));
