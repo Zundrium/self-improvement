@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import {
 		Apple,
 		Dumbbell,
@@ -10,6 +10,7 @@
 		Flower2,
 		Gauge,
 		House,
+		LoaderCircle,
 		LogOut,
 		Shield,
 		UserRound
@@ -46,16 +47,25 @@
 	const hidden = $derived(page.url.pathname === '/nutrition/track');
 	const fitnessEnabled = $derived(trackers.some((tracker) => tracker.id === 'fitness'));
 	const navigationItems = $derived([
-		{ href: '/' as const, label: 'Home', icon: House },
+		{ href: '/' as const, activePrefix: '/', label: 'Home', icon: House },
 		...trackers.map((tracker) => ({
 			href: tracker.href,
+			activePrefix: `/${tracker.id}`,
 			label: tracker.label,
 			icon: trackerIcons[tracker.id]
 		}))
 	]);
 
-	function isActive(href: string) {
-		return href === '/' ? page.url.pathname === href : page.url.pathname.startsWith(href);
+	function matchesPath(pathname: string, activePrefix: string) {
+		return activePrefix === '/' ? pathname === '/' : pathname.startsWith(activePrefix);
+	}
+
+	function isActive(activePrefix: string) {
+		return matchesPath(page.url.pathname, activePrefix);
+	}
+
+	function isPending(activePrefix: string) {
+		return Boolean(navigating.to && matchesPath(navigating.to.url.pathname, activePrefix));
 	}
 
 	function openProfile() {
@@ -90,14 +100,19 @@
 					href={resolve(item.href)}
 					class="flex items-center justify-center text-(--text)/40 transition-colors hover:text-(--text)"
 					aria-label={item.label}
-					aria-current={isActive(item.href) ? 'page' : undefined}
+					aria-current={isActive(item.activePrefix) ? 'page' : undefined}
+					aria-busy={isPending(item.activePrefix)}
 				>
 					<span
-						class="flex size-10 items-center justify-center rounded-2xl {isActive(item.href)
+						class="flex size-10 items-center justify-center rounded-2xl {isActive(item.activePrefix)
 							? 'bg-(--text)/8 text-(--text)'
 							: ''}"
 					>
-						<item.icon class="size-5" />
+						{#if isPending(item.activePrefix)}
+							<LoaderCircle class="size-5 animate-spin" />
+						{:else}
+							<item.icon class="size-5" />
+						{/if}
 					</span>
 				</a>
 			{/each}

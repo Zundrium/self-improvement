@@ -12,22 +12,26 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	const user = requireUser(event);
-	const date = event.params.date;
+	const today = todayIso();
+	const date = event.params.date === 'today' ? today : event.params.date;
 	if (!validDate(date)) error(400, 'Use a date in YYYY-MM-DD format.');
 
-	const db = requireDb(event.locals);
-	const entries = await getDailyEntries(db, user.id, date);
 	const { profile } = await event.parent();
+	const db = requireDb(event.locals);
 	const monthStart = `${date.slice(0, 7)}-01`;
 	const monthEnd = endOfMonth(date);
+	const [entries, trackedDates] = await Promise.all([
+		getDailyEntries(db, user.id, date),
+		getTrackedDates(db, user.id, monthStart, monthEnd)
+	]);
 
 	return {
 		date,
 		entries,
 		totals: sumEntryTotals(entries),
 		calorieGoal: profile.dailyCalorieGoal,
-		trackedDates: await getTrackedDates(db, user.id, monthStart, monthEnd),
-		today: todayIso()
+		trackedDates,
+		today
 	};
 };
 

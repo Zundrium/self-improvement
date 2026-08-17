@@ -10,17 +10,15 @@ export const load: PageServerLoad = async (event) => {
 	const user = requireUser(event);
 	const today = todayIso();
 	const date = selectedDate(event.url, today);
-	const entries = await loadEntries(requireDb(event.locals), user.id);
+	const [selectedEntries, history] = await loadEntries(requireDb(event.locals), user.id, date);
+	const markedDates = history.map((entry) => entry.localDate);
 	return {
 		date,
 		today,
-		entry: entries.find((entry) => entry.localDate === date) ?? null,
-		markedDates: entries.map((entry) => entry.localDate),
-		recentEntries: entries.slice(0, 10),
-		cycle: cycleSummary(
-			entries.map((entry) => entry.localDate),
-			today
-		)
+		entry: selectedEntries[0] ?? null,
+		markedDates,
+		recentEntries: history.slice(0, 10),
+		cycle: cycleSummary(markedDates, today)
 	};
 };
 
@@ -52,9 +50,21 @@ function selectedDate(url: URL, today: string) {
 	return date;
 }
 
-function loadEntries(db: ReturnType<typeof requireDb>, userId: string) {
+function loadEntries(db: ReturnType<typeof requireDb>, userId: string, date: string) {
+	return db.batch([selectedEntryQuery(db, userId, date), entryHistoryQuery(db, userId)]);
+}
+
+function selectedEntryQuery(db: ReturnType<typeof requireDb>, userId: string, date: string) {
 	return db
 		.select()
+		.from(menstruationEntry)
+		.where(and(eq(menstruationEntry.userId, userId), eq(menstruationEntry.localDate, date)))
+		.limit(1);
+}
+
+function entryHistoryQuery(db: ReturnType<typeof requireDb>, userId: string) {
+	return db
+		.select({ localDate: menstruationEntry.localDate, flow: menstruationEntry.flow })
 		.from(menstruationEntry)
 		.where(eq(menstruationEntry.userId, userId))
 		.orderBy(desc(menstruationEntry.localDate))

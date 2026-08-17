@@ -17,7 +17,7 @@ export const trackers = [
 		id: 'nutrition',
 		label: 'Nutrition',
 		description: 'Meals, calories, and daily nutrition goals.',
-		href: '/nutrition',
+		href: '/nutrition/log/today',
 		defaultEnabled: true
 	},
 	{

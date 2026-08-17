@@ -133,17 +133,43 @@ export async function getEntryWithMeals(db: Database, entryId: string, userId: s
 }
 
 export async function getDailyEntries(db: Database, userId: string, date: string) {
-	const entries = await db
+	const [entries, mealRows, ingredientRows] = await db.batch([
+		dailyEntriesQuery(db, userId, date),
+		dailyMealsQuery(db, userId, date),
+		dailyIngredientsQuery(db, userId, date)
+	]);
+	const meals = assembleMeals(
+		mealRows.map((row) => row.meal),
+		ingredientRows.map((row) => row.ingredient)
+	);
+	return entries.map((item) => assembleEntry(item, meals));
+}
+
+function dailyEntriesQuery(db: Database, userId: string, date: string) {
+	return db
 		.select()
 		.from(entry)
 		.where(and(eq(entry.userId, userId), eq(entry.date, date)))
 		.orderBy(asc(entry.createdAt));
-	if (entries.length === 0) return [];
-	const meals = await getMeals(
-		db,
-		entries.map((item) => item.id)
-	);
-	return entries.map((item) => assembleEntry(item, meals));
+}
+
+function dailyMealsQuery(db: Database, userId: string, date: string) {
+	return db
+		.select({ meal })
+		.from(meal)
+		.innerJoin(entry, eq(meal.entryId, entry.id))
+		.where(and(eq(entry.userId, userId), eq(entry.date, date)))
+		.orderBy(asc(meal.sortOrder), asc(meal.createdAt));
+}
+
+function dailyIngredientsQuery(db: Database, userId: string, date: string) {
+	return db
+		.select({ ingredient })
+		.from(ingredient)
+		.innerJoin(meal, eq(ingredient.mealId, meal.id))
+		.innerJoin(entry, eq(meal.entryId, entry.id))
+		.where(and(eq(entry.userId, userId), eq(entry.date, date)))
+		.orderBy(asc(ingredient.sortOrder), asc(ingredient.createdAt));
 }
 
 export async function getTrackedDates(
@@ -229,7 +255,6 @@ async function getMeals(db: Database, entryIds: string[]): Promise<MealWithIngre
 		.where(inArray(meal.entryId, entryIds))
 		.orderBy(asc(meal.sortOrder), asc(meal.createdAt));
 	if (meals.length === 0) return [];
-
 	const ingredients = await db
 		.select()
 		.from(ingredient)
@@ -240,18 +265,18 @@ async function getMeals(db: Database, entryIds: string[]): Promise<MealWithIngre
 			)
 		)
 		.orderBy(asc(ingredient.sortOrder), asc(ingredient.createdAt));
+	return assembleMeals(meals, ingredients);
+}
+
+function assembleMeals(meals: Meal[], ingredients: Ingredient[]): MealWithIngredients[] {
 	const byMeal = new Map<string, Ingredient[]>();
 	for (const item of ingredients)
 		byMeal.set(item.mealId, [...(byMeal.get(item.mealId) ?? []), item]);
+	return meals.map((item) => mealWithIngredients(item, byMeal.get(item.id) ?? []));
+}
 
-	return meals.map((item) => {
-		const mealIngredients = byMeal.get(item.id) ?? [];
-		return {
-			...item,
-			ingredients: mealIngredients,
-			totals: totalsFromIngredients(mealIngredients)
-		};
-	});
+function mealWithIngredients(item: Meal, ingredients: Ingredient[]): MealWithIngredients {
+	return { ...item, ingredients, totals: totalsFromIngredients(ingredients) };
 }
 
 function assembleEntry(item: Entry, meals: MealWithIngredients[]): EntryWithMeals {

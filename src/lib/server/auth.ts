@@ -24,6 +24,7 @@ export function createAuth(env: RuntimeEnv, origin = 'http://localhost:3000') {
 		basePath: '/api/auth',
 		trustedOrigins: buildTrustedOrigins(env, appUrl, origin),
 		database: drizzleAdapter(createDb(env.DB), { provider: 'sqlite', schema }),
+		session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
 		emailAndPassword: {
 			enabled: true,
 			disableSignUp: true,

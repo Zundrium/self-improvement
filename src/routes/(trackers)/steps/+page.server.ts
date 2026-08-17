@@ -41,10 +41,9 @@ async function loadStepPage(db: ReturnType<typeof requireDb>, userId: string, ur
 	if (!isValidDateKey(date) || date > today) error(400, 'Choose today or an earlier valid date.');
 
 	const dateKeys = dateKeysEndingAt(today, 7);
-	const [historyTotals, selectedTotals] = await Promise.all([
-		getDailySteps(db, userId, dateKeys[0], today),
-		getDailySteps(db, userId, date, date)
-	]);
+	const historyTotals = await getDailySteps(db, userId, dateKeys[0], today);
+	const selectedTotals =
+		date >= dateKeys[0] ? historyTotals : await getDailySteps(db, userId, date, date);
 	const totalsByDate = new Map(historyTotals.map((total) => [total.localDate, total.count]));
 	return {
 		connection: connectionView(connection),
@@ -52,7 +51,7 @@ async function loadStepPage(db: ReturnType<typeof requireDb>, userId: string, ur
 		isSynced: Boolean(connection?.lastReceivedAt),
 		date,
 		today,
-		steps: selectedTotals[0]?.count ?? 0,
+		steps: selectedTotals.find((total) => total.localDate === date)?.count ?? 0,
 		days: dateKeys.toReversed().map((day) => ({ date: day, count: totalsByDate.get(day) ?? 0 }))
 	};
 }

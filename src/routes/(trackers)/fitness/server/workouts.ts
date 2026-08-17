@@ -10,25 +10,38 @@ import {
 import type { Database } from '$lib/server/db';
 import type { CompletedWorkoutDay, ExercisePreference, Workout, WorkoutProgram } from '../fitness';
 
+const PROGRAM_SLUG = 'total-body-30';
+
 export async function getWorkoutProgram(
 	db: Database,
-	userId: string
+	userId: string,
+	workoutDay: number
 ): Promise<{ program: WorkoutProgram; completedDays: CompletedWorkoutDay[] }> {
-	const rows = await loadProgramRows(db, userId);
-	if (!rows[0]) throw new Error('The workout program has not been seeded.');
-	return {
-		program: assembleProgram(rows),
-		completedDays: await loadCompletedDays(db, userId, rows[0].programId)
-	};
+	const [programs, rows, completedDays] = await db.batch([
+		programQuery(db),
+		workoutRowsQuery(db, userId, workoutDay),
+		completedDaysQuery(db, userId)
+	]);
+	if (!programs[0]) throw new Error('The workout program has not been seeded.');
+	return { program: assembleProgram(programs[0], rows), completedDays };
 }
 
-async function loadProgramRows(db: Database, userId: string) {
+function programQuery(db: Database) {
 	return db
 		.select({
-			programId: fitnessProgram.id,
-			programName: fitnessProgram.name,
-			programDescription: fitnessProgram.description,
-			durationDays: fitnessProgram.durationDays,
+			id: fitnessProgram.id,
+			name: fitnessProgram.name,
+			description: fitnessProgram.description,
+			durationDays: fitnessProgram.durationDays
+		})
+		.from(fitnessProgram)
+		.where(eq(fitnessProgram.slug, PROGRAM_SLUG))
+		.limit(1);
+}
+
+function workoutRowsQuery(db: Database, userId: string, workoutDay: number) {
+	return db
+		.select({
 			workoutId: fitnessWorkout.id,
 			day: fitnessWorkout.day,
 			title: fitnessWorkout.title,
@@ -47,8 +60,8 @@ async function loadProgramRows(db: Database, userId: string) {
 			exerciseImageUrl: fitnessExercise.imageUrl,
 			speedPercent: fitnessExercisePreference.speedPercent
 		})
-		.from(fitnessProgram)
-		.innerJoin(fitnessWorkout, eq(fitnessWorkout.programId, fitnessProgram.id))
+		.from(fitnessWorkout)
+		.innerJoin(fitnessProgram, eq(fitnessWorkout.programId, fitnessProgram.id))
 		.innerJoin(fitnessWorkoutExercise, eq(fitnessWorkoutExercise.workoutId, fitnessWorkout.id))
 		.innerJoin(fitnessExercise, eq(fitnessExercise.id, fitnessWorkoutExercise.exerciseId))
 		.leftJoin(
@@ -58,22 +71,17 @@ async function loadProgramRows(db: Database, userId: string) {
 				eq(fitnessExercisePreference.userId, userId)
 			)
 		)
-		.where(eq(fitnessProgram.slug, 'total-body-30'))
-		.orderBy(fitnessWorkout.day, fitnessWorkoutExercise.position);
+		.where(and(eq(fitnessProgram.slug, PROGRAM_SLUG), eq(fitnessWorkout.day, workoutDay)))
+		.orderBy(fitnessWorkoutExercise.position);
 }
 
-type ProgramRow = Awaited<ReturnType<typeof loadProgramRows>>[number];
+type Program = Awaited<ReturnType<typeof programQuery>>[number];
+type ProgramRow = Awaited<ReturnType<typeof workoutRowsQuery>>[number];
 
-function assembleProgram(rows: ProgramRow[]): WorkoutProgram {
+function assembleProgram(program: Program, rows: ProgramRow[]): WorkoutProgram {
 	const workouts = new Map<number, Workout>();
 	for (const row of rows) addWorkoutRow(workouts, row);
-	return {
-		id: rows[0].programId,
-		name: rows[0].programName,
-		description: rows[0].programDescription,
-		durationDays: rows[0].durationDays,
-		workouts: [...workouts.values()]
-	};
+	return { ...program, workouts: [...workouts.values()] };
 }
 
 function addWorkoutRow(workouts: Map<number, Workout>, row: ProgramRow) {
@@ -111,7 +119,7 @@ function createActivity(row: ProgramRow) {
 		: { ...activity, type: 'timed' as const };
 }
 
-async function loadCompletedDays(db: Database, userId: string, programId: number) {
+function completedDaysQuery(db: Database, userId: string) {
 	return db
 		.select({
 			workoutId: fitnessWorkoutProgress.workoutId,
@@ -119,7 +127,8 @@ async function loadCompletedDays(db: Database, userId: string, programId: number
 		})
 		.from(fitnessWorkoutProgress)
 		.innerJoin(fitnessWorkout, eq(fitnessWorkout.id, fitnessWorkoutProgress.workoutId))
-		.where(and(eq(fitnessWorkoutProgress.userId, userId), eq(fitnessWorkout.programId, programId)));
+		.innerJoin(fitnessProgram, eq(fitnessProgram.id, fitnessWorkout.programId))
+		.where(and(eq(fitnessWorkoutProgress.userId, userId), eq(fitnessProgram.slug, PROGRAM_SLUG)));
 }
 
 export async function getExercisePreferences(
