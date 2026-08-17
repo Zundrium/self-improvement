@@ -10,8 +10,12 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+{@render children()}
 {#if data.user}
 	<AppNavbar user={data.user} />
 {/if}
-{@render children()}
-<Toaster position="bottom-center" richColors />
+<Toaster
+	position="bottom-center"
+	richColors
+	offset={data.user ? { bottom: 'calc(5rem + env(safe-area-inset-bottom))' } : undefined}
+/>

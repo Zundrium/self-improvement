@@ -75,7 +75,7 @@
 </main>
 
 <div
-	class="fixed inset-x-0 bottom-0 z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] backdrop-blur-xl"
+	class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-4 backdrop-blur-xl"
 >
 	<div class="mx-auto flex max-w-4xl gap-2">
 		<Button form="save-entry" type="submit" size="lg" class="flex-1"

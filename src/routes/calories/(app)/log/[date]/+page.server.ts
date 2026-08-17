@@ -27,17 +27,9 @@ export const load: PageServerLoad = async (event) => {
 		totals: sumEntryTotals(entries),
 		calorieGoal: profile.dailyCalorieGoal,
 		trackedDates: await getTrackedDates(db, user.id, monthStart, monthEnd),
-		previousDate: offsetDate(date, -1),
-		nextDate: offsetDate(date, 1),
 		today: todayIso()
 	};
 };
-
-function offsetDate(date: string, days: number) {
-	const value = new Date(`${date}T00:00:00Z`);
-	value.setUTCDate(value.getUTCDate() + days);
-	return value.toISOString().slice(0, 10);
-}
 
 function endOfMonth(date: string) {
 	const value = new Date(`${date.slice(0, 7)}-01T00:00:00Z`);

@@ -1,39 +1,21 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import {
-		CalendarDays,
-		Camera,
-		ChevronLeft,
-		ChevronRight,
-		Droplet,
-		Drumstick,
-		Salad,
-		Wheat
-	} from '@lucide/svelte';
-	import { parseDate, type DateValue } from '@internationalized/date';
-	import { untrack } from 'svelte';
+	import { Camera, ChevronRight, Droplet, Drumstick, Salad, Wheat } from '@lucide/svelte';
 	import type { PageProps } from './$types';
 
+	import DateSelector from '$lib/components/date-selector.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { Calendar } from '$lib/components/ui/calendar';
 	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
-	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
 
 	let { data }: PageProps = $props();
-	let calendarOpen = $state(false);
-	let calendarDate = $state<DateValue | undefined>(untrack(() => parseDate(data.date)));
 
 	const consumed = $derived(Math.round(data.totals.calories));
 	const goal = $derived(data.calorieGoal);
 	const progress = $derived(Math.min(100, Math.round((consumed / Math.max(goal, 1)) * 100)));
 	const mealCount = $derived(data.entries.reduce((total, entry) => total + entry.meals.length, 0));
 
-	function chooseDate(value: DateValue | undefined) {
-		if (!value) return;
-		calendarOpen = false;
-		void goto(resolve(`/calories/log/${value.toString()}`));
+	function calorieLogHref(date: string) {
+		return `/calories/log/${date}`;
 	}
 
 	function displayDate(value: string) {
@@ -55,40 +37,7 @@
 <svelte:head><title>{displayDate(data.date)} · Self Improvement</title></svelte:head>
 
 <main class="mx-auto max-w-5xl space-y-6 px-4 py-8 pb-28 sm:px-6 sm:py-10">
-	<section class="flex items-center justify-center gap-1">
-		<Button
-			href="/calories/log/{data.previousDate}"
-			variant="ghost"
-			size="icon"
-			aria-label="Previous day"><ChevronLeft class="size-4" /></Button
-		>
-		<Popover bind:open={calendarOpen}>
-			<PopoverTrigger>
-				{#snippet child({ props })}
-					<Button variant="ghost" class="min-w-56 gap-2" {...props}>
-						<CalendarDays class="size-4" />
-						{displayDate(data.date)}
-						{#if data.date === data.today}<Badge>Today</Badge>{/if}
-					</Button>
-				{/snippet}
-			</PopoverTrigger>
-			<PopoverContent class="w-auto p-0">
-				<Calendar
-					type="single"
-					bind:value={calendarDate}
-					maxValue={parseDate(data.today)}
-					onValueChange={chooseDate}
-				/>
-			</PopoverContent>
-		</Popover>
-		<Button
-			href={data.nextDate <= data.today ? `/calories/log/${data.nextDate}` : undefined}
-			disabled={data.nextDate > data.today}
-			variant="ghost"
-			size="icon"
-			aria-label="Next day"><ChevronRight class="size-4" /></Button
-		>
-	</section>
+	<DateSelector date={data.date} today={data.today} hrefForDate={calorieLogHref} />
 
 	<section class="grid items-center gap-6 py-2 lg:grid-cols-[1.35fr_1fr] lg:gap-12">
 		<div class="flex flex-col items-center py-4 sm:py-6">
@@ -222,7 +171,7 @@
 </main>
 
 <div
-	class="fixed inset-x-0 bottom-0 z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] backdrop-blur-xl sm:hidden"
+	class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-4 backdrop-blur-xl sm:hidden"
 >
 	<Button href="/calories/track?date={data.date}" size="lg" class="mx-auto flex w-full max-w-md"
 		><Camera class="mr-2 size-5" /> Add a meal</Button

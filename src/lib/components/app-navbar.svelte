@@ -2,7 +2,17 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { Gauge, LogOut, Shield, UserRound } from '@lucide/svelte';
+	import {
+		Apple,
+		Dumbbell,
+		Footprints,
+		Flower2,
+		Gauge,
+		House,
+		LogOut,
+		Shield,
+		UserRound
+	} from '@lucide/svelte';
 	import { authClient } from '$lib/auth-client';
 	import { Avatar } from '$lib/components/ui/avatar';
 	import {
@@ -24,6 +34,17 @@
 
 	let { user }: { user: User } = $props();
 	const hidden = $derived(page.url.pathname === '/calories/track');
+	const navigationItems = [
+		{ href: '/' as const, label: 'Home', icon: House },
+		{ href: '/fitness' as const, label: 'Fitness', icon: Dumbbell },
+		{ href: '/steps' as const, label: 'Steps', icon: Footprints },
+		{ href: '/calories' as const, label: 'Nutrition', icon: Apple },
+		{ href: '/meditate' as const, label: 'Meditation', icon: Flower2 }
+	];
+
+	function isActive(href: string) {
+		return href === '/' ? page.url.pathname === href : page.url.pathname.startsWith(href);
+	}
 
 	function openProfile() {
 		void goto(resolve('/profile'));
@@ -44,46 +65,73 @@
 </script>
 
 {#if !hidden}
-	<nav class="sticky top-0 z-40 border-b border-(--text)/8 bg-(--bg)/90 backdrop-blur-lg">
-		<div class="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
-			<a href={resolve('/')} class="text-sm font-semibold tracking-[-0.02em]">Self Improvement</a>
-			<div class="flex items-center gap-1">
-				<ThemeToggle />
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						class="cursor-pointer rounded-full ring-(--text)/20 outline-none focus-visible:ring-2"
-						aria-label="Open user menu"
+	<nav
+		class="fixed inset-x-0 bottom-0 z-50 border-t border-(--text)/8 bg-(--bg)/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg"
+		aria-label="Main navigation"
+	>
+		<div class="mx-auto grid h-16 w-full max-w-md grid-cols-6 items-stretch px-2">
+			{#each navigationItems as item (item.href)}
+				<a
+					href={resolve(item.href)}
+					class="flex items-center justify-center text-(--text)/40 transition-colors hover:text-(--text)"
+					aria-label={item.label}
+					aria-current={isActive(item.href) ? 'page' : undefined}
+				>
+					<span
+						class="flex size-10 items-center justify-center rounded-2xl {isActive(item.href)
+							? 'bg-(--text)/8 text-(--text)'
+							: ''}"
 					>
-						<Avatar src={user.image ?? undefined} alt={user.name} size="default" />
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" class="w-56">
-						<DropdownMenuLabel class="space-y-0.5 py-2">
-							<p class="truncate text-sm font-medium text-(--text)">{user.name}</p>
-							<p class="truncate font-normal">{user.email}</p>
-						</DropdownMenuLabel>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem onSelect={openProfile}>
-							<UserRound />
-							Profile
+						<item.icon class="size-5" />
+					</span>
+				</a>
+			{/each}
+
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					class="flex cursor-pointer items-center justify-center rounded-2xl ring-(--text)/20 outline-none focus-visible:ring-2"
+					aria-label="Open user menu"
+				>
+					<Avatar
+						src={user.image ?? undefined}
+						alt={user.name}
+						size="sm"
+						class={page.url.pathname === '/profile' ? 'ring-2 ring-(--text)' : ''}
+					/>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent side="top" align="end" sideOffset={10} class="w-56">
+					<DropdownMenuLabel class="space-y-0.5 py-2">
+						<p class="truncate text-sm font-medium text-(--text)">{user.name}</p>
+						<p class="truncate font-normal">{user.email}</p>
+					</DropdownMenuLabel>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem onSelect={openProfile}>
+						<UserRound />
+						Profile
+					</DropdownMenuItem>
+					<DropdownMenuItem onSelect={openFitnessSettings}>
+						<Gauge />
+						Rep speeds
+					</DropdownMenuItem>
+					{#if user.role === 'admin'}
+						<DropdownMenuItem onSelect={openAdmin}>
+							<Shield />
+							Users
 						</DropdownMenuItem>
-						<DropdownMenuItem onSelect={openFitnessSettings}>
-							<Gauge />
-							Rep speeds
-						</DropdownMenuItem>
-						{#if user.role === 'admin'}
-							<DropdownMenuItem onSelect={openAdmin}>
-								<Shield />
-								Users
-							</DropdownMenuItem>
-						{/if}
-						<DropdownMenuSeparator />
-						<DropdownMenuItem variant="destructive" onSelect={() => void signOut()}>
-							<LogOut />
-							Sign out
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
+					{/if}
+					<DropdownMenuSeparator />
+					<div class="flex items-center justify-between gap-3 px-3 py-1 text-sm">
+						<span>Theme</span>
+						<ThemeToggle />
+					</div>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem variant="destructive" onSelect={() => void signOut()}>
+						<LogOut />
+						Sign out
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</div>
 	</nav>
+	<div class="h-[calc(4rem+env(safe-area-inset-bottom))]" aria-hidden="true"></div>
 {/if}
