@@ -1,0 +1,196 @@
+<script lang="ts">
+	import { onDestroy } from 'svelte';
+	import Icon from '@iconify/svelte';
+	import { Check, LoaderCircle, Minus, Pause, Play, Plus, RotateCcw, Square } from '@lucide/svelte';
+	import { Button } from '$lib/components/ui/button';
+	import type { AmbientAudioManager } from './audio-manager';
+	import {
+		DEFAULT_DURATION_SECONDS,
+		formatTimer,
+		getLocalDate,
+		MAXIMUM_DURATION_SECONDS,
+		MINIMUM_DURATION_SECONDS,
+		type MeditationCompletion,
+		type SaveState
+	} from './meditation';
+	import { singingBowlUrl } from './sounds';
+
+	type TimerStatus = 'idle' | 'running' | 'paused' | 'completed';
+	type Props = {
+		audioManager?: AmbientAudioManager;
+		saveState: SaveState;
+		oncomplete: (completion: MeditationCompletion) => void;
+		onretry: () => void;
+	};
+
+	let { audioManager, saveState, oncomplete, onretry }: Props = $props();
+	let durationSeconds = $state(DEFAULT_DURATION_SECONDS);
+	let remainingSeconds = $state(DEFAULT_DURATION_SECONDS);
+	let status = $state<TimerStatus>('idle');
+	let timerId: number | undefined;
+	let deadline = 0;
+	let startedAt = 0;
+
+	const canAdjust = $derived(status === 'idle');
+	const timerLabel = $derived(getTimerLabel(status));
+
+	onDestroy(clearTimer);
+
+	function adjustDuration(change: number) {
+		if (!canAdjust) return;
+		durationSeconds = Math.min(
+			MAXIMUM_DURATION_SECONDS,
+			Math.max(MINIMUM_DURATION_SECONDS, durationSeconds + change)
+		);
+		remainingSeconds = durationSeconds;
+	}
+
+	function toggleTimer() {
+		if (status === 'running') pauseTimer();
+		else startTimer();
+	}
+
+	function startTimer() {
+		if (status === 'idle') startedAt = Date.now();
+		deadline = Date.now() + remainingSeconds * 1000;
+		status = 'running';
+		timerId = window.setInterval(updateTimer, 250);
+	}
+
+	function pauseTimer() {
+		updateRemainingTime();
+		if (remainingSeconds === 0) return completeTimer();
+		clearTimer();
+		status = 'paused';
+	}
+
+	function updateTimer() {
+		updateRemainingTime();
+		if (remainingSeconds === 0) completeTimer();
+	}
+
+	function updateRemainingTime() {
+		remainingSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+	}
+
+	function completeTimer() {
+		clearTimer();
+		status = 'completed';
+		void audioManager?.playOnce(singingBowlUrl).catch(() => undefined);
+		oncomplete(createCompletion());
+	}
+
+	function createCompletion(): MeditationCompletion {
+		return {
+			id: crypto.randomUUID(),
+			localDate: getLocalDate(),
+			durationSeconds,
+			startedAt
+		};
+	}
+
+	function stopTimer() {
+		clearTimer();
+		status = 'idle';
+		remainingSeconds = durationSeconds;
+		startedAt = 0;
+	}
+
+	function resetTimer() {
+		status = 'idle';
+		remainingSeconds = durationSeconds;
+		startedAt = 0;
+	}
+
+	function clearTimer() {
+		if (timerId) window.clearInterval(timerId);
+		timerId = undefined;
+	}
+
+	function getTimerLabel(timerStatus: TimerStatus) {
+		if (timerStatus === 'running') return 'Pause meditation';
+		if (timerStatus === 'paused') return 'Resume meditation';
+		if (timerStatus === 'completed') return 'Meditate again';
+		return 'Start meditation';
+	}
+</script>
+
+<section class="pt-3" aria-label="Meditation timer">
+	<div class="flex flex-col items-center gap-6 pt-3">
+		<Icon icon="iconoir:yoga" class="size-56 sm:size-64" aria-hidden="true" />
+
+		<div class="flex w-full items-center justify-center gap-2 sm:gap-4">
+			<Button
+				variant="ghost"
+				size="icon"
+				aria-label="Decrease duration by one minute"
+				disabled={!canAdjust || durationSeconds === MINIMUM_DURATION_SECONDS}
+				onclick={() => adjustDuration(-60)}
+			>
+				<Minus size={20} />
+			</Button>
+			<p
+				class="w-36 text-center text-5xl font-semibold tracking-[-0.06em] tabular-nums sm:w-44 sm:text-6xl"
+			>
+				{formatTimer(remainingSeconds)}
+			</p>
+			<Button
+				variant="ghost"
+				size="icon"
+				aria-label="Increase duration by one minute"
+				disabled={!canAdjust || durationSeconds === MAXIMUM_DURATION_SECONDS}
+				onclick={() => adjustDuration(60)}
+			>
+				<Plus size={20} />
+			</Button>
+		</div>
+
+		<div class="flex items-center justify-center gap-3">
+			<Button
+				size="icon"
+				class="size-16"
+				aria-label={timerLabel}
+				onclick={status === 'completed' ? resetTimer : toggleTimer}
+			>
+				{#if status === 'running'}
+					<Pause size={25} />
+				{:else if status === 'completed'}
+					<RotateCcw size={23} />
+				{:else}
+					<Play class="translate-x-px" size={25} />
+				{/if}
+			</Button>
+			{#if status === 'running' || status === 'paused'}
+				<Button
+					variant="ghost"
+					size="icon"
+					class="size-16"
+					aria-label="Stop meditation"
+					onclick={stopTimer}
+				>
+					<Square size={21} />
+				</Button>
+			{/if}
+		</div>
+
+		<div class="min-h-6 text-center text-sm text-(--text)/56" aria-live="polite">
+			{#if status === 'running'}
+				Meditation in progress
+			{:else if status === 'paused'}
+				Timer paused
+			{:else if saveState === 'saving'}
+				<span class="inline-flex items-center gap-2"
+					><LoaderCircle class="animate-spin" size={15} /> Saving session</span
+				>
+			{:else if saveState === 'saved'}
+				<span class="inline-flex items-center gap-2"><Check size={15} /> Session saved</span>
+			{:else if saveState === 'error'}
+				<button
+					class="link cursor-pointer font-medium text-(--text)"
+					type="button"
+					onclick={onretry}>Save again</button
+				>
+			{/if}
+		</div>
+	</div>
+</section>
