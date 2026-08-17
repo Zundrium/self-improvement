@@ -45,6 +45,11 @@
 		remainingSeconds = durationSeconds;
 	}
 
+	function handlePrimaryAction() {
+		if (status === 'completed') resetTimer();
+		toggleTimer();
+	}
+
 	function toggleTimer() {
 		if (status === 'running') pauseTimer();
 		else startTimer();
@@ -115,6 +120,34 @@
 	}
 </script>
 
+{#snippet actions()}
+	<div
+		class="grid gap-3 {status === 'running' || status === 'paused' ? 'grid-cols-[1fr_auto]' : ''}"
+	>
+		<Button size="lg" class="w-full" aria-label={timerLabel} onclick={handlePrimaryAction}>
+			{#if status === 'running'}
+				<Pause class="mr-2 size-4" />
+			{:else if status === 'completed'}
+				<RotateCcw class="mr-2 size-4" />
+			{:else}
+				<Play class="mr-2 size-4 fill-current" />
+			{/if}
+			{timerLabel}
+		</Button>
+		{#if status === 'running' || status === 'paused'}
+			<Button
+				variant="ghost"
+				size="icon"
+				class="size-11"
+				aria-label="Stop meditation"
+				onclick={stopTimer}
+			>
+				<Square class="size-4" />
+			</Button>
+		{/if}
+	</div>
+{/snippet}
+
 <section class="pt-3" aria-label="Meditation timer">
 	<div class="flex flex-col items-center gap-6 pt-3">
 		<Icon icon="iconoir:yoga" class="size-24" aria-hidden="true" />
@@ -145,32 +178,8 @@
 			</Button>
 		</div>
 
-		<div class="flex items-center justify-center gap-3">
-			<Button
-				size="icon"
-				class="size-16"
-				aria-label={timerLabel}
-				onclick={status === 'completed' ? resetTimer : toggleTimer}
-			>
-				{#if status === 'running'}
-					<Pause size={25} />
-				{:else if status === 'completed'}
-					<RotateCcw size={23} />
-				{:else}
-					<Play class="translate-x-px" size={25} />
-				{/if}
-			</Button>
-			{#if status === 'running' || status === 'paused'}
-				<Button
-					variant="ghost"
-					size="icon"
-					class="size-16"
-					aria-label="Stop meditation"
-					onclick={stopTimer}
-				>
-					<Square size={21} />
-				</Button>
-			{/if}
+		<div class="hidden w-full sm:block">
+			{@render actions()}
 		</div>
 
 		<div class="min-h-6 text-center text-sm text-(--text)/56" aria-live="polite">
@@ -194,3 +203,11 @@
 		</div>
 	</div>
 </section>
+
+<div
+	class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-4 backdrop-blur-xl sm:hidden"
+>
+	<div class="mx-auto w-full max-w-md">
+		{@render actions()}
+	</div>
+</div>

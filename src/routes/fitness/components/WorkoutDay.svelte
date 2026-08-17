@@ -40,6 +40,23 @@
 	}
 </script>
 
+{#snippet actions()}
+	<Button
+		variant="ghost"
+		size="lg"
+		class="w-full px-2"
+		disabled={saving}
+		aria-pressed={completed}
+		onclick={ontoggle}
+	>
+		<Check class="mr-1 size-4" />
+		{completed ? 'Completed' : 'Mark complete'}
+	</Button>
+	<Button size="lg" class="w-full px-2" disabled={!audioManager} onclick={startSession}>
+		<Play class="mr-1 size-4 fill-current" /> Start workout
+	</Button>
+{/snippet}
+
 {#if isSessionActive && audioManager}
 	<WorkoutSession
 		{workout}
@@ -101,20 +118,16 @@
 			{/each}
 		</Card>
 
-		<div class="mt-5 grid grid-cols-2 gap-3">
-			<Button
-				variant="ghost"
-				class="w-full px-2"
-				disabled={saving}
-				aria-pressed={completed}
-				onclick={ontoggle}
-			>
-				<Check class="mr-1 size-4" />
-				{completed ? 'Completed' : 'Mark complete'}
-			</Button>
-			<Button class="w-full px-2" disabled={!audioManager} onclick={startSession}>
-				<Play class="mr-1 size-4 fill-current" /> Start workout
-			</Button>
+		<div class="mt-5 hidden grid-cols-2 gap-3 sm:grid">
+			{@render actions()}
 		</div>
 	</section>
+
+	<div
+		class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-4 backdrop-blur-xl sm:hidden"
+	>
+		<div class="mx-auto grid w-full max-w-md grid-cols-2 gap-3">
+			{@render actions()}
+		</div>
+	</div>
 {/if}
