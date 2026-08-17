@@ -11,10 +11,10 @@
 		Wind
 	} from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
-	import type { AmbientAudioManager } from './audio-manager';
+	import type { AudioManager } from '$lib/audio/audio-manager';
 	import { ambientSounds } from './sounds';
 
-	type Props = { audioManager?: AmbientAudioManager };
+	type Props = { audioManager?: AudioManager };
 	let { audioManager }: Props = $props();
 	let activeSoundIds = $state<string[]>([]);
 	let loadingSoundId = $state('');
@@ -36,7 +36,7 @@
 		loadingSoundId = id;
 		audioError = '';
 		try {
-			setSoundActive(id, await audioManager.toggleSound(id));
+			setSoundActive(id, await audioManager.toggleLoop(id));
 		} catch {
 			audioError = 'This sound could not be played.';
 		} finally {

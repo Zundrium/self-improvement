@@ -17,9 +17,11 @@ A mobile-first SvelteKit app that brings nutrition, fitness, and meditation into
 - `src/lib/server/auth.ts` owns authentication and trusted-origin configuration.
 - `src/lib/server/db/` contains the D1 client and shared schema.
 - `src/lib/server/guards.ts` protects authenticated and administrator routes.
+- `src/lib/audio/audio-manager.ts` handles meditation loops and fitness sound effects.
 - `src/routes/api/auth/[...path]/+server.ts` exposes the Better Auth API.
 - `src/lib/auth-client.ts` provides the browser authentication client.
 - `src/routes/calories/` contains the calorie estimator, meal log, and nutrition feature logic.
+- `src/routes/fitness/` contains workout pages, APIs, components, and feature-specific logic.
 - `src/routes/meditate/` contains the meditation timer, sounds, and completion tracking.
 - `drizzle/` contains versioned D1 migrations.
 - `scripts/create-admin.mjs` creates or promotes the first administrator.
@@ -80,6 +82,10 @@ Drizzle Studio or direct remote Drizzle access uses the values documented in `.e
 
 The authenticated `/calories` route includes nutrition onboarding, daily calorie and macro goals, photo-first AI meal estimation, iterative corrections, editable meal details, and a dated food log. Add `OPENROUTER_API_KEY` to `.dev.vars` locally or as a Cloudflare secret remotely.
 
+## Fitness
+
+The authenticated `/fitness` route includes the complete 30-day workout calendar, guided timed sessions, screen wake lock, workout cues and voice announcements, completion history, and per-exercise rep speed settings. The source music player, music files, and decorative button sounds are intentionally excluded.
+
 ## Meditation
 
 The authenticated `/meditate` route includes a configurable timer, mixable looping ambient sounds, shared volume controls, and automatic D1 persistence for completed sessions. Meditation pages, components, audio, and feature logic are colocated under `src/routes/meditate/`.
@@ -131,10 +137,6 @@ npm run deploy
 
 Deployment requires an authenticated Wrangler session and explicit approval.
 
-## Planned integration
+## Integrated tools
 
-The parent workspace contains the remaining source app that will be reimplemented here:
-
-- `../zun-fitness`
-
-The calorie estimator from `../ai-calorie-counter` is available under `/calories`. The timer and ambient sounds from `../meditate` are available under `/meditate`.
+The fitness program from `../zun-fitness`, calorie estimator from `../ai-calorie-counter`, and timer with ambient sounds from `../meditate` are available under `/fitness`, `/calories`, and `/meditate`.

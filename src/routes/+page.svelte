@@ -30,6 +30,21 @@
 		<div class="space-y-4">
 			<Card>
 				<CardHeader>
+					<CardTitle>Fitness</CardTitle>
+					<CardDescription>Follow a guided 30-day total-body program.</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<p class="text-sm leading-6 text-(--text)/64">
+						Run timed workouts with spoken cues and track completed days.
+					</p>
+				</CardContent>
+				<CardFooter>
+					<Button href="/fitness">Open fitness</Button>
+				</CardFooter>
+			</Card>
+
+			<Card>
+				<CardHeader>
 					<CardTitle>Nutrition</CardTitle>
 					<CardDescription>Photograph a meal and review its AI calorie estimate.</CardDescription>
 				</CardHeader>

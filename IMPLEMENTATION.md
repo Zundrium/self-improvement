@@ -23,10 +23,12 @@ Status: implemented.
 
 ## 4. Fitness
 
-- Reimplement workouts and completion tracking from `../zun-fitness`.
-- Remove the music player, audio service, and all fitness audio files.
-- Start with the existing workout calendar and session flow.
-- Later replace the calendar landing view with a simpler daily status when useful.
+Status: implemented.
+
+- Reimplemented the 30-day workout calendar, guided sessions, completion tracking, and rep-speed preferences under `/fitness`.
+- Removed the music player, music library, and decorative button sounds while retaining workout cues, countdowns, and voice announcements.
+- Shared one audio manager implementation between fitness sound effects and meditation ambient loops.
+- Kept the calendar landing view; it can later be replaced with a simpler daily status when useful.
 
 ## 5. Meditation
 

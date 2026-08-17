@@ -3,7 +3,7 @@
 	import Icon from '@iconify/svelte';
 	import { Check, LoaderCircle, Minus, Pause, Play, Plus, RotateCcw, Square } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
-	import type { AmbientAudioManager } from './audio-manager';
+	import type { AudioManager } from '$lib/audio/audio-manager';
 	import {
 		DEFAULT_DURATION_SECONDS,
 		formatTimer,
@@ -17,7 +17,7 @@
 
 	type TimerStatus = 'idle' | 'running' | 'paused' | 'completed';
 	type Props = {
-		audioManager?: AmbientAudioManager;
+		audioManager?: AudioManager;
 		saveState: SaveState;
 		oncomplete: (completion: MeditationCompletion) => void;
 		onretry: () => void;
@@ -76,7 +76,7 @@
 	function completeTimer() {
 		clearTimer();
 		status = 'completed';
-		void audioManager?.playOnce(singingBowlUrl).catch(() => undefined);
+		void audioManager?.play(singingBowlUrl);
 		oncomplete(createCompletion());
 	}
 

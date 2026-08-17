@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { AudioManager } from '$lib/audio/audio-manager';
 	import AmbientSounds from './AmbientSounds.svelte';
-	import { AmbientAudioManager } from './audio-manager';
 	import MeditationTimer from './MeditationTimer.svelte';
 	import {
 		formatDuration,
@@ -14,7 +14,7 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let audioManager = $state<AmbientAudioManager>();
+	let audioManager = $state<AudioManager>();
 	let localDate = $state('');
 	let savedCompletions = $state<MeditationCompletion[]>([]);
 	let pendingCompletion = $state<MeditationCompletion>();
@@ -31,8 +31,8 @@
 	});
 
 	function createAudioManager() {
-		const manager = new AmbientAudioManager();
-		for (const sound of ambientSounds) manager.addSound(sound.id, sound.url);
+		const manager = new AudioManager();
+		for (const sound of ambientSounds) manager.addLoop(sound.id, sound.url);
 		return manager;
 	}
 

@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { LogOut, Shield, UserRound } from '@lucide/svelte';
+	import { Gauge, LogOut, Shield, UserRound } from '@lucide/svelte';
 	import { authClient } from '$lib/auth-client';
 	import { Avatar } from '$lib/components/ui/avatar';
 	import {
@@ -33,6 +33,10 @@
 		void goto(resolve('/admin'));
 	}
 
+	function openFitnessSettings() {
+		void goto(resolve('/fitness/exercises'));
+	}
+
 	async function signOut() {
 		await authClient.signOut();
 		await goto(resolve('/sign-in'));
@@ -61,6 +65,10 @@
 						<DropdownMenuItem onSelect={openProfile}>
 							<UserRound />
 							Profile
+						</DropdownMenuItem>
+						<DropdownMenuItem onSelect={openFitnessSettings}>
+							<Gauge />
+							Rep speeds
 						</DropdownMenuItem>
 						{#if user.role === 'admin'}
 							<DropdownMenuItem onSelect={openAdmin}>
