@@ -3,16 +3,7 @@
 	import { Check, Clipboard, Footprints, RefreshCw, Smartphone } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import {
-		Card,
-		CardContent,
-		CardDescription,
-		CardHeader,
-		CardTitle
-	} from '$lib/components/ui/card';
-	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { Progress } from '$lib/components/ui/progress';
 	import { STEP_TOKEN_HEADER } from './steps';
@@ -62,178 +53,146 @@
 	<meta name="description" content="Track daily steps from Android Health Connect." />
 </svelte:head>
 
-<main class="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
-	<header class="space-y-3">
-		<span class="flex size-12 items-center justify-center rounded-3xl bg-(--text) text-(--bg)">
-			<Footprints class="size-6" />
-		</span>
-		<div>
-			<h1 class="text-3xl font-semibold tracking-[-0.05em]">Daily steps</h1>
-			<p class="mt-2 text-(--text)/56">Synced privately from Health Connect on your phone.</p>
-		</div>
-	</header>
+<main class="mx-auto w-full max-w-3xl space-y-8 px-4 py-10 sm:px-6 sm:py-14">
+	{#if data.hasStepData}
+		<header class="space-y-3">
+			<span class="flex size-12 items-center justify-center rounded-3xl bg-(--text) text-(--bg)">
+				<Footprints class="size-6" />
+			</span>
+			<div>
+				<h1 class="text-3xl font-semibold tracking-[-0.05em]">Daily steps</h1>
+				<p class="mt-2 text-(--text)/56">Synced privately from Health Connect on your phone.</p>
+			</div>
+		</header>
 
-	<div class="grid gap-4 sm:grid-cols-[1.2fr_0.8fr]">
-		<Card>
-			<CardHeader>
-				<CardDescription>Today</CardDescription>
-				<CardTitle class="text-4xl tracking-[-0.05em]">{todaySteps.toLocaleString()}</CardTitle>
-			</CardHeader>
-			<CardContent class="gap-3">
+		<section
+			class="grid border-y border-(--text)/8 sm:grid-cols-[1.2fr_0.8fr] sm:divide-x sm:divide-(--text)/8"
+			aria-label="Today's step summary"
+		>
+			<div class="space-y-4 py-6 sm:pr-6">
+				<p class="text-sm text-(--text)/56">Today</p>
+				<p class="text-4xl font-semibold tracking-[-0.05em] tabular-nums">
+					{todaySteps.toLocaleString()}
+				</p>
 				<Progress value={todaySteps} max={dailyGoal} />
 				<div class="flex items-center justify-between text-sm text-(--text)/56">
 					<span>{goalProgress}% of goal</span>
 					<span>{dailyGoal.toLocaleString()} steps</span>
 				</div>
-			</CardContent>
-		</Card>
+			</div>
 
-		<Card>
-			<CardHeader>
-				<div class="flex items-center justify-between gap-3">
-					<CardTitle>Connection</CardTitle>
-					<Badge>{data.connection ? 'Configured' : 'Not connected'}</Badge>
-				</div>
-			</CardHeader>
-			<CardContent class="gap-2 text-sm">
-				<p class="font-medium">{syncLabel(data.connection?.lastReceivedAt ?? null)}</p>
-				<p class="text-(--text)/56">
+			<div class="space-y-2 border-t border-(--text)/8 py-6 sm:border-0 sm:pl-6">
+				<h2 class="font-medium">Connection</h2>
+				<p class="text-sm font-medium">{syncLabel(data.connection?.lastReceivedAt ?? null)}</p>
+				<p class="text-sm text-(--text)/56">
 					{data.connection?.appVersion
 						? `HC Webhook ${data.connection.appVersion}`
-						: 'No Health Connect data received yet.'}
+						: 'Health Connect data received.'}
 				</p>
-			</CardContent>
-		</Card>
-	</div>
+			</div>
+		</section>
 
-	<Card>
-		<CardHeader>
-			<CardTitle>Last 7 days</CardTitle>
-			<CardDescription
-				>Daily totals use the timezone saved when you create the token.</CardDescription
-			>
-		</CardHeader>
-		<CardContent class="gap-4">
-			{#each data.days as day (day.date)}
-				<div class="grid grid-cols-[3.5rem_1fr_auto] items-center gap-3">
-					<span class="text-sm font-medium">{dayLabel(day.date)}</span>
-					<Progress value={day.count} max={dailyGoal} />
-					<span class="w-14 text-right text-sm text-(--text)/64">
-						{day.count.toLocaleString()}
-					</span>
-				</div>
-			{/each}
-		</CardContent>
-	</Card>
-
-	{#if data.connection}
-		<Card>
-			<CardHeader>
-				<CardTitle>Daily goal</CardTitle>
-				<CardDescription>Choose the target used by your progress bars.</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<form method="POST" action="?/goal" class="flex items-end gap-3" use:enhance>
-					<Field class="max-w-48 flex-1">
-						<FieldLabel for="dailyGoal">Steps</FieldLabel>
-						<Input
-							id="dailyGoal"
-							name="dailyGoal"
-							type="number"
-							min="1000"
-							max="100000"
-							step="500"
-							value={dailyGoal}
-							required
-						/>
-					</Field>
-					<Button type="submit">Save goal</Button>
-				</form>
-				{#if form?.kind === 'goal' && form.error}
-					<Alert variant="destructive"><AlertDescription>{form.error}</AlertDescription></Alert>
-				{:else if form?.kind === 'goal' && form.message}
-					<Alert><AlertDescription>{form.message}</AlertDescription></Alert>
-				{/if}
-			</CardContent>
-		</Card>
+		<section class="space-y-5" aria-labelledby="step-history-title">
+			<div>
+				<h2 id="step-history-title" class="text-xl font-medium">Last 7 days</h2>
+				<p class="mt-1 text-sm text-(--text)/56">
+					Daily totals use the timezone saved with your webhook.
+				</p>
+			</div>
+			<div class="space-y-4">
+				{#each data.days as day (day.date)}
+					<div class="grid grid-cols-[3.5rem_1fr_auto] items-center gap-3">
+						<span class="text-sm font-medium">{dayLabel(day.date)}</span>
+						<Progress value={day.count} max={dailyGoal} />
+						<span class="w-14 text-right text-sm text-(--text)/64 tabular-nums">
+							{day.count.toLocaleString()}
+						</span>
+					</div>
+				{/each}
+			</div>
+		</section>
 	{/if}
 
-	<Card>
-		<CardHeader>
-			<div class="flex items-center gap-3">
-				<span class="flex size-10 items-center justify-center rounded-3xl bg-(--text)/8">
-					<Smartphone class="size-5" />
-				</span>
-				<div>
-					<CardTitle>Connect your phone</CardTitle>
-					<CardDescription>Use the free HC Webhook FOSS build as the bridge.</CardDescription>
-				</div>
-			</div>
-		</CardHeader>
-		<CardContent class="gap-6">
-			{#if form?.kind === 'connection' && form.error}
-				<Alert variant="destructive"><AlertDescription>{form.error}</AlertDescription></Alert>
-			{/if}
-
-			{#if generatedToken}
-				<Alert>
-					<AlertDescription>
-						Copy this token now. It is stored securely and cannot be shown again.
-					</AlertDescription>
-				</Alert>
-				<div class="space-y-4 rounded-3xl bg-(--text)/5 p-4">
-					{@render Credential({
-						label: 'Webhook URL',
-						value: data.webhookUrl,
-						copied: copied === 'url',
-						oncopy: () => copyValue('url', data.webhookUrl)
-					})}
-					{@render Credential({
-						label: 'Custom header name',
-						value: STEP_TOKEN_HEADER,
-						copied: copied === 'header',
-						oncopy: () => copyValue('header', STEP_TOKEN_HEADER)
-					})}
-					{@render Credential({
-						label: 'Custom header value',
-						value: generatedToken,
-						copied: copied === 'token',
-						oncopy: () => copyValue('token', generatedToken)
-					})}
-				</div>
-			{/if}
-
-			<ol class="list-decimal space-y-2 pl-5 text-sm leading-6 text-(--text)/64">
-				<li>
-					Install the
-					<a
-						class="font-medium text-(--text) underline underline-offset-4"
-						href="https://github.com/mcnaveen/health-connect-webhook/releases/latest"
-						target="_blank"
-						rel="noreferrer">free FOSS APK</a
-					>
-					and grant it Health Connect step access.
-				</li>
-				<li>Enable only <strong class="text-(--text)">Steps</strong> for this webhook.</li>
-				<li>Set the Steps resolution to <strong class="text-(--text)">Daily</strong>.</li>
-				<li>Add the webhook URL and custom header shown above, then choose a sync schedule.</li>
-				<li>Tap <strong class="text-(--text)">Sync now</strong> and refresh this page.</li>
-			</ol>
-
-			<form method="POST" action="?/connection" use:enhance>
-				<input type="hidden" name="timeZone" value={timeZone} />
-				<Button type="submit" variant={data.connection ? 'ghost' : 'default'}>
-					{#if data.connection}<RefreshCw class="size-4" />{/if}
-					{data.connection ? 'Generate a new token' : 'Create webhook token'}
-				</Button>
-				{#if data.connection}
-					<p class="mt-2 text-xs text-(--text)/48">
-						Generating a token immediately invalidates the current one.
-					</p>
+	<section
+		class="space-y-6 {data.hasStepData ? 'border-t border-(--text)/8 pt-8' : ''}"
+		aria-labelledby="webhook-setup-title"
+	>
+		<div class="flex items-center gap-3">
+			<span class="flex size-10 items-center justify-center rounded-3xl bg-(--text)/8">
+				<Smartphone class="size-5" />
+			</span>
+			<div>
+				{#if data.hasStepData}
+					<h2 id="webhook-setup-title" class="text-xl font-medium">Connect your phone</h2>
+				{:else}
+					<h1 id="webhook-setup-title" class="text-xl font-medium">Connect your phone</h1>
 				{/if}
-			</form>
-		</CardContent>
-	</Card>
+				<p class="text-sm text-(--text)/56">Use the free HC Webhook FOSS build as the bridge.</p>
+			</div>
+		</div>
+
+		{#if form?.kind === 'connection' && form.error}
+			<Alert variant="destructive"><AlertDescription>{form.error}</AlertDescription></Alert>
+		{/if}
+
+		{#if generatedToken}
+			<Alert>
+				<AlertDescription>
+					Copy this token now. It is stored securely and cannot be shown again.
+				</AlertDescription>
+			</Alert>
+			<div class="space-y-4">
+				{@render Credential({
+					label: 'Webhook URL',
+					value: data.webhookUrl,
+					copied: copied === 'url',
+					oncopy: () => copyValue('url', data.webhookUrl)
+				})}
+				{@render Credential({
+					label: 'Custom header name',
+					value: STEP_TOKEN_HEADER,
+					copied: copied === 'header',
+					oncopy: () => copyValue('header', STEP_TOKEN_HEADER)
+				})}
+				{@render Credential({
+					label: 'Custom header value',
+					value: generatedToken,
+					copied: copied === 'token',
+					oncopy: () => copyValue('token', generatedToken)
+				})}
+			</div>
+		{/if}
+
+		<ol class="list-decimal space-y-2 pl-5 text-sm leading-6 text-(--text)/64">
+			<li>
+				Install the
+				<a
+					class="font-medium text-(--text) underline underline-offset-4"
+					href="https://github.com/mcnaveen/health-connect-webhook/releases/latest"
+					target="_blank"
+					rel="noreferrer">free FOSS APK</a
+				>
+				and grant it Health Connect step access.
+			</li>
+			<li>Enable only <strong class="text-(--text)">Steps</strong> for this webhook.</li>
+			<li>Set the Steps resolution to <strong class="text-(--text)">Daily</strong>.</li>
+			<li>Add the webhook URL and custom header shown above, then choose a sync schedule.</li>
+			<li>Tap <strong class="text-(--text)">Sync now</strong> and refresh this page.</li>
+		</ol>
+
+		<form method="POST" action="?/connection" use:enhance>
+			<input type="hidden" name="timeZone" value={timeZone} />
+			<Button type="submit" variant={data.connection ? 'ghost' : 'default'}>
+				{#if data.connection}<RefreshCw class="size-4" />{/if}
+				{data.connection ? 'Generate a new token' : 'Create webhook token'}
+			</Button>
+			{#if data.connection}
+				<p class="mt-2 text-xs text-(--text)/48">
+					Generating a token immediately invalidates the current one.
+				</p>
+			{/if}
+		</form>
+	</section>
 </main>
 
 {#snippet Credential(props: { label: string; value: string; copied: boolean; oncopy: () => void })}

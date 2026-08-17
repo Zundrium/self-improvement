@@ -1,12 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import { requireDb, requireUser } from '$lib/server/guards';
-import { dateKeysEndingAt, localDateForInstant, parseStepGoal } from './steps';
-import {
-	createStepConnection,
-	getDailySteps,
-	getStepConnection,
-	updateStepGoal
-} from './server/steps';
+import { dateKeysEndingAt, localDateForInstant } from './steps';
+import { createStepConnection, getDailySteps, getStepConnection } from './server/steps';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -35,20 +30,6 @@ export const actions: Actions = {
 			console.error('Failed to create step connection:', cause);
 			return fail(500, { kind: 'connection', error: 'Could not create webhook credentials.' });
 		}
-	},
-	goal: async (event) => {
-		const user = requireUser(event);
-		try {
-			const form = await event.request.formData();
-			const dailyGoal = parseStepGoal(form.get('dailyGoal'));
-			await updateStepGoal(requireDb(event.locals), user.id, dailyGoal);
-			return { kind: 'goal', message: 'Daily step goal updated.' };
-		} catch (cause) {
-			return fail(400, {
-				kind: 'goal',
-				error: cause instanceof Error ? cause.message : 'Could not update your goal.'
-			});
-		}
 	}
 };
 
@@ -62,6 +43,7 @@ async function loadStepPage(db: ReturnType<typeof requireDb>, userId: string, or
 	return {
 		connection: connectionView(connection),
 		webhookUrl: new URL('/steps/api/health-connect', origin).toString(),
+		hasStepData: totals.length > 0,
 		today,
 		days: dateKeys.map((date) => ({ date, count: totalsByDate.get(date) ?? 0 }))
 	};

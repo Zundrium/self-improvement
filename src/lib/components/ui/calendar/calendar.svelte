@@ -3,6 +3,8 @@
 	import { Calendar as CalendarPrimitive } from 'bits-ui';
 	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 
+	type Props = WithoutChildrenOrChild<CalendarPrimitive.RootProps> & { fluid?: boolean };
+
 	let {
 		ref = $bindable(null),
 		value = $bindable(),
@@ -10,8 +12,9 @@
 		class: className,
 		weekdayFormat = 'short',
 		locale = 'en-US',
+		fluid = false,
 		...restProps
-	}: WithoutChildrenOrChild<CalendarPrimitive.RootProps> = $props();
+	}: Props = $props();
 </script>
 
 <CalendarPrimitive.Root
@@ -42,10 +45,13 @@
 			{#each months as month (month.value)}
 				<CalendarPrimitive.Grid class="w-full border-collapse select-none">
 					<CalendarPrimitive.GridHead>
-						<CalendarPrimitive.GridRow class="flex">
+						<CalendarPrimitive.GridRow class={fluid ? 'grid grid-cols-7' : 'flex'}>
 							{#each weekdays as weekday (weekday)}
 								<CalendarPrimitive.HeadCell
-									class="w-9 pb-1 text-xs font-normal tracking-[-0.3px] text-(--text)/40"
+									class={cn(
+										'pb-1 text-xs font-normal tracking-[-0.3px] text-(--text)/40',
+										fluid ? 'w-full' : 'w-9'
+									)}
 								>
 									{weekday.slice(0, 2)}
 								</CalendarPrimitive.HeadCell>
@@ -54,15 +60,20 @@
 					</CalendarPrimitive.GridHead>
 					<CalendarPrimitive.GridBody>
 						{#each month.weeks as weekDates (weekDates)}
-							<CalendarPrimitive.GridRow class="mt-0.5 flex w-full">
+							<CalendarPrimitive.GridRow
+								class={fluid ? 'mt-0.5 grid w-full grid-cols-7' : 'mt-0.5 flex w-full'}
+							>
 								{#each weekDates as date (date)}
 									<CalendarPrimitive.Cell
 										{date}
 										month={month.value}
-										class="relative size-9 p-0 text-center"
+										class={cn('relative p-0 text-center', fluid ? 'w-full' : 'size-9')}
 									>
 										<CalendarPrimitive.Day
-											class="inline-flex size-9 items-center justify-center rounded-2xl text-sm tracking-[-0.39px] text-(--text)/72 transition-colors duration-150 outline-none hover:bg-(--text)/8 hover:text-(--text) data-outside-month:opacity-30 data-selected:bg-(--text) data-selected:font-medium data-selected:text-(--bg) data-today:bg-(--text)/8 data-today:font-semibold data-today:text-(--text) data-unavailable:line-through data-disabled:pointer-events-none data-disabled:opacity-30"
+											class={cn(
+												'inline-flex items-center justify-center rounded-2xl text-sm tracking-[-0.39px] text-(--text)/72 transition-colors duration-150 outline-none hover:bg-(--text)/8 hover:text-(--text) data-outside-month:opacity-30 data-selected:bg-(--text) data-selected:font-medium data-selected:text-(--bg) data-today:bg-(--text)/8 data-today:font-semibold data-today:text-(--text) data-unavailable:line-through data-disabled:pointer-events-none data-disabled:opacity-30',
+												fluid ? 'h-12 w-full sm:h-16' : 'size-9'
+											)}
 										/>
 									</CalendarPrimitive.Cell>
 								{/each}

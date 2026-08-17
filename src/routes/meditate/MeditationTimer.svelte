@@ -117,7 +117,7 @@
 
 <section class="pt-3" aria-label="Meditation timer">
 	<div class="flex flex-col items-center gap-6 pt-3">
-		<Icon icon="iconoir:yoga" class="size-56 sm:size-64" aria-hidden="true" />
+		<Icon icon="iconoir:yoga" class="size-24" aria-hidden="true" />
 
 		<div class="flex w-full items-center justify-center gap-2 sm:gap-4">
 			<Button

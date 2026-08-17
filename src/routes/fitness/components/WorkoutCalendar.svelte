@@ -71,5 +71,6 @@
 	onValueChange={handleValueChange}
 	disableDaysOutsideMonth
 	isDateUnavailable={(date) => date.day > 30}
-	class="mx-auto shadow-sm"
+	fluid
+	class="w-full shadow-sm"
 />

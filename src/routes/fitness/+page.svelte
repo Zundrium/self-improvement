@@ -3,7 +3,6 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { AudioManager } from '$lib/audio/audio-manager';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import FitnessClock from './components/FitnessClock.svelte';
 	import WorkoutCalendar from './components/WorkoutCalendar.svelte';
 	import WorkoutModal from './components/WorkoutModal.svelte';
 	import type { Workout } from './fitness';
@@ -100,22 +99,14 @@
 	<meta name="description" content={data.program.description} />
 </svelte:head>
 
-<main
-	class="mx-auto flex min-h-[calc(100vh-7rem)] max-w-2xl flex-col items-center justify-center px-4 py-10 sm:px-6"
->
-	<div class="w-full">
-		<FitnessClock />
+<main class="mx-auto min-h-[calc(100vh-7rem)] w-full max-w-2xl px-4 py-10 sm:px-6">
+	<WorkoutCalendar completedDateKeys={[...completedDateKeys]} ondayclick={handleDayClick} />
 
-		<div class="mt-10 w-full">
-			<WorkoutCalendar completedDateKeys={[...completedDateKeys]} ondayclick={handleDayClick} />
-		</div>
-
-		{#if errorMessage}
-			<Alert variant="destructive" class="mx-auto mt-4 max-w-sm">
-				<AlertDescription>{errorMessage}</AlertDescription>
-			</Alert>
-		{/if}
-	</div>
+	{#if errorMessage}
+		<Alert variant="destructive" class="mx-auto mt-4 max-w-sm">
+			<AlertDescription>{errorMessage}</AlertDescription>
+		</Alert>
+	{/if}
 </main>
 
 {#if selectedWorkoutWithSpeeds && selectedDateKey && audioManager}

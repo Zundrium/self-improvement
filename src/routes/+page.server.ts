@@ -73,7 +73,7 @@ async function loadFitness(db: ReturnType<typeof requireDb>, userId: string, tod
 		.limit(1);
 	return {
 		fitnessDone: Boolean(workout?.completedDate),
-		fitnessWorkoutTitle: workout?.title ?? 'Rest day'
+		fitnessWorkoutTitle: workout?.title.replace(/^Total Body -\s*/, '') ?? 'Rest day'
 	};
 }
 
