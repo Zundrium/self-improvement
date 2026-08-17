@@ -12,7 +12,10 @@
 
 <svelte:head>
 	<title>Self Improvement</title>
-	<meta name="description" content="A unified daily view for nutrition, fitness, and meditation." />
+	<meta
+		name="description"
+		content="A unified daily view for steps, nutrition, fitness, and meditation."
+	/>
 </svelte:head>
 
 <main class="flex min-h-[calc(100svh-4rem)] items-center justify-center p-4 sm:p-6">
@@ -23,11 +26,26 @@
 				Your day, in one place.
 			</h1>
 			<p class="max-w-sm text-base leading-7 text-(--text)/64">
-				A mobile-first home for nutrition, fitness, and meditation.
+				A mobile-first home for steps, nutrition, fitness, and meditation.
 			</p>
 		</header>
 
 		<div class="space-y-4">
+			<Card>
+				<CardHeader>
+					<CardTitle>Steps</CardTitle>
+					<CardDescription>Sync daily totals from Android Health Connect.</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<p class="text-sm leading-6 text-(--text)/64">
+						Follow your daily goal and review the last seven days.
+					</p>
+				</CardContent>
+				<CardFooter>
+					<Button href="/steps">Open steps</Button>
+				</CardFooter>
+			</Card>
+
 			<Card>
 				<CardHeader>
 					<CardTitle>Fitness</CardTitle>

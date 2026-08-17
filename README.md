@@ -1,6 +1,6 @@
 # Self Improvement
 
-A mobile-first SvelteKit app that brings nutrition, fitness, and meditation into one private daily view.
+A mobile-first SvelteKit app that brings steps, nutrition, fitness, and meditation into one private daily view.
 
 ## Stack
 
@@ -23,6 +23,7 @@ A mobile-first SvelteKit app that brings nutrition, fitness, and meditation into
 - `src/routes/calories/` contains the calorie estimator, meal log, and nutrition feature logic.
 - `src/routes/fitness/` contains workout pages, APIs, components, and feature-specific logic.
 - `src/routes/meditate/` contains the meditation timer, sounds, and completion tracking.
+- `src/routes/steps/` contains Health Connect webhook setup, ingestion, and daily step tracking.
 - `drizzle/` contains versioned D1 migrations.
 - `scripts/create-admin.mjs` creates or promotes the first administrator.
 
@@ -85,6 +86,10 @@ The authenticated `/calories` route includes nutrition onboarding, daily calorie
 ## Fitness
 
 The authenticated `/fitness` route includes the complete 30-day workout calendar, guided timed sessions, screen wake lock, workout cues and voice announcements, completion history, and per-exercise rep speed settings. The source music player, music files, and decorative button sounds are intentionally excluded.
+
+## Steps
+
+The authenticated `/steps` route creates a one-time webhook token for the free HC Webhook FOSS Android app, receives daily Health Connect step totals, and tracks a seven-day history against a configurable goal. Configure HC Webhook to use the displayed URL and custom header with Steps resolution set to Daily.
 
 ## Meditation
 
