@@ -17,7 +17,7 @@
 
 Status: implemented.
 
-- Reimplemented `../ai-calorie-counter` under `/calories` with the shared Lily UI.
+- Reimplemented `../ai-calorie-counter` under `/nutrition` with the shared Lily UI.
 - Kept onboarding, calorie targets, meal entry, image analysis, corrections, and daily history.
 - Reused the centralized account and D1 infrastructure instead of its separate auth setup.
 
@@ -42,6 +42,6 @@ Status: implemented first.
 ## 6. Final integration
 
 - Make all routes mobile-first and consistent with Lily UI.
-- Verify each module updates the home status immediately.
+- Verify each tracker updates the home status immediately.
 - Test authentication, daily boundaries, persistence, timers, and audio cleanup.
 - Migrate existing data only after the new flows match the source apps.

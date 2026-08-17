@@ -1,6 +1,5 @@
 <script lang="ts" module>
 	import { resolve } from '$app/paths';
-	import type { Pathname } from '$app/types';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 
@@ -51,7 +50,7 @@
 			sizes[size],
 			className
 		)}
-		href={disabled ? undefined : resolve(href as Pathname)}
+		href={disabled ? undefined : resolve(href as '/')}
 		aria-disabled={disabled}
 		role={disabled ? 'link' : undefined}
 		tabindex={disabled ? -1 : undefined}

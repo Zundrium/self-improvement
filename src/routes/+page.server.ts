@@ -5,13 +5,18 @@ import {
 	fitnessProgram,
 	fitnessWorkout,
 	fitnessWorkoutProgress,
-	meditationSession
+	meditationSession,
+	menstruationEntry
 } from '$lib/server/db/schema';
 import { requireDb, requireUser } from '$lib/server/guards';
-import { getDailyEntries, sumEntryTotals, validDate } from './calories/server/nutrition';
-import { getProfile } from './calories/server/profiles';
-import { getDailySteps, getStepConnection } from './steps/server/steps';
-import { DEFAULT_STEP_GOAL, localDateForInstant } from './steps/steps';
+import {
+	getDailyEntries,
+	sumEntryTotals,
+	validDate
+} from './(trackers)/nutrition/server/nutrition';
+import { getProfile } from './(trackers)/nutrition/server/profiles';
+import { getDailySteps, getStepConnection } from './(trackers)/steps/server/steps';
+import { DEFAULT_STEP_GOAL, localDateForInstant } from './(trackers)/steps/steps';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -29,11 +34,12 @@ async function loadDashboard(
 	const today = localDateForInstant(new Date(), connection?.timeZone ?? 'UTC');
 	const date = requestedDate ?? today;
 	if (!validDate(date) || date > today) error(400, 'Choose today or an earlier valid date.');
-	const [steps, fitness, nutrition, meditationDone] = await Promise.all([
+	const [steps, fitness, nutrition, meditationDone, periodFlow] = await Promise.all([
 		loadSteps(db, userId, date),
 		loadFitness(db, userId, date),
 		loadNutrition(db, userId, date),
-		loadMeditationDone(db, userId, date)
+		loadMeditationDone(db, userId, date),
+		loadPeriodFlow(db, userId, date)
 	]);
 	return {
 		date,
@@ -42,7 +48,8 @@ async function loadDashboard(
 		stepGoal: connection?.dailyGoal ?? DEFAULT_STEP_GOAL,
 		...fitness,
 		...nutrition,
-		meditationDone
+		meditationDone,
+		periodFlow
 	};
 }
 
@@ -95,4 +102,13 @@ async function loadMeditationDone(db: ReturnType<typeof requireDb>, userId: stri
 		.where(and(eq(meditationSession.userId, userId), eq(meditationSession.localDate, today)))
 		.limit(1);
 	return result.length > 0;
+}
+
+async function loadPeriodFlow(db: ReturnType<typeof requireDb>, userId: string, today: string) {
+	const [entry] = await db
+		.select({ flow: menstruationEntry.flow })
+		.from(menstruationEntry)
+		.where(and(eq(menstruationEntry.userId, userId), eq(menstruationEntry.localDate, today)))
+		.limit(1);
+	return entry?.flow ?? null;
 }

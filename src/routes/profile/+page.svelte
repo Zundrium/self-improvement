@@ -10,6 +10,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
@@ -123,6 +124,46 @@
 					<Button type="submit" disabled={savingProfile}>
 						{#if savingProfile}<Spinner class="size-4" />{/if} Save profile
 					</Button>
+				</form>
+			</CardContent>
+		</Card>
+
+		<Card>
+			<CardHeader><CardTitle>Trackers</CardTitle></CardHeader>
+			<CardContent>
+				<form
+					class="space-y-5"
+					method="POST"
+					action="?/trackers"
+					use:enhance={() =>
+						async ({ update }) =>
+							update({ invalidateAll: true })}
+				>
+					<p class="text-sm leading-6 text-(--text)/64">
+						Choose which trackers appear on your home screen and navigation.
+					</p>
+					{#if form?.form === 'trackers' && form.message}
+						<Alert><AlertDescription>{form.message}</AlertDescription></Alert>
+					{/if}
+					<div class="divide-y divide-(--text)/8">
+						{#each data.trackerPreferences as tracker (tracker.id)}
+							<div class="flex items-start gap-3 py-4 first:pt-0 last:pb-0">
+								<Checkbox
+									id="tracker-{tracker.id}"
+									name="trackers"
+									value={tracker.id}
+									checked={tracker.enabled}
+								/>
+								<label class="min-w-0 flex-1 cursor-pointer" for="tracker-{tracker.id}">
+									<span class="block text-sm font-medium">{tracker.label}</span>
+									<span class="mt-0.5 block text-sm leading-5 text-(--text)/56">
+										{tracker.description}
+									</span>
+								</label>
+							</div>
+						{/each}
+					</div>
+					<Button type="submit">Save trackers</Button>
 				</form>
 			</CardContent>
 		</Card>
@@ -253,7 +294,7 @@
 						<p class="text-sm leading-6 text-(--text)/64">
 							Set a daily calorie goal before tracking meals.
 						</p>
-						<Button href="/calories/onboarding">Set up nutrition</Button>
+						<Button href="/nutrition/onboarding">Set up nutrition</Button>
 					</div>
 				{/if}
 			</CardContent>

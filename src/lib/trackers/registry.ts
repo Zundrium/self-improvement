@@ -1,0 +1,44 @@
+export const trackers = [
+	{
+		id: 'steps',
+		label: 'Steps',
+		description: 'Daily steps and Health Connect history.',
+		href: '/steps',
+		defaultEnabled: true
+	},
+	{
+		id: 'fitness',
+		label: 'Fitness',
+		description: 'Workouts, progress, and exercise preferences.',
+		href: '/fitness',
+		defaultEnabled: true
+	},
+	{
+		id: 'nutrition',
+		label: 'Nutrition',
+		description: 'Meals, calories, and daily nutrition goals.',
+		href: '/nutrition',
+		defaultEnabled: true
+	},
+	{
+		id: 'meditation',
+		label: 'Meditation',
+		description: 'Timed sessions and meditation history.',
+		href: '/meditation',
+		defaultEnabled: true
+	},
+	{
+		id: 'period',
+		label: 'Period',
+		description: 'Menstruation flow, notes, and recent history.',
+		href: '/period',
+		defaultEnabled: true
+	}
+] as const;
+
+export type Tracker = (typeof trackers)[number];
+export type TrackerId = Tracker['id'];
+
+export function isTrackerId(value: string): value is TrackerId {
+	return trackers.some((tracker) => tracker.id === value);
+}

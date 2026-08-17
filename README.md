@@ -1,6 +1,6 @@
 # Self Improvement
 
-A mobile-first SvelteKit app that brings steps, nutrition, fitness, and meditation into one private daily view.
+A mobile-first SvelteKit app that brings steps, nutrition, fitness, meditation, and period tracking into one private daily view.
 
 ## Stack
 
@@ -15,15 +15,19 @@ A mobile-first SvelteKit app that brings steps, nutrition, fitness, and meditati
 
 - `src/hooks.server.ts` creates Drizzle and Better Auth per request from Cloudflare bindings.
 - `src/lib/server/auth.ts` owns authentication and trusted-origin configuration.
-- `src/lib/server/db/` contains the D1 client and shared schema.
+- `src/lib/server/db/` contains the D1 client and schema aggregator.
+- `src/lib/server/db/trackers/` contains one schema file per tracker.
 - `src/lib/server/guards.ts` protects authenticated and administrator routes.
-- `src/lib/audio/audio-manager.ts` handles meditation loops and fitness sound effects.
+- `src/lib/audio/audio-manager.ts` handles shared meditation loops and fitness sound effects.
+- `src/lib/trackers/registry.ts` is the shared tracker catalog used by navigation and profile settings.
+- `src/lib/server/trackers/preferences.ts` persists each user's visible trackers.
 - `src/routes/api/auth/[...path]/+server.ts` exposes the Better Auth API.
 - `src/lib/auth-client.ts` provides the browser authentication client.
-- `src/routes/calories/` contains the calorie estimator, meal log, and nutrition feature logic.
-- `src/routes/fitness/` contains workout pages, APIs, components, and feature-specific logic.
-- `src/routes/meditate/` contains the meditation timer, sounds, and completion tracking.
-- `src/routes/steps/` contains Health Connect webhook setup, ingestion, and daily step tracking.
+- `src/routes/(trackers)/nutrition/` contains the calorie estimator, meal log, and nutrition logic.
+- `src/routes/(trackers)/fitness/` contains workout pages, APIs, components, and fitness logic.
+- `src/routes/(trackers)/meditation/` contains the timer, sounds, and meditation history.
+- `src/routes/(trackers)/steps/` contains Health Connect ingestion and step history.
+- `src/routes/(trackers)/period/` contains menstruation entries, cycle estimates, and period history.
 - `drizzle/` contains versioned D1 migrations.
 - `scripts/create-admin.mjs` creates or promotes the first administrator.
 
@@ -47,7 +51,7 @@ The development server binds to `0.0.0.0:3000` and is available at `http://local
 
 - `/sign-in` — authenticate and resume a protected destination
 - `/forgot-password` and `/reset-password` — password recovery
-- `/profile` — update the profile or password
+- `/profile` — update the profile, visible trackers, nutrition settings, or password
 - `/admin` — administrator-only user management
 
 Public sign-up is disabled. Administrators can create users, change roles and passwords, ban or restore accounts, and delete accounts.
@@ -79,9 +83,9 @@ Local runtime values belong in `.dev.vars`. Production values are configured thr
 
 Drizzle Studio or direct remote Drizzle access uses the values documented in `.env.example`.
 
-## Calories
+## Nutrition
 
-The authenticated `/calories` route includes nutrition onboarding, daily calorie and macro goals, photo-first AI meal estimation, iterative corrections, editable meal details, and a dated food log. Add `OPENROUTER_API_KEY` to `.dev.vars` locally or as a Cloudflare secret remotely.
+The authenticated `/nutrition` route includes nutrition onboarding, daily calorie and macro goals, photo-first AI meal estimation, iterative corrections, editable meal details, and a dated food log. Add `OPENROUTER_API_KEY` to `.dev.vars` locally or as a Cloudflare secret remotely.
 
 ## Fitness
 
@@ -93,7 +97,20 @@ The authenticated `/steps` route creates a one-time webhook token for the free H
 
 ## Meditation
 
-The authenticated `/meditate` route includes a configurable timer, mixable looping ambient sounds, shared volume controls, automatic D1 persistence, and a dated history with completion marks. Meditation pages, components, audio, and feature logic are colocated under `src/routes/meditate/`.
+The authenticated `/meditation` route includes a configurable timer, mixable looping ambient sounds, shared volume controls, automatic D1 persistence, and a dated history with completion marks.
+
+## Period
+
+The authenticated `/period` route records daily menstruation flow and private notes, marks tracked dates, keeps recent history, and estimates cycle timing from saved entries.
+
+## Adding a tracker
+
+1. Create `src/routes/(trackers)/<tracker>/` and keep its pages, APIs, components, tests, and feature logic there.
+2. Add its metadata to `src/lib/trackers/registry.ts` so it appears in profile configuration.
+3. Put persistent models in `src/lib/server/db/trackers/<tracker>.ts`, export them from `src/lib/server/db/schema.ts`, and generate a migration.
+4. Add its daily summary to the root dashboard when it has dashboard data.
+
+Only reusable cross-tracker concerns belong under `src/lib`.
 
 ## Database changes
 
@@ -144,4 +161,4 @@ Deployment requires an authenticated Wrangler session and explicit approval.
 
 ## Integrated tools
 
-The fitness program from `../zun-fitness`, calorie estimator from `../ai-calorie-counter`, and timer with ambient sounds from `../meditate` are available under `/fitness`, `/calories`, and `/meditate`.
+The fitness program from `../zun-fitness`, calorie estimator from `../ai-calorie-counter`, and timer with ambient sounds from `../meditate` are available under `/fitness`, `/nutrition`, and `/meditation`.

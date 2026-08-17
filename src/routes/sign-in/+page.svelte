@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import type { Pathname } from '$app/types';
 	import { authClient } from '$lib/auth-client';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Button } from '$lib/components/ui/button';
@@ -31,7 +30,7 @@
 		const result = await authClient.signIn.email({ email, password });
 		loading = false;
 		if (result.error) return (message = result.error.message ?? 'Unable to sign in.');
-		await goto(resolve(data.redirectTo as Pathname));
+		await goto(resolve(data.redirectTo as '/'));
 	}
 </script>
 

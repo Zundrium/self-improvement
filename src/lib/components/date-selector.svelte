@@ -31,7 +31,7 @@
 	function chooseDate(value: DateValue | undefined) {
 		if (!value) return;
 		calendarOpen = false;
-		void goto(resolve(hrefForDate(value.toString()) as Pathname));
+		void goto(resolve(hrefForDate(value.toString()) as '/'));
 	}
 
 	function displayDate(value: string) {

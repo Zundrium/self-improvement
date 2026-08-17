@@ -12,7 +12,7 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 {@render children()}
 {#if data.user}
-	<AppNavbar user={data.user} />
+	<AppNavbar user={data.user} trackers={data.enabledTrackers} />
 {/if}
 <Toaster
 	position="bottom-center"

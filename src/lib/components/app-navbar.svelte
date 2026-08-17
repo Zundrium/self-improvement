@@ -5,6 +5,7 @@
 	import {
 		Apple,
 		Dumbbell,
+		Droplet,
 		Footprints,
 		Flower2,
 		Gauge,
@@ -23,6 +24,7 @@
 		DropdownMenuSeparator,
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
+	import type { Tracker } from '$lib/trackers/registry';
 	import ThemeToggle from './theme-toggle.svelte';
 
 	type User = {
@@ -32,15 +34,25 @@
 		role?: string | null;
 	};
 
-	let { user }: { user: User } = $props();
-	const hidden = $derived(page.url.pathname === '/calories/track');
-	const navigationItems = [
+	const trackerIcons = {
+		steps: Footprints,
+		fitness: Dumbbell,
+		nutrition: Apple,
+		meditation: Flower2,
+		period: Droplet
+	};
+
+	let { user, trackers }: { user: User; trackers: Tracker[] } = $props();
+	const hidden = $derived(page.url.pathname === '/nutrition/track');
+	const fitnessEnabled = $derived(trackers.some((tracker) => tracker.id === 'fitness'));
+	const navigationItems = $derived([
 		{ href: '/' as const, label: 'Home', icon: House },
-		{ href: '/fitness' as const, label: 'Fitness', icon: Dumbbell },
-		{ href: '/steps' as const, label: 'Steps', icon: Footprints },
-		{ href: '/calories' as const, label: 'Nutrition', icon: Apple },
-		{ href: '/meditate' as const, label: 'Meditation', icon: Flower2 }
-	];
+		...trackers.map((tracker) => ({
+			href: tracker.href,
+			label: tracker.label,
+			icon: trackerIcons[tracker.id]
+		}))
+	]);
 
 	function isActive(href: string) {
 		return href === '/' ? page.url.pathname === href : page.url.pathname.startsWith(href);
@@ -69,7 +81,10 @@
 		class="fixed inset-x-0 bottom-0 z-50 border-t border-(--text)/8 bg-(--bg)/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg"
 		aria-label="Main navigation"
 	>
-		<div class="mx-auto grid h-16 w-full max-w-md grid-cols-6 items-stretch px-2">
+		<div
+			class="mx-auto grid h-16 w-full max-w-lg items-stretch px-1"
+			style={`grid-template-columns: repeat(${navigationItems.length + 1}, minmax(0, 1fr))`}
+		>
 			{#each navigationItems as item (item.href)}
 				<a
 					href={resolve(item.href)}
@@ -109,10 +124,12 @@
 						<UserRound />
 						Profile
 					</DropdownMenuItem>
-					<DropdownMenuItem onSelect={openFitnessSettings}>
-						<Gauge />
-						Rep speeds
-					</DropdownMenuItem>
+					{#if fitnessEnabled}
+						<DropdownMenuItem onSelect={openFitnessSettings}>
+							<Gauge />
+							Rep speeds
+						</DropdownMenuItem>
+					{/if}
 					{#if user.role === 'admin'}
 						<DropdownMenuItem onSelect={openAdmin}>
 							<Shield />
