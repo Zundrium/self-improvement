@@ -2,7 +2,6 @@
 	import { enhance } from '$app/forms';
 	import { CalendarDays, Droplet } from '@lucide/svelte';
 	import { untrack } from 'svelte';
-	import DateSelector from '$lib/components/date-selector.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
@@ -46,14 +45,7 @@
 	<meta name="description" content="Track menstruation flow, notes, and cycle history." />
 </svelte:head>
 
-<main class="mx-auto w-full max-w-4xl space-y-6 px-4 py-8 pb-28 sm:px-6 sm:py-10">
-	<DateSelector
-		date={data.date}
-		today={data.today}
-		markedDates={data.markedDates}
-		hrefForDate={periodHref}
-	/>
-
+<main class="mx-auto w-full max-w-4xl flex-1 px-4 pt-6 pb-8 sm:px-6 sm:pt-8 sm:pb-10">
 	<div class="grid gap-4 md:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
 		<Card>
 			<CardHeader>

@@ -150,5 +150,5 @@
 			</DropdownMenu>
 		</div>
 	</nav>
-	<div class="h-[calc(4rem+env(safe-area-inset-bottom))]" aria-hidden="true"></div>
+	<div class="h-[calc(4rem+env(safe-area-inset-bottom))] shrink-0" aria-hidden="true"></div>
 {/if}

@@ -8,7 +8,6 @@
 		Flower2,
 		Footprints
 	} from '@lucide/svelte';
-	import DateSelector from '$lib/components/date-selector.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { TrackerId } from '$lib/trackers/registry';
 	import type { PageProps } from './$types';
@@ -23,10 +22,6 @@
 			? `${data.dashboard.periodFlow[0].toUpperCase()}${data.dashboard.periodFlow.slice(1)} flow`
 			: 'No period logged'
 	);
-
-	function dashboardHref(date: string) {
-		return date === data.dashboard.today ? '/' : `/?date=${date}`;
-	}
 
 	function datedFeatureHref(path: '/fitness' | '/meditation' | '/period' | '/steps') {
 		return data.dashboard.date === data.dashboard.today
@@ -58,14 +53,8 @@
 	</span>
 {/snippet}
 
-<main class="flex min-h-[calc(100svh-4rem)] items-start justify-center p-4 sm:p-6">
-	<div class="w-full max-w-md space-y-6">
-		<DateSelector
-			date={data.dashboard.date}
-			today={data.dashboard.today}
-			hrefForDate={dashboardHref}
-		/>
-
+<main class="flex flex-1 items-start justify-center px-4 pt-6 pb-4 sm:px-6 sm:pb-6">
+	<div class="w-full max-w-md">
 		{#if data.enabledTrackers.length}
 			<section class="divide-y divide-(--text)/8" aria-label="Daily dashboard">
 				{#if trackerEnabled('steps')}

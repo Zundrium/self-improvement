@@ -3,7 +3,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { AudioManager } from '$lib/audio/audio-manager';
-	import DateSelector from '$lib/components/date-selector.svelte';
+	import { useDateSelectorState } from '$lib/components/date-selector-state.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
 	import WorkoutDay from './components/WorkoutDay.svelte';
@@ -11,6 +11,7 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+	const dateSelectorState = useDateSelectorState();
 	const completedDateKeys = new SvelteSet<string>(
 		untrack(() => data.completedDays.map((day) => day.dateKey))
 	);
@@ -59,10 +60,6 @@
 		);
 	}
 
-	function fitnessHref(date: string) {
-		return date === data.today ? '/fitness' : `/fitness?date=${date}`;
-	}
-
 	function handleSpeedChange(exerciseId: number, speedPercent: number) {
 		exerciseSpeeds = { ...exerciseSpeeds, [exerciseId]: speedPercent };
 	}
@@ -82,6 +79,7 @@
 	function setCompleted(date: string, completed: boolean) {
 		if (completed) completedDateKeys.add(date);
 		else completedDateKeys.delete(date);
+		dateSelectorState.mark(date, completed);
 	}
 
 	async function saveCompletion(workoutId: number, date: string, deleting: boolean) {
@@ -109,16 +107,7 @@
 	<meta name="description" content={data.program.description} />
 </svelte:head>
 
-<main
-	class="mx-auto min-h-[calc(100vh-7rem)] w-full max-w-3xl space-y-8 px-4 py-8 pb-28 sm:px-6 sm:py-10"
->
-	<DateSelector
-		date={data.date}
-		today={data.today}
-		markedDates={[...completedDateKeys]}
-		hrefForDate={fitnessHref}
-	/>
-
+<main class="mx-auto w-full max-w-3xl flex-1 space-y-8 px-4 pt-8 pb-8 sm:px-6 sm:pt-10 sm:pb-10">
 	{#if errorMessage}
 		<Alert variant="destructive">
 			<AlertDescription>{errorMessage}</AlertDescription>

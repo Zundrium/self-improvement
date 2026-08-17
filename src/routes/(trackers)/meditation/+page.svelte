@@ -3,7 +3,7 @@
 	import { Check } from '@lucide/svelte';
 	import { onDestroy, untrack } from 'svelte';
 	import { AudioManager } from '$lib/audio/audio-manager';
-	import DateSelector from '$lib/components/date-selector.svelte';
+	import { useDateSelectorState } from '$lib/components/date-selector-state.svelte';
 	import AmbientSounds from './AmbientSounds.svelte';
 	import MeditationTimer from './MeditationTimer.svelte';
 	import { formatDuration, type MeditationCompletion, type SaveState } from './meditation';
@@ -11,6 +11,7 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+	const dateSelectorState = useDateSelectorState();
 	let audioManager = $state<AudioManager>();
 	let loadedDate = $state(untrack(() => data.date));
 	let savedCompletions = $state<MeditationCompletion[]>([]);
@@ -49,10 +50,6 @@
 		audioManager = undefined;
 	}
 
-	function meditationHref(date: string) {
-		return date === data.today ? '/meditation' : `/meditation?date=${date}`;
-	}
-
 	async function saveCompletion(completion: MeditationCompletion) {
 		pendingCompletion = completion;
 		saveState = 'saving';
@@ -77,6 +74,7 @@
 	function recordCompletion(completion: MeditationCompletion) {
 		if (savedCompletions.some((saved) => saved.id === completion.id)) return;
 		savedCompletions = [...savedCompletions, completion];
+		dateSelectorState.mark(completion.localDate, true);
 	}
 
 	function mergeMeditationHistory(
@@ -126,15 +124,8 @@
 	/>
 </svelte:head>
 
-<main class="min-h-[calc(100svh-4rem)] px-4 py-6 pb-28 sm:px-6 sm:py-10">
+<main class="flex-1 px-4 pt-6 pb-6 sm:px-6 sm:pt-10 sm:pb-10">
 	<section class="mx-auto w-full max-w-md space-y-6">
-		<DateSelector
-			date={data.date}
-			today={data.today}
-			markedDates={meditationHistory.map((day) => day.localDate)}
-			hrefForDate={meditationHref}
-		/>
-
 		{#if isToday}
 			<MeditationTimer
 				{audioManager}

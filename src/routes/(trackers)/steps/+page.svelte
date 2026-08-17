@@ -3,7 +3,6 @@
 	import { Check, Clipboard, RefreshCw, Smartphone } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
-	import DateSelector from '$lib/components/date-selector.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -51,10 +50,6 @@
 		setTimeout(() => (copied = ''), 1600);
 	}
 
-	function stepsHref(date: string) {
-		return date === data.today ? '/steps' : `/steps?date=${date}`;
-	}
-
 	function dayLabel(dateKey: string) {
 		if (dateKey === data.today) return 'Today';
 		return new Intl.DateTimeFormat('en', { weekday: 'short', timeZone: 'UTC' }).format(
@@ -68,10 +63,8 @@
 	<meta name="description" content="Track daily steps from Android Health Connect." />
 </svelte:head>
 
-<main class="mx-auto w-full max-w-5xl space-y-6 px-4 py-8 pb-28 sm:px-6 sm:py-10">
+<main class="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 pt-6 pb-8 sm:px-6 sm:pt-8 sm:pb-10">
 	{#if data.isSynced}
-		<DateSelector date={data.date} today={data.today} hrefForDate={stepsHref} />
-
 		<section class="flex items-center justify-center py-2">
 			<div class="flex flex-col items-center py-4 sm:py-6">
 				<div

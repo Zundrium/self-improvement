@@ -2,7 +2,6 @@
 	import { Camera, ChevronRight, Droplet, Drumstick, Salad, Wheat } from '@lucide/svelte';
 	import type { PageProps } from './$types';
 
-	import DateSelector from '$lib/components/date-selector.svelte';
 	import MobileActionBar from '$lib/components/mobile-action-bar.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
@@ -14,10 +13,6 @@
 	const goal = $derived(data.calorieGoal);
 	const progress = $derived(Math.min(100, Math.round((consumed / Math.max(goal, 1)) * 100)));
 	const mealCount = $derived(data.entries.reduce((total, entry) => total + entry.meals.length, 0));
-
-	function calorieLogHref(date: string) {
-		return `/nutrition/log/${date}`;
-	}
 
 	function displayDate(value: string) {
 		return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
@@ -37,9 +32,7 @@
 
 <svelte:head><title>{displayDate(data.date)} · Self Improvement</title></svelte:head>
 
-<main class="mx-auto max-w-5xl space-y-6 px-4 py-8 pb-28 sm:px-6 sm:py-10">
-	<DateSelector date={data.date} today={data.today} hrefForDate={calorieLogHref} />
-
+<main class="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 pt-6 pb-28 sm:px-6 sm:pt-8">
 	<section class="grid items-center gap-6 py-2 lg:grid-cols-[1.35fr_1fr] lg:gap-12">
 		<div class="flex flex-col items-center py-4 sm:py-6">
 			<p class="mb-3 text-sm text-(--text)/48">Daily energy</p>
