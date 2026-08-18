@@ -7,6 +7,20 @@ export const trackers = [
 		defaultEnabled: true
 	},
 	{
+		id: 'sleep',
+		label: 'Sleep',
+		description: 'Sleep duration, averages, and a daily Health Connect goal.',
+		href: '/sleep',
+		defaultEnabled: true
+	},
+	{
+		id: 'screen-time',
+		label: 'Screen time',
+		description: 'Daily Android usage and per-app screen-time history.',
+		href: '/screen-time',
+		defaultEnabled: true
+	},
+	{
 		id: 'fitness',
 		label: 'Fitness',
 		description: 'Workouts, progress, and exercise preferences.',

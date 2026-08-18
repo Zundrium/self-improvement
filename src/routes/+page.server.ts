@@ -10,14 +10,21 @@ import {
 	menstruationEntry
 } from '$lib/server/db/schema';
 import { requireDb, requireUser } from '$lib/server/guards';
+import { localDateForInstant } from '$lib/trackers/dates';
 import {
 	getDailyEntries,
 	sumEntryTotals,
 	validDate
 } from './(trackers)/nutrition/server/nutrition';
 import { getProfile } from './(trackers)/nutrition/server/profiles';
+import {
+	getDailyScreenTime,
+	getScreenTimeConnection
+} from './(trackers)/screen-time/server/screen-time';
+import { getDailySleep, getSleepConnection } from './(trackers)/sleep/server/sleep';
+import { DEFAULT_SLEEP_GOAL_MINUTES } from './(trackers)/sleep/sleep';
 import { getDailySteps, getStepConnection } from './(trackers)/steps/server/steps';
-import { DEFAULT_STEP_GOAL, localDateForInstant } from './(trackers)/steps/steps';
+import { DEFAULT_STEP_GOAL } from './(trackers)/steps/steps';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -31,24 +38,43 @@ async function loadDashboard(
 	userId: string,
 	requestedDate: string | null
 ) {
-	const connection = await getStepConnection(db, userId);
-	const today = localDateForInstant(new Date(), connection?.timeZone ?? 'UTC');
+	const [stepConnection, sleepConnection, screenTimeConnection] = await Promise.all([
+		getStepConnection(db, userId),
+		getSleepConnection(db, userId),
+		getScreenTimeConnection(db, userId)
+	]);
+	const timeZone =
+		stepConnection?.timeZone ?? sleepConnection?.timeZone ?? screenTimeConnection?.timeZone;
+	const today = localDateForInstant(new Date(), timeZone ?? 'UTC');
 	const date = requestedDate ?? today;
 	if (!validDate(date) || date > today) error(400, 'Choose today or an earlier valid date.');
-	const [steps, fitness, nutrition, meditationDone, happinessRating, periodFlow] =
-		await Promise.all([
-			loadSteps(db, userId, date),
-			loadFitness(db, userId, date),
-			loadNutrition(db, userId, date),
-			loadMeditationDone(db, userId, date),
-			loadHappinessRating(db, userId, date),
-			loadPeriodFlow(db, userId, date)
-		]);
+	const [
+		steps,
+		sleepMinutes,
+		screenTimeMinutes,
+		fitness,
+		nutrition,
+		meditationDone,
+		happinessRating,
+		periodFlow
+	] = await Promise.all([
+		loadSteps(db, userId, date),
+		loadSleep(db, userId, date),
+		loadScreenTime(db, userId, date),
+		loadFitness(db, userId, date),
+		loadNutrition(db, userId, date),
+		loadMeditationDone(db, userId, date),
+		loadHappinessRating(db, userId, date),
+		loadPeriodFlow(db, userId, date)
+	]);
 	return {
 		date,
 		today,
 		steps,
-		stepGoal: connection?.dailyGoal ?? DEFAULT_STEP_GOAL,
+		stepGoal: stepConnection?.dailyGoal ?? DEFAULT_STEP_GOAL,
+		sleepMinutes,
+		sleepGoalMinutes: sleepConnection?.dailyGoalMinutes ?? DEFAULT_SLEEP_GOAL_MINUTES,
+		screenTimeMinutes,
 		...fitness,
 		...nutrition,
 		meditationDone,
@@ -60,6 +86,16 @@ async function loadDashboard(
 async function loadSteps(db: ReturnType<typeof requireDb>, userId: string, today: string) {
 	const totals = await getDailySteps(db, userId, today, today);
 	return totals[0]?.count ?? 0;
+}
+
+async function loadSleep(db: ReturnType<typeof requireDb>, userId: string, today: string) {
+	const totals = await getDailySleep(db, userId, today, today);
+	return Math.round((totals[0]?.durationSeconds ?? 0) / 60);
+}
+
+async function loadScreenTime(db: ReturnType<typeof requireDb>, userId: string, today: string) {
+	const totals = await getDailyScreenTime(db, userId, today, today);
+	return totals[0]?.totalMinutes ?? 0;
 }
 
 async function loadFitness(db: ReturnType<typeof requireDb>, userId: string, today: string) {

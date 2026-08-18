@@ -12,8 +12,10 @@
 		House,
 		LoaderCircle,
 		LogOut,
+		Moon,
 		Shield,
 		Smile,
+		Smartphone,
 		UserRound
 	} from '@lucide/svelte';
 	import { authClient } from '$lib/auth-client';
@@ -38,6 +40,8 @@
 
 	const trackerIcons = {
 		steps: Footprints,
+		sleep: Moon,
+		'screen-time': Smartphone,
 		fitness: Dumbbell,
 		nutrition: Apple,
 		meditation: Flower2,

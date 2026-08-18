@@ -7,15 +7,20 @@
 		Dumbbell,
 		Flower2,
 		Footprints,
-		Smile
+		Moon,
+		Smile,
+		Smartphone
 	} from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { TrackerId } from '$lib/trackers/registry';
 	import { happinessLabel } from './(trackers)/happiness/happiness';
+	import { formatScreenTime } from './(trackers)/screen-time/screen-time';
+	import { formatSleepMinutes } from './(trackers)/sleep/sleep';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	const stepsDone = $derived(data.dashboard.steps >= data.dashboard.stepGoal);
+	const sleepDone = $derived(data.dashboard.sleepMinutes >= data.dashboard.sleepGoalMinutes);
 	const caloriesDone = $derived(
 		data.dashboard.calorieGoal !== null && data.dashboard.calories <= data.dashboard.calorieGoal
 	);
@@ -31,7 +36,8 @@
 	);
 
 	function datedFeatureHref(
-		path: '/fitness' | '/happiness' | '/meditation' | '/period' | '/steps'
+		path:
+			'/fitness' | '/happiness' | '/meditation' | '/period' | '/screen-time' | '/sleep' | '/steps'
 	) {
 		return data.dashboard.date === data.dashboard.today
 			? path
@@ -47,7 +53,7 @@
 	<title>Self Improvement</title>
 	<meta
 		name="description"
-		content="A unified daily view for steps, nutrition, fitness, meditation, happiness, and period tracking."
+		content="A unified daily view for health, wellbeing, fitness, and screen-time tracking."
 	/>
 </svelte:head>
 
@@ -82,6 +88,49 @@
 									<span class="font-normal text-(--text)/40">
 										/ {data.dashboard.stepGoal.toLocaleString()} steps
 									</span>
+								</strong>
+							</span>
+							<ChevronRight class="size-5 text-(--text)/28" />
+						</span>
+					</Button>
+				{/if}
+
+				{#if trackerEnabled('sleep')}
+					<Button
+						href={datedFeatureHref('/sleep')}
+						variant="ghost"
+						class="h-auto w-full rounded-none bg-transparent px-0 py-5 text-left whitespace-normal hover:bg-transparent"
+						aria-label={`${formatSleepMinutes(data.dashboard.sleepMinutes)} of ${formatSleepMinutes(data.dashboard.sleepGoalMinutes)} sleep, goal ${sleepDone ? 'complete' : 'not complete'}`}
+					>
+						<span class="grid w-full grid-cols-[2rem_minmax(0,1fr)_1.25rem] items-center gap-4">
+							<Moon class="size-6 text-(--text)/64" />
+							<span class="flex min-w-0 items-center gap-3">
+								{@render statusCheckbox(sleepDone)}
+								<strong class="min-w-0 text-xl font-medium tracking-[-0.03em] tabular-nums">
+									{formatSleepMinutes(data.dashboard.sleepMinutes)}
+									<span class="font-normal text-(--text)/40">
+										/ {formatSleepMinutes(data.dashboard.sleepGoalMinutes)} sleep
+									</span>
+								</strong>
+							</span>
+							<ChevronRight class="size-5 text-(--text)/28" />
+						</span>
+					</Button>
+				{/if}
+
+				{#if trackerEnabled('screen-time')}
+					<Button
+						href={datedFeatureHref('/screen-time')}
+						variant="ghost"
+						class="h-auto w-full rounded-none bg-transparent px-0 py-5 text-left whitespace-normal hover:bg-transparent"
+						aria-label={`${formatScreenTime(data.dashboard.screenTimeMinutes)} screen time`}
+					>
+						<span class="grid w-full grid-cols-[2rem_minmax(0,1fr)_1.25rem] items-center gap-4">
+							<Smartphone class="size-6 text-(--text)/64" />
+							<span class="flex min-w-0 items-center gap-3">
+								{@render statusCheckbox(data.dashboard.screenTimeMinutes > 0)}
+								<strong class="text-base font-medium tracking-[-0.02em]">
+									{formatScreenTime(data.dashboard.screenTimeMinutes)} screen time
 								</strong>
 							</span>
 							<ChevronRight class="size-5 text-(--text)/28" />

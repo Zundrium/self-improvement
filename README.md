@@ -1,6 +1,6 @@
 # Self Improvement
 
-A mobile-first SvelteKit app that brings steps, nutrition, fitness, meditation, happiness, and period tracking into one private daily view.
+A mobile-first SvelteKit app that brings health, screen time, nutrition, fitness, meditation, happiness, and period tracking into one private daily view.
 
 ## Stack
 
@@ -95,6 +95,16 @@ The authenticated `/fitness` route presents each day's 30-day-program workout as
 ## Steps
 
 The authenticated `/steps` route creates a one-time webhook token for the free HC Webhook FOSS Android app, receives daily Health Connect step totals, and tracks a seven-day history against a configurable goal. Configure HC Webhook to use the displayed URL and custom header with Steps resolution set to Daily.
+
+## Sleep
+
+The authenticated `/sleep` route receives Health Connect sleep sessions through HC Webhook, subtracts known awake stages when Full sleep resolution is available, and compares daily duration and the recorded seven-day average with a configurable seven-hour default goal.
+
+## Screen time
+
+The authenticated `/screen-time` route receives the previous seven days of Android usage from the free Life Dashboard Companion app. It shows daily totals, the seven-day average, and a bounded per-app breakdown sent to its token-protected webhook.
+
+Steps, Sleep, and Screen time share the same phone-connection setup component while keeping separate webhook credentials and source-specific setup instructions.
 
 ## Meditation
 

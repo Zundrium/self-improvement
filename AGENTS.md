@@ -6,7 +6,7 @@
 - Runtime secrets belong in `.dev.vars` locally and Cloudflare secrets remotely.
 - Use Lily components under `src/lib/components/ui`; do not add another component system.
 - Keep application schemas under `src/lib/server/db` and migrations under `drizzle/`.
-- Treat steps, fitness, nutrition, meditation, happiness, and period tracking as trackers.
+- Treat steps, sleep, screen time, fitness, nutrition, meditation, happiness, and period tracking as trackers.
 - Colocate each tracker's pages, APIs, components, and feature logic under `src/routes/(trackers)/<tracker>/`.
 - Put each tracker's database schema in `src/lib/server/db/trackers/<tracker>.ts` and export it from `src/lib/server/db/schema.ts`.
 - Register every tracker in `src/lib/trackers/registry.ts`; profile visibility and navigation are driven by this registry.
