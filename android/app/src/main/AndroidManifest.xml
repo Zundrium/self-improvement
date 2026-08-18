@@ -44,6 +44,7 @@
     </application>
 
     <!-- Usage access is granted in Android settings rather than through a runtime permission dialog. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
