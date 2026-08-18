@@ -54,7 +54,7 @@ export const actions: Actions = {
 
 async function loadSleepPage(db: ReturnType<typeof requireDb>, userId: string, url: URL) {
 	const connection = await getSleepConnection(db, userId);
-	const today = localDateForInstant(new Date(), connection?.timeZone ?? 'UTC');
+	const today = localDateForInstant(new Date(), connectionTimeZone(connection));
 	const date = selectedDate(url, today);
 	const dateKeys = dateKeysEndingAt(today, 7);
 	const history = await getDailySleep(db, userId, dateKeys[0], today);
@@ -97,9 +97,13 @@ function selectedDate(url: URL, today: string) {
 function connectionView(connection: Awaited<ReturnType<typeof getSleepConnection>>) {
 	if (!connection) return null;
 	return {
-		timeZone: connection.timeZone,
+		timeZone: connectionTimeZone(connection),
 		dailyGoalMinutes: connection.dailyGoalMinutes,
 		appVersion: connection.appVersion,
 		lastReceivedAt: connection.lastReceivedAt
 	};
+}
+
+function connectionTimeZone(connection: Awaited<ReturnType<typeof getSleepConnection>>) {
+	return connection?.companionTimeZone ?? connection?.timeZone ?? 'UTC';
 }

@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { rotateAndroidCompanionCredentials } from '$lib/server/android-companion/pairing';
 import { requireDb, requireUser } from '$lib/server/guards';
 import { getTrackerPreferences, saveTrackerPreferences } from '$lib/server/trackers/preferences';
 import { isTrackerId, type TrackerId } from '$lib/trackers/registry';
@@ -31,6 +32,23 @@ export const actions: Actions = {
 		const enabledIds = trackerIdsFromForm(await event.request.formData());
 		await saveTrackerPreferences(requireDb(event.locals), user.id, enabledIds);
 		return { form: 'trackers', message: 'Tracker visibility updated.' };
+	},
+	androidCompanion: async (event) => {
+		const user = requireUser(event);
+		event.setHeaders({ 'cache-control': 'no-store' });
+		try {
+			const payload = await rotateAndroidCompanionCredentials(
+				requireDb(event.locals),
+				user.id,
+				event.url.origin
+			);
+			return { form: 'androidCompanion', payload };
+		} catch {
+			return fail(500, {
+				form: 'androidCompanion',
+				error: 'Could not connect the Android companion. Please try again.'
+			});
+		}
 	},
 	nutrition: async (event) => {
 		const user = requireUser(event);

@@ -5,7 +5,11 @@ import {
 	SCREEN_TIME_TOKEN_HEADER,
 	type ScreenTimePayload
 } from '../../screen-time';
-import { findScreenTimeConnectionByToken, recordScreenTimePayload } from '../../server/screen-time';
+import {
+	findScreenTimeConnectionByCompanionToken,
+	findScreenTimeConnectionByToken,
+	recordScreenTimePayload
+} from '../../server/screen-time';
 import type { RequestHandler } from './$types';
 
 const MAX_BODY_BYTES = 256 * 1024;
@@ -19,9 +23,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	let connection;
 	try {
-		connection = await findScreenTimeConnectionByToken(requireDb(locals), token);
-	} catch (cause) {
-		console.error('Failed to authenticate screen-time webhook:', cause);
+		connection = await findAuthorizedConnection(requireDb(locals), token);
+	} catch {
+		console.error('Failed to authenticate screen-time webhook.');
 		return response({ error: 'Screen-time webhook unavailable.' }, 503);
 	}
 	if (!connection) return response({ error: 'Invalid webhook token.' }, 401);
@@ -39,11 +43,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		const accepted = await recordScreenTimePayload(requireDb(locals), connection, payload);
 		return response({ accepted });
-	} catch (cause) {
-		console.error('Failed to store screen-time usage:', cause);
+	} catch {
+		console.error('Failed to store screen-time usage.');
 		return response({ error: 'Could not store screen-time usage.' }, 500);
 	}
 };
+
+async function findAuthorizedConnection(db: ReturnType<typeof requireDb>, token: string) {
+	return (
+		(await findScreenTimeConnectionByToken(db, token)) ??
+		(await findScreenTimeConnectionByCompanionToken(db, token))
+	);
+}
 
 function bodyIsTooLarge(request: Request) {
 	const contentLength = Number(request.headers.get('content-length') ?? 0);

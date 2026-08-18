@@ -9,3 +9,4 @@ worker-configuration.d.ts
 # Miscellaneous
 /static/
 /drizzle/
+/android/app/src/main/assets/

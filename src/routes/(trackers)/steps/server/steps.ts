@@ -32,11 +32,22 @@ export async function createStepConnection(
 export async function findConnectionByToken(db: Database, token: string) {
 	const tokenHash = await hashStepToken(token);
 	const [connection] = await db
-		.select()
+		.select({ userId: stepConnection.userId, timeZone: stepConnection.timeZone })
 		.from(stepConnection)
 		.where(eq(stepConnection.tokenHash, tokenHash))
 		.limit(1);
 	return connection ?? null;
+}
+
+export async function findConnectionByCompanionToken(db: Database, token: string) {
+	const tokenHash = await hashStepToken(token);
+	const [connection] = await db
+		.select({ userId: stepConnection.userId, timeZone: stepConnection.companionTimeZone })
+		.from(stepConnection)
+		.where(eq(stepConnection.companionTokenHash, tokenHash))
+		.limit(1);
+	if (!connection?.timeZone) return null;
+	return { userId: connection.userId, timeZone: connection.timeZone };
 }
 
 export async function updateStepGoal(db: Database, userId: string, dailyGoal: number) {
@@ -67,7 +78,7 @@ export async function getDailySteps(
 
 export async function recordHealthConnectPayload(
 	db: Database,
-	connection: NonNullable<Awaited<ReturnType<typeof getStepConnection>>>,
+	connection: { userId: string; timeZone: string },
 	payload: HealthConnectPayload
 ) {
 	const snapshots = dailySnapshots(payload.steps, connection.timeZone);
@@ -155,7 +166,7 @@ async function saveSnapshot(db: Database, userId: string, snapshot: DailySnapsho
 		});
 }
 
-function createStepToken() {
+export function createStepToken() {
 	const bytes = crypto.getRandomValues(new Uint8Array(32));
 	return `stp_${[...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 }

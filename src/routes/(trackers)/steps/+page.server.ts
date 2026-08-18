@@ -36,7 +36,7 @@ export const actions: Actions = {
 
 async function loadStepPage(db: ReturnType<typeof requireDb>, userId: string, url: URL) {
 	const connection = await getStepConnection(db, userId);
-	const today = localDateForInstant(new Date(), connection?.timeZone ?? 'UTC');
+	const today = localDateForInstant(new Date(), connectionTimeZone(connection));
 	const date = url.searchParams.get('date') ?? today;
 	if (!isValidDateKey(date) || date > today) error(400, 'Choose today or an earlier valid date.');
 
@@ -59,9 +59,13 @@ async function loadStepPage(db: ReturnType<typeof requireDb>, userId: string, ur
 function connectionView(connection: Awaited<ReturnType<typeof getStepConnection>>) {
 	if (!connection) return null;
 	return {
-		timeZone: connection.timeZone,
+		timeZone: connectionTimeZone(connection),
 		dailyGoal: connection.dailyGoal,
 		appVersion: connection.appVersion,
 		lastReceivedAt: connection.lastReceivedAt
 	};
+}
+
+function connectionTimeZone(connection: Awaited<ReturnType<typeof getStepConnection>>) {
+	return connection?.companionTimeZone ?? connection?.timeZone ?? 'UTC';
 }

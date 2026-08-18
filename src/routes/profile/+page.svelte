@@ -2,8 +2,14 @@
 	import { enhance } from '$app/forms';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { Activity } from '@lucide/svelte';
-	import { untrack } from 'svelte';
+	import { Activity, Smartphone } from '@lucide/svelte';
+	import { tick, untrack } from 'svelte';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import {
+		androidCompanionPairingPayloadSchema,
+		serializeAndroidCompanionPairingPayload,
+		type AndroidCompanionPairingPayload
+	} from '$lib/android-companion/pairing';
 	import { authClient } from '$lib/auth-client';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Avatar } from '$lib/components/ui/avatar';
@@ -29,9 +35,19 @@
 	let passwordFailed = $state(false);
 	let savingProfile = $state(false);
 	let savingPassword = $state(false);
+	let pairingPending = $state(false);
+	let pairingError = $state('');
+	let pairingQrVisible = $state(false);
+	let pairingCanvas = $state<HTMLCanvasElement>();
 	let gender = $state(initialNutritionProfile?.gender ?? 'male');
 	let activityLevel = $state(initialNutritionProfile?.activityLevel ?? 'sedentary');
 	let goalMode = $state(initialNutritionProfile?.goalMode ?? 'estimated');
+	const pairingQrOptions = {
+		errorCorrectionLevel: 'M',
+		margin: 2,
+		width: 280,
+		color: { dark: '#111827', light: '#ffffff' }
+	} as const;
 
 	const activityLabel = $derived(
 		(
@@ -81,6 +97,41 @@
 	async function signOut() {
 		await authClient.signOut();
 		await goto(resolve('/sign-in'));
+	}
+
+	const enhanceAndroidCompanion: SubmitFunction = () => {
+		pairingPending = true;
+		pairingError = '';
+		pairingQrVisible = false;
+		return async ({ result }) => {
+			pairingPending = false;
+			if (result.type !== 'success') return pairingFailure();
+			const parsed = androidCompanionPairingPayloadSchema.safeParse(result.data?.payload);
+			if (!parsed.success) return pairingFailure();
+			await showPairingQr(parsed.data);
+		};
+	};
+
+	async function showPairingQr(payload: AndroidCompanionPairingPayload) {
+		pairingQrVisible = true;
+		try {
+			await renderPairingQr(payload);
+		} catch {
+			pairingFailure('Credentials were rotated, but the QR could not be displayed. Try again.');
+		}
+	}
+
+	async function renderPairingQr(payload: AndroidCompanionPairingPayload) {
+		await tick();
+		if (!pairingCanvas) throw new Error();
+		const { default: QRCode } = await import('qrcode');
+		const serialized = serializeAndroidCompanionPairingPayload(payload);
+		await QRCode.toCanvas(pairingCanvas, serialized, pairingQrOptions);
+	}
+
+	function pairingFailure(message = 'Could not connect the Android companion. Please try again.') {
+		pairingQrVisible = false;
+		pairingError = message;
 	}
 </script>
 
@@ -164,6 +215,57 @@
 						{/each}
 					</div>
 					<Button type="submit">Save trackers</Button>
+				</form>
+			</CardContent>
+		</Card>
+
+		<Card>
+			<CardHeader>
+				<CardTitle class="flex items-center gap-2">
+					<Smartphone class="size-5" /> Android companion
+				</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<form
+					class="space-y-5"
+					method="POST"
+					action="?/androidCompanion"
+					use:enhance={enhanceAndroidCompanion}
+				>
+					<p class="text-sm leading-6 text-(--text)/64">
+						Pair the Android app once to sync steps, sleep, and screen time.
+					</p>
+					<Alert>
+						<AlertDescription>
+							Rotating replaces the previous Android companion credentials. Existing tracker
+							webhooks, goals, and records are preserved.
+						</AlertDescription>
+					</Alert>
+					{#if pairingError}
+						<Alert variant="destructive"><AlertDescription>{pairingError}</AlertDescription></Alert>
+					{:else if form?.form === 'androidCompanion' && form.error}
+						<Alert variant="destructive"><AlertDescription>{form.error}</AlertDescription></Alert>
+					{/if}
+					{#if pairingQrVisible}
+						<div class="space-y-3" aria-live="polite">
+							<Alert>
+								<AlertDescription>
+									Scan this QR now. It is shown once and disappears when you reload or leave;
+									recovering it requires another credential rotation.
+								</AlertDescription>
+							</Alert>
+							<div class="flex justify-center rounded-2xl bg-white p-3">
+								<canvas
+									bind:this={pairingCanvas}
+									class="h-auto max-w-full"
+									aria-label="Android companion pairing QR code"
+								></canvas>
+							</div>
+						</div>
+					{/if}
+					<Button type="submit" disabled={pairingPending}>
+						{#if pairingPending}<Spinner class="size-4" />{/if} Connect or rotate companion
+					</Button>
 				</form>
 			</CardContent>
 		</Card>

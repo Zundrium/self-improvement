@@ -9,6 +9,7 @@ A mobile-first SvelteKit app that brings health, screen time, nutrition, fitness
 - Cloudflare Workers and D1
 - Drizzle ORM with committed SQL migrations
 - Better Auth with private accounts, profile, password-reset, and admin support
+- Capacitor 8 with a committed Android platform and an independent Svelte mobile bundle
 - Vitest, ESLint, Prettier, and Svelte Check
 
 ## Structure
@@ -30,6 +31,8 @@ A mobile-first SvelteKit app that brings health, screen time, nutrition, fitness
 - `src/routes/(trackers)/happiness/` contains daily happiness levels, level-specific reasons, and history.
 - `src/routes/(trackers)/period/` contains menstruation entries, cycle estimates, and period history.
 - `drizzle/` contains versioned D1 migrations.
+- `mobile/` contains the companion UI; `vite.mobile.config.ts` builds it to `dist-mobile/`.
+- `android/` contains the committed Capacitor Android application source.
 - `scripts/create-admin.mjs` creates or promotes the first administrator.
 
 ## Local setup
@@ -47,6 +50,81 @@ npm run dev
 ```
 
 The development server binds to `0.0.0.0:3000` and is available at `http://localhost:3000`. The Cloudflare platform proxy exposes the local `DB` binding during Vite development. Local data is persisted under `.wrangler/`.
+
+## Android companion development
+
+Install Node.js 22, Java 21, and Android Studio with the Android SDK, platform 36, build tools, and platform tools. Use an emulator for shell work and a physical Android 8+ device for Health Connect and Usage Access validation.
+
+Build and run the bundled application without a Vite dependency:
+
+```sh
+npm run mobile:check
+npm run mobile:build
+npm run mobile:sync
+npm run mobile:android
+```
+
+`mobile:android:open` synchronizes the bundle and opens the generated project in Android Studio. Native plugin, manifest, Kotlin/Java, and Gradle changes require another sync and native rebuild.
+
+For live reload, run the backend and mobile Vite server in separate terminals:
+
+```sh
+npm run dev
+npm run mobile:dev -- --host 0.0.0.0
+```
+
+An emulator reaches the mobile server through the host alias:
+
+```sh
+CAPACITOR_SERVER_URL=http://10.0.2.2:5173 npm run mobile:android
+```
+
+For a USB device, reverse both development ports and use device-local URLs:
+
+```sh
+adb reverse tcp:3000 tcp:3000
+adb reverse tcp:5173 tcp:5173
+CAPACITOR_SERVER_URL=http://localhost:5173 npm run mobile:android
+```
+
+A LAN address is an alternative for physical devices. The pairing QR must contain an API base URL reachable by the device: `http://10.0.2.2:3000` for an emulator, `http://localhost:3000` with `adb reverse`, or the development machine's LAN address. `CAPACITOR_SERVER_URL` is omitted from production bundles; cleartext WebView traffic is enabled only when that development URL uses HTTP.
+
+Health Connect's rationale activity is wired to the bundled `mobile/public/privacypolicy.html` asset. The Android manifest requests only Internet, Usage Access, and read-only steps and sleep access; it does not request `QUERY_ALL_PACKAGES`, health history, background health access, or health write access.
+
+### Physical-device validation
+
+Before release, verify that:
+
+- the bundled app opens with no Vite server and survives an app update without losing pairing;
+- QR pairing and disconnect/credential rotation work without tokens appearing in logs;
+- Health Connect missing, denied, partially granted, granted, and revoked states are recoverable;
+- only steps and sleep read permissions appear, including sleep sessions crossing midnight;
+- Usage Access denied and granted states work and per-app totals match Android Digital Wellbeing;
+- offline sync retries on foreground return, and repeated seven-day uploads remain idempotent.
+
+Background sync is deliberately deferred. The selected Health Connect and UsageStatsManager Capacitor plugins run through an active JavaScript bridge and do not provide a supported headless/WorkManager-safe execution path. The first release therefore uses manual sync plus a foreground/on-resume stale-sync fallback and requests no background permission. A focused native WorkManager implementation can be added only after headless data access and secure credential use are validated.
+
+## Android releases
+
+`.github/workflows/android.yml` validates the web and mobile builds, runs Android unit tests and lint with Java 21, and checks the merged release manifest before packaging. The manifest check permits only steps and sleep Health Connect read permissions and rejects health write access and `QUERY_ALL_PACKAGES`. A manual `workflow_dispatch` uploads a debug APK. A `v*` tag builds and uploads a signed release APK and AAB named with the tag and Git revision.
+
+Configure these GitHub Actions secrets:
+
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+- `ANDROID_CERT_SHA256`
+
+`ANDROID_KEYSTORE_BASE64` is the base64 encoding of the durable release keystore. `ANDROID_CERT_SHA256` is the expected SHA-256 fingerprint of its signing certificate; tagged builds fail if `apksigner` reports another identity. Obtain it from the trusted release keystore and copy the value after `SHA256:`:
+
+```sh
+keytool -list -v -keystore release.keystore -alias "$ANDROID_KEY_ALIAS" | grep 'SHA256:'
+```
+
+Colons, whitespace, and letter casing are normalized by CI. Never commit the keystore or signing values. Keep the original keystore and its alias/passwords in encrypted storage outside GitHub, with a separately tested backup; the GitHub secret is not a recovery backup, and losing the key prevents compatible application updates.
+
+For a local signed build, set `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`, run `npm run mobile:sync`, then run `./gradlew assembleRelease bundleRelease` from `android/`.
 
 ## Account routes
 
@@ -159,11 +237,15 @@ npm run db:migrate:remote
 
 ## Validation
 
+`npm run test` runs both the web and mobile Vitest suites.
+
 ```sh
 npm run check
 npm run lint
 npm run test
 npm run build
+npm run mobile:check
+npm run mobile:build
 ```
 
 ## Deployment

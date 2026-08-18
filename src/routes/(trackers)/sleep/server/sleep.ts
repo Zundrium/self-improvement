@@ -31,11 +31,22 @@ export async function createSleepConnection(
 export async function findSleepConnectionByToken(db: Database, token: string) {
 	const tokenHash = await hashSleepToken(token);
 	const [connection] = await db
-		.select()
+		.select({ userId: sleepConnection.userId, timeZone: sleepConnection.timeZone })
 		.from(sleepConnection)
 		.where(eq(sleepConnection.tokenHash, tokenHash))
 		.limit(1);
 	return connection ?? null;
+}
+
+export async function findSleepConnectionByCompanionToken(db: Database, token: string) {
+	const tokenHash = await hashSleepToken(token);
+	const [connection] = await db
+		.select({ userId: sleepConnection.userId, timeZone: sleepConnection.companionTimeZone })
+		.from(sleepConnection)
+		.where(eq(sleepConnection.companionTokenHash, tokenHash))
+		.limit(1);
+	if (!connection?.timeZone) return null;
+	return { userId: connection.userId, timeZone: connection.timeZone };
 }
 
 export async function updateSleepGoal(db: Database, userId: string, dailyGoalMinutes: number) {
@@ -71,13 +82,12 @@ export async function getDailySleep(
 
 export async function recordHealthConnectSleepPayload(
 	db: Database,
-	connection: NonNullable<Awaited<ReturnType<typeof getSleepConnection>>>,
+	connection: { userId: string; timeZone: string },
 	payload: HealthConnectSleepPayload
 ) {
 	const sessions = calculatedSessions(payload, connection.timeZone);
 	for (const session of sessions) await saveSleepSession(db, connection.userId, session);
-	if (sessions.length)
-		await markSleepConnectionReceived(db, connection.userId, payload.app_version);
+	await markSleepConnectionReceived(db, connection.userId, payload.app_version);
 	return sessions.length;
 }
 
@@ -130,7 +140,7 @@ async function markSleepConnectionReceived(db: Database, userId: string, appVers
 		.where(eq(sleepConnection.userId, userId));
 }
 
-function createSleepToken() {
+export function createSleepToken() {
 	const bytes = crypto.getRandomValues(new Uint8Array(32));
 	return `slp_${[...bytes].map(toHex).join('')}`;
 }

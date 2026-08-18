@@ -27,20 +27,25 @@ export async function createScreenTimeConnection(
 export async function findScreenTimeConnectionByToken(db: Database, token: string) {
 	const tokenHash = await hashScreenTimeToken(token);
 	const [connection] = await db
-		.select()
+		.select({ userId: screenTimeConnection.userId, timeZone: screenTimeConnection.timeZone })
 		.from(screenTimeConnection)
 		.where(eq(screenTimeConnection.tokenHash, tokenHash))
 		.limit(1);
 	return connection ?? null;
 }
 
-export async function hasDailyScreenTime(db: Database, userId: string) {
-	const [snapshot] = await db
-		.select({ userId: screenTimeDailySnapshot.userId })
-		.from(screenTimeDailySnapshot)
-		.where(eq(screenTimeDailySnapshot.userId, userId))
+export async function findScreenTimeConnectionByCompanionToken(db: Database, token: string) {
+	const tokenHash = await hashScreenTimeToken(token);
+	const [connection] = await db
+		.select({
+			userId: screenTimeConnection.userId,
+			timeZone: screenTimeConnection.companionTimeZone
+		})
+		.from(screenTimeConnection)
+		.where(eq(screenTimeConnection.companionTokenHash, tokenHash))
 		.limit(1);
-	return Boolean(snapshot);
+	if (!connection?.timeZone) return null;
+	return { userId: connection.userId, timeZone: connection.timeZone };
 }
 
 export async function getDailyScreenTime(
@@ -64,12 +69,12 @@ export async function getDailyScreenTime(
 
 export async function recordScreenTimePayload(
 	db: Database,
-	connection: NonNullable<Awaited<ReturnType<typeof getScreenTimeConnection>>>,
+	connection: { userId: string; timeZone: string },
 	payload: ScreenTimePayload
 ) {
 	for (const day of payload.screen_time)
 		await saveDailySnapshot(db, connection.userId, day, payload);
-	if (payload.screen_time.length) await markConnectionReceived(db, connection.userId, payload);
+	await markConnectionReceived(db, connection.userId, payload);
 	return payload.screen_time.length;
 }
 
@@ -137,7 +142,7 @@ async function markConnectionReceived(db: Database, userId: string, payload: Scr
 		.where(eq(screenTimeConnection.userId, userId));
 }
 
-function createScreenTimeToken() {
+export function createScreenTimeToken() {
 	const bytes = crypto.getRandomValues(new Uint8Array(32));
 	return `scr_${[...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 }

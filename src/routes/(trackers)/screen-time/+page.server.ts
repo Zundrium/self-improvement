@@ -4,8 +4,7 @@ import { dateKeysEndingAt, isValidDateKey, localDateForInstant } from '$lib/trac
 import {
 	createScreenTimeConnection,
 	getDailyScreenTime,
-	getScreenTimeConnection,
-	hasDailyScreenTime
+	getScreenTimeConnection
 } from './server/screen-time';
 import { summarizeUsage, topApps } from './screen-time';
 import type { Actions, PageServerLoad } from './$types';
@@ -41,15 +40,12 @@ export const actions: Actions = {
 
 async function loadScreenTimePage(db: ReturnType<typeof requireDb>, userId: string, url: URL) {
 	const connection = await getScreenTimeConnection(db, userId);
-	const today = localDateForInstant(new Date(), connection?.timeZone ?? 'UTC');
+	const today = localDateForInstant(new Date(), connectionTimeZone(connection));
 	const date = url.searchParams.get('date') ?? today;
 	if (!isValidDateKey(date) || date > today) error(400, 'Choose today or an earlier valid date.');
 
 	const dateKeys = dateKeysEndingAt(today, 7);
-	const [historySnapshots, hasRecords] = await Promise.all([
-		getDailyScreenTime(db, userId, dateKeys[0], today),
-		hasDailyScreenTime(db, userId)
-	]);
+	const historySnapshots = await getDailyScreenTime(db, userId, dateKeys[0], today);
 	const selectedSnapshots =
 		date >= dateKeys[0] ? historySnapshots : await getDailyScreenTime(db, userId, date, date);
 	const selected = selectedSnapshots.find((snapshot) => snapshot.localDate === date);
@@ -67,7 +63,7 @@ async function loadScreenTimePage(db: ReturnType<typeof requireDb>, userId: stri
 	return {
 		connection: connectionView(connection),
 		webhookUrl: new URL('/screen-time/api/usage', url.origin).toString(),
-		isSynced: Boolean(connection?.lastReceivedAt && hasRecords),
+		isSynced: Boolean(connection?.lastReceivedAt),
 		date,
 		today,
 		markedDates: [...markedDates],
@@ -84,10 +80,14 @@ async function loadScreenTimePage(db: ReturnType<typeof requireDb>, userId: stri
 function connectionView(connection: Awaited<ReturnType<typeof getScreenTimeConnection>>) {
 	if (!connection) return null;
 	return {
-		timeZone: connection.timeZone,
+		timeZone: connectionTimeZone(connection),
 		appVersion: connection.appVersion,
 		device: connection.device,
 		source: connection.source,
 		lastReceivedAt: connection.lastReceivedAt
 	};
+}
+
+function connectionTimeZone(connection: Awaited<ReturnType<typeof getScreenTimeConnection>>) {
+	return connection?.companionTimeZone ?? connection?.timeZone ?? 'UTC';
 }

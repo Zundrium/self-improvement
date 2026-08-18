@@ -1,7 +1,11 @@
 import { json } from '@sveltejs/kit';
 import { requireDb } from '$lib/server/guards';
 import { parseHealthConnectPayload, STEP_TOKEN_HEADER } from '../../steps';
-import { findConnectionByToken, recordHealthConnectPayload } from '../../server/steps';
+import {
+	findConnectionByCompanionToken,
+	findConnectionByToken,
+	recordHealthConnectPayload
+} from '../../server/steps';
 import type { RequestHandler } from './$types';
 
 const MAX_BODY_BYTES = 128 * 1024;
@@ -11,21 +15,46 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!token) return response({ error: `Missing ${STEP_TOKEN_HEADER} header.` }, 401);
 	if (bodyIsTooLarge(request)) return response({ error: 'Payload too large.' }, 413);
 
+	const db = requireDb(locals);
+	let connection;
 	try {
-		const connection = await findConnectionByToken(requireDb(locals), token);
-		if (!connection) return response({ error: 'Invalid webhook token.' }, 401);
-		const payload = parseHealthConnectPayload(await readBody(request));
-		const accepted = await recordHealthConnectPayload(requireDb(locals), connection, payload);
-		return response({ accepted });
+		connection = await findAuthorizedConnection(db, token);
+	} catch {
+		return response({ error: 'Steps webhook unavailable.' }, 503);
+	}
+	if (!connection) return response({ error: 'Invalid webhook token.' }, 401);
+
+	let payload;
+	try {
+		payload = parseHealthConnectPayload(await readBody(request));
 	} catch (cause) {
-		if (cause instanceof SyntaxError) return response({ error: 'Invalid JSON payload.' }, 400);
+		return payloadFailure(cause);
+	}
+
+	try {
+		return response({ accepted: await recordHealthConnectPayload(db, connection, payload) });
+	} catch (cause) {
 		if (cause instanceof Error && cause.message.includes('resolution to Daily')) {
 			return response({ error: cause.message }, 422);
 		}
-		console.error('Failed to receive Health Connect steps:', cause);
-		return response({ error: 'Invalid Health Connect payload.' }, 400);
+		console.error('Failed to store Health Connect steps.');
+		return response({ error: 'Could not store Health Connect steps.' }, 500);
 	}
 };
+
+async function findAuthorizedConnection(db: ReturnType<typeof requireDb>, token: string) {
+	return (
+		(await findConnectionByToken(db, token)) ?? (await findConnectionByCompanionToken(db, token))
+	);
+}
+
+function payloadFailure(cause: unknown) {
+	if (cause instanceof PayloadTooLargeError) {
+		return response({ error: 'Payload too large.' }, 413);
+	}
+	if (cause instanceof SyntaxError) return response({ error: 'Invalid JSON payload.' }, 400);
+	return response({ error: 'Invalid Health Connect payload.' }, 400);
+}
 
 function bodyIsTooLarge(request: Request) {
 	const contentLength = Number(request.headers.get('content-length') ?? 0);
@@ -35,7 +64,7 @@ function bodyIsTooLarge(request: Request) {
 async function readBody(request: Request) {
 	const body = await request.text();
 	if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
-		throw new SyntaxError('Payload too large.');
+		throw new PayloadTooLargeError();
 	}
 	return JSON.parse(body) as unknown;
 }
@@ -43,3 +72,5 @@ async function readBody(request: Request) {
 function response(body: Record<string, unknown>, status = 200) {
 	return json(body, { status, headers: { 'cache-control': 'no-store' } });
 }
+
+class PayloadTooLargeError extends Error {}

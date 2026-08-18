@@ -1,7 +1,11 @@
 import { isHttpError, json } from '@sveltejs/kit';
 import { ZodError } from 'zod';
 import { requireDb } from '$lib/server/guards';
-import { findSleepConnectionByToken, recordHealthConnectSleepPayload } from '../../server/sleep';
+import {
+	findSleepConnectionByCompanionToken,
+	findSleepConnectionByToken,
+	recordHealthConnectSleepPayload
+} from '../../server/sleep';
 import { parseHealthConnectSleepPayload, SleepPayloadError, SLEEP_TOKEN_HEADER } from '../../sleep';
 import type { RequestHandler } from './$types';
 
@@ -14,7 +18,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (bodyIsTooLarge(request)) return response({ error: 'Payload too large.' }, 413);
 
 	try {
-		const connection = await findSleepConnectionByToken(requireDb(locals), token);
+		const connection = await findAuthorizedConnection(requireDb(locals), token);
 		if (!connection) return response({ error: 'Invalid webhook token.' }, 401);
 		const payload = parseHealthConnectSleepPayload(await readJsonBody(request));
 		const accepted = await recordHealthConnectSleepPayload(requireDb(locals), connection, payload);
@@ -24,14 +28,23 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			return response({ error: 'Payload too large.' }, 413);
 		}
 		if (cause instanceof SyntaxError) return response({ error: 'Invalid JSON payload.' }, 400);
-		if (isHttpError(cause)) throw cause;
+		if (isHttpError(cause)) {
+			return response({ error: 'Sleep webhook unavailable.' }, cause.status);
+		}
 		if (cause instanceof ZodError || cause instanceof SleepPayloadError) {
 			return response({ error: 'Invalid Health Connect sleep payload.' }, 400);
 		}
-		console.error('Failed to receive Health Connect sleep:', cause);
+		console.error('Failed to receive Health Connect sleep.');
 		return response({ error: 'Could not receive Health Connect sleep.' }, 500);
 	}
 };
+
+async function findAuthorizedConnection(db: ReturnType<typeof requireDb>, token: string) {
+	return (
+		(await findSleepConnectionByToken(db, token)) ??
+		(await findSleepConnectionByCompanionToken(db, token))
+	);
+}
 
 function isSleepToken(token: string) {
 	return /^slp_[a-f0-9]{64}$/.test(token);

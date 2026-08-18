@@ -24,6 +24,8 @@ export const sleepConnection = sqliteTable(
 			.primaryKey()
 			.references(() => authSchema.user.id, { onDelete: 'cascade' }),
 		tokenHash: text('token_hash').notNull(),
+		companionTokenHash: text('companion_token_hash'),
+		companionTimeZone: text('companion_time_zone'),
 		timeZone: text('time_zone').notNull().default('UTC'),
 		dailyGoalMinutes: integer('daily_goal_minutes').notNull().default(420),
 		appVersion: text('app_version'),
@@ -37,6 +39,7 @@ export const sleepConnection = sqliteTable(
 	},
 	(table) => [
 		uniqueIndex('sleepConnection_tokenHash_idx').on(table.tokenHash),
+		uniqueIndex('sleepConnection_companionTokenHash_idx').on(table.companionTokenHash),
 		check('sleepConnection_tokenHash_check', sql`length(${table.tokenHash}) = 64`),
 		check('sleepConnection_timeZone_check', sql`length(${table.timeZone}) BETWEEN 1 AND 100`),
 		check(

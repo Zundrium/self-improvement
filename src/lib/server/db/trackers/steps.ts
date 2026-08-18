@@ -17,6 +17,8 @@ export const stepConnection = sqliteTable(
 			.primaryKey()
 			.references(() => authSchema.user.id, { onDelete: 'cascade' }),
 		tokenHash: text('token_hash').notNull(),
+		companionTokenHash: text('companion_token_hash'),
+		companionTimeZone: text('companion_time_zone'),
 		timeZone: text('time_zone').notNull().default('UTC'),
 		dailyGoal: integer('daily_goal').notNull().default(5_000),
 		appVersion: text('app_version'),
@@ -30,6 +32,7 @@ export const stepConnection = sqliteTable(
 	},
 	(table) => [
 		uniqueIndex('stepConnection_tokenHash_idx').on(table.tokenHash),
+		uniqueIndex('stepConnection_companionTokenHash_idx').on(table.companionTokenHash),
 		check(
 			'stepConnection_dailyGoal_check',
 			sql`${table.dailyGoal} >= 1000 AND ${table.dailyGoal} <= 100000`

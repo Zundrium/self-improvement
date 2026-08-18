@@ -24,6 +24,8 @@ export const screenTimeConnection = sqliteTable(
 			.primaryKey()
 			.references(() => authSchema.user.id, { onDelete: 'cascade' }),
 		tokenHash: text('token_hash').notNull(),
+		companionTokenHash: text('companion_token_hash'),
+		companionTimeZone: text('companion_time_zone'),
 		timeZone: text('time_zone').notNull().default('UTC'),
 		appVersion: text('app_version'),
 		device: text('device'),
@@ -36,7 +38,10 @@ export const screenTimeConnection = sqliteTable(
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull()
 	},
-	(table) => [uniqueIndex('screenTimeConnection_tokenHash_idx').on(table.tokenHash)]
+	(table) => [
+		uniqueIndex('screenTimeConnection_tokenHash_idx').on(table.tokenHash),
+		uniqueIndex('screenTimeConnection_companionTokenHash_idx').on(table.companionTokenHash)
+	]
 );
 
 export const screenTimeDailySnapshot = sqliteTable(
