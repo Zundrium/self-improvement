@@ -16,7 +16,8 @@
 		Shield,
 		Smile,
 		Smartphone,
-		UserRound
+		UserRound,
+		Wind
 	} from '@lucide/svelte';
 	import { authClient } from '$lib/auth-client';
 	import { Avatar } from '$lib/components/ui/avatar';
@@ -45,6 +46,7 @@
 		fitness: Dumbbell,
 		nutrition: Apple,
 		meditation: Flower2,
+		breathing: Wind,
 		happiness: Smile,
 		period: Droplet
 	};

@@ -9,7 +9,8 @@
 		Footprints,
 		Moon,
 		Smile,
-		Smartphone
+		Smartphone,
+		Wind
 	} from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { TrackerId } from '$lib/trackers/registry';
@@ -37,7 +38,14 @@
 
 	function datedFeatureHref(
 		path:
-			'/fitness' | '/happiness' | '/meditation' | '/period' | '/screen-time' | '/sleep' | '/steps'
+			| '/breathing'
+			| '/fitness'
+			| '/happiness'
+			| '/meditation'
+			| '/period'
+			| '/screen-time'
+			| '/sleep'
+			| '/steps'
 	) {
 		return data.dashboard.date === data.dashboard.today
 			? path
@@ -197,6 +205,24 @@
 							<span class="flex min-w-0 items-center gap-3">
 								{@render statusCheckbox(data.dashboard.meditationDone)}
 								<strong class="text-base font-medium tracking-[-0.02em]">Meditation</strong>
+							</span>
+							<ChevronRight class="size-5 text-(--text)/28" />
+						</span>
+					</Button>
+				{/if}
+
+				{#if trackerEnabled('breathing')}
+					<Button
+						href={datedFeatureHref('/breathing')}
+						variant="ghost"
+						class="h-auto w-full rounded-none bg-transparent px-0 py-5 text-left whitespace-normal hover:bg-transparent"
+						aria-label={`Breathing, ${data.dashboard.breathingDone ? 'complete' : 'not complete'}`}
+					>
+						<span class="grid w-full grid-cols-[2rem_minmax(0,1fr)_1.25rem] items-center gap-4">
+							<Wind class="size-6 text-(--text)/64" />
+							<span class="flex min-w-0 items-center gap-3">
+								{@render statusCheckbox(data.dashboard.breathingDone)}
+								<strong class="text-base font-medium tracking-[-0.02em]">4-7-8 breathing</strong>
 							</span>
 							<ChevronRight class="size-5 text-(--text)/28" />
 						</span>

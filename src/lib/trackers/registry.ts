@@ -42,6 +42,13 @@ export const trackers = [
 		defaultEnabled: true
 	},
 	{
+		id: 'breathing',
+		label: 'Breathing',
+		description: 'A guided daily 4-7-8 breathing exercise.',
+		href: '/breathing',
+		defaultEnabled: true
+	},
+	{
 		id: 'happiness',
 		label: 'Happiness',
 		description: 'Daily happiness levels and the reasons behind them.',

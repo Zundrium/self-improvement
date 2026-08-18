@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 
 import {
+	breathingExercise,
 	fitnessProgram,
 	fitnessWorkout,
 	fitnessWorkoutProgress,
@@ -55,6 +56,7 @@ async function loadDashboard(
 		fitness,
 		nutrition,
 		meditationDone,
+		breathingDone,
 		happinessRating,
 		periodFlow
 	] = await Promise.all([
@@ -64,6 +66,7 @@ async function loadDashboard(
 		loadFitness(db, userId, date),
 		loadNutrition(db, userId, date),
 		loadMeditationDone(db, userId, date),
+		loadBreathingDone(db, userId, date),
 		loadHappinessRating(db, userId, date),
 		loadPeriodFlow(db, userId, date)
 	]);
@@ -78,6 +81,7 @@ async function loadDashboard(
 		...fitness,
 		...nutrition,
 		meditationDone,
+		breathingDone,
 		happinessRating,
 		periodFlow
 	};
@@ -140,6 +144,15 @@ async function loadMeditationDone(db: ReturnType<typeof requireDb>, userId: stri
 		.select({ id: meditationSession.id })
 		.from(meditationSession)
 		.where(and(eq(meditationSession.userId, userId), eq(meditationSession.localDate, today)))
+		.limit(1);
+	return result.length > 0;
+}
+
+async function loadBreathingDone(db: ReturnType<typeof requireDb>, userId: string, today: string) {
+	const result = await db
+		.select({ localDate: breathingExercise.localDate })
+		.from(breathingExercise)
+		.where(and(eq(breathingExercise.userId, userId), eq(breathingExercise.localDate, today)))
 		.limit(1);
 	return result.length > 0;
 }

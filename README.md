@@ -1,6 +1,6 @@
 # Self Improvement
 
-A mobile-first SvelteKit app that brings health, screen time, nutrition, fitness, meditation, happiness, and period tracking into one private daily view.
+A mobile-first SvelteKit app that brings health, screen time, nutrition, fitness, meditation, breathing, happiness, and period tracking into one private daily view.
 
 ## Stack
 
@@ -27,6 +27,7 @@ A mobile-first SvelteKit app that brings health, screen time, nutrition, fitness
 - `src/routes/(trackers)/nutrition/` contains the calorie estimator, meal log, and nutrition logic.
 - `src/routes/(trackers)/fitness/` contains workout pages, APIs, components, and fitness logic.
 - `src/routes/(trackers)/meditation/` contains the timer, sounds, and meditation history.
+- `src/routes/(trackers)/breathing/` contains the guided daily 4-7-8 breathing exercise and history.
 - `src/routes/(trackers)/steps/` contains Health Connect ingestion and step history.
 - `src/routes/(trackers)/happiness/` contains daily happiness levels, level-specific reasons, and history.
 - `src/routes/(trackers)/period/` contains menstruation entries, cycle estimates, and period history.
@@ -187,6 +188,10 @@ Steps, Sleep, and Screen time share the same phone-connection setup component wh
 ## Meditation
 
 The authenticated `/meditation` route includes a configurable timer, mixable looping ambient sounds, shared volume controls, automatic D1 persistence, and a dated history with completion marks.
+
+## Breathing
+
+The authenticated `/breathing` route guides one daily six-round 4-7-8 breathing exercise. Its circle expands during each four-second inhale, stays full during each seven-second hold, and contracts during each eight-second exhale. Completed days are persisted in D1 and marked in the date selector.
 
 ## Happiness
 
