@@ -3,12 +3,28 @@ import { calculateBmr, calculateTdee } from './nutrition';
 import { parseMealImageDataUrl } from './server/meal-image';
 import { validateAIResult, validateMealEstimate } from './server/meal-analysis';
 import { localDateTime, validDate } from './server/nutrition';
+import { profileInputFromForm } from './server/profiles';
 
 describe('calorie estimates', () => {
 	it('calculates BMR and TDEE with Mifflin-St Jeor', () => {
 		expect(calculateBmr(70, 175, 30, 'male')).toBe(1649);
 		expect(calculateBmr(70, 175, 30, 'female')).toBe(1483);
 		expect(calculateTdee(70, 175, 30, 'male', 'moderate')).toBe(2556);
+	});
+});
+
+describe('profile calorie goals', () => {
+	it('accepts a manual calorie goal from profile settings', () => {
+		const form = new FormData();
+		form.set('weightKg', '70');
+		form.set('heightCm', '175');
+		form.set('age', '30');
+		form.set('gender', 'male');
+		form.set('activityLevel', 'moderate');
+		form.set('goalMode', 'custom');
+		form.set('customGoal', '2200');
+
+		expect(profileInputFromForm(form)).toMatchObject({ goalMode: 'custom', customGoal: 2200 });
 	});
 });
 

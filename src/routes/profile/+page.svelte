@@ -11,7 +11,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
+	import { Field, FieldDescription, FieldGroup, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
 	import { Spinner } from '$lib/components/ui/spinner';
@@ -264,16 +264,16 @@
 									<FieldLabel>Goal calculation</FieldLabel>
 									<Select type="single" name="goalMode" bind:value={goalMode}>
 										<SelectTrigger class="w-full">
-											{goalMode === 'custom' ? 'Custom goal' : 'Use estimate'}
+											{goalMode === 'custom' ? 'Manual goal' : 'Use estimate'}
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="estimated">Use TDEE estimate</SelectItem>
-											<SelectItem value="custom">Custom calorie goal</SelectItem>
+											<SelectItem value="custom">Set a manual calorie goal</SelectItem>
 										</SelectContent>
 									</Select>
 								</Field>
 								<Field>
-									<FieldLabel for="customGoal">Daily goal (kcal)</FieldLabel>
+									<FieldLabel for="customGoal">Manual daily goal (kcal)</FieldLabel>
 									<Input
 										id="customGoal"
 										name="customGoal"
@@ -284,6 +284,7 @@
 										disabled={goalMode !== 'custom'}
 										required={goalMode === 'custom'}
 									/>
+									<FieldDescription>Overrides the estimated daily goal.</FieldDescription>
 								</Field>
 							</div>
 						</FieldGroup>

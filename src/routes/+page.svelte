@@ -6,10 +6,12 @@
 		Droplet,
 		Dumbbell,
 		Flower2,
-		Footprints
+		Footprints,
+		Smile
 	} from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { TrackerId } from '$lib/trackers/registry';
+	import { happinessLabel } from './(trackers)/happiness/happiness';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -17,13 +19,20 @@
 	const caloriesDone = $derived(
 		data.dashboard.calorieGoal !== null && data.dashboard.calories <= data.dashboard.calorieGoal
 	);
+	const happinessSummary = $derived(
+		data.dashboard.happinessRating
+			? `${data.dashboard.happinessRating}/5 · ${happinessLabel(data.dashboard.happinessRating)}`
+			: 'No happiness logged'
+	);
 	const periodLabel = $derived(
 		data.dashboard.periodFlow
 			? `${data.dashboard.periodFlow[0].toUpperCase()}${data.dashboard.periodFlow.slice(1)} flow`
 			: 'No period logged'
 	);
 
-	function datedFeatureHref(path: '/fitness' | '/meditation' | '/period' | '/steps') {
+	function datedFeatureHref(
+		path: '/fitness' | '/happiness' | '/meditation' | '/period' | '/steps'
+	) {
 		return data.dashboard.date === data.dashboard.today
 			? path
 			: `${path}?date=${data.dashboard.date}`;
@@ -38,7 +47,7 @@
 	<title>Self Improvement</title>
 	<meta
 		name="description"
-		content="A unified daily view for steps, nutrition, fitness, meditation, and period tracking."
+		content="A unified daily view for steps, nutrition, fitness, meditation, happiness, and period tracking."
 	/>
 </svelte:head>
 
@@ -139,6 +148,26 @@
 							<span class="flex min-w-0 items-center gap-3">
 								{@render statusCheckbox(data.dashboard.meditationDone)}
 								<strong class="text-base font-medium tracking-[-0.02em]">Meditation</strong>
+							</span>
+							<ChevronRight class="size-5 text-(--text)/28" />
+						</span>
+					</Button>
+				{/if}
+
+				{#if trackerEnabled('happiness')}
+					<Button
+						href={datedFeatureHref('/happiness')}
+						variant="ghost"
+						class="h-auto w-full rounded-none bg-transparent px-0 py-5 text-left whitespace-normal hover:bg-transparent"
+						aria-label={`Happiness tracker: ${happinessSummary}`}
+					>
+						<span class="grid w-full grid-cols-[2rem_minmax(0,1fr)_1.25rem] items-center gap-4">
+							<Smile class="size-6 text-(--text)/64" />
+							<span class="flex min-w-0 items-center gap-3">
+								{@render statusCheckbox(data.dashboard.happinessRating !== null)}
+								<strong class="text-base font-medium tracking-[-0.02em]">
+									{happinessSummary}
+								</strong>
 							</span>
 							<ChevronRight class="size-5 text-(--text)/28" />
 						</span>

@@ -1,6 +1,6 @@
 # Self Improvement
 
-A mobile-first SvelteKit app that brings steps, nutrition, fitness, meditation, and period tracking into one private daily view.
+A mobile-first SvelteKit app that brings steps, nutrition, fitness, meditation, happiness, and period tracking into one private daily view.
 
 ## Stack
 
@@ -27,6 +27,7 @@ A mobile-first SvelteKit app that brings steps, nutrition, fitness, meditation, 
 - `src/routes/(trackers)/fitness/` contains workout pages, APIs, components, and fitness logic.
 - `src/routes/(trackers)/meditation/` contains the timer, sounds, and meditation history.
 - `src/routes/(trackers)/steps/` contains Health Connect ingestion and step history.
+- `src/routes/(trackers)/happiness/` contains daily happiness levels, level-specific reasons, and history.
 - `src/routes/(trackers)/period/` contains menstruation entries, cycle estimates, and period history.
 - `drizzle/` contains versioned D1 migrations.
 - `scripts/create-admin.mjs` creates or promotes the first administrator.
@@ -98,6 +99,10 @@ The authenticated `/steps` route creates a one-time webhook token for the free H
 ## Meditation
 
 The authenticated `/meditation` route includes a configurable timer, mixable looping ambient sounds, shared volume controls, automatic D1 persistence, and a dated history with completion marks.
+
+## Happiness
+
+The authenticated `/happiness` route records a daily happiness level from 1 to 5. Levels 1–2 show low-mood reasons, level 3 shows moderate positive reasons, and levels 4–5 show stronger positive reasons.
 
 ## Period
 

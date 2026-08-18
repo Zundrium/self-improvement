@@ -13,6 +13,7 @@
 		LoaderCircle,
 		LogOut,
 		Shield,
+		Smile,
 		UserRound
 	} from '@lucide/svelte';
 	import { authClient } from '$lib/auth-client';
@@ -40,6 +41,7 @@
 		fitness: Dumbbell,
 		nutrition: Apple,
 		meditation: Flower2,
+		happiness: Smile,
 		period: Droplet
 	};
 

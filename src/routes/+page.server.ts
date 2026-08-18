@@ -5,6 +5,7 @@ import {
 	fitnessProgram,
 	fitnessWorkout,
 	fitnessWorkoutProgress,
+	happinessEntry,
 	meditationSession,
 	menstruationEntry
 } from '$lib/server/db/schema';
@@ -34,13 +35,15 @@ async function loadDashboard(
 	const today = localDateForInstant(new Date(), connection?.timeZone ?? 'UTC');
 	const date = requestedDate ?? today;
 	if (!validDate(date) || date > today) error(400, 'Choose today or an earlier valid date.');
-	const [steps, fitness, nutrition, meditationDone, periodFlow] = await Promise.all([
-		loadSteps(db, userId, date),
-		loadFitness(db, userId, date),
-		loadNutrition(db, userId, date),
-		loadMeditationDone(db, userId, date),
-		loadPeriodFlow(db, userId, date)
-	]);
+	const [steps, fitness, nutrition, meditationDone, happinessRating, periodFlow] =
+		await Promise.all([
+			loadSteps(db, userId, date),
+			loadFitness(db, userId, date),
+			loadNutrition(db, userId, date),
+			loadMeditationDone(db, userId, date),
+			loadHappinessRating(db, userId, date),
+			loadPeriodFlow(db, userId, date)
+		]);
 	return {
 		date,
 		today,
@@ -49,6 +52,7 @@ async function loadDashboard(
 		...fitness,
 		...nutrition,
 		meditationDone,
+		happinessRating,
 		periodFlow
 	};
 }
@@ -102,6 +106,19 @@ async function loadMeditationDone(db: ReturnType<typeof requireDb>, userId: stri
 		.where(and(eq(meditationSession.userId, userId), eq(meditationSession.localDate, today)))
 		.limit(1);
 	return result.length > 0;
+}
+
+async function loadHappinessRating(
+	db: ReturnType<typeof requireDb>,
+	userId: string,
+	today: string
+) {
+	const [entry] = await db
+		.select({ rating: happinessEntry.rating })
+		.from(happinessEntry)
+		.where(and(eq(happinessEntry.userId, userId), eq(happinessEntry.localDate, today)))
+		.limit(1);
+	return entry?.rating ?? null;
 }
 
 async function loadPeriodFlow(db: ReturnType<typeof requireDb>, userId: string, today: string) {

@@ -28,6 +28,13 @@ export const trackers = [
 		defaultEnabled: true
 	},
 	{
+		id: 'happiness',
+		label: 'Happiness',
+		description: 'Daily happiness levels and the reasons behind them.',
+		href: '/happiness',
+		defaultEnabled: true
+	},
+	{
 		id: 'period',
 		label: 'Period',
 		description: 'Menstruation flow, notes, and recent history.',
