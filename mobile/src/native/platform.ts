@@ -7,10 +7,6 @@ export function isNativeAndroid() {
 
 export function requireNativeAndroid() {
 	if (!isNativeAndroid()) {
-		throw new SyncFailure(
-			'pairing',
-			'This companion only stores data inside the native Android app.',
-			false
-		);
+		throw new SyncFailure('session', 'This feature requires the native Android app.', false);
 	}
 }

@@ -5,6 +5,8 @@ yarn.lock
 bun.lock
 bun.lockb
 worker-configuration.d.ts
+mobile/.svelte-kit/
+mobile/static/
 
 # Miscellaneous
 /static/

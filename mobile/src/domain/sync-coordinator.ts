@@ -1,8 +1,8 @@
 import { SyncFailure, classifyFailure } from './errors';
 import {
 	TRACKER_IDS,
-	type CompanionStatus,
-	type PairingCredentials,
+	type MobileSyncStatus,
+	type AppCredentials,
 	type PermissionCheck,
 	type PermissionState,
 	type SyncReport,
@@ -10,21 +10,21 @@ import {
 	type TrackerSyncResult
 } from './model';
 import { reportOverall, staleTrackerIds } from './status';
-import type { CompanionRepository } from '../native/secure-repository';
+import type { MobileRepository } from '../native/secure-repository';
 
 export const DEFAULT_STALE_AFTER_MS = 15 * 60 * 1000;
 
 export interface TrackerJob {
 	checkPermission(): Promise<PermissionCheck>;
-	collect(pairing: PairingCredentials, now: Date): Promise<unknown>;
-	upload(pairing: PairingCredentials, payload: unknown): Promise<void>;
+	collect(credentials: AppCredentials, now: Date): Promise<unknown>;
+	upload(credentials: AppCredentials, payload: unknown): Promise<void>;
 }
 
 export class SyncCoordinator {
 	private activeSync?: Promise<SyncReport>;
 
 	constructor(
-		private readonly repository: CompanionRepository,
+		private readonly repository: MobileRepository,
 		private readonly jobs: Record<TrackerId, TrackerJob>,
 		private readonly clock: () => Date = () => new Date()
 	) {}
@@ -59,22 +59,24 @@ export class SyncCoordinator {
 
 	private async resultsForTrackers(trackers: TrackerId[], now: Date) {
 		try {
-			const pairing = await this.repository.loadPairing();
-			if (!pairing) return trackerFailures(trackers, new SyncFailure('pairing'));
-			return await Promise.all(trackers.map((tracker) => this.runTracker(tracker, pairing, now)));
+			const credentials = await this.repository.loadCredentials();
+			if (!credentials) return trackerFailures(trackers, new SyncFailure('session'));
+			return await Promise.all(
+				trackers.map((tracker) => this.runTracker(tracker, credentials, now))
+			);
 		} catch (cause) {
 			return trackerFailures(trackers, cause);
 		}
 	}
 
-	private async runTracker(tracker: TrackerId, pairing: PairingCredentials, now: Date) {
+	private async runTracker(tracker: TrackerId, credentials: AppCredentials, now: Date) {
 		let permission: PermissionState = 'unknown';
 		try {
 			const check = await this.jobs[tracker].checkPermission();
 			permission = check.state;
 			if (permission !== 'granted') throw permissionFailure(permission);
-			const payload = await this.jobs[tracker].collect(pairing, now);
-			await this.jobs[tracker].upload(pairing, payload);
+			const payload = await this.jobs[tracker].collect(credentials, now);
+			await this.jobs[tracker].upload(credentials, payload);
 			return successResult(tracker, permission, now);
 		} catch (cause) {
 			return failedResult(tracker, permission, cause);
@@ -83,10 +85,10 @@ export class SyncCoordinator {
 }
 
 function applyResults(
-	status: CompanionStatus,
+	status: MobileSyncStatus,
 	results: TrackerSyncResult[],
 	now: Date
-): CompanionStatus {
+): MobileSyncStatus {
 	const next = copyStatus(status);
 	for (const result of results) {
 		const previous = status.trackers[result.tracker];
@@ -96,7 +98,7 @@ function applyResults(
 }
 
 function resultStatus(
-	previous: CompanionStatus['trackers'][TrackerId],
+	previous: MobileSyncStatus['trackers'][TrackerId],
 	result: TrackerSyncResult,
 	now: Date
 ) {
@@ -107,7 +109,7 @@ function resultStatus(
 	return { ...previous, ...attempt, outcome: 'failed' as const, failure: result.failure };
 }
 
-function copyStatus(status: CompanionStatus): CompanionStatus {
+function copyStatus(status: MobileSyncStatus): MobileSyncStatus {
 	return {
 		version: 1,
 		trackers: {

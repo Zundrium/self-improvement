@@ -1,45 +1,40 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SyncFailure } from './errors';
-import type { CompanionStatus, PairingCredentials, TrackerId } from './model';
+import type { MobileSyncStatus, AppCredentials, TrackerId } from './model';
 import { createEmptyStatus } from './status';
 import { SyncCoordinator, type TrackerJob } from './sync-coordinator';
-import type { CompanionRepository } from '../native/secure-repository';
+import type { MobileRepository } from '../native/secure-repository';
 
-const defaultPairing: PairingCredentials = {
-	version: 1,
+const defaultCredentials: AppCredentials = {
 	apiBaseUrl: 'https://example.com',
 	timeZone: 'America/New_York',
-	tokens: {
-		steps: `stp_${'a'.repeat(64)}`,
-		sleep: `slp_${'b'.repeat(64)}`,
-		screenTime: `scr_${'c'.repeat(64)}`
-	}
+	token: 'signed-session-token'
 };
 
-class MemoryRepository implements CompanionRepository {
+class MemoryRepository implements MobileRepository {
 	constructor(
-		public pairing: PairingCredentials | null = structuredClone(defaultPairing),
-		public status: CompanionStatus = createEmptyStatus()
+		public credentials: AppCredentials | null = structuredClone(defaultCredentials),
+		public status: MobileSyncStatus = createEmptyStatus()
 	) {}
 
-	async loadPairing() {
-		return this.pairing;
+	async loadCredentials() {
+		return this.credentials;
 	}
 
-	async savePairing(value: PairingCredentials) {
-		this.pairing = value;
+	async saveCredentials(value: AppCredentials) {
+		this.credentials = value;
 	}
 
 	async loadStatus() {
 		return structuredClone(this.status);
 	}
 
-	async saveStatus(value: CompanionStatus) {
+	async saveStatus(value: MobileSyncStatus) {
 		this.status = structuredClone(value);
 	}
 
 	async disconnect() {
-		this.pairing = null;
+		this.credentials = null;
 		this.status = createEmptyStatus();
 	}
 }
@@ -96,7 +91,7 @@ describe('sync coordinator', () => {
 		});
 	});
 
-	it('classifies missing pairing independently without invoking collectors', async () => {
+	it('classifies missing credentials independently without invoking collectors', async () => {
 		const repository = new MemoryRepository(null);
 		const jobs = successfulJobs();
 		const report = await new SyncCoordinator(repository, jobs).syncAll();
@@ -106,7 +101,7 @@ describe('sync coordinator', () => {
 		expect(report.results.every((result) => result.outcome === 'failed')).toBe(true);
 		expect(
 			report.results.every(
-				(result) => result.outcome === 'failed' && result.failure.category === 'pairing'
+				(result) => result.outcome === 'failed' && result.failure.category === 'session'
 			)
 		).toBe(true);
 		expect(jobs.steps.collect).not.toHaveBeenCalled();

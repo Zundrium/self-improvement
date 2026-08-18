@@ -3,7 +3,7 @@ import { validationFailure } from './errors';
 import { payloadAppVersion, payloadTimestamp } from './payload-validation';
 import type { ScreenTimePayload } from './payloads';
 
-export const COMPANION_PACKAGE = 'com.zuncreative.selfimprovement';
+export const APP_PACKAGE = 'com.zuncreative.selfimprovement';
 const MAX_APPS = 100;
 const MAX_MINUTES = 1_440;
 const MAX_PACKAGE_LENGTH = 255;
@@ -61,7 +61,7 @@ function mergeApp(apps: Map<string, ScreenTimeApp>, usage: NativeUsageStats) {
 
 function toScreenTimeApp(usage: NativeUsageStats): ScreenTimeApp | undefined {
 	const packageName = validPackageName(usage.packageName);
-	if (packageName === COMPANION_PACKAGE) return;
+	if (packageName === APP_PACKAGE) return;
 	const minutes = foregroundMinutes(usage.totalTimeInForeground);
 	if (!minutes) return;
 	return {

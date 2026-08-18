@@ -1,10 +1,10 @@
 import { CalendarDate } from '@internationalized/date';
 import { describe, expect, it } from 'vitest';
-import { parseScreenTimePayload } from '../../../src/routes/(trackers)/screen-time/screen-time';
-import { parseHealthConnectSleepPayload } from '../../../src/routes/(trackers)/sleep/sleep';
-import { parseHealthConnectPayload } from '../../../src/routes/(trackers)/steps/steps';
+import { parseScreenTimePayload } from '../routes/screen-time/screen-time';
+import { parseHealthConnectSleepPayload } from '../routes/sleep/sleep';
+import { parseHealthConnectPayload } from '../routes/steps/steps';
 import { toLocalDayRange } from './day-ranges';
-import { COMPANION_PACKAGE, buildScreenTimePayload, type NativeUsageStats } from './screen-time';
+import { APP_PACKAGE, buildScreenTimePayload, type NativeUsageStats } from './screen-time';
 import { buildSleepPayload, type NativeSleepSample } from './sleep';
 import { buildStepsPayload, rollingStepDayRanges } from './steps';
 
@@ -173,7 +173,7 @@ describe('screen-time payload transformation', () => {
 				return [packageName, usage(packageName, 60_000)];
 			})
 		);
-		stats[COMPANION_PACKAGE] = usage(COMPANION_PACKAGE, 12 * 60 * 60_000);
+		stats[APP_PACKAGE] = usage(APP_PACKAGE, 12 * 60 * 60_000);
 		stats['com.example.too-short'] = usage('com.example.too-short', 29_000);
 		const payload = buildScreenTimePayload([{ range, stats }], timestamp, appVersion);
 		const day = payload.screen_time[0];
@@ -186,7 +186,7 @@ describe('screen-time payload transformation', () => {
 			name: 'com.example.app000',
 			minutes: 1
 		});
-		expect(day.apps.some((app) => app.package === COMPANION_PACKAGE)).toBe(false);
+		expect(day.apps.some((app) => app.package === APP_PACKAGE)).toBe(false);
 		expect(day.apps.some((app) => app.package === 'com.example.too-short')).toBe(false);
 	});
 

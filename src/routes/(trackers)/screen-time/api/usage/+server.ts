@@ -6,6 +6,7 @@ import {
 	type ScreenTimePayload
 } from '../../screen-time';
 import {
+	ensureScreenTimeConnection,
 	findScreenTimeConnectionByCompanionToken,
 	findScreenTimeConnectionByToken,
 	recordScreenTimePayload
@@ -16,19 +17,23 @@ const MAX_BODY_BYTES = 256 * 1024;
 const TOKEN_PATTERN = /^scr_[0-9a-f]{64}$/;
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const token = request.headers.get(SCREEN_TIME_TOKEN_HEADER)?.trim();
-	if (!token) return response({ error: `Missing ${SCREEN_TIME_TOKEN_HEADER} header.` }, 401);
-	if (!TOKEN_PATTERN.test(token)) return response({ error: 'Invalid webhook token.' }, 401);
+	const token = request.headers.get(SCREEN_TIME_TOKEN_HEADER)?.trim() ?? '';
+	if (!locals.user && (!token || !TOKEN_PATTERN.test(token))) {
+		return response({ error: 'Authentication required.' }, 401);
+	}
 	if (bodyIsTooLarge(request)) return response({ error: 'Payload too large.' }, 413);
 
+	const db = requireDb(locals);
 	let connection;
 	try {
-		connection = await findAuthorizedConnection(requireDb(locals), token);
+		connection = locals.user
+			? await ensureScreenTimeConnection(db, locals.user.id, requestTimeZone(request))
+			: await findAuthorizedConnection(db, token);
 	} catch {
-		console.error('Failed to authenticate screen-time webhook.');
-		return response({ error: 'Screen-time webhook unavailable.' }, 503);
+		console.error('Failed to authenticate screen-time ingestion.');
+		return response({ error: 'Screen-time ingestion unavailable.' }, 503);
 	}
-	if (!connection) return response({ error: 'Invalid webhook token.' }, 401);
+	if (!connection) return response({ error: 'Authentication required.' }, 401);
 
 	let payload: ScreenTimePayload;
 	try {
@@ -41,7 +46,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	try {
-		const accepted = await recordScreenTimePayload(requireDb(locals), connection, payload);
+		const accepted = await recordScreenTimePayload(db, connection, payload);
 		return response({ accepted });
 	} catch {
 		console.error('Failed to store screen-time usage.');
@@ -54,6 +59,10 @@ async function findAuthorizedConnection(db: ReturnType<typeof requireDb>, token:
 		(await findScreenTimeConnectionByToken(db, token)) ??
 		(await findScreenTimeConnectionByCompanionToken(db, token))
 	);
+}
+
+function requestTimeZone(request: Request) {
+	return request.headers.get('X-Time-Zone')?.trim() ?? 'UTC';
 }
 
 function bodyIsTooLarge(request: Request) {

@@ -1,6 +1,6 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { betterAuth } from 'better-auth';
-import { admin } from 'better-auth/plugins';
+import { admin, bearer } from 'better-auth/plugins';
 import { createDb } from './db';
 import { schema } from './db/schema';
 import { sendEmail } from './email';
@@ -13,6 +13,7 @@ export type RuntimeEnv = {
 	BETTER_AUTH_TRUSTED_ORIGINS?: string;
 	EMAIL_FROM?: string;
 	RESEND_API_KEY?: string;
+	MOBILE_APP_ORIGINS?: string;
 };
 
 export function createAuth(env: RuntimeEnv, origin = 'http://localhost:3000') {
@@ -33,7 +34,10 @@ export function createAuth(env: RuntimeEnv, origin = 'http://localhost:3000') {
 			sendResetPassword: ({ user, url }) => sendPasswordReset(env, user.email, url)
 		},
 		user: { additionalFields: adminFields },
-		plugins: [admin({ defaultRole: 'user', adminRoles: ['admin'] })]
+		plugins: [
+			bearer({ requireSignature: true }),
+			admin({ defaultRole: 'user', adminRoles: ['admin'] })
+		]
 	});
 }
 
@@ -64,7 +68,19 @@ function resolveAppUrl(env: RuntimeEnv, origin: string) {
 }
 
 function buildTrustedOrigins(env: RuntimeEnv, appUrl: string, origin: string) {
-	return [...new Set([toOrigin(appUrl), toOrigin(origin), ...readOrigins(env)].filter(Boolean))];
+	return [
+		...new Set(
+			[
+				toOrigin(appUrl),
+				toOrigin(origin),
+				'https://localhost',
+				'http://localhost',
+				'http://localhost:5173',
+				'http://10.0.2.2:5173',
+				...readOrigins(env)
+			].filter(Boolean)
+		)
+	];
 }
 
 function readOrigins(env: RuntimeEnv) {

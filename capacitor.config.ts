@@ -7,10 +7,12 @@ const config: CapacitorConfig = {
 	appName: 'Self Improvement',
 	webDir: 'dist-mobile',
 	loggingBehavior: 'none',
+	server: { androidScheme: 'https' },
 	...(serverUrl
 		? {
 				server: {
 					url: serverUrl,
+					androidScheme: serverUrl.startsWith('https://') ? 'https' : 'http',
 					cleartext: serverUrl.startsWith('http://')
 				}
 			}

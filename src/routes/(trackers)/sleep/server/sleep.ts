@@ -28,6 +28,29 @@ export async function createSleepConnection(
 	return token;
 }
 
+export async function ensureSleepConnection(
+	db: Database,
+	userId: string,
+	requestedTimeZone: string
+) {
+	const timeZone = isValidTimeZone(requestedTimeZone) ? requestedTimeZone : 'UTC';
+	const existing = await getSleepConnection(db, userId);
+	if (existing) {
+		if (existing.companionTimeZone !== timeZone) {
+			await db
+				.update(sleepConnection)
+				.set({ companionTimeZone: timeZone, updatedAt: new Date() })
+				.where(eq(sleepConnection.userId, userId));
+		}
+		return { userId, timeZone };
+	}
+	const tokenHash = await hashSleepToken(createSleepToken());
+	await db
+		.insert(sleepConnection)
+		.values({ userId, tokenHash, timeZone, companionTimeZone: timeZone });
+	return { userId, timeZone };
+}
+
 export async function findSleepConnectionByToken(db: Database, token: string) {
 	const tokenHash = await hashSleepToken(token);
 	const [connection] = await db

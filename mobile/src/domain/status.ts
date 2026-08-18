@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { TRACKER_IDS, type CompanionStatus, type SyncReport, type TrackerId } from './model';
+import { TRACKER_IDS, type MobileSyncStatus, type SyncReport, type TrackerId } from './model';
 
 const failureSchema = z.object({
-	category: z.enum(['pairing', 'permission', 'validation', 'auth', 'network', 'server']),
+	category: z.enum(['session', 'permission', 'validation', 'auth', 'network', 'server']),
 	message: z.string().min(1).max(240),
 	retryable: z.boolean()
 });
@@ -15,7 +15,7 @@ const trackerStatusSchema = z.object({
 	failure: failureSchema.optional()
 });
 
-const companionStatusSchema = z.object({
+const mobileSyncStatusSchema = z.object({
 	version: z.literal(1),
 	trackers: z.object({
 		steps: trackerStatusSchema,
@@ -24,7 +24,7 @@ const companionStatusSchema = z.object({
 	})
 });
 
-export function createEmptyStatus(): CompanionStatus {
+export function createEmptyStatus(): MobileSyncStatus {
 	return {
 		version: 1,
 		trackers: {
@@ -36,14 +36,14 @@ export function createEmptyStatus(): CompanionStatus {
 }
 
 export function parseStoredStatus(input: unknown) {
-	return companionStatusSchema.parse(input) as CompanionStatus;
+	return mobileSyncStatusSchema.parse(input) as MobileSyncStatus;
 }
 
-export function failedTrackerIds(status: CompanionStatus) {
+export function failedTrackerIds(status: MobileSyncStatus) {
 	return TRACKER_IDS.filter((tracker) => status.trackers[tracker].outcome === 'failed');
 }
 
-export function staleTrackerIds(status: CompanionStatus, now: Date, staleAfterMs: number) {
+export function staleTrackerIds(status: MobileSyncStatus, now: Date, staleAfterMs: number) {
 	return TRACKER_IDS.filter((tracker) => trackerIsStale(status, tracker, now, staleAfterMs));
 }
 
@@ -59,7 +59,7 @@ function emptyTracker() {
 }
 
 function trackerIsStale(
-	status: CompanionStatus,
+	status: MobileSyncStatus,
 	tracker: TrackerId,
 	now: Date,
 	staleAfterMs: number

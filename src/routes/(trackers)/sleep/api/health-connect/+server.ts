@@ -2,6 +2,7 @@ import { isHttpError, json } from '@sveltejs/kit';
 import { ZodError } from 'zod';
 import { requireDb } from '$lib/server/guards';
 import {
+	ensureSleepConnection,
 	findSleepConnectionByCompanionToken,
 	findSleepConnectionByToken,
 	recordHealthConnectSleepPayload
@@ -12,16 +13,20 @@ import type { RequestHandler } from './$types';
 const MAX_BODY_BYTES = 128 * 1024;
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const token = request.headers.get(SLEEP_TOKEN_HEADER)?.trim();
-	if (!token) return response({ error: `Missing ${SLEEP_TOKEN_HEADER} header.` }, 401);
-	if (!isSleepToken(token)) return response({ error: 'Invalid webhook token.' }, 401);
+	const token = request.headers.get(SLEEP_TOKEN_HEADER)?.trim() ?? '';
+	if (!locals.user && (!token || !isSleepToken(token))) {
+		return response({ error: 'Authentication required.' }, 401);
+	}
 	if (bodyIsTooLarge(request)) return response({ error: 'Payload too large.' }, 413);
 
 	try {
-		const connection = await findAuthorizedConnection(requireDb(locals), token);
-		if (!connection) return response({ error: 'Invalid webhook token.' }, 401);
+		const db = requireDb(locals);
+		const connection = locals.user
+			? await ensureSleepConnection(db, locals.user.id, requestTimeZone(request))
+			: await findAuthorizedConnection(db, token);
+		if (!connection) return response({ error: 'Authentication required.' }, 401);
 		const payload = parseHealthConnectSleepPayload(await readJsonBody(request));
-		const accepted = await recordHealthConnectSleepPayload(requireDb(locals), connection, payload);
+		const accepted = await recordHealthConnectSleepPayload(db, connection, payload);
 		return response({ accepted });
 	} catch (cause) {
 		if (cause instanceof PayloadTooLargeError) {
@@ -44,6 +49,10 @@ async function findAuthorizedConnection(db: ReturnType<typeof requireDb>, token:
 		(await findSleepConnectionByToken(db, token)) ??
 		(await findSleepConnectionByCompanionToken(db, token))
 	);
+}
+
+function requestTimeZone(request: Request) {
+	return request.headers.get('X-Time-Zone')?.trim() ?? 'UTC';
 }
 
 function isSleepToken(token: string) {

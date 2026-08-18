@@ -1,16 +1,10 @@
 import { SyncFailure, validationFailure } from './errors';
-import type { PairingCredentials, TrackerId } from './model';
+import type { AppCredentials, TrackerId } from './model';
 
 const ENDPOINTS: Record<TrackerId, string> = {
 	steps: 'steps/api/health-connect',
 	sleep: 'sleep/api/health-connect',
 	screenTime: 'screen-time/api/usage'
-};
-
-const TOKEN_HEADERS: Record<TrackerId, string> = {
-	steps: 'X-Steps-Token',
-	sleep: 'X-Sleep-Token',
-	screenTime: 'X-Screen-Time-Token'
 };
 
 const BODY_LIMITS: Record<TrackerId, number> = {
@@ -24,19 +18,20 @@ export type FetchAdapter = (input: RequestInfo | URL, init?: RequestInit) => Pro
 export class TrackerUploader {
 	constructor(private readonly request: FetchAdapter = fetch) {}
 
-	async upload(tracker: TrackerId, pairing: PairingCredentials, payload: unknown) {
+	async upload(tracker: TrackerId, credentials: AppCredentials, payload: unknown) {
 		const body = payloadBody(tracker, payload);
-		const response = await this.send(tracker, pairing, body);
+		const response = await this.send(tracker, credentials, body);
 		if (!response.ok) throw responseFailure(response.status);
 	}
 
-	private async send(tracker: TrackerId, pairing: PairingCredentials, body: string) {
+	private async send(tracker: TrackerId, credentials: AppCredentials, body: string) {
 		try {
-			return await this.request(endpointUrl(pairing.apiBaseUrl, tracker), {
+			return await this.request(endpointUrl(credentials.apiBaseUrl, tracker), {
 				method: 'POST',
 				headers: {
+					Authorization: `Bearer ${credentials.token}`,
 					'Content-Type': 'application/json',
-					[TOKEN_HEADERS[tracker]]: pairing.tokens[tracker]
+					'X-Time-Zone': credentials.timeZone
 				},
 				body
 			});
@@ -64,7 +59,7 @@ function endpointUrl(apiBaseUrl: string, tracker: TrackerId) {
 	try {
 		return new URL(ENDPOINTS[tracker], baseUrl).toString();
 	} catch {
-		throw new SyncFailure('pairing');
+		throw new SyncFailure('session');
 	}
 }
 

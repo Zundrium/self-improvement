@@ -1,10 +1,10 @@
 import type { FailureCategory, SyncFailureDetails } from './model';
 
 const DEFAULT_MESSAGES: Record<FailureCategory, string> = {
-	pairing: 'Reconnect the companion and try again.',
+	session: 'Sign in again and try again.',
 	permission: 'Android permission is required before this tracker can sync.',
 	validation: 'The device data could not be prepared safely.',
-	auth: 'The connection was rejected. Reconnect to rotate the credentials.',
+	auth: 'Your session expired. Sign in again.',
 	network: 'No connection to the server. Sync will retry when the app resumes.',
 	server: 'The server could not accept this tracker right now.'
 };

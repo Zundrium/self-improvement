@@ -29,6 +29,29 @@ export async function createStepConnection(
 	return token;
 }
 
+export async function ensureStepConnection(
+	db: Database,
+	userId: string,
+	requestedTimeZone: string
+) {
+	const timeZone = isValidTimeZone(requestedTimeZone) ? requestedTimeZone : 'UTC';
+	const existing = await getStepConnection(db, userId);
+	if (existing) {
+		if (existing.companionTimeZone !== timeZone) {
+			await db
+				.update(stepConnection)
+				.set({ companionTimeZone: timeZone, updatedAt: new Date() })
+				.where(eq(stepConnection.userId, userId));
+		}
+		return { userId, timeZone };
+	}
+	const tokenHash = await hashStepToken(createStepToken());
+	await db
+		.insert(stepConnection)
+		.values({ userId, tokenHash, timeZone, companionTimeZone: timeZone });
+	return { userId, timeZone };
+}
+
 export async function findConnectionByToken(db: Database, token: string) {
 	const tokenHash = await hashStepToken(token);
 	const [connection] = await db

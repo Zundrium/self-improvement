@@ -24,6 +24,29 @@ export async function createScreenTimeConnection(
 	return token;
 }
 
+export async function ensureScreenTimeConnection(
+	db: Database,
+	userId: string,
+	requestedTimeZone: string
+) {
+	const timeZone = isValidTimeZone(requestedTimeZone) ? requestedTimeZone : 'UTC';
+	const existing = await getScreenTimeConnection(db, userId);
+	if (existing) {
+		if (existing.companionTimeZone !== timeZone) {
+			await db
+				.update(screenTimeConnection)
+				.set({ companionTimeZone: timeZone, updatedAt: new Date() })
+				.where(eq(screenTimeConnection.userId, userId));
+		}
+		return { userId, timeZone };
+	}
+	const tokenHash = await hashScreenTimeToken(createScreenTimeToken());
+	await db
+		.insert(screenTimeConnection)
+		.values({ userId, tokenHash, timeZone, companionTimeZone: timeZone });
+	return { userId, timeZone };
+}
+
 export async function findScreenTimeConnectionByToken(db: Database, token: string) {
 	const tokenHash = await hashScreenTimeToken(token);
 	const [connection] = await db

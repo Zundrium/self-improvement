@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { requireDb } from '$lib/server/guards';
 import { parseHealthConnectPayload, STEP_TOKEN_HEADER } from '../../steps';
 import {
+	ensureStepConnection,
 	findConnectionByCompanionToken,
 	findConnectionByToken,
 	recordHealthConnectPayload
@@ -11,18 +12,18 @@ import type { RequestHandler } from './$types';
 const MAX_BODY_BYTES = 128 * 1024;
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const token = request.headers.get(STEP_TOKEN_HEADER)?.trim();
-	if (!token) return response({ error: `Missing ${STEP_TOKEN_HEADER} header.` }, 401);
 	if (bodyIsTooLarge(request)) return response({ error: 'Payload too large.' }, 413);
 
 	const db = requireDb(locals);
 	let connection;
 	try {
-		connection = await findAuthorizedConnection(db, token);
+		connection = locals.user
+			? await ensureStepConnection(db, locals.user.id, requestTimeZone(request))
+			: await findAuthorizedConnection(db, request.headers.get(STEP_TOKEN_HEADER)?.trim() ?? '');
 	} catch {
-		return response({ error: 'Steps webhook unavailable.' }, 503);
+		return response({ error: 'Steps ingestion unavailable.' }, 503);
 	}
-	if (!connection) return response({ error: 'Invalid webhook token.' }, 401);
+	if (!connection) return response({ error: 'Authentication required.' }, 401);
 
 	let payload;
 	try {
@@ -43,9 +44,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 };
 
 async function findAuthorizedConnection(db: ReturnType<typeof requireDb>, token: string) {
+	if (!token) return null;
 	return (
 		(await findConnectionByToken(db, token)) ?? (await findConnectionByCompanionToken(db, token))
 	);
+}
+
+function requestTimeZone(request: Request) {
+	return request.headers.get('X-Time-Zone')?.trim() ?? 'UTC';
 }
 
 function payloadFailure(cause: unknown) {

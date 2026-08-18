@@ -1,14 +1,16 @@
-import type { AndroidCompanionPairingPayload } from '$lib/android-companion/pairing';
-
 export const TRACKER_IDS = ['steps', 'sleep', 'screenTime'] as const;
 
 export type TrackerId = (typeof TRACKER_IDS)[number];
 export type FailureCategory =
-	'pairing' | 'permission' | 'validation' | 'auth' | 'network' | 'server';
+	'session' | 'permission' | 'validation' | 'auth' | 'network' | 'server';
 export type PermissionState = 'unknown' | 'granted' | 'denied' | 'unavailable';
 export type SyncOutcome = 'idle' | 'success' | 'failed';
 
-export type PairingCredentials = AndroidCompanionPairingPayload;
+export type AppCredentials = {
+	apiBaseUrl: string;
+	timeZone: string;
+	token: string;
+};
 
 export type SyncFailureDetails = {
 	category: FailureCategory;
@@ -24,7 +26,7 @@ export type TrackerStatus = {
 	failure?: SyncFailureDetails;
 };
 
-export type CompanionStatus = {
+export type MobileSyncStatus = {
 	version: 1;
 	trackers: Record<TrackerId, TrackerStatus>;
 };

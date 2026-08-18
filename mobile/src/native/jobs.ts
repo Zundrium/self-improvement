@@ -1,5 +1,5 @@
 import { rollingLocalDayRanges } from '../domain/day-ranges';
-import type { PairingCredentials, TrackerId } from '../domain/model';
+import type { AppCredentials, TrackerId } from '../domain/model';
 import { buildScreenTimePayload } from '../domain/screen-time';
 import { buildSleepPayload } from '../domain/sleep';
 import { buildStepsPayload, rollingStepDayRanges } from '../domain/steps';
@@ -18,40 +18,40 @@ export function createNativeTrackerJobs(
 	return {
 		steps: trackerJob(
 			() => health.checkPermission('steps'),
-			(pairing, now) => collectSteps(health, pairing, now),
-			(payload, pairing) => uploader.upload('steps', pairing, payload)
+			(credentials, now) => collectSteps(health, credentials, now),
+			(payload, credentials) => uploader.upload('steps', credentials, payload)
 		),
 		sleep: trackerJob(
 			() => health.checkPermission('sleep'),
-			(pairing, now) => collectSleep(health, pairing, now),
-			(payload, pairing) => uploader.upload('sleep', pairing, payload)
+			(credentials, now) => collectSleep(health, credentials, now),
+			(payload, credentials) => uploader.upload('sleep', credentials, payload)
 		),
 		screenTime: trackerJob(
 			() => usage.checkPermission(),
-			(pairing, now) => collectScreenTime(usage, pairing, now),
-			(payload, pairing) => uploader.upload('screenTime', pairing, payload)
+			(credentials, now) => collectScreenTime(usage, credentials, now),
+			(payload, credentials) => uploader.upload('screenTime', credentials, payload)
 		)
 	};
 }
 
-async function collectSteps(health: AndroidHealthAdapter, pairing: PairingCredentials, now: Date) {
-	const days = rollingStepDayRanges(now, pairing.timeZone);
+async function collectSteps(health: AndroidHealthAdapter, credentials: AppCredentials, now: Date) {
+	const days = rollingStepDayRanges(now, credentials.timeZone);
 	const [samples, version] = await Promise.all([health.aggregateSteps(days), getAppVersion()]);
 	return buildStepsPayload(samples, now, version);
 }
 
-async function collectSleep(health: AndroidHealthAdapter, pairing: PairingCredentials, now: Date) {
-	const days = rollingLocalDayRanges(now, pairing.timeZone);
+async function collectSleep(health: AndroidHealthAdapter, credentials: AppCredentials, now: Date) {
+	const days = rollingLocalDayRanges(now, credentials.timeZone);
 	const [samples, version] = await Promise.all([health.readSleep(days), getAppVersion()]);
 	return buildSleepPayload(samples, days, now, version);
 }
 
 async function collectScreenTime(
 	usage: AndroidUsageAdapter,
-	pairing: PairingCredentials,
+	credentials: AppCredentials,
 	now: Date
 ) {
-	const days = rollingLocalDayRanges(now, pairing.timeZone);
+	const days = rollingLocalDayRanges(now, credentials.timeZone);
 	const [stats, version] = await Promise.all([usage.readDailyUsage(days, now), getAppVersion()]);
 	return buildScreenTimePayload(stats, now, version);
 }
@@ -59,11 +59,11 @@ async function collectScreenTime(
 function trackerJob(
 	checkPermission: TrackerJob['checkPermission'],
 	collect: TrackerJob['collect'],
-	upload: (payload: unknown, pairing: PairingCredentials) => Promise<void>
+	upload: (payload: unknown, credentials: AppCredentials) => Promise<void>
 ): TrackerJob {
 	return {
 		checkPermission,
 		collect,
-		upload: (pairing, payload) => upload(payload, pairing)
+		upload: (credentials, payload) => upload(payload, credentials)
 	};
 }
