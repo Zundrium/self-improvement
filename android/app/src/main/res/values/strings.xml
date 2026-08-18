@@ -5,4 +5,10 @@
     <string name="package_name">com.zuncreative.selfimprovement</string>
     <string name="custom_url_scheme">com.zuncreative.selfimprovement</string>
     <string name="health_connect_privacy_policy_url">file:///android_asset/public/privacypolicy.html</string>
+    <string name="update_available_title">New version available</string>
+    <string name="update_available_message">Version %1$s is available. Install now?</string>
+    <string name="update_install">Install</string>
+    <string name="update_not_now">Not now</string>
+    <string name="update_download_title">Downloading Self Improvement %1$s</string>
+    <string name="update_download_failed">The update could not be downloaded.</string>
 </resources>

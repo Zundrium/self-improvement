@@ -90,7 +90,7 @@ CAPACITOR_SERVER_URL=http://localhost:5173 npm run mobile:android
 
 A LAN address is an alternative for physical devices. The pairing QR must contain an API base URL reachable by the device: `http://10.0.2.2:3000` for an emulator, `http://localhost:3000` with `adb reverse`, or the development machine's LAN address. `CAPACITOR_SERVER_URL` is omitted from production bundles; cleartext WebView traffic is enabled only when that development URL uses HTTP.
 
-Health Connect's rationale activity is wired to the bundled `mobile/public/privacypolicy.html` asset. The Android manifest requests only Internet, Usage Access, and read-only steps and sleep access; it does not request `QUERY_ALL_PACKAGES`, health history, background health access, or health write access.
+Health Connect's rationale activity is wired to the bundled `mobile/public/privacypolicy.html` asset. The Android manifest requests Internet, package installation, Usage Access, and read-only steps and sleep access; it does not request `QUERY_ALL_PACKAGES`, health history, background health access, or health write access.
 
 ### Physical-device validation
 
@@ -101,7 +101,8 @@ Before release, verify that:
 - Health Connect missing, denied, partially granted, granted, and revoked states are recoverable;
 - only steps and sleep read permissions appear, including sleep sessions crossing midnight;
 - Usage Access denied and granted states work and per-app totals match Android Digital Wellbeing;
-- offline sync retries on foreground return, and repeated seven-day uploads remain idempotent.
+- offline sync retries on foreground return, and repeated seven-day uploads remain idempotent;
+- a newer GitHub release prompts once, downloads through Android's download manager, and opens the package installer.
 
 Background sync is deliberately deferred. The selected Health Connect and UsageStatsManager Capacitor plugins run through an active JavaScript bridge and do not provide a supported headless/WorkManager-safe execution path. The first release therefore uses manual sync plus a foreground/on-resume stale-sync fallback and requests no background permission. A focused native WorkManager implementation can be added only after headless data access and secure credential use are validated.
 
@@ -116,6 +117,14 @@ Configure these GitHub Actions secrets:
 - `ANDROID_KEY_ALIAS`
 - `ANDROID_KEY_PASSWORD`
 - `ANDROID_CERT_SHA256`
+
+Release APKs check `/api/android-update` on launch. Because the repository is private, this endpoint uses a fine-grained GitHub token to find the latest release and exchange its APK asset for a short-lived signed download URL. Create a token scoped only to this repository with read-only **Contents** access, then store it as a Cloudflare secret:
+
+```sh
+npx wrangler secret put GITHUB_RELEASE_TOKEN
+```
+
+Set the same value as `GITHUB_RELEASE_TOKEN` in `.dev.vars` when testing the endpoint locally. The token remains server-side and must never be bundled into the APK or committed.
 
 `ANDROID_KEYSTORE_BASE64` is the base64 encoding of the durable release keystore. `ANDROID_CERT_SHA256` is the expected SHA-256 fingerprint of its signing certificate; tagged builds fail if `apksigner` reports another identity. Obtain it from the trusted release keystore and copy the value after `SHA256:`:
 
@@ -159,6 +168,7 @@ Local runtime values belong in `.dev.vars`. Production values are configured thr
 - `BETTER_AUTH_TRUSTED_ORIGINS`
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
+- `GITHUB_RELEASE_TOKEN`
 - `OPENROUTER_API_KEY`
 
 Drizzle Studio or direct remote Drizzle access uses the values documented in `.env.example`.

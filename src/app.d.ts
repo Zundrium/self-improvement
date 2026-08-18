@@ -5,6 +5,7 @@ import type { Database } from '$lib/server/db';
 
 type PlatformEnvironment = RuntimeEnv & {
 	ASSETS: Fetcher;
+	GITHUB_RELEASE_TOKEN?: string;
 	OPENROUTER_API_KEY?: string;
 };
 

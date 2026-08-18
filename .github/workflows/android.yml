@@ -71,6 +71,7 @@ jobs:
           required_permissions = allowed_health_reads | {
               'android.permission.INTERNET',
               'android.permission.PACKAGE_USAGE_STATS',
+              'android.permission.REQUEST_INSTALL_PACKAGES',
           }
           root = ElementTree.parse(sys.argv[1]).getroot()
           permissions = {
