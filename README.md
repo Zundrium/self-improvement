@@ -107,7 +107,7 @@ Background sync is deliberately deferred. The selected Health Connect and UsageS
 
 ## Android releases
 
-`.github/workflows/android.yml` validates the web and mobile builds, runs Android unit tests and lint with Java 21, and checks the merged release manifest before packaging. The manifest check permits only steps and sleep Health Connect read permissions and rejects health write access and `QUERY_ALL_PACKAGES`. A manual `workflow_dispatch` uploads a debug APK. A `v*` tag builds and uploads a signed release APK and AAB named with the tag and Git revision.
+`.github/workflows/android.yml` validates the web and mobile builds, runs Android unit tests and lint with Java 21, and checks the merged release manifest before packaging. The manifest check permits only steps and sleep Health Connect read permissions and rejects health write access and `QUERY_ALL_PACKAGES`. A manual `workflow_dispatch` uploads a debug APK. A `v*` tag builds a signed release APK and AAB, stores them as a workflow artifact, and publishes both files on a GitHub Release for the tag.
 
 Configure these GitHub Actions secrets:
 

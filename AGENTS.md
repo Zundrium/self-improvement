@@ -11,4 +11,5 @@
 - Put each tracker's database schema in `src/lib/server/db/trackers/<tracker>.ts` and export it from `src/lib/server/db/schema.ts`.
 - Register every tracker in `src/lib/trackers/registry.ts`; profile visibility and navigation are driven by this registry.
 - Keep only genuinely shared logic and components under `src/lib`.
+- After each successful push of a new project commit, follow `.pi/skills/release-after-push/SKILL.md` to publish the next pre-1.0 signed Android release.
 - Run `npm run check`, `npm run lint`, `npm run test`, and `npm run build` before handoff.

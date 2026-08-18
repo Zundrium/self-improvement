@@ -150,3 +150,37 @@ jobs:
             android/app/build/outputs/apk/release/app-release.apk
             android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: android
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download signed release APK and AAB
+        uses: actions/download-artifact@v4
+        with:
+          name: self-improvement-${{ github.ref_name }}-${{ github.sha }}
+          path: release
+      - name: Name release files
+        run: |
+          mv release/apk/release/app-release.apk "release/self-improvement-${GITHUB_REF_NAME}.apk"
+          mv release/bundle/release/app-release.aab "release/self-improvement-${GITHUB_REF_NAME}.aab"
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          apk="release/self-improvement-${GITHUB_REF_NAME}.apk"
+          aab="release/self-improvement-${GITHUB_REF_NAME}.aab"
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$apk" "$aab" --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" "$apk" "$aab" \
+              --verify-tag \
+              --generate-notes \
+              --title "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY"
+          fi
