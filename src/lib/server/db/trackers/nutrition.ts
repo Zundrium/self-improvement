@@ -89,7 +89,6 @@ export const nutritionMeal = sqliteTable(
 			.notNull()
 			.references(() => nutritionEntry.id, { onDelete: 'cascade' }),
 		name: text('name').notNull().default('Meal'),
-		notes: text('notes').notNull().default(''),
 		imageDataUrl: text('image_data_url').notNull().default(''),
 		sortOrder: integer('sort_order').notNull().default(0),
 		createdAt: integer('created_at', { mode: 'timestamp_ms' })

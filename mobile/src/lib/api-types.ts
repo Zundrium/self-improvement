@@ -114,7 +114,6 @@ export type NutritionIngredient = {
 export type NutritionMeal = {
 	id: string;
 	name: string;
-	notes: string;
 	imageDataUrl: string;
 	ingredients: NutritionIngredient[];
 	totals: NutritionTotals;

@@ -22,6 +22,7 @@
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
+	import { Card } from '$lib/components/ui/card';
 	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { Spinner } from '$lib/components/ui/spinner';
@@ -42,7 +43,6 @@
 	export type EditableMeal = {
 		id: string;
 		name: string;
-		notes: string;
 		imageDataUrl: string;
 		ingredients: EditableIngredient[];
 	};
@@ -150,7 +150,6 @@
 			{
 				id: crypto.randomUUID(),
 				name: 'Meal',
-				notes: '',
 				imageDataUrl: '',
 				ingredients: [newIngredient()]
 			}
@@ -221,26 +220,23 @@
 <input type="hidden" name="notes" value={notes} />
 
 <div class="space-y-5">
-	<div class="flex items-center gap-3">
-		<Button href="/nutrition/log/{date}" variant="ghost" size="icon" aria-label="Back to daily log"
-			><ChevronLeft class="size-5" /></Button
-		>
-		<div>
-			<h1 class="text-2xl font-medium tracking-[-0.04em]">Review meal</h1>
-			<p class="text-sm text-(--text)/48">
-				Correct any ingredients, portions, or nutrition values that look off.
-			</p>
-		</div>
-	</div>
-
 	{#if error}<Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>{/if}
 
 	<div class="space-y-6 py-2">
-		<div class="text-center">
-			<strong class="block text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl"
-				>{Math.round(totals.calories)}</strong
+		<div class="grid grid-cols-[2.5rem_1fr_2.5rem] items-center">
+			<Button
+				href="/nutrition/log/{date}"
+				variant="ghost"
+				size="icon"
+				aria-label="Back to daily log"><ChevronLeft class="size-5" /></Button
 			>
-			<span class="mt-1 block text-sm text-(--text)/48">kcal</span>
+			<div class="text-center">
+				<strong class="block text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl"
+					>{Math.round(totals.calories)}</strong
+				>
+				<span class="mt-1 block text-sm text-(--text)/48">kcal</span>
+			</div>
+			<span aria-hidden="true"></span>
 		</div>
 		<div class="mx-auto grid w-full max-w-lg grid-cols-3 items-center">
 			<MetricStat
@@ -327,15 +323,8 @@
 						</div>
 					</div>
 				</div>
-				<Input
-					bind:value={meal.notes}
-					aria-label="Meal notes"
-					placeholder="Meal notes (optional)"
-					maxlength={500}
-				/>
-
 				{#if meal.imageDataUrl}
-					<div class="space-y-4 py-2">
+					<Card class="gap-4">
 						<div class="flex gap-3">
 							<span
 								class="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--text) text-(--bg)"
@@ -358,7 +347,7 @@
 											class="max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm leading-5 {message.role ===
 											'user'
 												? 'bg-(--text) text-(--bg)'
-												: 'bg-(--bg-elevated) text-(--text)/72'}"
+												: 'bg-(--text)/5 text-(--text)/72'}"
 										>
 											{message.text}
 										</p>
@@ -393,7 +382,7 @@
 									correction <Send class="ml-2 size-4" />{/if}
 							</Button>
 						</div>
-					</div>
+					</Card>
 				{/if}
 
 				<div class="flex items-center justify-between pt-2">

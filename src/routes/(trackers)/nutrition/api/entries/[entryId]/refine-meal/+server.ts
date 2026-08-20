@@ -45,7 +45,7 @@ export const POST: RequestHandler = async ({ request, params, locals, platform }
 		const raw = await refineMealEstimate(
 			image?.base64 ?? '',
 			image?.mimeType ?? '',
-			storedMeal.notes,
+			'',
 			currentEstimate,
 			correction,
 			apiKey

@@ -23,7 +23,6 @@ export type IngredientInput = {
 
 export type MealInput = {
 	name?: string;
-	notes?: string;
 	imageDataUrl?: string;
 	ingredients?: IngredientInput[];
 };
@@ -223,7 +222,6 @@ async function insertMeal(db: Database, entryId: string, sortOrder: number, inpu
 		id: mealId,
 		entryId,
 		name: cleanText(input.name, 'Meal', 120),
-		notes: cleanText(input.notes, '', 500),
 		imageDataUrl: safeImageDataUrl(input.imageDataUrl),
 		sortOrder
 	});

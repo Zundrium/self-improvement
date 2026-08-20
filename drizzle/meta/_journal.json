@@ -85,6 +85,13 @@
       "when": 1787233264170,
       "tag": "0011_sparkling_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1787237437475,
+      "tag": "0012_useful_black_crow",
+      "breakpoints": true
     }
   ]
 }

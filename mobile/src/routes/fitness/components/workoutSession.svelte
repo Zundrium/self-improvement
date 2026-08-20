@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { onDestroy, onMount, untrack } from 'svelte';
-	import { Clock3, Gauge, Minus, Pause, Play, Plus, SkipForward, X } from '@lucide/svelte';
+	import { Clock3, Gauge, Pause, Play, SkipForward, X } from '@lucide/svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
 	import { apiRequest } from '$lib/api';
 
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { Dialog, DialogContent } from '$lib/components/ui/dialog';
 	import { Progress } from '$lib/components/ui/progress';
 	import { Slider } from '$lib/components/ui/slider';
 	import type { RepWorkoutActivity, Workout, WorkoutActivity } from '../fitness';
@@ -14,6 +13,7 @@
 	interface Props {
 		workout: Workout;
 		audioManager: AudioManager;
+		setCount: number;
 		oncomplete: () => void | Promise<void>;
 		oncancel: () => void;
 		onspeedchange: (exerciseId: number, speedPercent: number) => void;
@@ -22,13 +22,12 @@
 		release(): Promise<void>;
 		addEventListener(type: 'release', listener: () => void): void;
 	}
-	type Phase = 'setup' | 'intro' | 'exercise' | 'rest' | 'complete';
+	type Phase = 'intro' | 'exercise' | 'rest' | 'complete';
 
-	let { workout, audioManager, oncomplete, oncancel, onspeedchange }: Props = $props();
-	let phase = $state<Phase>('setup');
+	let { workout, audioManager, setCount, oncomplete, oncancel, onspeedchange }: Props = $props();
+	let phase = $state<Phase>('intro');
 	let currentSet = $state(1);
 	let currentActivityIndex = $state(0);
-	let configuredSets = $state(untrack(() => workout.sets));
 	let timeLeftMs = $state(0);
 	let totalTimeMs = $state(1);
 	let isPaused = $state(false);
@@ -87,8 +86,8 @@
 		void audioManager
 			.preload([...Object.values(SOUNDS), ...voiceUrls])
 			.catch((error) => console.error('Workout audio preload failed:', error));
-		lastTick = performance.now();
 		timer = setInterval(tick, 100);
+		startIntro();
 		void requestWakeLock();
 		document.addEventListener('visibilitychange', handleVisibilityChange);
 	});
@@ -176,7 +175,7 @@
 			return;
 		}
 		if (phase === 'exercise') {
-			if (currentActivityIndex === workout.activities.length - 1 && currentSet === configuredSets) {
+			if (currentActivityIndex === workout.activities.length - 1 && currentSet === setCount) {
 				void finishWorkout();
 			} else {
 				startRest();
@@ -289,10 +288,6 @@
 		advance();
 	}
 
-	function adjustSets(delta: number) {
-		configuredSets = Math.max(1, Math.min(10, configuredSets + delta));
-	}
-
 	function close() {
 		audioManager.stopAll();
 		oncancel();
@@ -317,7 +312,7 @@
 
 {#snippet speedControl()}
 	{#if speedTarget.type === 'reps' && targetSpeed !== null}
-		<div class="flex items-center gap-3 py-2">
+		<div class="flex items-center gap-3 py-1">
 			<span class="shrink-0 text-sm font-medium">Speed</span>
 			<span class="shrink-0 text-sm text-(--text)/56 tabular-nums">{targetSpeed}%</span>
 			<div class="min-w-0 flex-1">
@@ -336,137 +331,82 @@
 	{/if}
 {/snippet}
 
-<Dialog open onOpenChange={(open) => !open && close()}>
-	<DialogContent
-		class="h-[calc(100vh-2rem)] max-h-none max-w-6xl overflow-y-auto p-4 sm:p-6"
-		showCloseButton={false}
-	>
-		<div class="flex items-center justify-between gap-4">
-			{#if phase === 'setup'}
-				<div class="min-w-0">
-					<p class="text-xs font-medium text-(--text)/40">DAY {workout.day}</p>
-					<h1 class="truncate font-medium">
-						{workout.title.replace(/^Total Body - Day \d+:\s*/, '')}
-					</h1>
-				</div>
-			{:else}
-				<div class="flex min-w-0 items-center gap-3">
-					<Badge class={phase === 'exercise' ? 'bg-(--text) text-(--bg)' : ''}
-						>{phase === 'intro' ? 'Get ready' : phase === 'rest' ? 'Rest' : 'Exercise'}</Badge
-					>
-					<span class="text-sm text-(--text)/40 tabular-nums"
-						>{currentActivityIndex + 1} / {workout.activities.length}</span
-					>
-				</div>
-			{/if}
-			<Button variant="ghost" size="icon" onclick={close} aria-label="Close workout"
-				><X class="size-5" /></Button
+<section class="flex min-h-0 flex-1 flex-col gap-3" aria-label="Active workout">
+	<div class="flex shrink-0 items-center justify-between gap-3">
+		<div class="flex min-w-0 items-center gap-2 overflow-hidden">
+			<Badge class={phase === 'exercise' ? 'bg-(--text) text-(--bg)' : ''}
+				>{phase === 'intro' ? 'Get ready' : phase === 'rest' ? 'Rest' : 'Exercise'}</Badge
 			>
+			<span class="text-xs whitespace-nowrap text-(--text)/48 tabular-nums">
+				Exercise {currentActivityIndex + 1} / {workout.activities.length}
+			</span>
+			<span class="text-xs whitespace-nowrap text-(--text)/48 tabular-nums">
+				Set {currentSet} / {setCount}
+			</span>
 		</div>
-
-		<div
-			class="grid min-h-0 flex-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]"
+		<Button variant="ghost" size="icon" onclick={close} aria-label="Close workout"
+			><X class="size-5" /></Button
 		>
-			<div
-				class="relative min-h-[240px] overflow-hidden p-4 sm:min-h-[320px] sm:p-6 lg:min-h-[520px] lg:p-8"
-			>
-				<img
-					src={displayActivity.imageUrl}
-					alt={displayActivity.name}
-					class="size-full object-contain"
-				/>
-				{#if phase !== 'setup'}<Badge class="absolute top-4 left-4 bg-black/8 text-black"
-						>Set {currentSet} / {configuredSets}</Badge
-					>{/if}
+	</div>
+
+	<div class="shrink-0">
+		{#if phase === 'rest' || phase === 'intro'}
+			<p class="text-xs font-medium text-(--text)/40">UP NEXT</p>
+			<h2 class="mt-0.5 text-2xl font-medium tracking-[-0.04em]">
+				{phase === 'intro' ? currentActivity.name : nextActivity.name}
+			</h2>
+		{:else}
+			<h2 class="text-2xl font-medium tracking-[-0.04em]">{currentActivity.name}</h2>
+			{#if currentActivity.type === 'reps'}
+				<p class="mt-1 flex items-center gap-2 text-sm text-(--text)/56">
+					<Gauge class="size-4" />
+					{speedFor(currentActivity)}% cadence · {currentActivity.amount} reps
+				</p>
+			{:else}
+				<p class="mt-1 flex items-center gap-2 text-sm text-(--text)/56">
+					<Clock3 class="size-4" />
+					{currentActivity.amount} second interval
+				</p>
+			{/if}
+		{/if}
+	</div>
+
+	<div class="min-h-0 flex-1 overflow-hidden">
+		<img
+			src={displayActivity.imageUrl}
+			alt={displayActivity.name}
+			class="size-full object-contain"
+		/>
+	</div>
+
+	<div class="shrink-0 space-y-3">
+		{@render speedControl()}
+
+		<div class="text-center">
+			<div class="text-5xl font-medium tracking-[-0.08em] tabular-nums sm:text-7xl">
+				{formatTime(timeLeftMs)}
 			</div>
-
-			<div class="flex flex-col justify-center gap-4 p-4 sm:gap-5 sm:p-6 lg:p-8">
-				{#if phase === 'setup'}
-					<Badge>Ready when you are</Badge>
-					<div>
-						<h2 class="text-3xl font-medium tracking-[-0.04em]">Set your workout</h2>
-						<p class="mt-3 leading-7 text-(--text)/56">
-							Your saved cadence is applied to rep-based exercises. Timed intervals always keep
-							their prescribed duration.
-						</p>
-					</div>
-					<div class="flex items-center justify-center gap-6 py-4">
-						<Button
-							variant="ghost"
-							size="icon"
-							onclick={() => adjustSets(-1)}
-							aria-label="Decrease sets"><Minus class="size-4" /></Button
-						>
-						<div class="text-center">
-							<div class="text-5xl font-medium tabular-nums">{configuredSets}</div>
-							<div class="mt-1 text-xs text-(--text)/40">SETS</div>
-						</div>
-						<Button
-							variant="ghost"
-							size="icon"
-							onclick={() => adjustSets(1)}
-							aria-label="Increase sets"><Plus class="size-4" /></Button
-						>
-					</div>
-					{@render speedControl()}
-					<Button size="lg" class="w-full" onclick={startIntro}
-						><Play class="mr-2 size-4 fill-current" /> Begin workout</Button
-					>
-				{:else}
-					{#if phase === 'rest' || phase === 'intro'}
-						<div>
-							<p class="text-xs font-medium text-(--text)/40">UP NEXT</p>
-							<h2 class="mt-1 text-3xl font-medium tracking-[-0.04em]">
-								{phase === 'intro' ? currentActivity.name : nextActivity.name}
-							</h2>
-						</div>
-					{:else}
-						<div>
-							<h2 class="text-3xl font-medium tracking-[-0.04em]">{currentActivity.name}</h2>
-							{#if currentActivity.type === 'reps'}
-								<p class="mt-2 flex items-center gap-2 text-sm text-(--text)/56">
-									<Gauge class="size-4" />
-									{speedFor(currentActivity)}% cadence · {currentActivity.amount} reps
-								</p>
-							{:else}
-								<p class="mt-2 flex items-center gap-2 text-sm text-(--text)/56">
-									<Clock3 class="size-4" />
-									{currentActivity.amount} second interval
-								</p>
-							{/if}
-						</div>
-					{/if}
-
-					{@render speedControl()}
-
-					<div class="text-center">
-						<div class="text-7xl font-medium tracking-[-0.08em] tabular-nums sm:text-8xl">
-							{formatTime(timeLeftMs)}
-						</div>
-						{#if phase === 'exercise' && currentActivity.type === 'reps'}<p
-								class="mt-2 text-sm text-(--text)/56"
-							>
-								{remainingReps} reps remaining
-							</p>{/if}
-						{#if isPaused}<p class="mt-2 text-sm font-medium">Paused</p>{/if}
-					</div>
-					<Progress value={progress} />
-					<div class="grid grid-cols-[1fr_auto] gap-3">
-						<Button size="lg" onclick={togglePause}
-							>{#if isPaused}<Play class="mr-2 size-4 fill-current" /> Resume{:else}<Pause
-									class="mr-2 size-4 fill-current"
-								/> Pause{/if}</Button
-						>
-						<Button
-							variant="ghost"
-							size="icon"
-							class="size-11"
-							onclick={skip}
-							aria-label="Skip current step"><SkipForward class="size-4" /></Button
-						>
-					</div>
-				{/if}
-			</div>
+			{#if phase === 'exercise' && currentActivity.type === 'reps'}<p
+					class="mt-1 text-sm text-(--text)/56"
+				>
+					{remainingReps} reps remaining
+				</p>{/if}
+			{#if isPaused}<p class="mt-1 text-sm font-medium">Paused</p>{/if}
 		</div>
-	</DialogContent>
-</Dialog>
+		<Progress value={progress} />
+		<div class="grid grid-cols-[1fr_auto] gap-3">
+			<Button size="lg" onclick={togglePause}
+				>{#if isPaused}<Play class="mr-2 size-4 fill-current" /> Resume{:else}<Pause
+						class="mr-2 size-4 fill-current"
+					/> Pause{/if}</Button
+			>
+			<Button
+				variant="ghost"
+				size="icon"
+				class="size-11"
+				onclick={skip}
+				aria-label="Skip current step"><SkipForward class="size-4" /></Button
+			>
+		</div>
+	</div>
+</section>

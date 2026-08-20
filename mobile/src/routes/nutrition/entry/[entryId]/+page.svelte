@@ -34,7 +34,6 @@
 		initial.meals.map((meal) => ({
 			id: meal.id,
 			name: meal.name,
-			notes: meal.notes,
 			imageDataUrl: meal.imageDataUrl,
 			ingredients: meal.ingredients.map((item) => ({
 				id: item.id,
@@ -85,7 +84,7 @@
 	}
 </script>
 
-<svelte:head><title>Review meal · Self Improvement</title></svelte:head>
+<svelte:head><title>Edit meal · Self Improvement</title></svelte:head>
 
 <TrackerPage class="max-w-4xl">
 	<form id="save-entry" onsubmit={saveEntry}>

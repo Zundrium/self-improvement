@@ -106,7 +106,10 @@
 	<meta name="description" content={data.program.description} />
 </svelte:head>
 
-<TrackerPage class="max-w-3xl" contentClass="space-y-8">
+<TrackerPage
+	class="flex min-h-0 max-w-3xl flex-col"
+	contentClass="flex min-h-0 flex-1 flex-col gap-8 space-y-0"
+>
 	{#if errorMessage}
 		<Alert variant="destructive">
 			<AlertDescription>{errorMessage}</AlertDescription>

@@ -54,7 +54,6 @@ function parseMeals(value: unknown): MealInput[] {
 		const ingredients = Array.isArray(item.ingredients) ? item.ingredients : [];
 		return {
 			name: readString(item.name),
-			notes: readString(item.notes),
 			imageDataUrl: readString(item.imageDataUrl),
 			ingredients: ingredients.slice(0, 40).map(toIngredient)
 		};
