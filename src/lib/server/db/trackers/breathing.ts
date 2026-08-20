@@ -9,7 +9,7 @@ export const breathingExercise = sqliteTable(
 			.notNull()
 			.references(() => authSchema.user.id, { onDelete: 'cascade' }),
 		localDate: text('local_date').notNull(),
-		technique: text('technique', { enum: ['4-7-8'] })
+		technique: text('technique', { enum: ['4-7-8', '4-8'] })
 			.notNull()
 			.default('4-7-8'),
 		durationSeconds: integer('duration_seconds').notNull(),
@@ -20,7 +20,7 @@ export const breathingExercise = sqliteTable(
 	},
 	(table) => [
 		primaryKey({ columns: [table.userId, table.localDate] }),
-		check('breathingExercise_duration_check', sql`${table.durationSeconds} = 114`),
+		check('breathingExercise_duration_check', sql`${table.durationSeconds} IN (72, 114)`),
 		check(
 			'breathingExercise_date_check',
 			sql`${table.localDate} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`

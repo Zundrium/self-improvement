@@ -41,7 +41,7 @@
 
 <svelte:head><title>Reset password · Self Improvement</title></svelte:head>
 
-<main class="flex min-h-svh items-center justify-center p-4">
+<main class="app-gutter flex min-h-svh items-center justify-center py-4">
 	<Card class="w-full max-w-sm">
 		<CardHeader>
 			<CardTitle class="text-xl">Reset password</CardTitle>

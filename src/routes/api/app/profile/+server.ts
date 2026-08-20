@@ -1,6 +1,8 @@
 import { error, json } from '@sveltejs/kit';
 import { getTrackerPreferences, saveTrackerPreferences } from '$lib/server/trackers/preferences';
 import { isTrackerId, type TrackerId } from '$lib/trackers/registry';
+import { getSleepConnection } from '../../../(trackers)/sleep/server/sleep';
+import { DEFAULT_SLEEP_GOAL_MINUTES } from '../../../(trackers)/sleep/sleep';
 import {
 	estimatedTdee,
 	getProfile,
@@ -11,14 +13,16 @@ import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals }) => {
 	if (!locals.user || !locals.db) error(401, 'Authentication required.');
-	const [nutritionProfile, trackerPreferences] = await Promise.all([
+	const [nutritionProfile, trackerPreferences, sleepConnection] = await Promise.all([
 		getProfile(locals.db, locals.user.id),
-		getTrackerPreferences(locals.db, locals.user.id)
+		getTrackerPreferences(locals.db, locals.user.id),
+		getSleepConnection(locals.db, locals.user.id)
 	]);
 	return json({
 		profileUser: locals.user,
 		nutritionProfile,
 		trackerPreferences,
+		sleepGoalMinutes: sleepConnection?.dailyGoalMinutes ?? DEFAULT_SLEEP_GOAL_MINUTES,
 		estimatedTdee: estimatedTdee(nutritionProfile)
 	});
 };

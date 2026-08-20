@@ -64,7 +64,7 @@
 
 <svelte:head><title>Users · Self Improvement</title></svelte:head>
 
-<main class="mx-auto max-w-6xl space-y-4 p-4 md:p-8">
+<main class="app-gutter mx-auto max-w-6xl space-y-4 py-4 md:py-8">
 	<header class="flex flex-wrap items-center justify-between gap-3">
 		<div>
 			<h1 class="text-3xl font-semibold tracking-tight">Users</h1>

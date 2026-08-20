@@ -36,7 +36,7 @@
 
 <svelte:head><title>Sign in · Self Improvement</title></svelte:head>
 
-<main class="flex min-h-svh items-center justify-center p-4 sm:p-6">
+<main class="app-gutter flex min-h-svh items-center justify-center py-4 sm:py-6">
 	<Card class="w-full max-w-sm">
 		<CardHeader>
 			<CardTitle class="text-xl">Welcome back</CardTitle>

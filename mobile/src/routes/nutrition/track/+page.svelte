@@ -384,7 +384,7 @@
 			{#snippet trailing()}<Badge>1 of 2</Badge>{/snippet}
 		</WorkflowHeader>
 
-		<section class="mx-auto flex max-w-5xl flex-col items-center px-4 py-6 sm:px-6 sm:py-10">
+		<section class="app-gutter mx-auto flex max-w-5xl flex-col items-center py-6 sm:py-10">
 			<div class="mb-5 max-w-lg text-center">
 				<h1 class="text-3xl font-medium tracking-[-0.055em] sm:text-4xl">Take one clear photo</h1>
 				<p class="mt-2 text-sm leading-6 text-(--text)/56">
@@ -493,7 +493,7 @@
 		</WorkflowHeader>
 
 		<section
-			class="mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center px-4 py-6 text-center"
+			class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center py-6 text-center"
 			aria-live="polite"
 		>
 			<div class="w-full space-y-6">
@@ -550,7 +550,7 @@
 			{/snippet}
 		</WorkflowHeader>
 
-		<section class="mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center px-4 py-6">
+		<section class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center py-6">
 			<div class="w-full space-y-4">
 				<img src={selectedImage} alt="Your meal" class="h-56 w-full rounded-3xl object-cover" />
 				<Alert variant="destructive"><AlertDescription>{requestError}</AlertDescription></Alert>
@@ -578,7 +578,7 @@
 		</WorkflowHeader>
 
 		<section
-			class="mx-auto flex min-h-[calc(100svh-4rem)] max-w-xl items-center px-3 py-3 sm:px-6 sm:py-6"
+			class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-xl items-center py-3 sm:py-6"
 		>
 			<div class="w-full space-y-4">
 				<img

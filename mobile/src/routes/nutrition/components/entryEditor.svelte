@@ -24,7 +24,6 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
-	import { Separator } from '$lib/components/ui/separator';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import { Textarea } from '$lib/components/ui/textarea';
 
@@ -249,18 +248,21 @@
 				value={`${totals.proteinG.toFixed(1)}g`}
 				label="protein"
 				iconClass="text-chart-2"
+				boxed={false}
 			/>
 			<MetricStat
 				icon={Wheat}
 				value={`${totals.carbsG.toFixed(1)}g`}
 				label="carbs"
 				iconClass="text-chart-1"
+				boxed={false}
 			/>
 			<MetricStat
 				icon={Droplet}
 				value={`${totals.fatG.toFixed(1)}g`}
 				label="fat"
 				iconClass="text-chart-3"
+				boxed={false}
 			/>
 		</div>
 		<div class="mx-auto grid w-full max-w-xl grid-cols-2 gap-3">
@@ -394,8 +396,7 @@
 					</div>
 				{/if}
 
-				<Separator />
-				<div class="flex items-center justify-between">
+				<div class="flex items-center justify-between pt-2">
 					<h3 class="text-sm font-medium">Ingredients</h3>
 					<Button type="button" variant="ghost" size="sm" onclick={() => addIngredient(meal.id)}
 						><Plus class="mr-1 size-3.5" /> Ingredient</Button
@@ -405,7 +406,7 @@
 				{#if meal.ingredients.length > 0}
 					<Accordion type="multiple">
 						{#each meal.ingredients as item, itemIndex (item.id)}
-							<AccordionItem value={item.id}>
+							<AccordionItem value={item.id} class="border-0">
 								<AccordionTrigger>
 									<span class="min-w-0 flex-1"
 										><span class="block truncate">{item.name || `Ingredient ${itemIndex + 1}`}</span
@@ -493,7 +494,7 @@
 					<p class="py-6 text-center text-sm text-(--text)/40">No ingredients yet.</p>
 				{/if}
 			</div>
-			{#if mealIndex < meals.length - 1}<Separator />{/if}
+			{#if mealIndex < meals.length - 1}<div class="h-4"></div>{/if}
 		{/each}
 	</section>
 </div>

@@ -40,13 +40,17 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 
 export const PATCH: RequestHandler = async ({ locals, request }) => {
 	if (!locals.user || !locals.db) error(401, 'Authentication required.');
-	const body = (await request.json().catch(() => null)) as { dailyGoalMinutes?: unknown } | null;
+	const body = (await request.json().catch(() => null)) as {
+		dailyGoalMinutes?: unknown;
+		timeZone?: unknown;
+	} | null;
 	let dailyGoalMinutes: number;
 	try {
 		dailyGoalMinutes = parseSleepGoal(String(body?.dailyGoalMinutes ?? ''));
 	} catch (cause) {
 		error(400, cause instanceof Error ? cause.message : 'Invalid daily sleep goal.');
 	}
+	await ensureSleepConnection(locals.db, locals.user.id, String(body?.timeZone ?? 'UTC'));
 	await updateSleepGoal(locals.db, locals.user.id, dailyGoalMinutes);
 	return json({ dailyGoalMinutes });
 };

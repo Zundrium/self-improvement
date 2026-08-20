@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Check } from '@lucide/svelte';
 	import { onDestroy, untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
 	import { AudioManager } from '$lib/audio/audio-manager';
 	import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
+	import TrackerPage from '$lib/components/trackerPage.svelte';
 	import AmbientSounds from './components/ambientSounds.svelte';
 	import MeditationTimer from './components/meditationTimer.svelte';
-	import { formatDuration, type MeditationCompletion, type SaveState } from './meditation';
+	import { type MeditationCompletion, type SaveState } from './meditation';
 	import { ambientSounds } from './sounds';
 	import type { PageProps } from './$types';
 
@@ -18,12 +18,6 @@
 	let pendingCompletion = $state<MeditationCompletion>();
 	let saveState = $state<SaveState>('idle');
 
-	const meditationHistory = $derived(
-		mergeMeditationHistory(data.meditationHistory, savedCompletions)
-	);
-	const selectedDay = $derived(
-		meditationHistory.find((summary) => summary.localDate === data.date)
-	);
 	const isToday = $derived(data.date === data.today);
 
 	$effect(() => {
@@ -74,40 +68,6 @@
 		dateSelectorState.mark(completion.localDate, true);
 	}
 
-	function mergeMeditationHistory(
-		history: Array<{ localDate: string; totalSeconds: number; sessionCount: number }>,
-		completions: MeditationCompletion[]
-	) {
-		const merged = history.map((day) => ({ ...day }));
-		for (const completion of completions) addCompletion(merged, completion);
-		return merged.sort((first, second) => second.localDate.localeCompare(first.localDate));
-	}
-
-	function addCompletion(
-		history: Array<{ localDate: string; totalSeconds: number; sessionCount: number }>,
-		completion: MeditationCompletion
-	) {
-		const summary = history.find((day) => day.localDate === completion.localDate);
-		if (summary) updateSummary(summary, completion.durationSeconds);
-		else history.push(newSummary(completion));
-	}
-
-	function updateSummary(
-		summary: { totalSeconds: number; sessionCount: number },
-		durationSeconds: number
-	) {
-		summary.totalSeconds += durationSeconds;
-		summary.sessionCount += 1;
-	}
-
-	function newSummary(completion: MeditationCompletion) {
-		return {
-			localDate: completion.localDate,
-			totalSeconds: completion.durationSeconds,
-			sessionCount: 1
-		};
-	}
-
 	function retryCompletion() {
 		if (pendingCompletion) void saveCompletion(pendingCompletion);
 	}
@@ -121,47 +81,14 @@
 	/>
 </svelte:head>
 
-<main class="flex-1 px-4 pt-6 pb-6 sm:px-6 sm:pt-10 sm:pb-10">
-	<section class="mx-auto w-full max-w-md space-y-6">
-		{#if isToday}
-			<MeditationTimer
-				{audioManager}
-				{saveState}
-				oncomplete={(completion) => void saveCompletion(completion)}
-				onretry={retryCompletion}
-			/>
-			<AmbientSounds {audioManager} />
-		{/if}
-
-		<section
-			class="flex items-center gap-4 border-t border-(--text)/8 py-5"
-			aria-label="Daily meditation"
-		>
-			<span
-				class="flex size-10 shrink-0 items-center justify-center rounded-3xl {selectedDay
-					? 'bg-(--text) text-(--bg)'
-					: 'border border-(--text)/20'}"
-			>
-				{#if selectedDay}<Check class="size-5" />{/if}
-			</span>
-			<div class="min-w-0 flex-1">
-				<p class="text-sm font-medium">
-					{selectedDay ? 'Meditated' : isToday ? 'No meditation yet' : 'No meditation recorded'}
-				</p>
-				<p class="mt-0.5 text-xs text-(--text)/48">
-					{#if selectedDay}
-						{selectedDay.sessionCount}
-						{selectedDay.sessionCount === 1 ? 'session' : 'sessions'}
-					{:else if isToday}
-						Complete a session to mark today.
-					{:else}
-						No completed sessions on this day.
-					{/if}
-				</p>
-			</div>
-			{#if selectedDay}
-				<p class="text-sm font-medium tabular-nums">{formatDuration(selectedDay.totalSeconds)}</p>
-			{/if}
-		</section>
-	</section>
-</main>
+<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-1">
+	{#if isToday}
+		<MeditationTimer
+			{audioManager}
+			{saveState}
+			oncomplete={(completion) => void saveCompletion(completion)}
+			onretry={retryCompletion}
+		/>
+		<AmbientSounds {audioManager} />
+	{/if}
+</TrackerPage>

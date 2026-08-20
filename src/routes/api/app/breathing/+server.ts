@@ -5,14 +5,15 @@ import { breathingExercise } from '$lib/server/db/schema';
 import { requireDb, requireUser } from '$lib/server/guards';
 import { todayIso } from '$lib/utils';
 import {
-	BREATHING_DURATION_SECONDS,
+	breathingDurationSeconds,
 	isValidLocalDate
 } from '../../../(trackers)/breathing/breathing';
 import type { RequestHandler } from './$types';
 
 const completionSchema = z.object({
 	localDate: z.string().refine(isValidLocalDate),
-	startedAt: z.number().int().positive()
+	startedAt: z.number().int().positive(),
+	includeHold: z.boolean()
 });
 
 export const GET: RequestHandler = async (event) => {
@@ -48,21 +49,24 @@ export const POST: RequestHandler = async (event) => {
 	if (completion.data.localDate !== todayIso()) error(400, 'Only today can be completed.');
 	const age = Date.now() - completion.data.startedAt;
 	if (age < -60_000 || age > 60 * 60 * 1000) error(400, 'Invalid start time.');
+	const { includeHold, ...exercise } = completion.data;
+	const technique = includeHold ? '4-7-8' : '4-8';
+	const durationSeconds = breathingDurationSeconds(includeHold);
 	await requireDb(event.locals)
 		.insert(breathingExercise)
 		.values({
-			...completion.data,
+			...exercise,
 			userId: user.id,
-			technique: '4-7-8',
-			durationSeconds: BREATHING_DURATION_SECONDS,
-			startedAt: new Date(completion.data.startedAt)
+			technique,
+			durationSeconds,
+			startedAt: new Date(exercise.startedAt)
 		})
 		.onConflictDoNothing({ target: [breathingExercise.userId, breathingExercise.localDate] });
 	return json(
 		{
 			...completion.data,
-			technique: '4-7-8' as const,
-			durationSeconds: BREATHING_DURATION_SECONDS
+			technique,
+			durationSeconds
 		},
 		{ status: 201 }
 	);

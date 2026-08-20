@@ -8,7 +8,7 @@
 	<title>{page.status} · Self Improvement</title>
 </svelte:head>
 
-<main class="flex min-h-svh items-center justify-center p-4 text-center">
+<main class="app-gutter flex min-h-svh items-center justify-center py-4 text-center">
 	<Card class="w-full max-w-sm">
 		<CardHeader>
 			<p class="text-sm font-medium text-(--text)/56">{page.status}</p>

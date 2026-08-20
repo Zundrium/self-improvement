@@ -149,6 +149,7 @@ export type ProfileData = {
 	profileUser: AppUser;
 	nutritionProfile: NutritionProfile | null;
 	trackerPreferences: Array<Tracker & { enabled: boolean }>;
+	sleepGoalMinutes: number;
 	estimatedTdee: number | null;
 };
 export type AdminData = {

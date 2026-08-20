@@ -6,12 +6,19 @@
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
+	import { audioVolumeState } from '$lib/audio/audio-volume.svelte';
 	import AppNavbar from '$lib/components/appNavbar.svelte';
 	import BottomActionBarOutlet from '$lib/components/bottomActionBarOutlet.svelte';
 	import { provideBottomActionBarState } from '$lib/components/bottomActionBarState.svelte';
 	import DateSelector from '$lib/components/dateSelector.svelte';
 	import { provideDateSelectorState } from '$lib/components/dateSelectorState.svelte';
+	import TrackerTitle from '$lib/components/trackerTitle.svelte';
 	import { Toaster } from '$lib/components/ui/sonner';
+	import {
+		getTrackerColorsForPathname,
+		getTrackerForPathname,
+		type TrackerColors
+	} from '$lib/trackers/registry';
 	import { SyncCoordinator } from '$domain/sync-coordinator';
 	import { getLaunchUrl, listenForAppUrls, listenForResume } from '$native/app';
 	import { createNativeTrackerJobs } from '$native/jobs';
@@ -32,6 +39,7 @@
 		date: string;
 		today: string;
 		markedDates: string[];
+		colors: TrackerColors[];
 		hrefForDate: (date: string) => string;
 	};
 
@@ -42,6 +50,7 @@
 	const dateNavigation = $derived(
 		createDateNavigation(page.url.pathname, page.data as DatedPageData)
 	);
+	const selectedTracker = $derived(getTrackerForPathname(page.url.pathname));
 	const appShellActive = $derived(Boolean(data.user) && page.url.pathname !== '/nutrition/track');
 
 	$effect(() => {
@@ -50,6 +59,7 @@
 	});
 
 	onMount(() => {
+		audioVolumeState.hydrate();
 		if (!isNativeAndroid()) return;
 		const coordinator = new SyncCoordinator(mobileRepository, createNativeTrackerJobs());
 		if (data.user) void coordinator.syncStale();
@@ -76,8 +86,14 @@
 			date: datedData.date,
 			today: datedData.today,
 			markedDates: markedDates(pageData),
+			colors: dateSelectorColors(pathname),
 			hrefForDate: (selectedDate) => dateHref(pathname, selectedDate, datedData.today as string)
 		};
+	}
+
+	function dateSelectorColors(pathname: string) {
+		const colors = getTrackerColorsForPathname(pathname);
+		return colors ? [colors] : [];
 	}
 
 	function markedDates(pageData: DatedPageData) {
@@ -102,13 +118,17 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 <div class={appShellActive ? 'safe-area-padding-y flex h-svh flex-col overflow-hidden' : undefined}>
 	{#if dateNavigation}
-		<div class="shrink-0 px-4 py-4 sm:px-6 sm:py-6">
+		<div class="app-gutter shrink-0 py-(--app-header-padding-block)">
 			<DateSelector
 				date={dateNavigation.date}
 				today={dateNavigation.today}
 				markedDates={[...dateSelectorState.markedDates]}
+				colors={dateNavigation.colors}
 				hrefForDate={dateNavigation.hrefForDate}
 			/>
+			{#if selectedTracker}
+				<TrackerTitle tracker={selectedTracker} class="mt-2" />
+			{/if}
 		</div>
 	{/if}
 	<div class={appShellActive ? 'flex min-h-0 flex-1 flex-col overflow-y-auto' : undefined}>

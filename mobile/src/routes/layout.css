@@ -39,6 +39,14 @@
 		--bg: #f8f8f8;
 		--bg-elevated: #ffffff;
 		--text: #0d0d0d;
+		--app-gutter: 2rem;
+		--app-compact-max-width: 24rem;
+		--app-header-padding-block: 1rem;
+		--app-bar-padding-block: 0.75rem;
+		--app-overlay-padding: 1rem;
+		--app-inset-inline-start: max(var(--app-gutter), env(safe-area-inset-left, 0px));
+		--app-inset-inline-end: max(var(--app-gutter), env(safe-area-inset-right, 0px));
+		--app-overlay-width: calc(100vw - var(--app-inset-inline-start) - var(--app-inset-inline-end));
 
 		/* Chart series palette — the one sanctioned color surface in the
 		 * otherwise-monochrome system. Override to theme charts. */
@@ -47,6 +55,13 @@
 		--chart-3: #f59e0b;
 		--chart-4: #8b5cf6;
 		--chart-5: #f43f5e;
+	}
+
+	@media (min-width: 40rem) {
+		:root {
+			--app-gutter: 3rem;
+			--app-header-padding-block: 1.5rem;
+		}
 	}
 
 	:root.dark {
@@ -116,6 +131,11 @@
 	.safe-area-padding-y {
 		padding-top: env(safe-area-inset-top);
 		padding-bottom: env(safe-area-inset-bottom);
+	}
+
+	.app-gutter {
+		padding-inline-start: var(--app-inset-inline-start);
+		padding-inline-end: var(--app-inset-inline-end);
 	}
 
 	.link {

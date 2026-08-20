@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Dumbbell } from '@lucide/svelte';
 	import { onMount, untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiRequest } from '$lib/api';
 	import { AudioManager } from '$lib/audio/audio-manager';
 	import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
+	import TrackerPage from '$lib/components/trackerPage.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
+	import FitnessRestDay from './components/fitnessRestDay.svelte';
 	import WorkoutDay from './components/workoutDay.svelte';
 	import type { Workout } from './fitness';
 	import type { PageProps } from './$types';
@@ -42,7 +42,6 @@
 
 	onMount(() => {
 		audioManager = new AudioManager();
-		audioManager.setVolume(1);
 		return () => audioManager?.destroy();
 	});
 
@@ -107,7 +106,7 @@
 	<meta name="description" content={data.program.description} />
 </svelte:head>
 
-<main class="mx-auto w-full max-w-3xl flex-1 space-y-8 px-4 pt-8 pb-8 sm:px-6 sm:pt-10 sm:pb-10">
+<TrackerPage class="max-w-3xl" contentClass="space-y-8">
 	{#if errorMessage}
 		<Alert variant="destructive">
 			<AlertDescription>{errorMessage}</AlertDescription>
@@ -124,11 +123,6 @@
 			onspeedchange={handleSpeedChange}
 		/>
 	{:else}
-		<Empty class="py-20">
-			<EmptyMedia><Dumbbell class="size-6" /></EmptyMedia>
-			<EmptyTitle>Rest day</EmptyTitle>
-			<EmptyDescription>The 30-day program has no workout scheduled for this date.</EmptyDescription
-			>
-		</Empty>
+		<FitnessRestDay />
 	{/if}
-</main>
+</TrackerPage>

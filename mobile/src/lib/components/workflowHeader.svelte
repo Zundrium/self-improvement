@@ -13,7 +13,7 @@
 
 <header class="border-b border-(--text)/8 bg-(--bg)">
 	<div
-		class="mx-auto grid min-h-16 max-w-5xl grid-cols-[minmax(2.5rem,auto)_minmax(0,1fr)_minmax(2.5rem,auto)] items-center gap-3 px-4 sm:px-6"
+		class="app-gutter mx-auto grid min-h-16 max-w-5xl grid-cols-[minmax(2.5rem,auto)_minmax(0,1fr)_minmax(2.5rem,auto)] items-center gap-3"
 	>
 		<div class="flex min-w-10 items-center justify-center">
 			{@render leading?.()}

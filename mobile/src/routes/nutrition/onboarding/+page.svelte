@@ -45,7 +45,7 @@
 
 <svelte:head><title>Set your calorie goal · Self Improvement</title></svelte:head>
 
-<main class="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-16">
+<main class="app-gutter mx-auto max-w-2xl py-10 sm:py-16">
 	<div class="mb-8 max-w-xl">
 		<span class="mb-5 flex size-12 items-center justify-center rounded-3xl bg-(--text) text-(--bg)"
 			><Sparkles class="size-6" /></span

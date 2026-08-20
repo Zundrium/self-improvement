@@ -11,19 +11,23 @@
 	import { Calendar } from '$lib/components/ui/calendar';
 	import { fullDateLabel } from '$lib/dateFormatting';
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
+	import type { TrackerColors } from '$lib/trackers/registry';
 
 	interface Props {
 		date: string;
 		today: string;
 		markedDates?: string[];
+		colors?: TrackerColors[];
 		hrefForDate: (date: string) => string;
 	}
 
-	let { date, today, markedDates = [], hrefForDate }: Props = $props();
+	let { date, today, markedDates = [], colors = [], hrefForDate }: Props = $props();
 	let calendarOpen = $state(false);
 	let calendarDate = $state<DateValue | undefined>(untrack(() => parseDate(date)));
 	const previousDate = $derived(parseDate(date).subtract({ days: 1 }).toString());
 	const nextDate = $derived(parseDate(date).add({ days: 1 }).toString());
+	const primaryColor = $derived(colors[0]?.primary ?? '#262626');
+	const secondaryColor = $derived(colors[0]?.secondary ?? '#0d0d0d');
 
 	$effect(() => {
 		if (calendarDate?.toString() !== date) calendarDate = parseDate(date);
@@ -36,20 +40,33 @@
 	}
 </script>
 
-<section class="flex items-center justify-center gap-1" aria-label="Select date">
+<section
+	class="mx-auto grid w-full max-w-(--app-compact-max-width) grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2"
+	aria-label="Select date"
+>
 	<Button
 		href={hrefForDate(previousDate) as Pathname}
-		variant="ghost"
+		variant="default"
 		size="icon"
 		aria-label="Previous day"><ChevronLeft class="size-4" /></Button
 	>
 	<Popover bind:open={calendarOpen}>
 		<PopoverTrigger>
 			{#snippet child({ props })}
-				<Button variant="ghost" class="min-w-56 gap-2" {...props}>
+				<Button
+					variant="ghost"
+					class="date-picker-field w-full min-w-0 gap-2 px-3 text-white shadow-sm shadow-black/15 hover:text-white sm:px-4"
+					style={`--date-picker-primary: ${primaryColor}; --date-picker-secondary: ${secondaryColor}`}
+					{...props}
+				>
 					<CalendarDays class="size-4" />
-					{fullDateLabel(date)}
-					{#if date === today}<Badge>Today</Badge>{/if}
+					<span class="min-w-0 truncate">{fullDateLabel(date)}</span>
+					{#if date === today}
+						<Badge
+							class="bg-white px-1.5 py-0.5 text-[10px] leading-3 text-black shadow-sm shadow-black/15"
+							>Today</Badge
+						>
+					{/if}
 				</Button>
 			{/snippet}
 		</PopoverTrigger>
@@ -66,8 +83,37 @@
 	<Button
 		href={nextDate <= today ? (hrefForDate(nextDate) as Pathname) : undefined}
 		disabled={nextDate > today}
-		variant="ghost"
+		variant="default"
 		size="icon"
 		aria-label="Next day"><ChevronRight class="size-4" /></Button
 	>
 </section>
+
+<style>
+	@property --date-picker-primary {
+		syntax: '<color>';
+		inherits: false;
+		initial-value: #262626;
+	}
+
+	@property --date-picker-secondary {
+		syntax: '<color>';
+		inherits: false;
+		initial-value: #0d0d0d;
+	}
+
+	:global(.date-picker-field) {
+		background: linear-gradient(135deg, var(--date-picker-primary), var(--date-picker-secondary));
+		color: #ffffff;
+		transition:
+			--date-picker-primary 250ms ease,
+			--date-picker-secondary 250ms ease,
+			filter 150ms ease,
+			transform 200ms var(--ease-spring);
+	}
+
+	:global(.date-picker-field:hover) {
+		color: #ffffff;
+		filter: brightness(1.08);
+	}
+</style>

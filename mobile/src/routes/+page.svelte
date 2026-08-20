@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { trackerIcons } from '$lib/trackers/icons';
-	import type { TrackerId } from '$lib/trackers/registry';
+	import { getTrackerColors, type TrackerId } from '$lib/trackers/registry';
 	import TrackerTile from '$lib/components/trackerTile.svelte';
 	import { DEFAULT_SCREEN_TIME_LIMIT_MINUTES, formatScreenTime } from './screen-time/screen-time';
 	import { formatSleepMinutes } from './sleep/sleep';
@@ -63,7 +63,8 @@
 		data.enabledTrackers.map((tracker) => ({
 			...tracker,
 			...trackerDetails[tracker.id],
-			icon: trackerIcons[tracker.id]
+			icon: trackerIcons[tracker.id],
+			colors: getTrackerColors(tracker.id)
 		}))
 	);
 
@@ -102,8 +103,8 @@
 	/>
 </svelte:head>
 
-<main class="flex flex-1 items-start justify-center px-4 pt-6 pb-4 sm:px-6 sm:pb-6">
-	<div class="w-full max-w-md">
+<main class="app-gutter flex flex-1 items-start justify-center pt-6 pb-4 sm:pb-6">
+	<div class="w-full max-w-(--app-compact-max-width)">
 		{#if dashboardTrackers.length}
 			<section class="grid grid-cols-3 gap-3" aria-label="Daily dashboard">
 				{#each dashboardTrackers as tracker (tracker.id)}
@@ -113,6 +114,7 @@
 						description={tracker.value}
 						state={tracker.state}
 						icon={tracker.icon}
+						colors={tracker.colors}
 					/>
 				{/each}
 			</section>

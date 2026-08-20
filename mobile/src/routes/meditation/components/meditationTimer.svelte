@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import Icon from '@iconify/svelte';
 	import { Check, LoaderCircle, Minus, Pause, Play, Plus, RotateCcw, Square } from '@lucide/svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
 	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { getTrackerColors } from '$lib/trackers/registry';
+	import MeditationIcon from '$lib/trackers/meditationIcon.svelte';
 	import {
 		DEFAULT_DURATION_SECONDS,
 		formatTimer,
@@ -25,6 +26,7 @@
 	};
 
 	let { audioManager, saveState, oncomplete, onretry }: Props = $props();
+	const colors = getTrackerColors('meditation');
 	let durationSeconds = $state(DEFAULT_DURATION_SECONDS);
 	let remainingSeconds = $state(DEFAULT_DURATION_SECONDS);
 	let status = $state<TimerStatus>('idle');
@@ -149,9 +151,9 @@
 	</div>
 {/snippet}
 
-<section class="pt-3" aria-label="Meditation timer">
-	<div class="flex flex-col items-center gap-6 pt-3">
-		<Icon icon="iconoir:yoga" class="size-24" aria-hidden="true" />
+<section aria-label="Meditation timer">
+	<div class="flex flex-col items-center gap-4 pt-2">
+		<MeditationIcon class="size-56 sm:size-64" color={colors.primary} />
 
 		<div class="flex w-full items-center justify-center gap-2 sm:gap-4">
 			<Button
@@ -183,7 +185,7 @@
 			{@render actions()}
 		</div>
 
-		<div class="min-h-6 text-center text-sm text-(--text)/56" aria-live="polite">
+		<div class="min-h-5 text-center text-sm text-(--text)/56" aria-live="polite">
 			{#if status === 'running'}
 				Meditation in progress
 			{:else if status === 'paused'}

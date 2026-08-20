@@ -1,12 +1,15 @@
 <script lang="ts">
-	import { Check, LoaderCircle, type LucideIcon } from '@lucide/svelte';
+	import { Check, LoaderCircle } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
+	import type { TrackerIconComponent } from '$lib/trackers/icons';
+	import type { TrackerColors } from '$lib/trackers/registry';
 
 	type TrackerState = 'complete' | 'attention' | 'incomplete';
 	type Props = {
 		href: string;
 		label: string;
-		icon: LucideIcon;
+		icon: TrackerIconComponent;
+		colors: TrackerColors;
 		description?: string;
 		variant?: 'compact' | 'summary';
 		state?: TrackerState;
@@ -19,6 +22,7 @@
 		href,
 		label,
 		icon: TrackerIcon,
+		colors,
 		description,
 		variant = 'summary',
 		state = 'incomplete',
@@ -51,8 +55,9 @@
 	<span class="relative shrink-0">
 		<span
 			class={compact
-				? `flex size-10 items-center justify-center rounded-2xl ${active ? 'bg-(--text) text-(--bg)' : 'bg-(--text)/6'}`
-				: 'flex size-14 items-center justify-center rounded-2xl bg-(--text)/6'}
+				? `flex size-10 items-center justify-center rounded-2xl text-white shadow-sm shadow-black/15 ${active ? 'ring-2 ring-(--text)/25 ring-offset-2 ring-offset-(--bg-elevated)' : ''}`
+				: 'flex size-14 items-center justify-center rounded-2xl text-white shadow-sm shadow-black/15'}
+			style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`}
 		>
 			{#if pending}
 				<LoaderCircle class={compact ? 'size-5 animate-spin' : 'size-8 animate-spin'} />

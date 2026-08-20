@@ -8,7 +8,11 @@
 		mobileOnly?: boolean;
 	};
 
-	let { children, contentClass = 'max-w-md', mobileOnly = true }: Props = $props();
+	let {
+		children,
+		contentClass = 'max-w-(--app-compact-max-width)',
+		mobileOnly = true
+	}: Props = $props();
 	const state = useBottomActionBarState();
 	const id = Symbol('bottom-action-bar');
 

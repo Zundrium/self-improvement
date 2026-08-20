@@ -1,3 +1,5 @@
+import { audioVolumeState } from './audio-volume.svelte';
+
 type LoopSound = {
 	audio: HTMLAudioElement;
 	active: boolean;
@@ -15,6 +17,7 @@ export class AudioManager {
 	private preloaded = new Map<string, HTMLAudioElement>();
 	private volume = 0.7;
 	private muted = false;
+	private unregisterVolume = audioVolumeState.register(this);
 
 	addLoop(id: string, url: string) {
 		const audio = this.createAudio(url, 'none');
@@ -65,6 +68,7 @@ export class AudioManager {
 	}
 
 	destroy() {
+		this.unregisterVolume();
 		this.stopAll();
 		for (const sound of this.loops.values()) this.destroyLoop(sound);
 		this.loops.clear();

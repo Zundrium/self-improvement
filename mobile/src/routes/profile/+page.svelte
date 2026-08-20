@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { Activity } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
 	import { authClient, signOut as endSession } from '$lib/auth-client';
 	import NativeSyncCard from '$lib/components/nativeSyncCard.svelte';
+	import SleepGoalEditor from '../sleep/components/sleepGoalEditor.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Avatar } from '$lib/components/ui/avatar';
 	import { Badge } from '$lib/components/ui/badge';
@@ -127,7 +127,9 @@
 
 <svelte:head><title>Profile · Self Improvement</title></svelte:head>
 
-<main class="mx-auto grid w-full max-w-4xl flex-1 gap-4 p-4 md:grid-cols-[280px_1fr] md:p-8">
+<main
+	class="app-gutter mx-auto grid w-full max-w-4xl flex-1 gap-4 py-4 md:grid-cols-[280px_1fr] md:py-8"
+>
 	<Card>
 		<CardContent class="items-center text-center">
 			<Avatar size="xl" src={data.profileUser.image ?? undefined} alt={data.profileUser.name} />
@@ -203,10 +205,31 @@
 		<NativeSyncCard />
 
 		<Card>
-			<CardHeader
-				><CardTitle class="flex items-center gap-2"><Activity class="size-5" /> Nutrition</CardTitle
-				></CardHeader
-			>
+			<CardHeader>
+				<CardTitle>Sleep</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-4">
+				<p class="text-sm leading-6 text-(--text)/64">
+					Set the daily goal used by the sleep tracker.
+				</p>
+				<SleepGoalEditor goal={data.sleepGoalMinutes} />
+			</CardContent>
+		</Card>
+
+		<Card>
+			<CardHeader>
+				<CardTitle>Fitness</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-4">
+				<p class="text-sm leading-6 text-(--text)/64">
+					Set the cadence used for exercises measured in repetitions.
+				</p>
+				<Button href="/fitness/exercises">Configure rep speeds</Button>
+			</CardContent>
+		</Card>
+
+		<Card>
+			<CardHeader><CardTitle>Nutrition</CardTitle></CardHeader>
 			<CardContent>
 				{#if data.nutritionProfile}
 					<form class="space-y-5" onsubmit={saveNutrition}>

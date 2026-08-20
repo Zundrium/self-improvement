@@ -1,15 +1,18 @@
+import type { Component } from 'svelte';
 import {
 	Apple,
 	Droplet,
 	Dumbbell,
-	Flower2,
 	Footprints,
 	Moon,
 	Smile,
 	Smartphone,
 	Wind
 } from '@lucide/svelte';
+import MeditationIcon from './meditationIcon.svelte';
 import type { TrackerId } from './registry';
+
+export type TrackerIconComponent = Component<{ class?: string }>;
 
 export const trackerIcons = {
 	steps: Footprints,
@@ -17,8 +20,8 @@ export const trackerIcons = {
 	'screen-time': Smartphone,
 	fitness: Dumbbell,
 	nutrition: Apple,
-	meditation: Flower2,
+	meditation: MeditationIcon,
 	breathing: Wind,
 	happiness: Smile,
 	period: Droplet
-} satisfies Record<TrackerId, typeof Footprints>;
+} satisfies Record<TrackerId, TrackerIconComponent>;

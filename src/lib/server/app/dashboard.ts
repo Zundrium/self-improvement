@@ -85,7 +85,7 @@ async function loadScreenTime(db: Database, userId: string, date: string) {
 
 async function loadFitness(db: Database, userId: string, date: string) {
 	const [workout] = await db
-		.select({ title: fitnessWorkout.title, completedDate: fitnessWorkoutProgress.completedDate })
+		.select({ day: fitnessWorkout.day, completedDate: fitnessWorkoutProgress.completedDate })
 		.from(fitnessWorkout)
 		.innerJoin(fitnessProgram, eq(fitnessProgram.id, fitnessWorkout.programId))
 		.leftJoin(
@@ -102,7 +102,7 @@ async function loadFitness(db: Database, userId: string, date: string) {
 		.limit(1);
 	return {
 		fitnessDone: Boolean(workout?.completedDate),
-		fitnessWorkoutTitle: workout?.title.replace(/^Total Body -\s*/, '') ?? 'Rest day'
+		fitnessWorkoutTitle: workout ? `Day ${workout.day}` : 'Rest day'
 	};
 }
 

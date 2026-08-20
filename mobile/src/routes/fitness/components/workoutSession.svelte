@@ -6,10 +6,8 @@
 
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { Card } from '$lib/components/ui/card';
 	import { Dialog, DialogContent } from '$lib/components/ui/dialog';
 	import { Progress } from '$lib/components/ui/progress';
-	import { Separator } from '$lib/components/ui/separator';
 	import { Slider } from '$lib/components/ui/slider';
 	import type { RepWorkoutActivity, Workout, WorkoutActivity } from '../fitness';
 
@@ -319,7 +317,7 @@
 
 {#snippet speedControl()}
 	{#if speedTarget.type === 'reps' && targetSpeed !== null}
-		<Card class="flex-row items-center gap-3 bg-(--text)/5 p-3">
+		<div class="flex items-center gap-3 py-2">
 			<span class="shrink-0 text-sm font-medium">Speed</span>
 			<span class="shrink-0 text-sm text-(--text)/56 tabular-nums">{targetSpeed}%</span>
 			<div class="min-w-0 flex-1">
@@ -334,7 +332,7 @@
 					aria-label={`${speedTarget.name} speed`}
 				/>
 			</div>
-		</Card>
+		</div>
 	{/if}
 {/snippet}
 
@@ -365,13 +363,12 @@
 				><X class="size-5" /></Button
 			>
 		</div>
-		<Separator />
 
 		<div
 			class="grid min-h-0 flex-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]"
 		>
-			<Card
-				class="relative min-h-[240px] overflow-hidden bg-white p-4 sm:min-h-[320px] sm:p-6 lg:min-h-[520px] lg:p-8"
+			<div
+				class="relative min-h-[240px] overflow-hidden p-4 sm:min-h-[320px] sm:p-6 lg:min-h-[520px] lg:p-8"
 			>
 				<img
 					src={displayActivity.imageUrl}
@@ -381,9 +378,9 @@
 				{#if phase !== 'setup'}<Badge class="absolute top-4 left-4 bg-black/8 text-black"
 						>Set {currentSet} / {configuredSets}</Badge
 					>{/if}
-			</Card>
+			</div>
 
-			<Card class="justify-center gap-4 p-4 sm:gap-5 sm:p-6 lg:p-8">
+			<div class="flex flex-col justify-center gap-4 p-4 sm:gap-5 sm:p-6 lg:p-8">
 				{#if phase === 'setup'}
 					<Badge>Ready when you are</Badge>
 					<div>
@@ -393,7 +390,7 @@
 							their prescribed duration.
 						</p>
 					</div>
-					<Card class="flex-row items-center justify-center gap-6 bg-(--text)/5">
+					<div class="flex items-center justify-center gap-6 py-4">
 						<Button
 							variant="ghost"
 							size="icon"
@@ -410,7 +407,7 @@
 							onclick={() => adjustSets(1)}
 							aria-label="Increase sets"><Plus class="size-4" /></Button
 						>
-					</Card>
+					</div>
 					{@render speedControl()}
 					<Button size="lg" class="w-full" onclick={startIntro}
 						><Play class="mr-2 size-4 fill-current" /> Begin workout</Button
@@ -469,7 +466,7 @@
 						>
 					</div>
 				{/if}
-			</Card>
+			</div>
 		</div>
 	</DialogContent>
 </Dialog>

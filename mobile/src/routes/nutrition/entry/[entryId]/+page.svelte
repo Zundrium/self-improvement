@@ -7,6 +7,7 @@
 	import { apiRequest } from '$lib/api';
 
 	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
+	import TrackerPage from '$lib/components/trackerPage.svelte';
 	import EntryEditor, { type EditableMeal } from '../../components/entryEditor.svelte';
 	import {
 		AlertDialog,
@@ -86,7 +87,7 @@
 
 <svelte:head><title>Review meal · Self Improvement</title></svelte:head>
 
-<main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+<TrackerPage class="max-w-4xl">
 	<form id="save-entry" onsubmit={saveEntry}>
 		<EntryEditor
 			entryId={initial.id}
@@ -98,7 +99,7 @@
 			error={formError}
 		/>
 	</form>
-</main>
+</TrackerPage>
 
 <BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
 	<div class="flex gap-2">
