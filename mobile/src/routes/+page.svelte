@@ -3,52 +3,55 @@
 	import { trackerIcons } from '$lib/trackers/icons';
 	import type { TrackerId } from '$lib/trackers/registry';
 	import TrackerTile from '$lib/components/trackerTile.svelte';
-	import { formatScreenTime } from './screen-time/screen-time';
+	import { DEFAULT_SCREEN_TIME_LIMIT_MINUTES, formatScreenTime } from './screen-time/screen-time';
 	import { formatSleepMinutes } from './sleep/sleep';
 	import type { PageProps } from './$types';
 
-	type TrackerDetails = { value: string; complete: boolean; href: string };
+	type TrackerState = 'complete' | 'attention' | 'incomplete';
+	type TrackerDetails = { value: string; state: TrackerState; href: string };
 
 	let { data }: PageProps = $props();
 	const stepsDone = $derived(data.dashboard.steps >= data.dashboard.stepGoal);
 	const sleepDone = $derived(data.dashboard.sleepMinutes >= data.dashboard.sleepGoalMinutes);
 	const caloriesDone = $derived(
-		data.dashboard.calories > 0 &&
-			data.dashboard.calorieGoal !== null &&
-			data.dashboard.calories <= data.dashboard.calorieGoal
+		data.dashboard.calorieGoal !== null && data.dashboard.calories <= data.dashboard.calorieGoal
 	);
 	const trackerDetails = $derived({
 		steps: trackerDetail(`${data.dashboard.steps.toLocaleString()} steps`, stepsDone, '/steps'),
 		sleep: trackerDetail(formatSleepMinutes(data.dashboard.sleepMinutes), sleepDone, '/sleep'),
 		'screen-time': trackerDetail(
 			formatScreenTime(data.dashboard.screenTimeMinutes),
-			data.dashboard.screenTimeMinutes > 0,
+			data.dashboard.screenTimeMinutes <= DEFAULT_SCREEN_TIME_LIMIT_MINUTES,
 			'/screen-time'
 		),
 		fitness: trackerDetail(
 			data.dashboard.fitnessWorkoutTitle,
 			data.dashboard.fitnessDone,
-			'/fitness'
+			'/fitness',
+			data.dashboard.fitnessWorkoutTitle !== 'Rest day'
 		),
 		nutrition: {
 			value: `${data.dashboard.calories.toLocaleString()} kcal`,
-			complete: caloriesDone,
+			state: trackerState(caloriesDone),
 			href: `/nutrition/log/${data.dashboard.date}`
 		},
 		meditation: trackerDetail(
 			data.dashboard.meditationDone ? 'Completed' : 'Not yet',
 			data.dashboard.meditationDone,
-			'/meditation'
+			'/meditation',
+			true
 		),
 		breathing: trackerDetail(
 			data.dashboard.breathingDone ? 'Completed' : 'Not yet',
 			data.dashboard.breathingDone,
-			'/breathing'
+			'/breathing',
+			true
 		),
 		happiness: trackerDetail(
 			data.dashboard.happinessRating ? `${data.dashboard.happinessRating}/5` : 'Not logged',
 			data.dashboard.happinessRating !== null,
-			'/happiness'
+			'/happiness',
+			true
 		),
 		period: trackerDetail(
 			data.dashboard.periodFlow ? `${capitalize(data.dashboard.periodFlow)} flow` : 'Not logged',
@@ -64,8 +67,20 @@
 		}))
 	);
 
-	function trackerDetail(value: string, complete: boolean, path: string): TrackerDetails {
-		return { value, complete, href: datedFeatureHref(path) };
+	function trackerDetail(
+		value: string,
+		complete: boolean,
+		path: string,
+		needsAttention = false
+	): TrackerDetails {
+		return { value, state: trackerState(complete, needsAttention), href: datedFeatureHref(path) };
+	}
+
+	function trackerState(complete: boolean, needsAttention = false): TrackerState {
+		if (complete) return 'complete';
+		return needsAttention && data.dashboard.date === data.dashboard.today
+			? 'attention'
+			: 'incomplete';
 	}
 
 	function datedFeatureHref(path: string) {
@@ -96,7 +111,7 @@
 						href={tracker.href}
 						label={tracker.label}
 						description={tracker.value}
-						complete={tracker.complete}
+						state={tracker.state}
 						icon={tracker.icon}
 					/>
 				{/each}
