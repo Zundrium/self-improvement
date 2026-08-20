@@ -12,7 +12,7 @@
 	} from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { AudioManager } from '$lib/audio/audio-manager';
-	import { ambientSounds } from './sounds';
+	import { ambientSounds } from '../sounds';
 
 	type Props = { audioManager?: AudioManager };
 	let { audioManager }: Props = $props();

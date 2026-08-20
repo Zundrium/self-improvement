@@ -2,13 +2,13 @@
 	import { Check, Clock3, Gauge, Layers3, Play } from '@lucide/svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
 
-	import MobileActionBar from '$lib/components/mobile-action-bar.svelte';
+	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
 	import { Separator } from '$lib/components/ui/separator';
 	import type { Workout } from '../fitness';
-	import WorkoutSession from './WorkoutSession.svelte';
+	import WorkoutSession from './workoutSession.svelte';
 
 	interface Props {
 		workout: Workout;
@@ -124,9 +124,9 @@
 		</div>
 	</section>
 
-	<MobileActionBar>
+	<BottomActionBar>
 		<div class="grid grid-cols-2 gap-3">
 			{@render actions()}
 		</div>
-	</MobileActionBar>
+	</BottomActionBar>
 {/if}

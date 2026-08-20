@@ -6,9 +6,11 @@
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
-	import AppNavbar from '$lib/components/app-navbar.svelte';
-	import DateSelector from '$lib/components/date-selector.svelte';
-	import { provideDateSelectorState } from '$lib/components/date-selector-state.svelte';
+	import AppNavbar from '$lib/components/appNavbar.svelte';
+	import BottomActionBarOutlet from '$lib/components/bottomActionBarOutlet.svelte';
+	import { provideBottomActionBarState } from '$lib/components/bottomActionBarState.svelte';
+	import DateSelector from '$lib/components/dateSelector.svelte';
+	import { provideDateSelectorState } from '$lib/components/dateSelectorState.svelte';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { SyncCoordinator } from '$domain/sync-coordinator';
 	import { getLaunchUrl, listenForAppUrls, listenForResume } from '$native/app';
@@ -36,9 +38,11 @@
 	let { data, children }: LayoutProps = $props();
 	const initialPageData = page.data as DatedPageData;
 	const dateSelectorState = provideDateSelectorState(markedDates(initialPageData));
+	provideBottomActionBarState();
 	const dateNavigation = $derived(
 		createDateNavigation(page.url.pathname, page.data as DatedPageData)
 	);
+	const appShellActive = $derived(Boolean(data.user) && page.url.pathname !== '/nutrition/track');
 
 	$effect(() => {
 		const dates = dateNavigation?.markedDates ?? [];
@@ -96,9 +100,9 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-<div class={dateNavigation ? 'flex h-svh flex-col overflow-hidden' : undefined}>
+<div class={appShellActive ? 'safe-area-padding-y flex h-svh flex-col overflow-hidden' : undefined}>
 	{#if dateNavigation}
-		<div class="shrink-0 px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 sm:pt-6">
+		<div class="shrink-0 px-4 py-4 sm:px-6 sm:py-6">
 			<DateSelector
 				date={dateNavigation.date}
 				today={dateNavigation.today}
@@ -107,13 +111,16 @@
 			/>
 		</div>
 	{/if}
-	<div class={dateNavigation ? 'flex min-h-0 flex-1 flex-col overflow-y-auto' : undefined}>
+	<div class={appShellActive ? 'flex min-h-0 flex-1 flex-col overflow-y-auto' : undefined}>
 		{@render children()}
 	</div>
-	{#if data.user}<AppNavbar user={data.user} trackers={data.enabledTrackers} />{/if}
+	{#if data.user && appShellActive}
+		<BottomActionBarOutlet />
+		<AppNavbar user={data.user} trackers={data.enabledTrackers} />
+	{/if}
 </div>
 <Toaster
 	position="bottom-center"
 	richColors
-	offset={data.user ? { bottom: 'calc(5rem + env(safe-area-inset-bottom))' } : undefined}
+	offset={appShellActive ? { bottom: 'calc(5rem + env(safe-area-inset-bottom))' } : undefined}
 />

@@ -4,10 +4,10 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiRequest } from '$lib/api';
 	import { AudioManager } from '$lib/audio/audio-manager';
-	import { useDateSelectorState } from '$lib/components/date-selector-state.svelte';
+	import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
-	import WorkoutDay from './components/WorkoutDay.svelte';
+	import WorkoutDay from './components/workoutDay.svelte';
 	import type { Workout } from './fitness';
 	import type { PageProps } from './$types';
 

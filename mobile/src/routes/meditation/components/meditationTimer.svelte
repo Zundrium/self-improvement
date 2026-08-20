@@ -3,7 +3,7 @@
 	import Icon from '@iconify/svelte';
 	import { Check, LoaderCircle, Minus, Pause, Play, Plus, RotateCcw, Square } from '@lucide/svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
-	import MobileActionBar from '$lib/components/mobile-action-bar.svelte';
+	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import {
 		DEFAULT_DURATION_SECONDS,
@@ -13,8 +13,8 @@
 		MINIMUM_DURATION_SECONDS,
 		type MeditationCompletion,
 		type SaveState
-	} from './meditation';
-	import { singingBowlUrl } from './sounds';
+	} from '../meditation';
+	import { singingBowlUrl } from '../sounds';
 
 	type TimerStatus = 'idle' | 'running' | 'paused' | 'completed';
 	type Props = {
@@ -205,6 +205,6 @@
 	</div>
 </section>
 
-<MobileActionBar>
+<BottomActionBar>
 	{@render actions()}
-</MobileActionBar>
+</BottomActionBar>

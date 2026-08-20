@@ -5,7 +5,7 @@
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
 	import { authClient, signOut as endSession } from '$lib/auth-client';
-	import NativeSyncCard from '$lib/components/native-sync-card.svelte';
+	import NativeSyncCard from '$lib/components/nativeSyncCard.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Avatar } from '$lib/components/ui/avatar';
 	import { Badge } from '$lib/components/ui/badge';
@@ -127,9 +127,7 @@
 
 <svelte:head><title>Profile · Self Improvement</title></svelte:head>
 
-<main
-	class="mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-4xl gap-4 p-4 pt-[max(1rem,env(safe-area-inset-top))] md:grid-cols-[280px_1fr] md:p-8"
->
+<main class="mx-auto grid w-full max-w-4xl flex-1 gap-4 p-4 md:grid-cols-[280px_1fr] md:p-8">
 	<Card>
 		<CardContent class="items-center text-center">
 			<Avatar size="xl" src={data.profileUser.image ?? undefined} alt={data.profileUser.name} />

@@ -3,9 +3,9 @@
 	import { onDestroy, untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
 	import { AudioManager } from '$lib/audio/audio-manager';
-	import { useDateSelectorState } from '$lib/components/date-selector-state.svelte';
-	import AmbientSounds from './AmbientSounds.svelte';
-	import MeditationTimer from './MeditationTimer.svelte';
+	import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
+	import AmbientSounds from './components/ambientSounds.svelte';
+	import MeditationTimer from './components/meditationTimer.svelte';
 	import { formatDuration, type MeditationCompletion, type SaveState } from './meditation';
 	import { ambientSounds } from './sounds';
 	import type { PageProps } from './$types';

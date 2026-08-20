@@ -6,7 +6,8 @@
 	import type { PageProps } from './$types';
 	import { apiRequest } from '$lib/api';
 
-	import EntryEditor, { type EditableMeal } from '../../components/EntryEditor.svelte';
+	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
+	import EntryEditor, { type EditableMeal } from '../../components/entryEditor.svelte';
 	import {
 		AlertDialog,
 		AlertDialogAction,
@@ -85,7 +86,7 @@
 
 <svelte:head><title>Review meal · Self Improvement</title></svelte:head>
 
-<main class="mx-auto max-w-4xl px-4 py-8 pb-32 sm:px-6 sm:py-10">
+<main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
 	<form id="save-entry" onsubmit={saveEntry}>
 		<EntryEditor
 			entryId={initial.id}
@@ -99,10 +100,8 @@
 	</form>
 </main>
 
-<div
-	class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-t border-(--text)/8 bg-(--bg)/90 px-4 pt-3 pb-4 backdrop-blur-xl"
->
-	<div class="mx-auto flex max-w-4xl gap-2">
+<BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
+	<div class="flex gap-2">
 		<Button form="save-entry" type="submit" size="lg" class="flex-1"
 			><Save class="mr-2 size-4" /> Save meal</Button
 		>
@@ -128,4 +127,4 @@
 			</AlertDialogContent>
 		</AlertDialog>
 	</div>
-</div>
+</BottomActionBar>

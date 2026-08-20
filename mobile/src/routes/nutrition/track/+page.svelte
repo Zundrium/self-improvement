@@ -18,6 +18,7 @@
 	import type { PageProps } from './$types';
 
 	import { apiRequest } from '$lib/api';
+	import WorkflowHeader from '$lib/components/workflowHeader.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
@@ -371,21 +372,17 @@
 
 <main class="min-h-[100svh] bg-(--bg)">
 	{#if phase === 'photo'}
-		<header class="border-b border-(--text)/8 bg-(--bg)/90 backdrop-blur-xl">
-			<div class="mx-auto flex min-h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+		<WorkflowHeader title="Add one meal" subtitle="Photo → quick review">
+			{#snippet leading()}
 				<Button
 					href="/nutrition/log/{data.date}"
 					variant="ghost"
 					size="icon"
 					aria-label="Back to food log"><X class="size-5" /></Button
 				>
-				<div class="text-center">
-					<p class="text-sm font-medium">Add one meal</p>
-					<p class="text-xs text-(--text)/48">Photo → quick review</p>
-				</div>
-				<Badge>1 of 2</Badge>
-			</div>
-		</header>
+			{/snippet}
+			{#snippet trailing()}<Badge>1 of 2</Badge>{/snippet}
+		</WorkflowHeader>
 
 		<section class="mx-auto flex max-w-5xl flex-col items-center px-4 py-6 sm:px-6 sm:py-10">
 			<div class="mb-5 max-w-lg text-center">
@@ -410,7 +407,7 @@
 				></div>
 
 				<div class="absolute inset-x-0 top-0 flex justify-center p-4">
-					<Badge class="bg-black/50 text-white backdrop-blur-md"
+					<Badge class="bg-black/50 text-white"
 						><Camera class="size-3.5" /> One meal · one photo</Badge
 					>
 				</div>
@@ -487,17 +484,13 @@
 			</div>
 		</section>
 	{:else if phase === 'analyzing' || phase === 'refining'}
-		<header class="border-b border-(--text)/8 bg-(--bg)/90 backdrop-blur-xl">
-			<div class="mx-auto flex min-h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-				<span class="size-10"></span>
-				<p class="text-sm font-medium">
-					{phase === 'analyzing' ? 'Analyzing meal' : 'Updating estimate'}
-				</p>
+		<WorkflowHeader title={phase === 'analyzing' ? 'Analyzing meal' : 'Updating estimate'}>
+			{#snippet trailing()}
 				<Button href="/nutrition/log/{data.date}" variant="ghost" size="icon" aria-label="Cancel"
 					><X class="size-5" /></Button
 				>
-			</div>
-		</header>
+			{/snippet}
+		</WorkflowHeader>
 
 		<section
 			class="mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center px-4 py-6 text-center"
@@ -544,17 +537,18 @@
 			</div>
 		</section>
 	{:else if phase === 'analysis-error'}
-		<header class="border-b border-(--text)/8 bg-(--bg)/90 backdrop-blur-xl">
-			<div class="mx-auto flex min-h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+		<WorkflowHeader title="Could not analyze meal">
+			{#snippet leading()}
 				<Button variant="ghost" size="icon" onclick={retakePhoto} aria-label="Take another photo"
 					><ArrowLeft class="size-5" /></Button
 				>
-				<p class="text-sm font-medium">Could not analyze meal</p>
+			{/snippet}
+			{#snippet trailing()}
 				<Button href="/nutrition/log/{data.date}" variant="ghost" size="icon" aria-label="Cancel"
 					><X class="size-5" /></Button
 				>
-			</div>
-		</header>
+			{/snippet}
+		</WorkflowHeader>
 
 		<section class="mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center px-4 py-6">
 			<div class="w-full space-y-4">
@@ -571,13 +565,8 @@
 			</div>
 		</section>
 	{:else if estimate}
-		<header class="border-b border-(--text)/8 bg-(--bg)/90 backdrop-blur-xl">
-			<div class="mx-auto flex min-h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-				<span class="size-10"></span>
-				<div class="text-center">
-					<p class="text-sm font-medium">Review estimate</p>
-					<p class="text-xs text-(--text)/48">Is this correct?</p>
-				</div>
+		<WorkflowHeader title="Review estimate" subtitle="Is this correct?">
+			{#snippet trailing()}
 				<Button
 					href="/nutrition/log/{data.date}"
 					variant="ghost"
@@ -585,8 +574,8 @@
 					disabled={phase === 'saving'}
 					aria-label="Cancel"><X class="size-5" /></Button
 				>
-			</div>
-		</header>
+			{/snippet}
+		</WorkflowHeader>
 
 		<section
 			class="mx-auto flex min-h-[calc(100svh-4rem)] max-w-xl items-center px-3 py-3 sm:px-6 sm:py-6"

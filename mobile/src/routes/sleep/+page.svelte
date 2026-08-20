@@ -3,12 +3,14 @@
 	import { Moon, Settings } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
+	import CircularProgress from '$lib/components/circularProgress.svelte';
+	import MetricProgressRow from '$lib/components/metricProgressRow.svelte';
+	import { shortDayLabel } from '$lib/dateFormatting';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
-	import { Progress } from '$lib/components/ui/progress';
 	import { DEFAULT_SLEEP_GOAL_MINUTES, formatSleepMinutes } from './sleep';
 	import type { PageProps } from './$types';
 
@@ -17,7 +19,6 @@
 		data.connection?.dailyGoalMinutes ?? DEFAULT_SLEEP_GOAL_MINUTES
 	);
 	const selectedMinutes = $derived(Math.round(data.durationSeconds / 60));
-	const progress = $derived(Math.min(100, Math.round((selectedMinutes / dailyGoalMinutes) * 100)));
 	let goalInput = $state(untrack(() => dailyGoalMinutes));
 	let goalMessage = $state('');
 	let goalFailed = $state(false);
@@ -37,13 +38,6 @@
 			goalMessage = cause instanceof Error ? cause.message : 'Could not update the goal.';
 		}
 	}
-
-	function dayLabel(dateKey: string) {
-		if (dateKey === data.today) return 'Today';
-		return new Intl.DateTimeFormat('en', { weekday: 'short', timeZone: 'UTC' }).format(
-			new Date(`${dateKey}T12:00:00Z`)
-		);
-	}
 </script>
 
 <svelte:head>
@@ -57,48 +51,19 @@
 			<h1 id="daily-sleep-title" class="mb-3 text-sm font-medium text-(--text)/56">
 				Sleep ending {data.date === data.today ? 'today' : data.date}
 			</h1>
-			<div
-				class="relative flex size-56 items-center justify-center sm:size-64"
-				role="progressbar"
-				aria-label={`${selectedMinutes} of ${dailyGoalMinutes} sleep minutes`}
-				aria-valuemin="0"
-				aria-valuemax={dailyGoalMinutes}
-				aria-valuenow={selectedMinutes}
+			<CircularProgress
+				value={selectedMinutes}
+				max={dailyGoalMinutes}
+				label={`${selectedMinutes} of ${dailyGoalMinutes} sleep minutes`}
 			>
-				<svg class="absolute inset-0 size-full -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
-					<circle
-						cx="60"
-						cy="60"
-						r="52"
-						pathLength="100"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="8"
-						class="text-(--text)/8"
-					/>
-					<circle
-						cx="60"
-						cy="60"
-						r="52"
-						pathLength="100"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="8"
-						stroke-linecap="round"
-						class="text-(--text) transition-all duration-500"
-						style={`stroke-dasharray: ${progress} 100`}
-					/>
-				</svg>
-				<div class="relative text-center">
-					<Moon class="mx-auto mb-3 size-6 text-(--text)/56" />
-					<strong class="block text-4xl font-medium tracking-[-0.06em] tabular-nums sm:text-5xl">
-						{formatSleepMinutes(selectedMinutes)}
-					</strong>
-					<span class="mt-2 block text-sm text-(--text)/48 tabular-nums">
-						/ {formatSleepMinutes(dailyGoalMinutes)} goal
-					</span>
-				</div>
-			</div>
+				<Moon class="mx-auto mb-3 size-6 text-(--text)/56" />
+				<strong class="block text-4xl font-medium tracking-[-0.06em] tabular-nums sm:text-5xl">
+					{formatSleepMinutes(selectedMinutes)}
+				</strong>
+				<span class="mt-2 block text-sm text-(--text)/48 tabular-nums">
+					/ {formatSleepMinutes(dailyGoalMinutes)} goal
+				</span>
+			</CircularProgress>
 		</div>
 	</section>
 
@@ -117,13 +82,12 @@
 			</CardHeader>
 			<CardContent class="space-y-4">
 				{#each data.days as day (day.date)}
-					<div class="grid grid-cols-[3.5rem_1fr_auto] items-center gap-3">
-						<span class="text-sm font-medium">{dayLabel(day.date)}</span>
-						<Progress value={Math.round(day.durationSeconds / 60)} max={dailyGoalMinutes} />
-						<span class="w-16 text-right text-sm text-(--text)/64 tabular-nums">
-							{formatSleepMinutes(Math.round(day.durationSeconds / 60))}
-						</span>
-					</div>
+					<MetricProgressRow
+						label={shortDayLabel(day.date, data.today)}
+						value={Math.round(day.durationSeconds / 60)}
+						max={dailyGoalMinutes}
+						displayValue={formatSleepMinutes(Math.round(day.durationSeconds / 60))}
+					/>
 				{/each}
 			</CardContent>
 		</Card>

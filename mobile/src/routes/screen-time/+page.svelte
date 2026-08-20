@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { Clock, Smartphone } from '@lucide/svelte';
+	import MetricProgressRow from '$lib/components/metricProgressRow.svelte';
+	import { shortDayLabel } from '$lib/dateFormatting';
 	import {
 		Card,
 		CardContent,
@@ -13,13 +15,6 @@
 
 	let { data }: PageProps = $props();
 	const appProgressMax = $derived(Math.max(1, data.usage.totalMinutes));
-
-	function dayLabel(dateKey: string) {
-		if (dateKey === data.today) return 'Today';
-		return new Intl.DateTimeFormat('en', { weekday: 'short', timeZone: 'UTC' }).format(
-			new Date(`${dateKey}T12:00:00Z`)
-		);
-	}
 
 	function selectedDateLabel() {
 		if (data.date === data.today) return 'Today';
@@ -75,13 +70,12 @@
 			</CardHeader>
 			<CardContent class="space-y-4">
 				{#each data.days as day (day.date)}
-					<div class="grid grid-cols-[3.5rem_1fr_auto] items-center gap-3">
-						<span class="text-sm font-medium">{dayLabel(day.date)}</span>
-						<Progress value={day.totalMinutes} max={data.historyMaxMinutes} />
-						<span class="w-20 text-right text-sm text-(--text)/64 tabular-nums">
-							{formatScreenTime(day.totalMinutes)}
-						</span>
-					</div>
+					<MetricProgressRow
+						label={shortDayLabel(day.date, data.today)}
+						value={day.totalMinutes}
+						max={data.historyMaxMinutes}
+						displayValue={formatScreenTime(day.totalMinutes)}
+					/>
 				{/each}
 			</CardContent>
 		</Card>

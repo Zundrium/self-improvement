@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Check, LoaderCircle, Play, Square } from '@lucide/svelte';
 	import { onDestroy } from 'svelte';
-	import MobileActionBar from '$lib/components/mobile-action-bar.svelte';
+	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import {
 		BREATHING_DURATION_SECONDS,
@@ -10,7 +10,7 @@
 		formatTimer,
 		type BreathingCompletion,
 		type SaveState
-	} from './breathing';
+	} from '../breathing';
 
 	type TimerStatus = 'idle' | 'running' | 'completed';
 	type Props = {
@@ -140,9 +140,9 @@
 </section>
 
 {#if status !== 'completed' || saveState === 'error'}
-	<MobileActionBar>
+	<BottomActionBar>
 		{@render actions()}
-	</MobileActionBar>
+	</BottomActionBar>
 {/if}
 
 <style>

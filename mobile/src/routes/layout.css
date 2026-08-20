@@ -113,6 +113,11 @@
  * Utilities
  * ------------------------------------------------------------------------- */
 @layer utilities {
+	.safe-area-padding-y {
+		padding-top: env(safe-area-inset-top);
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+
 	.link {
 		background-image: linear-gradient(currentcolor, currentcolor);
 		background-position: 0 100%;

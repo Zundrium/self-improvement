@@ -2,8 +2,8 @@
 	import { Check, ExternalLink, Wind } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
-	import { useDateSelectorState } from '$lib/components/date-selector-state.svelte';
-	import BreathingExercise from './BreathingExercise.svelte';
+	import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
+	import BreathingExercise from './components/breathingExercise.svelte';
 	import {
 		BREATHING_DURATION_SECONDS,
 		BREATHING_ROUNDS,

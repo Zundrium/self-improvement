@@ -9,6 +9,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Calendar } from '$lib/components/ui/calendar';
+	import { fullDateLabel } from '$lib/dateFormatting';
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
 
 	interface Props {
@@ -33,14 +34,6 @@
 		calendarOpen = false;
 		void goto(resolve(hrefForDate(value.toString()) as '/'));
 	}
-
-	function displayDate(value: string) {
-		return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
-			weekday: 'long',
-			month: 'long',
-			day: 'numeric'
-		});
-	}
 </script>
 
 <section class="flex items-center justify-center gap-1" aria-label="Select date">
@@ -55,7 +48,7 @@
 			{#snippet child({ props })}
 				<Button variant="ghost" class="min-w-56 gap-2" {...props}>
 					<CalendarDays class="size-4" />
-					{displayDate(date)}
+					{fullDateLabel(date)}
 					{#if date === today}<Badge>Today</Badge>{/if}
 				</Button>
 			{/snippet}

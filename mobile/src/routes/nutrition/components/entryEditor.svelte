@@ -18,6 +18,7 @@
 		AccordionTrigger
 	} from '$lib/components/ui/accordion';
 	import { apiRequest } from '$lib/api';
+	import MetricStat from '$lib/components/metricStat.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
@@ -243,21 +244,24 @@
 			<span class="mt-1 block text-sm text-(--text)/48">kcal</span>
 		</div>
 		<div class="mx-auto grid w-full max-w-lg grid-cols-3 items-center">
-			<div class="flex flex-col items-center gap-2 py-4 text-center">
-				<Drumstick class="size-5 text-chart-2" /><strong class="text-2xl font-medium tabular-nums"
-					>{totals.proteinG.toFixed(1)}g</strong
-				><span class="text-xs text-(--text)/48">protein</span>
-			</div>
-			<div class="flex flex-col items-center gap-2 py-4 text-center">
-				<Wheat class="size-5 text-chart-1" /><strong class="text-2xl font-medium tabular-nums"
-					>{totals.carbsG.toFixed(1)}g</strong
-				><span class="text-xs text-(--text)/48">carbs</span>
-			</div>
-			<div class="flex flex-col items-center gap-2 py-4 text-center">
-				<Droplet class="size-5 text-chart-3" /><strong class="text-2xl font-medium tabular-nums"
-					>{totals.fatG.toFixed(1)}g</strong
-				><span class="text-xs text-(--text)/48">fat</span>
-			</div>
+			<MetricStat
+				icon={Drumstick}
+				value={`${totals.proteinG.toFixed(1)}g`}
+				label="protein"
+				iconClass="text-chart-2"
+			/>
+			<MetricStat
+				icon={Wheat}
+				value={`${totals.carbsG.toFixed(1)}g`}
+				label="carbs"
+				iconClass="text-chart-1"
+			/>
+			<MetricStat
+				icon={Droplet}
+				value={`${totals.fatG.toFixed(1)}g`}
+				label="fat"
+				iconClass="text-chart-3"
+			/>
 		</div>
 		<div class="mx-auto grid w-full max-w-xl grid-cols-2 gap-3">
 			<Field>

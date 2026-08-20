@@ -3,12 +3,13 @@
 	import { CalendarDays, Heart } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
+	import TrackerHistoryItem from '$lib/components/trackerHistoryItem.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+	import { shortDateLabel } from '$lib/dateFormatting';
 	import {
 		happinessLabel,
 		happinessRatings,
@@ -81,14 +82,6 @@
 
 	function happinessHref(date: string) {
 		return date === data.today ? '/happiness' : `/happiness?date=${date}`;
-	}
-
-	function displayDate(date: string) {
-		return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			timeZone: 'UTC'
-		});
 	}
 </script>
 
@@ -172,14 +165,11 @@
 				{#if data.recentEntries.length}
 					<div class="divide-y divide-(--text)/8">
 						{#each data.recentEntries as entry (entry.localDate)}
-							<Button
+							<TrackerHistoryItem
 								href={happinessHref(entry.localDate)}
-								variant="ghost"
-								class="h-auto w-full justify-between rounded-none bg-transparent px-0 py-3 hover:bg-transparent"
-							>
-								<span>{displayDate(entry.localDate)}</span>
-								<Badge>{entry.rating}/5 · {happinessLabel(entry.rating)}</Badge>
-							</Button>
+								label={shortDateLabel(entry.localDate)}
+								value={`${entry.rating}/5 · ${happinessLabel(entry.rating)}`}
+							/>
 						{/each}
 					</div>
 				{:else}

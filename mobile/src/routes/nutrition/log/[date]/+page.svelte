@@ -2,25 +2,19 @@
 	import { Camera, ChevronRight, Droplet, Drumstick, Salad, Wheat } from '@lucide/svelte';
 	import type { PageProps } from './$types';
 
-	import MobileActionBar from '$lib/components/mobile-action-bar.svelte';
+	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
+	import CircularProgress from '$lib/components/circularProgress.svelte';
+	import MetricStat from '$lib/components/metricStat.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
+	import { fullDateLabel } from '$lib/dateFormatting';
 
 	let { data }: PageProps = $props();
 
 	const consumed = $derived(Math.round(data.totals.calories));
 	const goal = $derived(data.calorieGoal);
-	const progress = $derived(Math.min(100, Math.round((consumed / Math.max(goal, 1)) * 100)));
 	const mealCount = $derived(data.entries.reduce((total, entry) => total + entry.meals.length, 0));
-
-	function displayDate(value: string) {
-		return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
-			weekday: 'long',
-			month: 'long',
-			day: 'numeric'
-		});
-	}
 
 	function displayTime(value: Date | string) {
 		const [time, period] = new Date(value)
@@ -30,69 +24,43 @@
 	}
 </script>
 
-<svelte:head><title>{displayDate(data.date)} · Self Improvement</title></svelte:head>
+<svelte:head><title>{fullDateLabel(data.date)} · Self Improvement</title></svelte:head>
 
-<main class="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 pt-6 pb-28 sm:px-6 sm:pt-8">
+<main class="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 pt-6 pb-8 sm:px-6 sm:pt-8 sm:pb-10">
 	<section class="grid items-center gap-6 py-2 lg:grid-cols-[1.35fr_1fr] lg:gap-12">
 		<div class="flex flex-col items-center py-4 sm:py-6">
 			<p class="mb-3 text-sm text-(--text)/48">Daily energy</p>
-			<div
-				class="relative flex size-56 items-center justify-center sm:size-64"
-				role="progressbar"
-				aria-label={`${consumed} of ${goal} calories consumed`}
-				aria-valuemin="0"
-				aria-valuemax={goal}
-				aria-valuenow={consumed}
+			<CircularProgress
+				value={consumed}
+				max={goal}
+				label={`${consumed} of ${goal} calories consumed`}
 			>
-				<svg class="absolute inset-0 size-full -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
-					<circle
-						cx="60"
-						cy="60"
-						r="52"
-						pathLength="100"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="8"
-						class="text-(--text)/8"
-					/>
-					<circle
-						cx="60"
-						cy="60"
-						r="52"
-						pathLength="100"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="8"
-						stroke-linecap="round"
-						class="text-(--text) transition-all duration-500"
-						style={`stroke-dasharray: ${progress} 100`}
-					/>
-				</svg>
-				<div class="relative text-center">
-					<strong class="block text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl"
-						>{consumed}</strong
-					>
-					<span class="mt-2 block text-sm text-(--text)/48 tabular-nums">/ {goal} kcal</span>
-				</div>
-			</div>
+				<strong class="block text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl">
+					{consumed}
+				</strong>
+				<span class="mt-2 block text-sm text-(--text)/48 tabular-nums">/ {goal} kcal</span>
+			</CircularProgress>
 		</div>
 
 		<div class="grid grid-cols-3 items-center">
-			<div class="flex flex-col items-center gap-2 py-4 text-center">
-				<Drumstick class="size-5 text-chart-2" /><strong class="text-2xl font-medium tabular-nums"
-					>{data.totals.proteinG}g</strong
-				><span class="text-xs text-(--text)/48">protein</span>
-			</div>
-			<div class="flex flex-col items-center gap-2 py-4 text-center">
-				<Wheat class="size-5 text-chart-1" /><strong class="text-2xl font-medium tabular-nums"
-					>{data.totals.carbsG}g</strong
-				><span class="text-xs text-(--text)/48">carbs</span>
-			</div>
-			<div class="flex flex-col items-center gap-2 py-4 text-center">
-				<Droplet class="size-5 text-chart-3" /><strong class="text-2xl font-medium tabular-nums"
-					>{data.totals.fatG}g</strong
-				><span class="text-xs text-(--text)/48">fat</span>
-			</div>
+			<MetricStat
+				icon={Drumstick}
+				value={`${data.totals.proteinG}g`}
+				label="protein"
+				iconClass="text-chart-2"
+			/>
+			<MetricStat
+				icon={Wheat}
+				value={`${data.totals.carbsG}g`}
+				label="carbs"
+				iconClass="text-chart-1"
+			/>
+			<MetricStat
+				icon={Droplet}
+				value={`${data.totals.fatG}g`}
+				label="fat"
+				iconClass="text-chart-3"
+			/>
 		</div>
 	</section>
 
@@ -164,8 +132,8 @@
 	</section>
 </main>
 
-<MobileActionBar>
+<BottomActionBar>
 	<Button href="/nutrition/track?date={data.date}" size="lg" class="w-full">
 		<Camera class="mr-2 size-5" /> Add a meal
 	</Button>
-</MobileActionBar>
+</BottomActionBar>

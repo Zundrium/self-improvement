@@ -3,12 +3,13 @@
 	import { CalendarDays, Droplet } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
+	import TrackerHistoryItem from '$lib/components/trackerHistoryItem.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
+	import { shortDateLabel } from '$lib/dateFormatting';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { flowLabel, flowOptions, type MenstruationFlow } from './period';
 	import type { PageProps } from './$types';
@@ -57,14 +58,6 @@
 
 	function periodHref(date: string) {
 		return date === data.today ? '/period' : `/period?date=${date}`;
-	}
-
-	function displayDate(date: string) {
-		return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			timeZone: 'UTC'
-		});
 	}
 </script>
 
@@ -130,11 +123,11 @@
 						<div class="divide-y divide-(--text)/8 text-sm">
 							<div class="flex items-center justify-between gap-4 py-3 first:pt-0">
 								<span class="text-(--text)/56">Last period started</span>
-								<strong>{displayDate(data.cycle.lastPeriodStarted)}</strong>
+								<strong>{shortDateLabel(data.cycle.lastPeriodStarted)}</strong>
 							</div>
 							<div class="flex items-center justify-between gap-4 py-3">
 								<span class="text-(--text)/56">Estimated next period</span>
-								<strong>{displayDate(data.cycle.estimatedNextPeriod)}</strong>
+								<strong>{shortDateLabel(data.cycle.estimatedNextPeriod)}</strong>
 							</div>
 							<div class="flex items-center justify-between gap-4 py-3 last:pb-0">
 								<span class="text-(--text)/56">
@@ -164,14 +157,11 @@
 					{#if data.recentEntries.length}
 						<div class="divide-y divide-(--text)/8">
 							{#each data.recentEntries as entry (entry.localDate)}
-								<Button
+								<TrackerHistoryItem
 									href={periodHref(entry.localDate)}
-									variant="ghost"
-									class="h-auto w-full justify-between rounded-none bg-transparent px-0 py-3 hover:bg-transparent"
-								>
-									<span>{displayDate(entry.localDate)}</span>
-									<Badge>{flowLabel(entry.flow)}</Badge>
-								</Button>
+									label={shortDateLabel(entry.localDate)}
+									value={flowLabel(entry.flow)}
+								/>
 							{/each}
 						</div>
 					{:else}
