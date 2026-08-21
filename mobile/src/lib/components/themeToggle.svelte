@@ -1,31 +1,42 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { Moon, Sun } from '@lucide/svelte';
+	import { Laptop, Moon, Sun } from '@lucide/svelte';
+	import { setMode, userPrefersMode } from 'mode-watcher';
 	import { Button } from '$lib/components/ui/button';
 
-	let dark = $state(false);
-
-	onMount(() => {
-		dark = document.documentElement.classList.contains('dark');
-	});
-
-	function toggleTheme() {
-		dark = !dark;
-		document.documentElement.classList.toggle('dark', dark);
-		document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-		try {
-			localStorage.setItem('self-improvement-theme', dark ? 'dark' : 'light');
-		} catch {
-			return;
-		}
+	function selected(mode: 'light' | 'system' | 'dark') {
+		return userPrefersMode.current === mode;
 	}
 </script>
 
-<Button
-	variant="ghost"
-	size="icon"
-	aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-	onclick={toggleTheme}
->
-	{#if dark}<Sun size={19} />{:else}<Moon size={19} />{/if}
-</Button>
+<div class="inline-flex rounded-3xl bg-(--text)/5 p-1" aria-label="Color theme">
+	<Button
+		variant={selected('light') ? 'default' : 'ghost'}
+		size="icon"
+		class="size-9"
+		aria-label="Use light theme"
+		aria-pressed={selected('light')}
+		onclick={() => setMode('light')}
+	>
+		<Sun class="size-4" />
+	</Button>
+	<Button
+		variant={selected('system') ? 'default' : 'ghost'}
+		size="icon"
+		class="size-9"
+		aria-label="Follow system theme"
+		aria-pressed={selected('system')}
+		onclick={() => setMode('system')}
+	>
+		<Laptop class="size-4" />
+	</Button>
+	<Button
+		variant={selected('dark') ? 'default' : 'ghost'}
+		size="icon"
+		class="size-9"
+		aria-label="Use dark theme"
+		aria-pressed={selected('dark')}
+		onclick={() => setMode('dark')}
+	>
+		<Moon class="size-4" />
+	</Button>
+</div>

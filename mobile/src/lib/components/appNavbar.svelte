@@ -4,7 +4,15 @@
 	import { navigating, page } from '$app/state';
 	import { fly } from 'svelte/transition';
 	import Icon from '@iconify/svelte';
-	import { ChevronDown, House, LoaderCircle, LogOut, Shield, UserRound } from '@lucide/svelte';
+	import {
+		ChevronDown,
+		House,
+		LoaderCircle,
+		LogOut,
+		Settings,
+		Shield,
+		UserRound
+	} from '@lucide/svelte';
 	import { apiRequest } from '$lib/api';
 	import { signOut as endSession } from '$lib/auth-client';
 	import {
@@ -19,7 +27,6 @@
 	import type { AppTracker } from '$lib/trackers/registry';
 	import AppDrawer from './appDrawer.svelte';
 	import AudioVolumeControl from './audioVolumeControl.svelte';
-	import ThemeToggle from './themeToggle.svelte';
 
 	type User = {
 		name: string;
@@ -113,7 +120,11 @@
 
 <svelte:window onpointerdown={closeDrawerOutside} onkeydown={closeDrawerOnEscape} />
 
-<nav bind:this={navigationElement} class="relative z-50 shrink-0" aria-label="Main navigation">
+<nav
+	bind:this={navigationElement}
+	class="relative z-50 shrink-0 bg-white pb-[env(safe-area-inset-bottom)] dark:bg-black"
+	aria-label="Main navigation"
+>
 	{#if appLauncherOpen}
 		<div
 			id="app-drawer"
@@ -196,8 +207,8 @@
 					</DropdownMenuLabel>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem onSelect={openProfile}>
-						<UserRound />
-						Profile
+						<Settings />
+						Settings
 					</DropdownMenuItem>
 					{#if user.role === 'admin'}
 						<DropdownMenuItem onSelect={openAdmin}>
@@ -207,11 +218,6 @@
 					{/if}
 					<DropdownMenuSeparator />
 					<AudioVolumeControl />
-					<DropdownMenuSeparator />
-					<div class="flex items-center justify-between gap-3 px-3 py-1 text-sm">
-						<span>Theme</span>
-						<ThemeToggle />
-					</div>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem variant="destructive" onSelect={() => void signOut()}>
 						<LogOut />

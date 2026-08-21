@@ -1,5 +1,4 @@
-import { apiRequest } from '$lib/api';
-import type { ExerciseData } from '$lib/api-types';
+import { redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
-export const load: PageLoad = () => apiRequest<ExerciseData>('/api/app/fitness/exercises');
+export const load: PageLoad = () => redirect(307, '/fitness/settings');

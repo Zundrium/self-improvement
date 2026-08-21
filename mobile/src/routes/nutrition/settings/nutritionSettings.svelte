@@ -1,0 +1,171 @@
+<script lang="ts">
+	import { invalidateAll } from '$app/navigation';
+	import { untrack } from 'svelte';
+	import { apiRequest } from '$lib/api';
+	import type { NutritionProfile } from '$lib/api-types';
+	import { Alert, AlertDescription } from '$lib/components/ui/alert';
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Field, FieldDescription, FieldGroup, FieldLabel } from '$lib/components/ui/field';
+	import { Input } from '$lib/components/ui/input';
+	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
+
+	type Props = { profile: NutritionProfile | null; estimatedTdee: number | null };
+	let { profile, estimatedTdee }: Props = $props();
+	let gender = $state(untrack(() => profile?.gender ?? 'male'));
+	let activityLevel = $state(untrack(() => profile?.activityLevel ?? 'sedentary'));
+	let goalMode = $state(untrack(() => profile?.goalMode ?? 'estimated'));
+	let message = $state('');
+	let failed = $state(false);
+	let saving = $state(false);
+	const activityLabel = $derived(
+		(
+			{
+				sedentary: 'Sedentary',
+				light: 'Light activity',
+				moderate: 'Moderate activity',
+				active: 'Active',
+				very_active: 'Very active'
+			} as Record<string, string>
+		)[activityLevel]
+	);
+
+	async function saveNutrition(event: SubmitEvent) {
+		event.preventDefault();
+		saving = true;
+		const form = Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement));
+		try {
+			await apiRequest('/api/app/profile', { method: 'PATCH', body: JSON.stringify(form) });
+			failed = false;
+			message = 'Nutrition settings updated.';
+			await invalidateAll();
+		} catch (cause) {
+			failed = true;
+			message = cause instanceof Error ? cause.message : 'Could not update nutrition settings.';
+		} finally {
+			saving = false;
+		}
+	}
+</script>
+
+<Card>
+	<CardHeader><CardTitle>Nutrition goals</CardTitle></CardHeader>
+	<CardContent>
+		{#if profile}
+			<form class="space-y-5" onsubmit={saveNutrition}>
+				{#if message}
+					<Alert variant={failed ? 'destructive' : 'default'}>
+						<AlertDescription>{message}</AlertDescription>
+					</Alert>
+				{/if}
+				<p class="text-sm text-(--text)/64">
+					Your estimated maintenance is {estimatedTdee} kcal per day.
+				</p>
+				<FieldGroup>
+					<div class="grid gap-4 sm:grid-cols-3">
+						<Field>
+							<FieldLabel for="weightKg">Weight (kg)</FieldLabel>
+							<Input
+								id="weightKg"
+								name="weightKg"
+								type="number"
+								step="0.1"
+								min="20"
+								max="300"
+								value={profile.weightKg}
+								required
+							/>
+						</Field>
+						<Field>
+							<FieldLabel for="heightCm">Height (cm)</FieldLabel>
+							<Input
+								id="heightCm"
+								name="heightCm"
+								type="number"
+								step="0.1"
+								min="100"
+								max="250"
+								value={profile.heightCm}
+								required
+							/>
+						</Field>
+						<Field>
+							<FieldLabel for="age">Age</FieldLabel>
+							<Input
+								id="age"
+								name="age"
+								type="number"
+								min="10"
+								max="120"
+								value={profile.age}
+								required
+							/>
+						</Field>
+					</div>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<Field>
+							<FieldLabel>Gender</FieldLabel>
+							<Select type="single" name="gender" bind:value={gender}>
+								<SelectTrigger class="w-full">{gender === 'male' ? 'Male' : 'Female'}</SelectTrigger
+								>
+								<SelectContent>
+									<SelectItem value="male">Male</SelectItem>
+									<SelectItem value="female">Female</SelectItem>
+								</SelectContent>
+							</Select>
+						</Field>
+						<Field>
+							<FieldLabel>Activity level</FieldLabel>
+							<Select type="single" name="activityLevel" bind:value={activityLevel}>
+								<SelectTrigger class="w-full">{activityLabel}</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="sedentary">Sedentary</SelectItem>
+									<SelectItem value="light">Light activity</SelectItem>
+									<SelectItem value="moderate">Moderate activity</SelectItem>
+									<SelectItem value="active">Active</SelectItem>
+									<SelectItem value="very_active">Very active</SelectItem>
+								</SelectContent>
+							</Select>
+						</Field>
+					</div>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<Field>
+							<FieldLabel>Goal calculation</FieldLabel>
+							<Select type="single" name="goalMode" bind:value={goalMode}>
+								<SelectTrigger class="w-full">
+									{goalMode === 'custom' ? 'Manual goal' : 'Use estimate'}
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="estimated">Use TDEE estimate</SelectItem>
+									<SelectItem value="custom">Set a manual calorie goal</SelectItem>
+								</SelectContent>
+							</Select>
+						</Field>
+						<Field>
+							<FieldLabel for="customGoal">Manual daily goal (kcal)</FieldLabel>
+							<Input
+								id="customGoal"
+								name="customGoal"
+								type="number"
+								min="500"
+								max="10000"
+								value={profile.dailyCalorieGoal}
+								disabled={goalMode !== 'custom'}
+								required={goalMode === 'custom'}
+							/>
+							<FieldDescription>Overrides the estimated daily goal.</FieldDescription>
+						</Field>
+					</div>
+				</FieldGroup>
+				<Button type="submit" disabled={saving}>Save nutrition settings</Button>
+			</form>
+		{:else}
+			<div class="space-y-4">
+				<p class="text-sm leading-6 text-(--text)/64">
+					Set a daily calorie goal before tracking meals.
+				</p>
+				<Button href="/nutrition/onboarding">Set up nutrition</Button>
+			</div>
+		{/if}
+	</CardContent>
+</Card>

@@ -117,7 +117,7 @@
 				<Sparkles class="mx-auto size-8" style={`color: ${colors.primary}`} />
 				<p class="text-sm text-(--text)/56">Your shop does not have any rewards yet.</p>
 				<Button
-					href="/profile#rewards"
+					href="/shop/settings"
 					class="text-white hover:text-white hover:brightness-110"
 					style={`background: ${colors.primary}`}>Set up rewards</Button
 				>

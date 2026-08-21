@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
+	import { ModeWatcher } from 'mode-watcher';
 	import { toast } from 'svelte-sonner';
 	import { audioVolumeState } from '$lib/audio/audio-volume.svelte';
 	import AppNavbar from '$lib/components/appNavbar.svelte';
@@ -121,7 +122,7 @@
 		toast.error('Some Android data is not being processed.', {
 			id: ANDROID_SYNC_TOAST,
 			description,
-			action: { label: 'Review', onClick: () => void goto(resolve('/profile')) }
+			action: { label: 'Review', onClick: () => location.assign(`${resolve('/profile')}?tab=data`) }
 		});
 	}
 
@@ -133,13 +134,16 @@
 		pathname: string,
 		pageData: DatedPageData
 	): DateNavigation | undefined {
-		if (pathname === '/' || !pageData.date || !pageData.today) return;
+		if (pathname.endsWith('/settings')) return;
+		const date = pageData.date ?? pageData.actionFeed?.date;
+		const today = pageData.today ?? pageData.actionFeed?.daySummary.today;
+		if (!date || !today) return;
 		return {
-			date: pageData.date,
-			today: pageData.today,
+			date,
+			today,
 			markedDates: markedDates(pageData),
 			colors: dateSelectorColors(pathname),
-			hrefForDate: (selectedDate) => dateHref(pathname, selectedDate, pageData.today as string)
+			hrefForDate: (selectedDate) => dateHref(pathname, selectedDate, today)
 		};
 	}
 
@@ -167,18 +171,32 @@
 	}
 </script>
 
-<div class={appShellActive ? 'safe-area-padding-y flex h-svh flex-col overflow-hidden' : undefined}>
-	{#if dateNavigation}
+<ModeWatcher
+	defaultMode="system"
+	modeStorageKey="self-improvement-theme"
+	themeColors={{ light: '#ffffff', dark: '#000000' }}
+/>
+
+<div
+	class={appShellActive ? 'safe-area-padding-top flex h-svh flex-col overflow-hidden' : undefined}
+>
+	{#if dateNavigation || selectedFeature}
 		<div class="app-gutter shrink-0 py-(--app-header-padding-block)">
-			<DateSelector
-				date={dateNavigation.date}
-				today={dateNavigation.today}
-				markedDates={[...dateSelectorState.markedDates]}
-				colors={dateNavigation.colors}
-				hrefForDate={dateNavigation.hrefForDate}
-			/>
+			{#if dateNavigation}
+				<DateSelector
+					date={dateNavigation.date}
+					today={dateNavigation.today}
+					markedDates={[...dateSelectorState.markedDates]}
+					colors={dateNavigation.colors}
+					hrefForDate={dateNavigation.hrefForDate}
+				/>
+			{/if}
 			{#if selectedFeature}
-				<TrackerTitle tracker={selectedFeature} class="mt-2" />
+				<TrackerTitle
+					tracker={selectedFeature}
+					settingsActive={page.url.pathname.endsWith('/settings')}
+					class={dateNavigation ? 'mt-2' : undefined}
+				/>
 			{/if}
 		</div>
 	{/if}

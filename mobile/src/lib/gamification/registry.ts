@@ -4,6 +4,7 @@ export const shopFeature = {
 	id: 'glimmers',
 	label: 'Glimmers',
 	href: '/shop',
+	settingsHref: '/shop/settings',
 	colors: gamificationColors.glimmers
 } as const;
 

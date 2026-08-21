@@ -3,8 +3,19 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-		<meta name="theme-color" content="#f5f2eb" />
 		<link rel="icon" href="/app-icon.svg" />
+		<script>
+			const root = document.documentElement;
+			let theme = 'system';
+			try {
+				theme = localStorage.getItem('self-improvement-theme') ?? 'system';
+			} catch {}
+			const dark =
+				theme === 'dark' ||
+				(theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+			root.classList.toggle('dark', dark);
+			root.style.colorScheme = dark ? 'dark' : 'light';
+		</script>
 		<style>
 			#app-loading-screen {
 				position: fixed;
@@ -14,6 +25,10 @@
 				align-items: center;
 				justify-content: center;
 				background: #f5f2eb;
+			}
+
+			html.dark #app-loading-screen {
+				background: #111111;
 			}
 
 			#app-loading-content {

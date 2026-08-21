@@ -36,13 +36,32 @@ const actionProviders: Partial<Record<AppTrackerId, ActionProvider>> = {
 	happiness: (summary) => getHappinessActions(summary.date, summary.happinessRating !== null)
 };
 
-export async function loadActionFeed(db: Database, userId: string) {
+export async function loadActionFeed(db: Database, userId: string, requestedDate: string | null) {
 	const [daySummary, enabledTrackers] = await Promise.all([
-		loadDaySummary(db, userId, null),
+		loadDaySummary(db, userId, requestedDate),
 		getEnabledTrackers(db, userId)
 	]);
 	const trackerIds = enabledTrackers.map(({ id }) => id);
-	return { date: daySummary.date, daySummary, items: buildActionItems(daySummary, trackerIds) };
+	const items = dateActionItems(buildActionItems(daySummary, trackerIds), daySummary);
+	return { date: daySummary.date, daySummary, items };
+}
+
+export function dateActionItems(
+	items: ActionFeedItem[],
+	summary: Pick<DaySummary, 'date' | 'today'>
+) {
+	if (summary.date === summary.today) return items;
+	return items.map((item) => withSelectedDate(item, summary.date));
+}
+
+function withSelectedDate(item: ActionFeedItem, date: string): ActionFeedItem {
+	if (item.action.type !== 'navigate' || item.action.href.startsWith('/android-data-help'))
+		return item;
+	const separator = item.action.href.includes('?') ? '&' : '?';
+	return {
+		...item,
+		action: { ...item.action, href: `${item.action.href}${separator}date=${date}` }
+	};
 }
 
 export function buildActionItems(summary: DaySummary, trackerIds: AppTrackerId[]) {

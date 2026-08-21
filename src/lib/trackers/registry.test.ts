@@ -9,4 +9,9 @@ describe('tracker registry', () => {
 		expect(hiddenTrackerIds).toEqual(['achievements', 'streaks']);
 		expect(appTrackers.map((tracker) => tracker.id)).not.toContain('achievements');
 	});
+
+	it('publishes tracker settings routes to the mobile session', () => {
+		expect(appTrackers.find(({ id }) => id === 'fitness')?.settingsHref).toBe('/fitness/settings');
+		expect(appTrackers.find(({ id }) => id === 'steps')?.settingsHref).toBeNull();
+	});
 });

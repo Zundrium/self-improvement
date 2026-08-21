@@ -4,23 +4,20 @@
 	import { Button } from '$lib/components/ui/button';
 </script>
 
-<div class="space-y-2 px-3 py-2">
-	<div class="flex items-center justify-between gap-3">
-		<span class="text-sm">Volume</span>
-		<Button
-			variant="ghost"
-			size="icon"
-			class="size-8"
-			aria-label={audioVolumeState.muted ? 'Unmute audio' : 'Mute audio'}
-			onclick={() => audioVolumeState.toggleMuted()}
-		>
-			{#if audioVolumeState.muted}<VolumeX class="size-4" />{:else}<Volume2 class="size-4" />{/if}
-		</Button>
-	</div>
+<div class="flex items-center gap-2 px-3 py-2">
+	<Button
+		variant="ghost"
+		size="icon"
+		class="size-8 shrink-0"
+		aria-label={audioVolumeState.muted ? 'Unmute audio' : 'Mute audio'}
+		onclick={() => audioVolumeState.toggleMuted()}
+	>
+		{#if audioVolumeState.muted}<VolumeX class="size-4" />{:else}<Volume2 class="size-4" />{/if}
+	</Button>
 	<label class="sr-only" for="app-volume">Audio volume</label>
 	<input
 		id="app-volume"
-		class="volume-slider h-6 w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+		class="volume-slider h-6 min-w-0 flex-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
 		style={`--volume-progress: ${audioVolumeState.volume * 100}%`}
 		type="range"
 		min="0"

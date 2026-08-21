@@ -1,0 +1,77 @@
+<script lang="ts">
+	import { invalidateAll } from '$app/navigation';
+	import { untrack } from 'svelte';
+	import { apiRequest } from '$lib/api';
+	import { Alert, AlertDescription } from '$lib/components/ui/alert';
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Checkbox } from '$lib/components/ui/checkbox';
+	import type { ProfileData } from '$lib/api-types';
+	import type { AppTrackerId } from '$lib/trackers/registry';
+
+	type TrackerPreference = ProfileData['trackerPreferences'][number];
+	let { trackers }: { trackers: TrackerPreference[] } = $props();
+	let enabledTrackers = $state<AppTrackerId[]>(
+		untrack(() => trackers.filter((tracker) => tracker.enabled).map((tracker) => tracker.id))
+	);
+	let message = $state('');
+	let failed = $state(false);
+	let saving = $state(false);
+
+	function toggleTracker(id: AppTrackerId, checked: boolean) {
+		enabledTrackers = checked
+			? [...new Set([...enabledTrackers, id])]
+			: enabledTrackers.filter((trackerId) => trackerId !== id);
+	}
+
+	async function saveTrackers() {
+		saving = true;
+		try {
+			await apiRequest('/api/app/profile', {
+				method: 'PATCH',
+				body: JSON.stringify({ trackers: enabledTrackers })
+			});
+			failed = false;
+			message = 'Tracker visibility updated.';
+			await invalidateAll();
+		} catch (cause) {
+			failed = true;
+			message = cause instanceof Error ? cause.message : 'Could not update your trackers.';
+		} finally {
+			saving = false;
+		}
+	}
+</script>
+
+<Card>
+	<CardHeader><CardTitle>Active trackers</CardTitle></CardHeader>
+	<CardContent class="space-y-5">
+		<p class="text-sm leading-6 text-(--text)/64">
+			Choose which trackers appear in the app drawer. Tracker-specific options are available from
+			the settings icon on each tracker.
+		</p>
+		{#if message}
+			<Alert variant={failed ? 'destructive' : 'default'}>
+				<AlertDescription>{message}</AlertDescription>
+			</Alert>
+		{/if}
+		<div class="divide-y divide-(--text)/8">
+			{#each trackers as tracker (tracker.id)}
+				<div class="flex items-start gap-3 py-4 first:pt-0 last:pb-0">
+					<Checkbox
+						id="tracker-{tracker.id}"
+						checked={enabledTrackers.includes(tracker.id)}
+						onCheckedChange={(checked) => toggleTracker(tracker.id, checked)}
+					/>
+					<label class="min-w-0 flex-1 cursor-pointer" for="tracker-{tracker.id}">
+						<span class="block text-sm font-medium">{tracker.label}</span>
+						<span class="mt-0.5 block text-sm leading-5 text-(--text)/56">
+							{tracker.description}
+						</span>
+					</label>
+				</div>
+			{/each}
+		</div>
+		<Button type="button" disabled={saving} onclick={saveTrackers}>Save trackers</Button>
+	</CardContent>
+</Card>
