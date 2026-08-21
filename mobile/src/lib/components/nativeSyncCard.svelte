@@ -2,27 +2,30 @@
 	import { onMount } from 'svelte';
 	import { Activity, RefreshCw, Settings, Shield, Smartphone } from '@lucide/svelte';
 	import { mobileRepository } from '$lib/api';
-	import { Alert, AlertDescription } from '$lib/components/ui/alert';
+	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { TRACKER_IDS, type MobileSyncStatus } from '$domain/model';
-	import { createEmptyStatus } from '$domain/status';
-	import { SyncCoordinator } from '$domain/sync-coordinator';
+	import { TRACKER_IDS, type MobileSyncStatus, type TrackerId } from '$domain/model';
+	import { createEmptyStatus, failedTrackerIds } from '$domain/status';
+	import {
+		androidHealth as health,
+		androidSyncCoordinator,
+		androidUsage as usage,
+		checkAndroidPermissions
+	} from '$native/android-data';
 	import { listenForResume } from '$native/app';
-	import { AndroidHealthAdapter } from '$native/health';
-	import { createNativeTrackerJobs } from '$native/jobs';
+	import { openAndroidAppDetails } from '$native/android-settings';
 	import { isNativeAndroid } from '$native/platform';
-	import { AndroidUsageAdapter } from '$native/usage';
-
-	const health = new AndroidHealthAdapter();
-	const usage = new AndroidUsageAdapter();
-	const coordinator = new SyncCoordinator(mobileRepository, createNativeTrackerJobs(health, usage));
 	let status = $state<MobileSyncStatus>(createEmptyStatus());
 	let healthAvailable = $state(false);
+	let loaded = $state(false);
 	let busy = $state(false);
 	let message = $state('');
 	let failed = $state(false);
+	const screenTimeNeedsAccess = $derived(
+		loaded && status.trackers.screenTime.permission !== 'granted'
+	);
 
 	onMount(() => {
 		if (!isNativeAndroid()) return;
@@ -33,23 +36,23 @@
 	});
 
 	async function refresh() {
-		await run(refreshPermissions, 'Could not read Android permissions.');
+		await run(async () => {
+			await androidSyncCoordinator.syncStale();
+			await refreshPermissions();
+			const trackers = failedTrackerIds(status);
+			failed = trackers.length > 0;
+			message = failed ? syncFailureMessage(trackers) : '';
+		}, 'Could not refresh Android data.');
 	}
 
 	async function refreshPermissions() {
-		const availability = await health.isAvailable();
-		healthAvailable = availability.available;
-		const unavailable = Promise.resolve({ state: 'unavailable' as const });
-		const [steps, sleep, screenTime] = await Promise.all([
-			availability.available ? health.checkPermission('steps') : unavailable,
-			availability.available ? health.checkPermission('sleep') : unavailable,
-			usage.checkPermission()
-		]);
+		const result = await checkAndroidPermissions();
+		healthAvailable = result.healthAvailable;
 		status = await mobileRepository.loadStatus();
-		status.trackers.steps.permission = steps.state;
-		status.trackers.sleep.permission = sleep.state;
-		status.trackers.screenTime.permission = screenTime.state;
-		await mobileRepository.saveStatus(status);
+		status.trackers.steps.permission = result.permissions.steps;
+		status.trackers.sleep.permission = result.permissions.sleep;
+		status.trackers.screenTime.permission = result.permissions.screenTime;
+		loaded = true;
 	}
 
 	async function grantHealth() {
@@ -57,6 +60,10 @@
 			await health.requestReadPermissions();
 			await refreshPermissions();
 		}, 'Health Connect permission could not be requested.');
+	}
+
+	async function openAppSettings() {
+		await run(() => openAndroidAppDetails(), 'App settings could not be opened.');
 	}
 
 	async function openUsageSettings() {
@@ -69,13 +76,11 @@
 
 	async function syncNow() {
 		await run(async () => {
-			const report = await coordinator.syncAll();
+			await androidSyncCoordinator.syncAll();
 			status = await mobileRepository.loadStatus();
-			failed = report.overall === 'failed' || report.overall === 'partial';
-			message =
-				report.overall === 'success'
-					? 'Health and screen time are up to date.'
-					: 'Some trackers need attention.';
+			const trackers = failedTrackerIds(status);
+			failed = trackers.length > 0;
+			message = failed ? syncFailureMessage(trackers) : 'Health and screen time are up to date.';
 		}, 'Synchronization could not complete.');
 	}
 
@@ -102,6 +107,11 @@
 		const value = status.trackers[tracker].lastSuccessAt;
 		return value ? new Date(value).toLocaleString() : 'Not synced yet';
 	}
+
+	function syncFailureMessage(trackers: TrackerId[]) {
+		const labels = trackers.map(label).join(', ');
+		return `${labels} ${trackers.length === 1 ? 'is' : 'are'} not being processed.`;
+	}
 </script>
 
 <Card>
@@ -115,6 +125,15 @@
 				Health Connect and Usage Access are available in the Android app.
 			</p>
 		{:else}
+			{#if screenTimeNeedsAccess}
+				<Alert variant="destructive">
+					<AlertTitle>Screen time is not being processed</AlertTitle>
+					<AlertDescription>
+						Android Usage Access is off. If Android calls it a restricted setting, open App
+						settings, tap ⋮, choose Allow restricted settings, then return and open Usage access.
+					</AlertDescription>
+				</Alert>
+			{/if}
 			{#if message}
 				<Alert variant={failed ? 'destructive' : 'default'}
 					><AlertDescription>{message}</AlertDescription></Alert
@@ -140,8 +159,13 @@
 				>
 					<Activity class="size-4" /> Health access
 				</Button>
+				{#if screenTimeNeedsAccess}
+					<Button type="button" variant="ghost" disabled={busy} onclick={openAppSettings}>
+						<Settings class="size-4" /> App settings
+					</Button>
+				{/if}
 				<Button type="button" variant="ghost" disabled={busy} onclick={openUsageSettings}>
-					<Settings class="size-4" /> Usage access
+					<Smartphone class="size-4" /> Usage access
 				</Button>
 				<Button type="button" variant="ghost" disabled={busy} onclick={openPrivacyPolicy}>
 					<Shield class="size-4" /> Privacy

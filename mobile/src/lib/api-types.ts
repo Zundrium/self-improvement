@@ -28,6 +28,7 @@ export type DashboardData = {
 	sleepMinutes: number;
 	sleepGoalMinutes: number;
 	screenTimeMinutes: number;
+	screenTimeRecorded: boolean;
 	fitnessDone: boolean;
 	fitnessWorkoutTitle: string;
 	calories: number;
@@ -54,6 +55,7 @@ export type SleepData = DatedData & {
 };
 
 export type ScreenTimeData = DatedData & {
+	connection: { lastReceivedAt: string | null } | null;
 	isSynced: boolean;
 	usage: {
 		totalMinutes: number;

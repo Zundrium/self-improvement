@@ -1,11 +1,11 @@
 <script lang="ts">
 	import '@fontsource-variable/ibm-plex-sans';
 	import './layout.css';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
-	import favicon from '$lib/assets/favicon.svg';
+	import { toast } from 'svelte-sonner';
 	import { audioVolumeState } from '$lib/audio/audio-volume.svelte';
 	import AppNavbar from '$lib/components/appNavbar.svelte';
 	import BottomActionBarOutlet from '$lib/components/bottomActionBarOutlet.svelte';
@@ -19,11 +19,13 @@
 		getTrackerForPathname,
 		type TrackerColors
 	} from '$lib/trackers/registry';
-	import { SyncCoordinator } from '$domain/sync-coordinator';
-	import { getLaunchUrl, listenForAppUrls, listenForResume } from '$native/app';
-	import { createNativeTrackerJobs } from '$native/jobs';
-	import { isNativeAndroid } from '$native/platform';
 	import { mobileRepository } from '$lib/api';
+	import type { TrackerId } from '$domain/model';
+	import { failedTrackerIds } from '$domain/status';
+	import { androidSyncCoordinator } from '$native/android-data';
+	import { ANDROID_SETUP_PATH } from '$native/android-setup';
+	import { getLaunchUrl, listenForAppUrls, listenForResume } from '$native/app';
+	import { isNativeAndroid } from '$native/platform';
 	import type { LayoutProps } from './$types';
 
 	type DatedPageData = {
@@ -43,6 +45,7 @@
 		hrefForDate: (date: string) => string;
 	};
 
+	const ANDROID_SYNC_TOAST = 'android-sync-failure';
 	let { data, children }: LayoutProps = $props();
 	const initialPageData = page.data as DatedPageData;
 	const dateSelectorState = provideDateSelectorState(markedDates(initialPageData));
@@ -51,22 +54,31 @@
 		createDateNavigation(page.url.pathname, page.data as DatedPageData)
 	);
 	const selectedTracker = $derived(getTrackerForPathname(page.url.pathname));
-	const appShellActive = $derived(Boolean(data.user) && page.url.pathname !== '/nutrition/track');
+	const standalonePage = $derived(
+		page.url.pathname === '/nutrition/track' || page.url.pathname === ANDROID_SETUP_PATH
+	);
+	const appShellActive = $derived(Boolean(data.user) && !standalonePage);
 
 	$effect(() => {
 		const dates = dateNavigation?.markedDates ?? [];
 		untrack(() => dateSelectorState.replace(dates));
 	});
 
+	$effect(() => {
+		const pathname = page.url.pathname;
+		if (!data.user || pathname === ANDROID_SETUP_PATH || !isNativeAndroid()) return;
+		untrack(() => void showStoredSyncStatus());
+	});
+
 	onMount(() => {
+		document.getElementById('app-loading-screen')?.remove();
 		audioVolumeState.hydrate();
 		if (!isNativeAndroid()) return;
-		const coordinator = new SyncCoordinator(mobileRepository, createNativeTrackerJobs());
-		if (data.user) void coordinator.syncStale();
+		if (data.user) void syncAndroidData();
 		let removeResume = () => {};
 		let removeUrls = () => {};
 		void listenForResume(async () => {
-			if (data.user) await coordinator.syncStale();
+			if (data.user) await syncAndroidData();
 		}).then((remove) => (removeResume = remove));
 		void getLaunchUrl().then((url) => url && openAppUrl(url));
 		void listenForAppUrls(openAppUrl).then((remove) => (removeUrls = remove));
@@ -75,6 +87,43 @@
 			removeUrls();
 		};
 	});
+
+	async function syncAndroidData() {
+		try {
+			const report = await androidSyncCoordinator.syncStale();
+			if (report.results.some((result) => result.outcome === 'success')) await invalidateAll();
+			showSyncStatus(failedTrackerIds(await mobileRepository.loadStatus()));
+		} catch {
+			showSyncFailure('Android data could not be synchronized.');
+		}
+	}
+
+	async function showStoredSyncStatus() {
+		try {
+			showSyncStatus(failedTrackerIds(await mobileRepository.loadStatus()));
+		} catch {
+			showSyncFailure('Android data status could not be read.');
+		}
+	}
+
+	function showSyncStatus(trackers: TrackerId[]) {
+		if (page.url.pathname === ANDROID_SETUP_PATH) return;
+		if (!trackers.length) return void toast.dismiss(ANDROID_SYNC_TOAST);
+		const labels = trackers.map(trackerLabel).join(', ');
+		showSyncFailure(`Review ${labels} under Profile.`);
+	}
+
+	function showSyncFailure(description: string) {
+		toast.error('Some Android data is not being processed.', {
+			id: ANDROID_SYNC_TOAST,
+			description,
+			action: { label: 'Review', onClick: () => void goto(resolve('/profile')) }
+		});
+	}
+
+	function trackerLabel(tracker: TrackerId) {
+		return tracker === 'screenTime' ? 'Screen time' : tracker[0].toUpperCase() + tracker.slice(1);
+	}
 
 	function createDateNavigation(
 		pathname: string,
@@ -115,7 +164,6 @@
 	}
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
 <div class={appShellActive ? 'safe-area-padding-y flex h-svh flex-col overflow-hidden' : undefined}>
 	{#if dateNavigation}
 		<div class="app-gutter shrink-0 py-(--app-header-padding-block)">

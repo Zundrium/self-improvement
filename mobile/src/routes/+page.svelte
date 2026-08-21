@@ -20,9 +20,13 @@
 		steps: trackerDetail(`${data.dashboard.steps.toLocaleString()} steps`, stepsDone, '/steps'),
 		sleep: trackerDetail(formatSleepMinutes(data.dashboard.sleepMinutes), sleepDone, '/sleep'),
 		'screen-time': trackerDetail(
-			formatScreenTime(data.dashboard.screenTimeMinutes),
-			data.dashboard.screenTimeMinutes <= DEFAULT_SCREEN_TIME_LIMIT_MINUTES,
-			'/screen-time'
+			data.dashboard.screenTimeRecorded
+				? formatScreenTime(data.dashboard.screenTimeMinutes)
+				: 'Not synced',
+			data.dashboard.screenTimeRecorded &&
+				data.dashboard.screenTimeMinutes <= DEFAULT_SCREEN_TIME_LIMIT_MINUTES,
+			'/screen-time',
+			true
 		),
 		fitness: trackerDetail(
 			data.dashboard.fitnessWorkoutTitle,

@@ -61,7 +61,7 @@ export async function loadDashboard(db: Database, userId: string, requestedDate:
 		stepGoal: stepConnection?.dailyGoal ?? DEFAULT_STEP_GOAL,
 		sleepMinutes: summaries[1],
 		sleepGoalMinutes: sleepConnection?.dailyGoalMinutes ?? DEFAULT_SLEEP_GOAL_MINUTES,
-		screenTimeMinutes: summaries[2],
+		...summaries[2],
 		...summaries[3],
 		...summaries[4],
 		meditationDone: summaries[5],
@@ -80,7 +80,11 @@ async function loadSleep(db: Database, userId: string, date: string) {
 }
 
 async function loadScreenTime(db: Database, userId: string, date: string) {
-	return (await getDailyScreenTime(db, userId, date, date))[0]?.totalMinutes ?? 0;
+	const snapshot = (await getDailyScreenTime(db, userId, date, date))[0];
+	return {
+		screenTimeMinutes: snapshot?.totalMinutes ?? 0,
+		screenTimeRecorded: Boolean(snapshot)
+	};
 }
 
 async function loadFitness(db: Database, userId: string, date: string) {

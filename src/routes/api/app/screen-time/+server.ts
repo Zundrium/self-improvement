@@ -27,7 +27,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	}));
 	const summary = summarizeUsage(chronologicalDays);
 	return json({
-		connection,
+		connection: connection ? { lastReceivedAt: connection.lastReceivedAt } : null,
 		isSynced: Boolean(connection?.lastReceivedAt),
 		date,
 		today,

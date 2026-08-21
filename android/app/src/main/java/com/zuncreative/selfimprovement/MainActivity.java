@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        registerPlugin(AndroidSettingsPlugin.class);
         super.onCreate(savedInstanceState);
         appUpdater = new AppUpdater(this);
         appUpdater.checkForUpdate();
