@@ -153,9 +153,11 @@
 
 <section aria-label="Meditation timer">
 	<div class="flex flex-col items-center gap-4 pt-2">
-		<MeditationIcon class="size-56 sm:size-64" color={colors.primary} />
+		<div data-meditation-icon>
+			<MeditationIcon class="size-56 sm:size-64" color={colors.primary} />
+		</div>
 
-		<div class="flex w-full items-center justify-center gap-2 sm:gap-4">
+		<div class="flex w-full items-center justify-center gap-2 sm:gap-4" data-meditation-timer>
 			<Button
 				variant="ghost"
 				size="icon"
@@ -186,9 +188,7 @@
 		</div>
 
 		<div class="min-h-5 text-center text-sm text-(--text)/56" aria-live="polite">
-			{#if status === 'running'}
-				Meditation in progress
-			{:else if status === 'paused'}
+			{#if status === 'paused'}
 				Timer paused
 			{:else if saveState === 'saving'}
 				<span class="inline-flex items-center gap-2"

@@ -61,7 +61,10 @@
 	/>
 </svelte:head>
 
-<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-8">
+<TrackerPage
+	class="flex max-w-(--app-compact-max-width) flex-col"
+	contentClass="flex flex-1 flex-col"
+>
 	<BreathingExercise
 		localDate={data.date}
 		{saveState}

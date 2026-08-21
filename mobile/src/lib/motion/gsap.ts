@@ -256,8 +256,9 @@ export function watchExpanded(node: HTMLElement) {
 }
 
 function revealPage(node: HTMLElement) {
-	const targets = pageTargets(node);
 	node.style.visibility = 'visible';
+	if (node.querySelector('[data-motion-page-enter="custom"]')) return;
+	const targets = pageTargets(node);
 	if (!targets.length) return;
 	gsap.fromTo(
 		targets,

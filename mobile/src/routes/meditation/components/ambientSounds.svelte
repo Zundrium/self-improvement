@@ -47,6 +47,7 @@
 			<Button
 				variant="ghost"
 				class="h-auto flex-col gap-2 bg-transparent px-1 py-2 hover:bg-transparent"
+				data-meditation-sound
 				aria-label={`${active ? 'Stop' : 'Play'} ${sound.label}`}
 				aria-pressed={active}
 				disabled={Boolean(loadingSoundId && loadingSoundId !== sound.id)}
