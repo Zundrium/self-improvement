@@ -1,133 +1,84 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import { trackerIcons } from '$lib/trackers/icons';
-	import { getTrackerColors, type TrackerId } from '$lib/trackers/registry';
-	import TrackerTile from '$lib/components/trackerTile.svelte';
-	import { DEFAULT_SCREEN_TIME_LIMIT_MINUTES, formatScreenTime } from './screen-time/screen-time';
-	import { formatSleepMinutes } from './sleep/sleep';
+	import { invalidateAll } from '$app/navigation';
+	import { onMount, untrack } from 'svelte';
+	import { toast } from 'svelte-sonner';
+	import type { ActionFeedItem } from '$lib/api-types';
+	import GameBar from '$lib/components/gameBar.svelte';
+	import { loadNativeActionFeedItems } from '$native/action-feed';
+	import { androidHealth, androidSyncCoordinator, androidUsage } from '$native/android-data';
+	import { listenForResume } from '$native/app';
+	import { isNativeAndroid } from '$native/platform';
+	import ActionFeed from './actionFeed.svelte';
+	import { mergeActionFeedItems } from './action-feed';
 	import type { PageProps } from './$types';
 
-	type TrackerState = 'complete' | 'attention' | 'incomplete';
-	type TrackerDetails = { value: string; state: TrackerState; href: string };
-
 	let { data }: PageProps = $props();
-	const stepsDone = $derived(data.dashboard.steps >= data.dashboard.stepGoal);
-	const sleepDone = $derived(data.dashboard.sleepMinutes >= data.dashboard.sleepGoalMinutes);
-	const caloriesDone = $derived(
-		data.dashboard.calorieGoal !== null && data.dashboard.calories <= data.dashboard.calorieGoal
-	);
-	const trackerDetails = $derived({
-		steps: trackerDetail(`${data.dashboard.steps.toLocaleString()} steps`, stepsDone, '/steps'),
-		sleep: trackerDetail(formatSleepMinutes(data.dashboard.sleepMinutes), sleepDone, '/sleep'),
-		'screen-time': trackerDetail(
-			data.dashboard.screenTimeRecorded
-				? formatScreenTime(data.dashboard.screenTimeMinutes)
-				: 'Not synced',
-			data.dashboard.screenTimeRecorded &&
-				data.dashboard.screenTimeMinutes <= DEFAULT_SCREEN_TIME_LIMIT_MINUTES,
-			'/screen-time',
-			true
-		),
-		fitness: trackerDetail(
-			data.dashboard.fitnessWorkoutTitle,
-			data.dashboard.fitnessDone,
-			'/fitness',
-			data.dashboard.fitnessWorkoutTitle !== 'Rest day'
-		),
-		nutrition: {
-			value: `${data.dashboard.calories.toLocaleString()} kcal`,
-			state: trackerState(caloriesDone),
-			href: `/nutrition/log/${data.dashboard.date}`
-		},
-		meditation: trackerDetail(
-			data.dashboard.meditationDone ? 'Completed' : 'Not yet',
-			data.dashboard.meditationDone,
-			'/meditation',
-			true
-		),
-		breathing: trackerDetail(
-			data.dashboard.breathingDone ? 'Completed' : 'Not yet',
-			data.dashboard.breathingDone,
-			'/breathing',
-			true
-		),
-		happiness: trackerDetail(
-			data.dashboard.happinessRating ? `${data.dashboard.happinessRating}/5` : 'Not logged',
-			data.dashboard.happinessRating !== null,
-			'/happiness',
-			true
-		),
-		period: trackerDetail(
-			data.dashboard.periodFlow ? `${capitalize(data.dashboard.periodFlow)} flow` : 'Not logged',
-			data.dashboard.periodFlow !== null,
-			'/period'
-		)
-	} satisfies Record<TrackerId, TrackerDetails>);
-	const dashboardTrackers = $derived(
-		data.enabledTrackers.map((tracker) => ({
-			...tracker,
-			...trackerDetails[tracker.id],
-			icon: trackerIcons[tracker.id],
-			colors: getTrackerColors(tracker.id)
-		}))
-	);
+	let nativeItems = $state(untrack(() => data.nativeItems));
+	let busyActionId = $state('');
+	const trackerIds = $derived(data.enabledTrackers.map(({ id }) => id));
+	const items = $derived(mergeActionFeedItems(data.actionFeed.items, nativeItems));
 
-	function trackerDetail(
-		value: string,
-		complete: boolean,
-		path: string,
-		needsAttention = false
-	): TrackerDetails {
-		return { value, state: trackerState(complete, needsAttention), href: datedFeatureHref(path) };
+	$effect(() => {
+		const updatedNativeItems = data.nativeItems;
+		untrack(() => (nativeItems = updatedNativeItems));
+	});
+
+	onMount(() => {
+		if (!isNativeAndroid()) return;
+		let removeResume = () => {};
+		void listenForResume(refreshNativeItems).then((remove) => (removeResume = remove));
+		return () => removeResume();
+	});
+
+	async function executeAction(item: ActionFeedItem) {
+		if (item.action.type === 'navigate' || busyActionId) return;
+		busyActionId = item.id;
+		try {
+			await runNativeAction(item.action);
+		} catch (cause) {
+			toast.error(cause instanceof Error ? cause.message : 'The action could not be completed.');
+		} finally {
+			busyActionId = '';
+		}
 	}
 
-	function trackerState(complete: boolean, needsAttention = false): TrackerState {
-		if (complete) return 'complete';
-		return needsAttention && data.dashboard.date === data.dashboard.today
-			? 'attention'
-			: 'incomplete';
+	async function runNativeAction(action: Exclude<ActionFeedItem['action'], { type: 'navigate' }>) {
+		if (action.type === 'open-usage-access') return androidUsage.openSettings();
+		if (action.type === 'request-health-access') {
+			await androidHealth.requestReadPermissions();
+			await androidSyncCoordinator.sync(action.trackerIds);
+		}
+		if (action.type === 'sync-android-data') {
+			await androidSyncCoordinator.sync(action.trackerIds);
+		}
+		await invalidateAll();
 	}
 
-	function datedFeatureHref(path: string) {
-		return data.dashboard.date === data.dashboard.today
-			? path
-			: `${path}?date=${data.dashboard.date}`;
-	}
-
-	function capitalize(value: string) {
-		return `${value[0].toUpperCase()}${value.slice(1)}`;
+	async function refreshNativeItems() {
+		try {
+			nativeItems = await loadNativeActionFeedItems(trackerIds);
+		} catch {
+			return;
+		}
 	}
 </script>
 
 <svelte:head>
-	<title>Self Improvement</title>
-	<meta
-		name="description"
-		content="A unified daily view for health, wellbeing, fitness, and screen-time tracking."
-	/>
+	<title>Today · Self Improvement</title>
+	<meta name="description" content="Everything that needs your attention today." />
 </svelte:head>
 
-<main class="app-gutter flex flex-1 items-start justify-center pt-6 pb-4 sm:pb-6">
+<main class="app-gutter flex flex-1 items-start justify-center py-4 pb-6">
 	<div class="w-full max-w-(--app-compact-max-width)">
-		{#if dashboardTrackers.length}
-			<section class="grid grid-cols-3 gap-3" aria-label="Daily dashboard">
-				{#each dashboardTrackers as tracker (tracker.id)}
-					<TrackerTile
-						href={tracker.href}
-						label={tracker.label}
-						description={tracker.value}
-						state={tracker.state}
-						icon={tracker.icon}
-						colors={tracker.colors}
-					/>
-				{/each}
-			</section>
-		{:else}
-			<section class="space-y-4 py-12 text-center">
-				<h1 class="text-xl font-medium">No trackers selected</h1>
-				<p class="text-sm text-(--text)/56">Choose the trackers you want to see in your profile.</p>
-				<Button href="/profile">Choose trackers</Button>
-			</section>
+		{#if data.gamification}
+			<GameBar
+				gamification={data.gamification}
+				date={data.actionFeed.date}
+				today={data.actionFeed.daySummary.today}
+			/>
 		{/if}
+		<div class="mt-3">
+			<ActionFeed {items} {busyActionId} onexecute={(item) => void executeAction(item)} />
+		</div>
 	</div>
 </main>

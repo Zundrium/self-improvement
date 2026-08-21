@@ -71,6 +71,15 @@ export async function findScreenTimeConnectionByCompanionToken(db: Database, tok
 	return { userId: connection.userId, timeZone: connection.timeZone };
 }
 
+export async function hasScreenTimeMeasurements(db: Database, userId: string) {
+	const [measurement] = await db
+		.select({ date: screenTimeDailySnapshot.localDate })
+		.from(screenTimeDailySnapshot)
+		.where(eq(screenTimeDailySnapshot.userId, userId))
+		.limit(1);
+	return Boolean(measurement);
+}
+
 export async function getDailyScreenTime(
 	db: Database,
 	userId: string,

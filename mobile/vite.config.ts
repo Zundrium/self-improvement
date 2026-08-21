@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	envDir: '..',
+	envPrefix: ['VITE_', 'PUBLIC_'],
 	plugins: [tailwindcss(), sveltekit()],
 	server: { port: 5173, strictPort: true },
 	test: {

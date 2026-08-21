@@ -2,8 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
+	import { fly } from 'svelte/transition';
 	import Icon from '@iconify/svelte';
-	import { House, LoaderCircle, LogOut, Shield, UserRound } from '@lucide/svelte';
+	import { ChevronDown, House, LoaderCircle, LogOut, Shield, UserRound } from '@lucide/svelte';
+	import { apiRequest } from '$lib/api';
 	import { signOut as endSession } from '$lib/auth-client';
 	import {
 		DropdownMenu,
@@ -13,12 +15,11 @@
 		DropdownMenuSeparator,
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
-	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
-	import { trackerIcons } from '$lib/trackers/icons';
-	import { getTrackerColors, type Tracker } from '$lib/trackers/registry';
+	import type { DaySummaryData } from '$lib/api-types';
+	import type { AppTracker } from '$lib/trackers/registry';
+	import AppDrawer from './appDrawer.svelte';
 	import AudioVolumeControl from './audioVolumeControl.svelte';
 	import ThemeToggle from './themeToggle.svelte';
-	import TrackerTile from './trackerTile.svelte';
 
 	type User = {
 		name: string;
@@ -26,8 +27,20 @@
 		role?: string | null;
 	};
 
-	let { user, trackers }: { user: User; trackers: Tracker[] } = $props();
+	let {
+		user,
+		trackers,
+		daySummary
+	}: { user: User; trackers: AppTracker[]; daySummary?: DaySummaryData } = $props();
 	let appLauncherOpen = $state(false);
+	let daySummaryLoading = $state(false);
+	let daySummaryFailed = $state(false);
+	let drawerDaySummary = $state<DaySummaryData>();
+	let navigationElement: HTMLElement | undefined;
+
+	$effect(() => {
+		if (daySummary) drawerDaySummary = daySummary;
+	});
 
 	function matchesPath(pathname: string, activePrefix: string) {
 		return activePrefix === '/' ? pathname === '/' : pathname.startsWith(activePrefix);
@@ -39,6 +52,49 @@
 
 	function isPending(activePrefix: string) {
 		return Boolean(navigating.to && matchesPath(navigating.to.url.pathname, activePrefix));
+	}
+
+	function toggleDrawer() {
+		if (appLauncherOpen) return closeDrawer();
+		appLauncherOpen = true;
+		void loadDaySummary();
+	}
+
+	function closeDrawer() {
+		appLauncherOpen = false;
+	}
+
+	function closeDrawerOutside(event: PointerEvent) {
+		const target = event.target;
+		if (target instanceof Node && !navigationElement?.contains(target)) closeDrawer();
+	}
+
+	function closeDrawerOnEscape(event: KeyboardEvent) {
+		if (event.key === 'Escape') closeDrawer();
+	}
+
+	async function loadDaySummary() {
+		const date = page.url.searchParams.get('date');
+		if (hasDaySummaryFor(date)) return;
+		drawerDaySummary = undefined;
+		daySummaryLoading = true;
+		daySummaryFailed = false;
+		try {
+			drawerDaySummary = await apiRequest<DaySummaryData>(daySummaryPath(date));
+		} catch {
+			daySummaryFailed = true;
+		} finally {
+			daySummaryLoading = false;
+		}
+	}
+
+	function hasDaySummaryFor(date: string | null) {
+		if (!drawerDaySummary) return false;
+		return date ? drawerDaySummary.date === date : drawerDaySummary.date === drawerDaySummary.today;
+	}
+
+	function daySummaryPath(date: string | null) {
+		return date ? `/api/app/day-summary?date=${encodeURIComponent(date)}` : '/api/app/day-summary';
 	}
 
 	function openProfile() {
@@ -55,8 +111,33 @@
 	}
 </script>
 
-<nav class="z-50 shrink-0 bg-white dark:bg-black" aria-label="Main navigation">
-	<div class="app-gutter">
+<svelte:window onpointerdown={closeDrawerOutside} onkeydown={closeDrawerOnEscape} />
+
+<nav bind:this={navigationElement} class="relative z-50 shrink-0" aria-label="Main navigation">
+	{#if appLauncherOpen}
+		<div
+			id="app-drawer"
+			class="absolute inset-x-0 bottom-full z-40 max-h-[calc(100svh-4rem)] overflow-y-auto bg-(--bg-elevated)"
+			transition:fly={{ y: '100%', opacity: 1, duration: 150 }}
+		>
+			{#if drawerDaySummary && !daySummaryLoading}
+				<AppDrawer {trackers} daySummary={drawerDaySummary} onSelect={closeDrawer} />
+			{:else if daySummaryFailed}
+				<button
+					type="button"
+					class="app-gutter flex min-h-48 w-full items-center justify-center text-sm text-(--text)/56"
+					onclick={() => void loadDaySummary()}
+				>
+					Tracker summary unavailable. Tap to retry.
+				</button>
+			{:else}
+				<div class="flex min-h-48 items-center justify-center" aria-label="Loading tracker apps">
+					<LoaderCircle class="size-6 animate-spin text-(--text)/40" />
+				</div>
+			{/if}
+		</div>
+	{/if}
+	<div class="app-gutter relative z-50 bg-white dark:bg-black">
 		<div class="mx-auto grid h-16 w-full max-w-(--app-compact-max-width) grid-cols-3 items-stretch">
 			<a
 				href={resolve('/')}
@@ -64,6 +145,7 @@
 				aria-label="Home"
 				aria-current={isActive('/') ? 'page' : undefined}
 				aria-busy={isPending('/')}
+				onclick={closeDrawer}
 			>
 				<span
 					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
@@ -76,46 +158,30 @@
 				</span>
 			</a>
 
-			<Popover bind:open={appLauncherOpen}>
-				<PopoverTrigger
-					class="flex cursor-pointer items-center justify-center rounded-2xl text-(--text)/40 transition-colors outline-none hover:text-(--text) focus-visible:ring-2 focus-visible:ring-(--text)/20"
-					aria-label="Open trackers"
-					aria-expanded={appLauncherOpen}
+			<button
+				type="button"
+				class="flex cursor-pointer items-center justify-center rounded-2xl text-(--text)/40 transition-colors outline-none hover:text-(--text) focus-visible:ring-2 focus-visible:ring-(--text)/20"
+				aria-label={appLauncherOpen ? 'Close app drawer' : 'Open app drawer'}
+				aria-controls="app-drawer"
+				aria-expanded={appLauncherOpen}
+				onclick={toggleDrawer}
+			>
+				<span
+					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
 				>
-					<span
-						class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
-					>
+					{#if appLauncherOpen}
+						<ChevronDown class="size-6" />
+					{:else}
 						<Icon icon="material-symbols-light:apps" class="size-6" aria-hidden="true" />
-					</span>
-				</PopoverTrigger>
-				<PopoverContent
-					side="top"
-					align="center"
-					sideOffset={12}
-					class="w-(--app-overlay-width) max-w-(--app-compact-max-width) p-(--app-overlay-padding)"
-				>
-					<p class="px-2 pb-3 text-sm font-medium">Trackers</p>
-					<div class="grid grid-cols-3 gap-1">
-						{#each trackers as tracker (tracker.id)}
-							<TrackerTile
-								href={tracker.href}
-								label={tracker.label}
-								icon={trackerIcons[tracker.id]}
-								colors={getTrackerColors(tracker.id)}
-								variant="compact"
-								active={isActive(`/${tracker.id}`)}
-								pending={isPending(`/${tracker.id}`)}
-								onSelect={() => (appLauncherOpen = false)}
-							/>
-						{/each}
-					</div>
-				</PopoverContent>
-			</Popover>
+					{/if}
+				</span>
+			</button>
 
 			<DropdownMenu>
 				<DropdownMenuTrigger
 					class="flex cursor-pointer items-center justify-center rounded-2xl ring-(--text)/20 outline-none focus-visible:ring-2"
 					aria-label="Open user menu"
+					onclick={closeDrawer}
 				>
 					<span
 						class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"

@@ -6,6 +6,7 @@
 	import { authClient, signOut as endSession } from '$lib/auth-client';
 	import NativeSyncCard from '$lib/components/nativeSyncCard.svelte';
 	import SleepGoalEditor from '../sleep/components/sleepGoalEditor.svelte';
+	import RewardSettings from './components/rewardSettings.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Avatar } from '$lib/components/ui/avatar';
 	import { Badge } from '$lib/components/ui/badge';
@@ -16,13 +17,13 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
 	import { Spinner } from '$lib/components/ui/spinner';
-	import type { TrackerId } from '$lib/trackers/registry';
+	import type { AppTrackerId } from '$lib/trackers/registry';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	const initialProfile = untrack(() => data.nutritionProfile);
 	let name = $state(untrack(() => data.profileUser.name));
-	let enabledTrackers = $state<TrackerId[]>(
+	let enabledTrackers = $state<AppTrackerId[]>(
 		untrack(() =>
 			data.trackerPreferences.filter((tracker) => tracker.enabled).map((tracker) => tracker.id)
 		)
@@ -94,7 +95,7 @@
 		}
 	}
 
-	function toggleTracker(id: TrackerId, checked: boolean) {
+	function toggleTracker(id: AppTrackerId, checked: boolean) {
 		enabledTrackers = checked
 			? [...new Set([...enabledTrackers, id])]
 			: enabledTrackers.filter((trackerId) => trackerId !== id);
@@ -201,6 +202,8 @@
 				>
 			</CardContent>
 		</Card>
+
+		<RewardSettings initialRewards={data.rewards} />
 
 		<NativeSyncCard />
 

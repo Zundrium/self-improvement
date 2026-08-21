@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { Activity, Database, RefreshCw } from '@lucide/svelte';
+	import { ArrowRight, Footprints, Moon, Smartphone } from '@lucide/svelte';
 	import NativeSyncCard from '$lib/components/nativeSyncCard.svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
 	import {
 		Card,
 		CardContent,
 		CardDescription,
+		CardFooter,
 		CardHeader,
 		CardTitle
 	} from '$lib/components/ui/card';
+	import DataFlow from './components/dataFlow.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -33,7 +36,7 @@
 	<title>Android data help · Self Improvement</title>
 	<meta
 		name="description"
-		content="Check Health Connect and Android Usage Access tracker connections."
+		content="Set up Health Connect and Android Usage Access tracker sources."
 	/>
 </svelte:head>
 
@@ -41,7 +44,7 @@
 	<header class="max-w-2xl">
 		<h1 class="text-3xl font-medium tracking-[-0.05em]">Android data help</h1>
 		<p class="mt-2 leading-6 text-(--text)/56">
-			Use these checks when Steps, Sleep, or Screen time remains at zero or has not synced.
+			Find what measures each tracker, connect its data, and verify every step before synchronizing.
 		</p>
 	</header>
 
@@ -50,75 +53,61 @@
 			<Card>
 				<CardHeader>
 					<div class="flex items-start justify-between gap-3">
-						<div>
-							<CardTitle>{tracker.label}</CardTitle>
-							<CardDescription>{tracker.provider}</CardDescription>
-						</div>
+						<span class="flex size-9 items-center justify-center rounded-full bg-(--text)/6">
+							{#if tracker.id === 'steps'}
+								<Footprints class="size-4" />
+							{:else if tracker.id === 'sleep'}
+								<Moon class="size-4" />
+							{:else}
+								<Smartphone class="size-4" />
+							{/if}
+						</span>
 						<Badge class={statusClass(tracker)}>{statusLabel(tracker)}</Badge>
 					</div>
+					<CardTitle>{tracker.label}</CardTitle>
+					<CardDescription>{tracker.provider}</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent class="mt-auto">
 					<p class="text-xs leading-5 text-(--text)/48">{lastReceived(tracker.lastReceivedAt)}</p>
 				</CardContent>
+				<CardFooter>
+					<Button
+						class="w-full"
+						href={`/android-data-help/${tracker.id}`}
+						size="sm"
+						variant="ghost"
+					>
+						Open guide <ArrowRight class="size-4" />
+					</Button>
+				</CardFooter>
 			</Card>
 		{/each}
 	</section>
 
 	<Card>
 		<CardHeader>
-			<CardTitle>Check the connection in three steps</CardTitle>
-			<CardDescription>Complete every step, then review the tracker status again.</CardDescription>
+			<CardTitle>Know the source before checking the connection</CardTitle>
+			<CardDescription>These trackers use two different Android systems.</CardDescription>
 		</CardHeader>
-		<CardContent>
-			<ol class="divide-y divide-(--text)/8">
-				<li class="flex gap-4 py-5 first:pt-0">
-					<span
-						class="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--text)/8 text-sm font-medium"
-						>1</span
-					>
-					<div>
-						<h2 class="flex items-center gap-2 font-medium">
-							<Activity class="size-4" /> Allow Android access
-						</h2>
-						<p class="mt-1 text-sm leading-6 text-(--text)/64">
-							Steps and Sleep need read access in Health Connect. Screen time uses Android Usage
-							Access. For a sideloaded app, allow restricted settings in App settings first.
-						</p>
-					</div>
-				</li>
-				<li class="flex gap-4 py-5">
-					<span
-						class="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--text)/8 text-sm font-medium"
-						>2</span
-					>
-					<div>
-						<h2 class="flex items-center gap-2 font-medium">
-							<Database class="size-4" /> Check the source data
-						</h2>
-						<p class="mt-1 text-sm leading-6 text-(--text)/64">
-							Health Connect does not measure anything itself. Open Health Connect → Data and access
-							and verify that another app has written recent Steps or Sleep entries. For Screen
-							time, verify Usage Access and use the device before trying again.
-						</p>
-					</div>
-				</li>
-				<li class="flex gap-4 py-5 last:pb-0">
-					<span
-						class="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--text)/8 text-sm font-medium"
-						>3</span
-					>
-					<div>
-						<h2 class="flex items-center gap-2 font-medium">
-							<RefreshCw class="size-4" /> Synchronize again
-						</h2>
-						<p class="mt-1 text-sm leading-6 text-(--text)/64">
-							Return to Self Improvement and tap Sync now below. A completed upload without
-							measurements means the Android provider had no usable recent data. A failed tracker
-							shows the remaining permission, provider, or upload problem.
-						</p>
-					</div>
-				</li>
-			</ol>
+		<CardContent class="divide-y divide-(--text)/8">
+			<div class="space-y-3 pb-5">
+				<h2 class="font-medium">Steps and sleep</h2>
+				<p class="text-sm leading-6 text-(--text)/64">
+					Health Connect stores and shares measurements. A phone, wearable, or health app must
+					create them first.
+				</p>
+				<DataFlow
+					items={['Measuring device', 'Health app', 'Health Connect', 'Self Improvement']}
+				/>
+			</div>
+			<div class="space-y-3 pt-5">
+				<h2 class="font-medium">Screen time</h2>
+				<p class="text-sm leading-6 text-(--text)/64">
+					Self Improvement reads Android’s usage history directly. Digital Wellbeing is another
+					reader, not the provider for this tracker.
+				</p>
+				<DataFlow items={['Android app usage', 'Usage Access', 'Self Improvement']} />
+			</div>
 		</CardContent>
 	</Card>
 

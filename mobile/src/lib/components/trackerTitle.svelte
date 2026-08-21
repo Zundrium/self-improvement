@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
-	import type { Tracker } from '$lib/trackers/registry';
+	import type { TrackerColors } from '$lib/trackers/registry';
 
-	let { tracker, class: className }: { tracker: Tracker; class?: string } = $props();
+	type TitledFeature = { label: string; colors: TrackerColors };
+	let { tracker, class: className }: { tracker: TitledFeature; class?: string } = $props();
 </script>
 
 <h1

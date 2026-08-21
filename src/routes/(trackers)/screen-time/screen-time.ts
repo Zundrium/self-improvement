@@ -4,6 +4,7 @@ export const SCREEN_TIME_TOKEN_HEADER = 'X-Screen-Time-Token';
 export const MAX_SCREEN_TIME_DAYS = 7;
 export const MAX_APPS_PER_DAY = 100;
 export const MAX_DAILY_MINUTES = 1_440;
+export const DEFAULT_SCREEN_TIME_LIMIT_MINUTES = 4 * 60;
 
 const shortString = z.string().trim().min(1).max(120);
 const instantSchema = z.iso.datetime();

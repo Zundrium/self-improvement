@@ -35,5 +35,5 @@ async function enforceAndroidSetup(pathname: string) {
 }
 
 function publicSession(): LayoutData {
-	return { user: null, enabledTrackers: [] };
+	return { user: null, enabledTrackers: [], gamification: null };
 }

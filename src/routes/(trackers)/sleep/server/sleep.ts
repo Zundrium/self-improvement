@@ -79,6 +79,15 @@ export async function updateSleepGoal(db: Database, userId: string, dailyGoalMin
 		.where(eq(sleepConnection.userId, userId));
 }
 
+export async function hasSleepMeasurements(db: Database, userId: string) {
+	const [measurement] = await db
+		.select({ date: sleepSession.localDate })
+		.from(sleepSession)
+		.where(eq(sleepSession.userId, userId))
+		.limit(1);
+	return Boolean(measurement);
+}
+
 export async function getDailySleep(
 	db: Database,
 	userId: string,

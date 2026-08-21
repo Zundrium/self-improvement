@@ -13,6 +13,7 @@
 	import DateSelector from '$lib/components/dateSelector.svelte';
 	import { provideDateSelectorState } from '$lib/components/dateSelectorState.svelte';
 	import TrackerTitle from '$lib/components/trackerTitle.svelte';
+	import { getShopColorsForPathname, getShopFeatureForPathname } from '$lib/gamification/registry';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import {
 		getTrackerColorsForPathname,
@@ -20,6 +21,7 @@
 		type TrackerColors
 	} from '$lib/trackers/registry';
 	import { mobileRepository } from '$lib/api';
+	import type { ActionFeedData } from '$lib/api-types';
 	import type { TrackerId } from '$domain/model';
 	import { failedTrackerIds } from '$domain/status';
 	import { androidSyncCoordinator } from '$native/android-data';
@@ -35,7 +37,7 @@
 		completedDays?: Array<{ dateKey: string }>;
 		meditationHistory?: Array<{ localDate: string }>;
 		trackedDates?: string[];
-		dashboard?: { date: string; today: string };
+		actionFeed?: ActionFeedData;
 	};
 	type DateNavigation = {
 		date: string;
@@ -53,7 +55,9 @@
 	const dateNavigation = $derived(
 		createDateNavigation(page.url.pathname, page.data as DatedPageData)
 	);
-	const selectedTracker = $derived(getTrackerForPathname(page.url.pathname));
+	const selectedFeature = $derived(
+		getTrackerForPathname(page.url.pathname) ?? getShopFeatureForPathname(page.url.pathname)
+	);
 	const standalonePage = $derived(
 		page.url.pathname === '/nutrition/track' || page.url.pathname === ANDROID_SETUP_PATH
 	);
@@ -91,7 +95,7 @@
 	async function syncAndroidData() {
 		try {
 			const report = await androidSyncCoordinator.syncStale();
-			if (report.results.some((result) => result.outcome === 'success')) await invalidateAll();
+			if (report.results.length) await invalidateAll();
 			showSyncStatus(failedTrackerIds(await mobileRepository.loadStatus()));
 		} catch {
 			showSyncFailure('Android data could not be synchronized.');
@@ -107,7 +111,7 @@
 	}
 
 	function showSyncStatus(trackers: TrackerId[]) {
-		if (page.url.pathname === ANDROID_SETUP_PATH) return;
+		if ([ANDROID_SETUP_PATH, '/'].includes(page.url.pathname)) return;
 		if (!trackers.length) return void toast.dismiss(ANDROID_SYNC_TOAST);
 		const labels = trackers.map(trackerLabel).join(', ');
 		showSyncFailure(`Review ${labels} under Profile.`);
@@ -129,19 +133,18 @@
 		pathname: string,
 		pageData: DatedPageData
 	): DateNavigation | undefined {
-		const datedData = pathname === '/' ? pageData.dashboard : pageData;
-		if (!datedData?.date || !datedData.today) return;
+		if (pathname === '/' || !pageData.date || !pageData.today) return;
 		return {
-			date: datedData.date,
-			today: datedData.today,
+			date: pageData.date,
+			today: pageData.today,
 			markedDates: markedDates(pageData),
 			colors: dateSelectorColors(pathname),
-			hrefForDate: (selectedDate) => dateHref(pathname, selectedDate, datedData.today as string)
+			hrefForDate: (selectedDate) => dateHref(pathname, selectedDate, pageData.today as string)
 		};
 	}
 
 	function dateSelectorColors(pathname: string) {
-		const colors = getTrackerColorsForPathname(pathname);
+		const colors = getTrackerColorsForPathname(pathname) ?? getShopColorsForPathname(pathname);
 		return colors ? [colors] : [];
 	}
 
@@ -155,7 +158,7 @@
 	function dateHref(pathname: string, date: string, today: string) {
 		if (pathname.startsWith('/nutrition/log/')) return `/nutrition/log/${date}`;
 		if (date === today) return pathname;
-		return pathname === '/' ? `/?date=${date}` : `${pathname}?date=${date}`;
+		return `${pathname}?date=${date}`;
 	}
 
 	function openAppUrl(url: URL) {
@@ -174,8 +177,8 @@
 				colors={dateNavigation.colors}
 				hrefForDate={dateNavigation.hrefForDate}
 			/>
-			{#if selectedTracker}
-				<TrackerTitle tracker={selectedTracker} class="mt-2" />
+			{#if selectedFeature}
+				<TrackerTitle tracker={selectedFeature} class="mt-2" />
 			{/if}
 		</div>
 	{/if}
@@ -184,7 +187,11 @@
 	</div>
 	{#if data.user && appShellActive}
 		<BottomActionBarOutlet />
-		<AppNavbar user={data.user} trackers={data.enabledTrackers} />
+		<AppNavbar
+			user={data.user}
+			trackers={data.enabledTrackers}
+			daySummary={(page.data as DatedPageData).actionFeed?.daySummary}
+		/>
 	{/if}
 </div>
 <Toaster

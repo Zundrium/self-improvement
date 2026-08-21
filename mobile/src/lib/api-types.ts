@@ -5,7 +5,7 @@ import type {
 	ExercisePreference,
 	WorkoutProgram
 } from '../routes/fitness/fitness';
-import type { Tracker, TrackerId } from '$lib/trackers/registry';
+import type { AppTracker, AppTrackerId } from '$lib/trackers/registry';
 
 export type AppUser = {
 	id: string;
@@ -17,18 +17,68 @@ export type AppUser = {
 	createdAt: string;
 };
 
-export type SessionData = { user: AppUser; enabledTrackers: Tracker[] };
+export type StreakSummary = {
+	trackerId: AppTrackerId;
+	label: string;
+	points: number;
+	current: number;
+	best: number;
+	total: number;
+};
+export type DayStreakSummary = {
+	label: string;
+	current: number;
+	best: number;
+	total: number;
+};
+export type AchievementSummary = {
+	id: string;
+	title: string;
+	description: string;
+	unlocked: boolean;
+	progress: number;
+	target: number;
+};
+export type GamificationData = {
+	today: string;
+	glimmers: number;
+	score: number;
+	earnedNow: number;
+	bestCurrentStreak: number;
+	achievementCount: number;
+	achievementTotal: number;
+	dayStreak: DayStreakSummary;
+	streaks: StreakSummary[];
+	achievements: AchievementSummary[];
+};
+export type Reward = { id: string; name: string; emoji: string; price: number };
+export type RewardRedemption = Reward & { redeemedAt: string };
+export type RewardsData = {
+	today: string;
+	glimmers: number;
+	rewards: Reward[];
+	redemptions: RewardRedemption[];
+};
+export type SessionData = {
+	user: AppUser;
+	enabledTrackers: AppTracker[];
+	gamification: GamificationData;
+};
 export type DatedData = { date: string; today: string; markedDates?: string[] };
 
-export type DashboardData = {
+export type DaySummaryData = {
 	date: string;
 	today: string;
 	steps: number;
 	stepGoal: number;
+	stepsHaveMeasurements: boolean;
 	sleepMinutes: number;
 	sleepGoalMinutes: number;
+	sleepHasMeasurements: boolean;
 	screenTimeMinutes: number;
+	screenTimeLimitMinutes: number;
 	screenTimeRecorded: boolean;
+	screenTimeHasMeasurements: boolean;
 	fitnessDone: boolean;
 	fitnessWorkoutTitle: string;
 	calories: number;
@@ -37,6 +87,29 @@ export type DashboardData = {
 	breathingDone: boolean;
 	happinessRating: HappinessRating | null;
 	periodFlow: MenstruationFlow | null;
+};
+
+export type ActionPriority = 'blocking' | 'warning' | 'activity';
+export type ActionFeedCommand =
+	| { type: 'navigate'; href: string }
+	| { type: 'request-health-access'; trackerIds: Array<'steps' | 'sleep'> }
+	| { type: 'open-usage-access' }
+	| {
+			type: 'sync-android-data';
+			trackerIds: Array<'steps' | 'sleep' | 'screenTime'>;
+	  };
+export type ActionFeedItem = {
+	id: string;
+	trackerIds: AppTrackerId[];
+	priority: ActionPriority;
+	icon: 'tracker' | 'permission' | 'sync';
+	title: string;
+	action: ActionFeedCommand;
+};
+export type ActionFeedData = {
+	date: string;
+	daySummary: DaySummaryData;
+	items: ActionFeedItem[];
 };
 
 export type StepsData = DatedData & {
@@ -152,9 +225,10 @@ export type NutritionProfile = {
 export type ProfileData = {
 	profileUser: AppUser;
 	nutritionProfile: NutritionProfile | null;
-	trackerPreferences: Array<Tracker & { enabled: boolean }>;
+	trackerPreferences: Array<AppTracker & { enabled: boolean }>;
 	sleepGoalMinutes: number;
 	estimatedTdee: number | null;
+	rewards: Reward[];
 };
 export type AdminData = {
 	currentUser: AppUser;
@@ -166,7 +240,8 @@ export type AdminData = {
 
 export type LayoutData = {
 	user: AppUser | null;
-	enabledTrackers: Tracker[];
+	enabledTrackers: AppTracker[];
+	gamification: GamificationData | null;
 };
 
-export type TrackerPreferencesPayload = { trackers: TrackerId[] };
+export type TrackerPreferencesPayload = { trackers: AppTrackerId[] };

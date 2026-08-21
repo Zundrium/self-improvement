@@ -19,14 +19,24 @@ import {
 import { getProfile } from '../../../routes/(trackers)/nutrition/server/profiles';
 import {
 	getDailyScreenTime,
-	getScreenTimeConnection
+	getScreenTimeConnection,
+	hasScreenTimeMeasurements
 } from '../../../routes/(trackers)/screen-time/server/screen-time';
-import { getDailySleep, getSleepConnection } from '../../../routes/(trackers)/sleep/server/sleep';
+import { DEFAULT_SCREEN_TIME_LIMIT_MINUTES } from '../../../routes/(trackers)/screen-time/screen-time';
+import {
+	getDailySleep,
+	getSleepConnection,
+	hasSleepMeasurements
+} from '../../../routes/(trackers)/sleep/server/sleep';
 import { DEFAULT_SLEEP_GOAL_MINUTES } from '../../../routes/(trackers)/sleep/sleep';
-import { getDailySteps, getStepConnection } from '../../../routes/(trackers)/steps/server/steps';
+import {
+	getDailySteps,
+	getStepConnection,
+	hasStepMeasurements
+} from '../../../routes/(trackers)/steps/server/steps';
 import { DEFAULT_STEP_GOAL } from '../../../routes/(trackers)/steps/steps';
 
-export async function loadDashboard(db: Database, userId: string, requestedDate: string | null) {
+export async function loadDaySummary(db: Database, userId: string, requestedDate: string | null) {
 	const [stepConnection, sleepConnection, screenTimeConnection] = await Promise.all([
 		getStepConnection(db, userId),
 		getSleepConnection(db, userId),
@@ -52,16 +62,23 @@ export async function loadDashboard(db: Database, userId: string, requestedDate:
 		loadMeditationDone(db, userId, date),
 		loadBreathingDone(db, userId, date),
 		loadHappinessRating(db, userId, date),
-		loadPeriodFlow(db, userId, date)
+		loadPeriodFlow(db, userId, date),
+		hasStepMeasurements(db, userId),
+		hasSleepMeasurements(db, userId),
+		hasScreenTimeMeasurements(db, userId)
 	]);
 	return {
 		date,
 		today,
 		steps: summaries[0],
 		stepGoal: stepConnection?.dailyGoal ?? DEFAULT_STEP_GOAL,
+		stepsHaveMeasurements: summaries[9],
 		sleepMinutes: summaries[1],
 		sleepGoalMinutes: sleepConnection?.dailyGoalMinutes ?? DEFAULT_SLEEP_GOAL_MINUTES,
+		sleepHasMeasurements: summaries[10],
 		...summaries[2],
+		screenTimeLimitMinutes: DEFAULT_SCREEN_TIME_LIMIT_MINUTES,
+		screenTimeHasMeasurements: summaries[11],
 		...summaries[3],
 		...summaries[4],
 		meditationDone: summaries[5],

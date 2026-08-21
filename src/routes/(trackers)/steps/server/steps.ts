@@ -80,6 +80,15 @@ export async function updateStepGoal(db: Database, userId: string, dailyGoal: nu
 		.where(eq(stepConnection.userId, userId));
 }
 
+export async function hasStepMeasurements(db: Database, userId: string) {
+	const [measurement] = await db
+		.select({ date: stepDailyTotal.localDate })
+		.from(stepDailyTotal)
+		.where(eq(stepDailyTotal.userId, userId))
+		.limit(1);
+	return Boolean(measurement);
+}
+
 export async function getDailySteps(
 	db: Database,
 	userId: string,

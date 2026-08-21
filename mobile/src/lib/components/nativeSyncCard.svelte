@@ -19,15 +19,21 @@
 	import { openAndroidAppDetails } from '$native/android-settings';
 	import { isNativeAndroid } from '$native/platform';
 
-	let { showHelpLink = true }: { showHelpLink?: boolean } = $props();
+	let {
+		showHelpLink = true,
+		tracker: focusedTracker
+	}: { showHelpLink?: boolean; tracker?: TrackerId } = $props();
 	let status = $state<MobileSyncStatus>(createEmptyStatus());
 	let healthAvailable = $state(false);
 	let loaded = $state(false);
 	let busy = $state(false);
 	let message = $state('');
 	let failed = $state(false);
+	const visibleTrackers = $derived(focusedTracker ? [focusedTracker] : TRACKER_IDS);
+	const usesHealthConnect = $derived(focusedTracker !== 'screenTime');
+	const usesUsageAccess = $derived(!focusedTracker || focusedTracker === 'screenTime');
 	const screenTimeNeedsAccess = $derived(
-		loaded && status.trackers.screenTime.permission !== 'granted'
+		usesUsageAccess && loaded && status.trackers.screenTime.permission !== 'granted'
 	);
 
 	onMount(() => {
@@ -42,7 +48,7 @@
 		await run(async () => {
 			await androidSyncCoordinator.syncStale();
 			await refreshPermissions();
-			const trackers = failedTrackerIds(status);
+			const trackers = relevantFailedTrackers();
 			failed = trackers.length > 0;
 			message = failed ? syncFailureMessage(trackers) : '';
 		}, 'Could not refresh Android data.');
@@ -83,13 +89,24 @@
 
 	async function syncNow() {
 		await run(async () => {
-			await androidSyncCoordinator.syncAll();
+			await synchronizeTrackers();
 			status = await mobileRepository.loadStatus();
-			const trackers = failedTrackerIds(status);
+			const trackers = relevantFailedTrackers();
 			failed = trackers.length > 0;
 			message = failed ? syncFailureMessage(trackers) : 'Android synchronization completed.';
 			await invalidateAll();
 		}, 'Synchronization could not complete.');
+	}
+
+	function synchronizeTrackers() {
+		return focusedTracker
+			? androidSyncCoordinator.sync([focusedTracker])
+			: androidSyncCoordinator.syncAll();
+	}
+
+	function relevantFailedTrackers() {
+		const trackers = failedTrackerIds(status);
+		return focusedTracker ? trackers.filter((tracker) => tracker === focusedTracker) : trackers;
 	}
 
 	async function run(action: () => Promise<void>, fallback: string) {
@@ -130,8 +147,10 @@
 
 <Card>
 	<CardHeader>
-		<CardTitle class="flex items-center gap-2"><Smartphone class="size-5" /> Android data</CardTitle
-		>
+		<CardTitle class="flex items-center gap-2">
+			<Smartphone class="size-5" />
+			{focusedTracker ? `${label(focusedTracker)} Android data` : 'Android data'}
+		</CardTitle>
 	</CardHeader>
 	<CardContent class="space-y-5">
 		{#if !isNativeAndroid()}
@@ -154,7 +173,7 @@
 				>
 			{/if}
 			<div class="divide-y divide-(--text)/8">
-				{#each TRACKER_IDS as tracker (tracker)}
+				{#each visibleTrackers as tracker (tracker)}
 					<div class="flex items-start justify-between gap-4 py-3 first:pt-0">
 						<div>
 							<p class="text-sm font-medium">{label(tracker)}</p>
@@ -170,33 +189,37 @@
 				{/each}
 			</div>
 			<div class="flex flex-wrap gap-2">
-				<Button
-					type="button"
-					variant="ghost"
-					disabled={busy || !healthAvailable}
-					onclick={grantHealth}
-				>
-					<Activity class="size-4" /> Health access
-				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					disabled={busy || !healthAvailable}
-					onclick={openHealthSettings}
-				>
-					<Settings class="size-4" /> Health Connect
-				</Button>
-				{#if screenTimeNeedsAccess}
-					<Button type="button" variant="ghost" disabled={busy} onclick={openAppSettings}>
-						<Settings class="size-4" /> App settings
+				{#if usesHealthConnect}
+					<Button
+						type="button"
+						variant="ghost"
+						disabled={busy || !healthAvailable}
+						onclick={grantHealth}
+					>
+						<Activity class="size-4" /> Health access
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						disabled={busy || !healthAvailable}
+						onclick={openHealthSettings}
+					>
+						<Settings class="size-4" /> Health Connect
+					</Button>
+					<Button type="button" variant="ghost" disabled={busy} onclick={openPrivacyPolicy}>
+						<Shield class="size-4" /> Privacy
 					</Button>
 				{/if}
-				<Button type="button" variant="ghost" disabled={busy} onclick={openUsageSettings}>
-					<Smartphone class="size-4" /> Usage access
-				</Button>
-				<Button type="button" variant="ghost" disabled={busy} onclick={openPrivacyPolicy}>
-					<Shield class="size-4" /> Privacy
-				</Button>
+				{#if usesUsageAccess}
+					{#if screenTimeNeedsAccess}
+						<Button type="button" variant="ghost" disabled={busy} onclick={openAppSettings}>
+							<Settings class="size-4" /> App settings
+						</Button>
+					{/if}
+					<Button type="button" variant="ghost" disabled={busy} onclick={openUsageSettings}>
+						<Smartphone class="size-4" /> Usage access
+					</Button>
+				{/if}
 				{#if showHelpLink}
 					<Button href="/android-data-help" variant="ghost" disabled={busy}>
 						<CircleHelp class="size-4" /> Troubleshooting

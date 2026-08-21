@@ -72,7 +72,7 @@
 		await run('usage', () => androidUsage.openSettings(), 'Usage Access could not be opened.');
 	}
 
-	async function continueToDashboard() {
+	async function continueToApp() {
 		await run(
 			'continue',
 			async () => {
@@ -133,7 +133,7 @@
 			</span>
 			<h1 class="text-3xl font-medium tracking-[-0.05em]">Connect Android data</h1>
 			<p class="mt-2 leading-6 text-(--text)/56">
-				Complete these two steps before opening your dashboard.
+				Complete these two steps before opening the app.
 			</p>
 		</header>
 
@@ -223,7 +223,7 @@
 					type="button"
 					variant={allGranted ? 'default' : 'ghost'}
 					disabled={Boolean(busy)}
-					onclick={continueToDashboard}
+					onclick={continueToApp}
 				>
 					{#if busy === 'continue'}<Spinner class="size-4" />{/if}
 					{allGranted ? 'Continue' : 'Continue without full access'}

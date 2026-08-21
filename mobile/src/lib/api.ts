@@ -5,6 +5,7 @@ export const API_BASE_URL = (import.meta.env.PUBLIC_API_BASE_URL || 'https://sel
 	''
 );
 export const mobileRepository = new SecureMobileRepository();
+export const GAMIFICATION_CHANGED_EVENT = 'gamification:changed';
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 	const credentials = await mobileRepository.loadCredentials();
@@ -16,7 +17,13 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 	if (refreshedToken) await saveAuthToken(refreshedToken);
 	if (response.status === 401) await mobileRepository.disconnect();
 	if (!response.ok) throw new ApiError(response.status, await errorMessage(response));
-	return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+	const result = response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+	if (init?.method && init.method.toUpperCase() !== 'GET') notifyGamificationChanged();
+	return result;
+}
+
+function notifyGamificationChanged() {
+	if (typeof window !== 'undefined') window.dispatchEvent(new Event(GAMIFICATION_CHANGED_EVENT));
 }
 
 export async function saveAuthToken(token: string) {

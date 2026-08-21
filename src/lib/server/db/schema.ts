@@ -1,4 +1,5 @@
 import * as authSchema from './auth.schema';
+import * as gamificationSchema from './gamification';
 import * as trackerPreferenceSchema from './tracker-preference';
 import * as breathingSchema from './trackers/breathing';
 import * as fitnessSchema from './trackers/fitness';
@@ -11,6 +12,7 @@ import * as sleepSchema from './trackers/sleep';
 import * as stepsSchema from './trackers/steps';
 
 export * from './auth.schema';
+export * from './gamification';
 export * from './tracker-preference';
 export * from './trackers/breathing';
 export * from './trackers/fitness';
@@ -24,6 +26,7 @@ export * from './trackers/steps';
 
 export const schema = {
 	...authSchema,
+	...gamificationSchema,
 	...trackerPreferenceSchema,
 	...breathingSchema,
 	...fitnessSchema,

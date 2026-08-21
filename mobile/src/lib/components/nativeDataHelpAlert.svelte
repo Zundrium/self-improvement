@@ -10,7 +10,7 @@
 	const labels: Record<NativeTracker, string> = {
 		steps: 'step',
 		sleep: 'sleep',
-		'screen-time': 'screen-time'
+		'screen-time': 'screen time'
 	};
 	const label = $derived(labels[tracker]);
 </script>
@@ -26,6 +26,8 @@
 		{/if}
 	</AlertDescription>
 	<div class="col-start-2 mt-2">
-		<Button href="/android-data-help" size="sm" variant="ghost">Check Android connection</Button>
+		<Button href={`/android-data-help/${tracker}`} size="sm" variant="ghost"
+			>Open setup guide</Button
+		>
 	</div>
 </Alert>

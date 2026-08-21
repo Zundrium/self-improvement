@@ -1,0 +1,248 @@
+import { and, eq, gte, lt, lte, sql } from 'drizzle-orm';
+import {
+	breathingExercise,
+	fitnessWorkoutProgress,
+	happinessEntry,
+	meditationSession,
+	menstruationEntry,
+	nutritionEntry,
+	screenTimeConnection,
+	screenTimeDailySnapshot,
+	sleepConnection,
+	sleepSession,
+	stepConnection,
+	stepDailyTotal
+} from '$lib/server/db/schema';
+import type { Database } from '$lib/server/db';
+import { localDateForInstant } from '$lib/trackers/dates';
+import { DEFAULT_SLEEP_GOAL_MINUTES } from '../../../routes/(trackers)/sleep/sleep';
+import { DEFAULT_STEP_GOAL } from '../../../routes/(trackers)/steps/steps';
+import { emptyCompletionDates, SCREEN_TIME_LIMIT_MINUTES, type CompletionDates } from './rules';
+
+export async function gamificationToday(db: Database, userId: string) {
+	const [steps, sleep, screenTime] = await Promise.all([
+		loadStepConnection(db, userId),
+		loadSleepConnection(db, userId),
+		loadScreenTimeConnection(db, userId)
+	]);
+	const timeZone = preferredTimeZone(steps, sleep, screenTime);
+	return localDateForInstant(new Date(), timeZone);
+}
+
+export async function loadCompletionDates(
+	db: Database,
+	userId: string,
+	startDate: string,
+	today: string
+): Promise<CompletionDates> {
+	const [stepGoal, sleepGoal] = await Promise.all([
+		loadStepGoal(db, userId),
+		loadSleepGoal(db, userId)
+	]);
+	const results = await Promise.all([
+		loadSteps(db, userId, startDate, today, stepGoal),
+		loadSleep(db, userId, startDate, today, sleepGoal),
+		loadScreenTime(db, userId, startDate, today),
+		loadFitness(db, userId, startDate, today),
+		loadNutrition(db, userId, startDate, today),
+		loadMeditation(db, userId, startDate, today),
+		loadBreathing(db, userId, startDate, today),
+		loadHappiness(db, userId, startDate, today),
+		loadPeriod(db, userId, startDate, today)
+	]);
+	const dates = emptyCompletionDates();
+	[
+		dates.steps,
+		dates.sleep,
+		dates['screen-time'],
+		dates.fitness,
+		dates.nutrition,
+		dates.meditation,
+		dates.breathing,
+		dates.happiness,
+		dates.period
+	] = results;
+	return dates;
+}
+
+async function loadSteps(
+	db: Database,
+	userId: string,
+	startDate: string,
+	today: string,
+	goal: number
+) {
+	const rows = await db
+		.select({ date: stepDailyTotal.localDate })
+		.from(stepDailyTotal)
+		.where(
+			and(
+				eq(stepDailyTotal.userId, userId),
+				gte(stepDailyTotal.localDate, startDate),
+				lte(stepDailyTotal.localDate, today),
+				gte(stepDailyTotal.count, goal)
+			)
+		);
+	return rows.map(({ date }) => date);
+}
+
+async function loadSleep(
+	db: Database,
+	userId: string,
+	startDate: string,
+	today: string,
+	goalMinutes: number
+) {
+	const rows = await db
+		.select({
+			date: sleepSession.localDate,
+			seconds: sql<number>`sum(${sleepSession.sleepDurationSeconds})`
+		})
+		.from(sleepSession)
+		.where(
+			and(
+				eq(sleepSession.userId, userId),
+				gte(sleepSession.localDate, startDate),
+				lte(sleepSession.localDate, today)
+			)
+		)
+		.groupBy(sleepSession.localDate);
+	return rows.filter(({ seconds }) => Number(seconds) >= goalMinutes * 60).map(({ date }) => date);
+}
+
+async function loadScreenTime(db: Database, userId: string, startDate: string, today: string) {
+	const rows = await db
+		.select({ date: screenTimeDailySnapshot.localDate })
+		.from(screenTimeDailySnapshot)
+		.where(
+			and(
+				eq(screenTimeDailySnapshot.userId, userId),
+				gte(screenTimeDailySnapshot.localDate, startDate),
+				lt(screenTimeDailySnapshot.localDate, today),
+				lte(screenTimeDailySnapshot.totalMinutes, SCREEN_TIME_LIMIT_MINUTES)
+			)
+		);
+	return rows.map(({ date }) => date);
+}
+
+async function loadFitness(db: Database, userId: string, startDate: string, today: string) {
+	const rows = await db
+		.selectDistinct({ date: fitnessWorkoutProgress.completedDate })
+		.from(fitnessWorkoutProgress)
+		.where(
+			and(
+				eq(fitnessWorkoutProgress.userId, userId),
+				gte(fitnessWorkoutProgress.completedDate, startDate),
+				lte(fitnessWorkoutProgress.completedDate, today)
+			)
+		);
+	return rows.map(({ date }) => date);
+}
+
+async function loadNutrition(db: Database, userId: string, startDate: string, today: string) {
+	const rows = await db
+		.selectDistinct({ date: nutritionEntry.date })
+		.from(nutritionEntry)
+		.where(
+			and(
+				eq(nutritionEntry.userId, userId),
+				gte(nutritionEntry.date, startDate),
+				lte(nutritionEntry.date, today)
+			)
+		);
+	return rows.map(({ date }) => date);
+}
+
+async function loadMeditation(db: Database, userId: string, startDate: string, today: string) {
+	const rows = await db
+		.selectDistinct({ date: meditationSession.localDate })
+		.from(meditationSession)
+		.where(
+			and(
+				eq(meditationSession.userId, userId),
+				gte(meditationSession.localDate, startDate),
+				lte(meditationSession.localDate, today)
+			)
+		);
+	return rows.map(({ date }) => date);
+}
+
+async function loadBreathing(db: Database, userId: string, startDate: string, today: string) {
+	const rows = await db
+		.select({ date: breathingExercise.localDate })
+		.from(breathingExercise)
+		.where(
+			and(
+				eq(breathingExercise.userId, userId),
+				gte(breathingExercise.localDate, startDate),
+				lte(breathingExercise.localDate, today)
+			)
+		);
+	return rows.map(({ date }) => date);
+}
+
+async function loadHappiness(db: Database, userId: string, startDate: string, today: string) {
+	const rows = await db
+		.select({ date: happinessEntry.localDate })
+		.from(happinessEntry)
+		.where(
+			and(
+				eq(happinessEntry.userId, userId),
+				gte(happinessEntry.localDate, startDate),
+				lte(happinessEntry.localDate, today)
+			)
+		);
+	return rows.map(({ date }) => date);
+}
+
+async function loadPeriod(db: Database, userId: string, startDate: string, today: string) {
+	const rows = await db
+		.select({ date: menstruationEntry.localDate })
+		.from(menstruationEntry)
+		.where(
+			and(
+				eq(menstruationEntry.userId, userId),
+				gte(menstruationEntry.localDate, startDate),
+				lte(menstruationEntry.localDate, today)
+			)
+		);
+	return rows.map(({ date }) => date);
+}
+
+async function loadStepGoal(db: Database, userId: string) {
+	return (await loadStepConnection(db, userId))?.dailyGoal ?? DEFAULT_STEP_GOAL;
+}
+
+async function loadSleepGoal(db: Database, userId: string) {
+	return (await loadSleepConnection(db, userId))?.dailyGoalMinutes ?? DEFAULT_SLEEP_GOAL_MINUTES;
+}
+
+async function loadStepConnection(db: Database, userId: string) {
+	return db.query.stepConnection.findFirst({ where: eq(stepConnection.userId, userId) });
+}
+
+async function loadSleepConnection(db: Database, userId: string) {
+	return db.query.sleepConnection.findFirst({ where: eq(sleepConnection.userId, userId) });
+}
+
+async function loadScreenTimeConnection(db: Database, userId: string) {
+	return db.query.screenTimeConnection.findFirst({
+		where: eq(screenTimeConnection.userId, userId)
+	});
+}
+
+function preferredTimeZone(
+	steps: Awaited<ReturnType<typeof loadStepConnection>>,
+	sleep: Awaited<ReturnType<typeof loadSleepConnection>>,
+	screenTime: Awaited<ReturnType<typeof loadScreenTimeConnection>>
+) {
+	return (
+		steps?.companionTimeZone ??
+		sleep?.companionTimeZone ??
+		screenTime?.companionTimeZone ??
+		steps?.timeZone ??
+		sleep?.timeZone ??
+		screenTime?.timeZone ??
+		'UTC'
+	);
+}

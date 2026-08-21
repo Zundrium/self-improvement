@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { Database } from '$lib/server/db';
 import { trackerPreference } from '$lib/server/db/schema';
-import { trackers, type TrackerId } from '$lib/trackers/registry';
+import { appTrackers, type AppTrackerId } from '$lib/trackers/registry';
 
 export async function getTrackerPreferences(db: Database, userId: string) {
 	const preferences = await db
@@ -9,7 +9,7 @@ export async function getTrackerPreferences(db: Database, userId: string) {
 		.from(trackerPreference)
 		.where(eq(trackerPreference.userId, userId));
 	const enabledById = new Map(preferences.map((item) => [item.trackerId, item.enabled]));
-	return trackers.map((tracker) => ({
+	return appTrackers.map((tracker) => ({
 		...tracker,
 		enabled: enabledById.get(tracker.id) ?? tracker.defaultEnabled
 	}));
@@ -23,9 +23,9 @@ export async function getEnabledTrackers(db: Database, userId: string) {
 export async function saveTrackerPreferences(
 	db: Database,
 	userId: string,
-	enabledIds: Set<TrackerId>
+	enabledIds: Set<AppTrackerId>
 ) {
-	for (const tracker of trackers) {
+	for (const tracker of appTrackers) {
 		await savePreference(db, userId, tracker.id, enabledIds.has(tracker.id));
 	}
 }
@@ -33,7 +33,7 @@ export async function saveTrackerPreferences(
 async function savePreference(
 	db: Database,
 	userId: string,
-	trackerId: TrackerId,
+	trackerId: AppTrackerId,
 	enabled: boolean
 ) {
 	const values = { userId, trackerId, enabled, updatedAt: new Date() };
