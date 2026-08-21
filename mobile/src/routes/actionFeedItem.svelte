@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { ChevronRight, LoaderCircle, RefreshCw, Shield } from '@lucide/svelte';
 	import type { ActionFeedItem } from '$lib/api-types';
+	import { interactionScale } from '$lib/motion/gsap';
 	import { trackerIcons } from '$lib/trackers/icons';
 	import { getTrackerColors } from '$lib/trackers/registry';
 
@@ -40,25 +41,22 @@
 	</span>
 {/snippet}
 
-<div
-	class="overflow-hidden rounded-3xl bg-(--bg-elevated)"
-	data-motion-press
-	data-motion-press-scale="0.985"
->
+<div>
 	{#if item.action.type === 'navigate'}
 		<a
 			href={resolve(item.action.href as '/')}
-			class="flex min-h-20 touch-manipulation items-center gap-3 rounded-3xl px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5"
+			class="flex min-h-20 touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5"
+			use:interactionScale={{ hover: 1.01, pressed: 0.96 }}
 		>
 			{@render actionContent()}
 		</a>
 	{:else}
 		<button
 			type="button"
-			class="flex min-h-20 w-full cursor-pointer touch-manipulation items-center gap-3 rounded-3xl px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5 disabled:pointer-events-none disabled:opacity-60"
+			class="flex min-h-20 w-full cursor-pointer touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5 disabled:pointer-events-none disabled:opacity-60"
 			disabled={busy}
 			aria-busy={busy}
-			data-motion-press-scale="0.985"
+			use:interactionScale={{ disabled: busy, hover: 1.01, pressed: 0.96 }}
 			onclick={() => onexecute(item)}
 		>
 			{@render actionContent()}

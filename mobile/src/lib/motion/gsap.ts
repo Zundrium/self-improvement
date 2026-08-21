@@ -2,6 +2,7 @@ import { gsap } from 'gsap';
 import type { Action } from 'svelte/action';
 
 export type GradientColors = { primary: string; secondary: string };
+export type InteractionScaleOptions = { disabled?: boolean; hover?: number; pressed?: number };
 export type SurfaceMotion = 'accordion' | 'dialog' | 'menu' | 'overlay';
 export type StaggerOptions = { delay?: number; selector?: string; y?: number };
 
@@ -45,6 +46,63 @@ export const pageEnter: Action<HTMLElement> = (node) => {
 	node.style.visibility = 'hidden';
 	const frame = requestAnimationFrame(() => revealPage(node));
 	return { destroy: () => cancelAnimationFrame(frame) };
+};
+
+export const interactionScale: Action<HTMLElement, InteractionScaleOptions | undefined> = (
+	node,
+	options = {}
+) => {
+	let settings = options;
+	let hovered = false;
+	gsap.set(node, { force3D: true, scaleX: 1, scaleY: 1, transformOrigin: 'center center' });
+	const scaleXTo = gsap.quickTo(node, 'scaleX', { duration: 0.2, ease: 'power2.out' });
+	const scaleYTo = gsap.quickTo(node, 'scaleY', { duration: 0.2, ease: 'power2.out' });
+	const moveTo = (scale: number, duration: number) => {
+		scaleXTo.tween.duration(duration);
+		scaleYTo.tween.duration(duration);
+		scaleXTo(scale);
+		scaleYTo(scale);
+	};
+	const enter = (event: PointerEvent) => {
+		if (event.pointerType !== 'mouse' || settings.disabled) return;
+		hovered = true;
+		moveTo(settings.hover ?? 1.01, 0.2);
+	};
+	const leave = () => {
+		hovered = false;
+		moveTo(1, 0.2);
+	};
+	const down = (event: PointerEvent) => {
+		if (event.button !== 0 || settings.disabled) return;
+		moveTo(settings.pressed ?? 0.96, 0.1);
+	};
+	const up = () => {
+		const scale = hovered && !settings.disabled ? (settings.hover ?? 1.01) : 1;
+		moveTo(scale, 0.28);
+	};
+	node.dataset.motionScale = '';
+	node.addEventListener('pointerenter', enter);
+	node.addEventListener('pointerleave', leave);
+	node.addEventListener('pointerdown', down);
+	node.addEventListener('pointerup', up);
+	node.addEventListener('pointercancel', up);
+	return {
+		update(next = {}) {
+			settings = next;
+			if (settings.disabled) moveTo(1, 0.2);
+		},
+		destroy() {
+			node.removeEventListener('pointerenter', enter);
+			node.removeEventListener('pointerleave', leave);
+			node.removeEventListener('pointerdown', down);
+			node.removeEventListener('pointerup', up);
+			node.removeEventListener('pointercancel', up);
+			delete node.dataset.motionScale;
+			scaleXTo.tween.kill();
+			scaleYTo.tween.kill();
+			gsap.set(node, { clearProps: 'transform,transformOrigin' });
+		}
+	};
 };
 
 export const staggerChildren: Action<HTMLElement, StaggerOptions | undefined> = (
@@ -160,11 +218,24 @@ export function closeDrawer(node: HTMLElement | undefined) {
 	});
 }
 
+export function dismissLoadingScreen() {
+	const screen = document.getElementById('app-loading-screen');
+	if (!screen) return;
+	if (reducedMotion()) return screen.remove();
+	gsap.to(screen, {
+		autoAlpha: 0,
+		duration: 0.35,
+		ease: 'power2.out',
+		onComplete: () => screen.remove()
+	});
+}
+
 export function watchMotionState(node: HTMLElement, kind: SurfaceMotion) {
 	const sync = () => animateSurfaceState(node, kind);
 	const observer = new MutationObserver(sync);
 	observer.observe(node, { attributes: true, attributeFilter: ['data-state'] });
-	sync();
+	if (node.dataset.state === 'open') sync();
+	else hideInitialSurface(node, kind);
 	return () => {
 		observer.disconnect();
 		gsap.killTweensOf(node);
@@ -245,6 +316,12 @@ function animateSurfaceState(node: HTMLElement, kind: SurfaceMotion) {
 	if (kind === 'accordion') return animateAccordion(node, open);
 	if (open) return animateSurfaceIn(node, kind);
 	animateSurfaceOut(node, kind);
+}
+
+function hideInitialSurface(node: HTMLElement, kind: SurfaceMotion) {
+	node.inert = true;
+	if (kind === 'accordion') return hideAccordion(node);
+	hideSurface(node);
 }
 
 function animateSurfaceIn(node: HTMLElement, kind: Exclude<SurfaceMotion, 'accordion'>) {
@@ -408,7 +485,7 @@ function releaseKey(event: KeyboardEvent, active: Set<HTMLElement>) {
 }
 
 function interactiveTarget(target: EventTarget | null) {
-	if (!(target instanceof Element)) return;
+	if (!(target instanceof Element) || target.closest('[data-motion-scale]')) return;
 	const element = target.closest<HTMLElement>(PRESS_SELECTOR);
 	if (!element || element.matches(':disabled, [aria-disabled="true"]')) return;
 	return element;

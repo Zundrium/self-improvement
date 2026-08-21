@@ -6,12 +6,15 @@
 	let {
 		ref = $bindable(null),
 		class: className,
+		wrapperClass,
 		sideOffset = 6,
 		align = 'center',
 		portalProps,
+		children,
 		...restProps
-	}: PopoverPrimitive.ContentProps & {
+	}: Omit<PopoverPrimitive.ContentProps, 'child'> & {
 		portalProps?: PopoverPrimitive.PortalProps;
+		wrapperClass?: string;
 	} = $props();
 
 	$effect(() => {
@@ -32,5 +35,11 @@
 		)}
 		forceMount
 		{...restProps}
-	/>
+	>
+		{#snippet child({ props, wrapperProps })}
+			<div {...wrapperProps} class={cn('z-50', wrapperClass)}>
+				<div {...props}>{@render children?.()}</div>
+			</div>
+		{/snippet}
+	</PopoverPrimitive.Content>
 </PopoverPrimitive.Portal>

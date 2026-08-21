@@ -10,7 +10,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Calendar } from '$lib/components/ui/calendar';
 	import { fullDateLabel } from '$lib/dateFormatting';
-	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
+	import {
+		Popover,
+		PopoverContent,
+		PopoverOverlay,
+		PopoverTrigger
+	} from '$lib/components/ui/popover';
 	import type { TrackerColors } from '$lib/trackers/registry';
 
 	interface Props {
@@ -38,6 +43,12 @@
 		if (!value) return;
 		calendarOpen = false;
 		void goto(resolve(hrefForDate(value.toString()) as '/'));
+	}
+
+	function dismissCalendar(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		calendarOpen = false;
 	}
 </script>
 
@@ -71,7 +82,12 @@
 				</Button>
 			{/snippet}
 		</PopoverTrigger>
-		<PopoverContent class="w-auto p-0">
+		<PopoverOverlay onclick={dismissCalendar} />
+		<PopoverContent
+			class="w-auto p-0"
+			wrapperClass="z-[61]"
+			onInteractOutside={(event) => event.preventDefault()}
+		>
 			<Calendar
 				type="single"
 				bind:value={calendarDate}

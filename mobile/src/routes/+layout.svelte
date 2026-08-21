@@ -22,7 +22,7 @@
 		type TrackerColors
 	} from '$lib/trackers/registry';
 	import { mobileRepository } from '$lib/api';
-	import { motionRoot, pageEnter } from '$lib/motion/gsap';
+	import { dismissLoadingScreen, motionRoot, pageEnter } from '$lib/motion/gsap';
 	import type { ActionFeedData } from '$lib/api-types';
 	import type { TrackerId } from '$domain/model';
 	import { failedTrackerIds } from '$domain/status';
@@ -77,7 +77,7 @@
 	});
 
 	onMount(() => {
-		document.getElementById('app-loading-screen')?.remove();
+		dismissLoadingScreen();
 		audioVolumeState.hydrate();
 		if (!isNativeAndroid()) return;
 		if (data.user) void syncAndroidData();
