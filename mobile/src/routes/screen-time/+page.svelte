@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import NativeDataHelpAlert from '$lib/components/nativeDataHelpAlert.svelte';
 	import TrackerHistory from '$lib/components/trackerHistory.svelte';
 	import TrackerPage from '$lib/components/trackerPage.svelte';
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
@@ -35,18 +35,14 @@
 
 <TrackerPage class="max-w-3xl">
 	<ScreenTimeSummary totalMinutes={data.usage.totalMinutes} />
-	<Alert variant={data.isSynced ? 'default' : 'destructive'}>
-		<AlertTitle
-			>{data.isSynced ? 'Android data processed' : 'Screen time is not being processed'}</AlertTitle
-		>
-		<AlertDescription>
-			{#if data.isSynced}
-				Last sync: {lastProcessed}
-			{:else}
-				Enable Usage Access under <a href={resolve('/profile')}>Profile</a>, then sync Android data.
-			{/if}
-		</AlertDescription>
-	</Alert>
+	{#if data.hasData}
+		<Alert>
+			<AlertTitle>Android data processed</AlertTitle>
+			<AlertDescription>Last sync: {lastProcessed}</AlertDescription>
+		</Alert>
+	{:else}
+		<NativeDataHelpAlert tracker="screen-time" isSynced={data.isSynced} />
+	{/if}
 	<TrackerHistory items={history} {colors} />
 	<ScreenTimeApps apps={data.usage.apps} totalMinutes={data.usage.totalMinutes} />
 </TrackerPage>

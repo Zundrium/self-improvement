@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NativeDataHelpAlert from '$lib/components/nativeDataHelpAlert.svelte';
 	import TrackerHistory from '$lib/components/trackerHistory.svelte';
 	import TrackerPage from '$lib/components/trackerPage.svelte';
 	import { shortDayLabel } from '$lib/dateFormatting';
@@ -28,5 +29,6 @@
 
 <TrackerPage class="max-w-3xl">
 	<StepsSummary steps={data.steps} goal={dailyGoal} />
+	{#if !data.hasData}<NativeDataHelpAlert tracker="steps" isSynced={data.isSynced} />{/if}
 	<TrackerHistory items={history} {colors} />
 </TrackerPage>

@@ -42,6 +42,7 @@ export type DashboardData = {
 export type StepsData = DatedData & {
 	connection: { dailyGoal: number; lastReceivedAt: string | null } | null;
 	isSynced: boolean;
+	hasData: boolean;
 	steps: number;
 	days: Array<{ date: string; count: number }>;
 };
@@ -49,6 +50,7 @@ export type StepsData = DatedData & {
 export type SleepData = DatedData & {
 	connection: { dailyGoalMinutes: number; lastReceivedAt: string | null } | null;
 	isSynced: boolean;
+	hasData: boolean;
 	durationSeconds: number;
 	days: Array<{ date: string; durationSeconds: number; sessionCount: number }>;
 	averageMinutes: number;
@@ -57,6 +59,7 @@ export type SleepData = DatedData & {
 export type ScreenTimeData = DatedData & {
 	connection: { lastReceivedAt: string | null } | null;
 	isSynced: boolean;
+	hasData: boolean;
 	usage: {
 		totalMinutes: number;
 		apps: Array<{ package: string; name: string; minutes: number; last_used: string }>;

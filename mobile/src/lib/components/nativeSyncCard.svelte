@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { Activity, RefreshCw, Settings, Shield, Smartphone } from '@lucide/svelte';
+	import { Activity, CircleHelp, RefreshCw, Settings, Shield, Smartphone } from '@lucide/svelte';
 	import { mobileRepository } from '$lib/api';
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
 	import { Badge } from '$lib/components/ui/badge';
@@ -17,6 +18,8 @@
 	import { listenForResume } from '$native/app';
 	import { openAndroidAppDetails } from '$native/android-settings';
 	import { isNativeAndroid } from '$native/platform';
+
+	let { showHelpLink = true }: { showHelpLink?: boolean } = $props();
 	let status = $state<MobileSyncStatus>(createEmptyStatus());
 	let healthAvailable = $state(false);
 	let loaded = $state(false);
@@ -66,6 +69,10 @@
 		await run(() => openAndroidAppDetails(), 'App settings could not be opened.');
 	}
 
+	async function openHealthSettings() {
+		await run(() => health.openSettings(), 'Health Connect settings could not be opened.');
+	}
+
 	async function openUsageSettings() {
 		await run(() => usage.openSettings(), 'Usage Access settings could not be opened.');
 	}
@@ -80,7 +87,8 @@
 			status = await mobileRepository.loadStatus();
 			const trackers = failedTrackerIds(status);
 			failed = trackers.length > 0;
-			message = failed ? syncFailureMessage(trackers) : 'Health and screen time are up to date.';
+			message = failed ? syncFailureMessage(trackers) : 'Android synchronization completed.';
+			await invalidateAll();
 		}, 'Synchronization could not complete.');
 	}
 
@@ -105,7 +113,13 @@
 
 	function lastSync(tracker: (typeof TRACKER_IDS)[number]) {
 		const value = status.trackers[tracker].lastSuccessAt;
-		return value ? new Date(value).toLocaleString() : 'Not synced yet';
+		return value ? new Date(value).toLocaleString() : 'No successful upload yet';
+	}
+
+	function failureMessage(tracker: (typeof TRACKER_IDS)[number]) {
+		return status.trackers[tracker].outcome === 'failed'
+			? status.trackers[tracker].failure?.message
+			: undefined;
 	}
 
 	function syncFailureMessage(trackers: TrackerId[]) {
@@ -141,10 +155,15 @@
 			{/if}
 			<div class="divide-y divide-(--text)/8">
 				{#each TRACKER_IDS as tracker (tracker)}
-					<div class="flex items-center justify-between gap-4 py-3 first:pt-0">
+					<div class="flex items-start justify-between gap-4 py-3 first:pt-0">
 						<div>
 							<p class="text-sm font-medium">{label(tracker)}</p>
 							<p class="text-xs text-(--text)/48">{lastSync(tracker)}</p>
+							{#if failureMessage(tracker)}
+								<p class="mt-1 text-xs leading-5 text-red-600 dark:text-red-400">
+									{failureMessage(tracker)}
+								</p>
+							{/if}
 						</div>
 						<Badge>{status.trackers[tracker].permission}</Badge>
 					</div>
@@ -159,6 +178,14 @@
 				>
 					<Activity class="size-4" /> Health access
 				</Button>
+				<Button
+					type="button"
+					variant="ghost"
+					disabled={busy || !healthAvailable}
+					onclick={openHealthSettings}
+				>
+					<Settings class="size-4" /> Health Connect
+				</Button>
 				{#if screenTimeNeedsAccess}
 					<Button type="button" variant="ghost" disabled={busy} onclick={openAppSettings}>
 						<Settings class="size-4" /> App settings
@@ -170,6 +197,11 @@
 				<Button type="button" variant="ghost" disabled={busy} onclick={openPrivacyPolicy}>
 					<Shield class="size-4" /> Privacy
 				</Button>
+				{#if showHelpLink}
+					<Button href="/android-data-help" variant="ghost" disabled={busy}>
+						<CircleHelp class="size-4" /> Troubleshooting
+					</Button>
+				{/if}
 				<Button type="button" disabled={busy} onclick={syncNow}>
 					<RefreshCw class={busy ? 'size-4 animate-spin' : 'size-4'} /> Sync now
 				</Button>

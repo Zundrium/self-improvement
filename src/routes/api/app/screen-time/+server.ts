@@ -29,6 +29,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	return json({
 		connection: connection ? { lastReceivedAt: connection.lastReceivedAt } : null,
 		isSynced: Boolean(connection?.lastReceivedAt),
+		hasData: [...history, ...selected].some((day) => day.totalMinutes > 0),
 		date,
 		today,
 		markedDates: [...new Set([...history, ...selected].map((day) => day.localDate))],

@@ -22,6 +22,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	return json({
 		connection,
 		isSynced: Boolean(connection?.lastReceivedAt),
+		hasData: [...history, ...selected].some((day) => day.count > 0),
 		date,
 		today,
 		steps: selected.find((day) => day.localDate === date)?.count ?? 0,
