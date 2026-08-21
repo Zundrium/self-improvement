@@ -22,6 +22,7 @@
 		type TrackerColors
 	} from '$lib/trackers/registry';
 	import { mobileRepository } from '$lib/api';
+	import { motionRoot, pageEnter } from '$lib/motion/gsap';
 	import type { ActionFeedData } from '$lib/api-types';
 	import type { TrackerId } from '$domain/model';
 	import { failedTrackerIds } from '$domain/status';
@@ -179,6 +180,7 @@
 
 <div
 	class={appShellActive ? 'safe-area-padding-top flex h-svh flex-col overflow-hidden' : undefined}
+	use:motionRoot
 >
 	{#if dateNavigation || selectedFeature}
 		<div class="app-gutter shrink-0 py-(--app-header-padding-block)">
@@ -200,9 +202,11 @@
 			{/if}
 		</div>
 	{/if}
-	<div class={appShellActive ? 'flex min-h-0 flex-1 flex-col overflow-y-auto' : undefined}>
-		{@render children()}
-	</div>
+	{#key page.url.pathname + page.url.search}
+		<div class={appShellActive ? 'flex min-h-0 flex-1 flex-col overflow-y-auto' : undefined}>
+			<div class="contents" use:pageEnter>{@render children()}</div>
+		</div>
+	{/key}
 	{#if data.user && appShellActive}
 		<BottomActionBarOutlet />
 		<AppNavbar

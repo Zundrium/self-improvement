@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Progress as ProgressPrimitive } from 'bits-ui';
 	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
+	import { linearProgress } from '$lib/motion/gsap';
 
 	let {
 		ref = $bindable(null),
@@ -26,10 +27,8 @@
 >
 	<div
 		data-slot="progress-indicator"
-		class={cn(
-			'h-full w-full flex-1 rounded-full bg-(--text) transition-transform duration-300',
-			indicatorClass
-		)}
-		style={`${indicatorStyle ?? ''}; transform: translateX(-${100 - (100 * (value ?? 0)) / (max || 1)}%)`}
+		class={cn('h-full w-full flex-1 rounded-full bg-(--text)', indicatorClass)}
+		style={indicatorStyle}
+		use:linearProgress={(100 * (value ?? 0)) / (max || 1)}
 	></div>
 </ProgressPrimitive.Root>

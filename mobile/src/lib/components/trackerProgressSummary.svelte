@@ -14,7 +14,7 @@
 	let { value, max, displayValue, secondaryText, label, colors }: Props = $props();
 </script>
 
-<section class="flex items-center justify-center py-2" aria-label={label}>
+<section class="flex items-center justify-center py-2" aria-label={label} data-motion-item>
 	<CircularProgress {value} {max} {label} {colors}>
 		<strong class="block text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl">
 			{displayValue}

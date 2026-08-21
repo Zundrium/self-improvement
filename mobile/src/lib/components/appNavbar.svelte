@@ -2,7 +2,6 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
-	import { fly } from 'svelte/transition';
 	import Icon from '@iconify/svelte';
 	import {
 		ChevronDown,
@@ -24,6 +23,7 @@
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
 	import type { DaySummaryData } from '$lib/api-types';
+	import { closeDrawer as animateDrawerClose, drawerEnter } from '$lib/motion/gsap';
 	import type { AppTracker } from '$lib/trackers/registry';
 	import AppDrawer from './appDrawer.svelte';
 	import AudioVolumeControl from './audioVolumeControl.svelte';
@@ -44,6 +44,8 @@
 	let daySummaryFailed = $state(false);
 	let drawerDaySummary = $state<DaySummaryData>();
 	let navigationElement: HTMLElement | undefined;
+	let drawerElement = $state<HTMLElement>();
+	let drawerClosing = false;
 
 	$effect(() => {
 		if (daySummary) drawerDaySummary = daySummary;
@@ -62,22 +64,30 @@
 	}
 
 	function toggleDrawer() {
-		if (appLauncherOpen) return closeDrawer();
+		if (appLauncherOpen) return void closeDrawer();
 		appLauncherOpen = true;
 		void loadDaySummary();
 	}
 
-	function closeDrawer() {
+	async function closeDrawer() {
+		if (!appLauncherOpen || drawerClosing) return;
+		drawerClosing = true;
+		await animateDrawerClose(drawerElement);
+		dismissDrawer();
+	}
+
+	function dismissDrawer() {
 		appLauncherOpen = false;
+		drawerClosing = false;
 	}
 
 	function closeDrawerOutside(event: PointerEvent) {
 		const target = event.target;
-		if (target instanceof Node && !navigationElement?.contains(target)) closeDrawer();
+		if (target instanceof Node && !navigationElement?.contains(target)) void closeDrawer();
 	}
 
 	function closeDrawerOnEscape(event: KeyboardEvent) {
-		if (event.key === 'Escape') closeDrawer();
+		if (event.key === 'Escape') void closeDrawer();
 	}
 
 	async function loadDaySummary() {
@@ -127,10 +137,18 @@
 >
 	{#if appLauncherOpen}
 		<div
+			bind:this={drawerElement}
 			id="app-drawer"
 			class="absolute inset-x-0 bottom-full z-40 max-h-[calc(100svh-4rem)] overflow-y-auto bg-(--bg-elevated)"
-			transition:fly={{ y: '100%', opacity: 1, duration: 150 }}
+			use:drawerEnter={dismissDrawer}
 		>
+			<div
+				class="flex h-5 touch-none items-center justify-center"
+				data-drawer-handle
+				aria-hidden="true"
+			>
+				<span class="h-1 w-10 rounded-full bg-(--text)/16"></span>
+			</div>
 			{#if drawerDaySummary && !daySummaryLoading}
 				<AppDrawer {trackers} daySummary={drawerDaySummary} onSelect={closeDrawer} />
 			{:else if daySummaryFailed}
@@ -143,7 +161,7 @@
 				</button>
 			{:else}
 				<div class="flex min-h-48 items-center justify-center" aria-label="Loading tracker apps">
-					<LoaderCircle class="size-6 animate-spin text-(--text)/40" />
+					<LoaderCircle class="size-6 text-(--text)/40" data-motion-spin />
 				</div>
 			{/if}
 		</div>
@@ -152,17 +170,18 @@
 		<div class="mx-auto grid h-16 w-full max-w-(--app-compact-max-width) grid-cols-3 items-stretch">
 			<a
 				href={resolve('/')}
-				class="flex items-center justify-center text-(--text)/40 transition-colors hover:text-(--text)"
+				class="flex touch-manipulation items-center justify-center text-(--text)/40 hover:text-(--text)"
 				aria-label="Home"
 				aria-current={isActive('/') ? 'page' : undefined}
 				aria-busy={isPending('/')}
+				data-motion-press
 				onclick={closeDrawer}
 			>
 				<span
 					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
 				>
 					{#if isPending('/')}
-						<LoaderCircle class="size-6 animate-spin" />
+						<LoaderCircle class="size-6" data-motion-spin />
 					{:else}
 						<House class="size-6" />
 					{/if}
@@ -171,7 +190,7 @@
 
 			<button
 				type="button"
-				class="flex cursor-pointer items-center justify-center rounded-2xl text-(--text)/40 transition-colors outline-none hover:text-(--text) focus-visible:ring-2 focus-visible:ring-(--text)/20"
+				class="flex cursor-pointer touch-manipulation items-center justify-center rounded-2xl text-(--text)/40 outline-none hover:text-(--text) focus-visible:ring-2 focus-visible:ring-(--text)/20"
 				aria-label={appLauncherOpen ? 'Close app drawer' : 'Open app drawer'}
 				aria-controls="app-drawer"
 				aria-expanded={appLauncherOpen}

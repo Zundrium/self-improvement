@@ -2,6 +2,7 @@
 	import Icon from '@iconify/svelte';
 	import { Accordion as AccordionPrimitive } from 'bits-ui';
 	import { cn, type WithoutChild } from '$lib/utils.js';
+	import { watchExpanded } from '$lib/motion/gsap';
 
 	let {
 		ref = $bindable(null),
@@ -12,6 +13,11 @@
 	}: WithoutChild<AccordionPrimitive.TriggerProps> & {
 		level?: AccordionPrimitive.HeaderProps['level'];
 	} = $props();
+
+	$effect(() => {
+		if (!ref) return;
+		return watchExpanded(ref);
+	});
 </script>
 
 <AccordionPrimitive.Header {level} class="flex">
@@ -19,7 +25,7 @@
 		bind:ref
 		data-slot="accordion-trigger"
 		class={cn(
-			'group/accordion flex flex-1 items-center justify-between gap-4 py-4 text-left text-sm font-medium tracking-[-0.39px] transition-colors duration-150 outline-none hover:text-(--text)/72 active:[transform:none] disabled:pointer-events-none disabled:opacity-50',
+			'group/accordion flex flex-1 items-center justify-between gap-4 py-4 text-left text-sm font-medium tracking-[-0.39px] outline-none hover:text-(--text)/72 disabled:pointer-events-none disabled:opacity-50',
 			className
 		)}
 		{...restProps}
@@ -27,7 +33,8 @@
 		{@render children?.()}
 		<Icon
 			icon="heroicons:chevron-down-solid"
-			class="size-4 shrink-0 text-(--text)/40 transition-transform duration-200 ease-out group-aria-expanded/accordion:rotate-180"
+			class="size-4 shrink-0 text-(--text)/40"
+			data-motion-chevron="true"
 			aria-hidden="true"
 		/>
 	</AccordionPrimitive.Trigger>

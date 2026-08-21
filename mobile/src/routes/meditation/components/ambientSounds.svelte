@@ -61,7 +61,7 @@
 						: undefined}
 				>
 					{#if loadingSoundId === sound.id}
-						<LoaderCircle class="size-6 animate-spin" />
+						<LoaderCircle class="size-6" data-motion-spin />
 					{:else}
 						<SoundIcon class="size-7" />
 					{/if}

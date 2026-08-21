@@ -1,6 +1,7 @@
 <script lang="ts" module>
 	import { resolve } from '$app/paths';
 	import { cn, type WithElementRef } from '$lib/utils.js';
+	import { gradientColors, type GradientColors } from '$lib/motion/gsap';
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 
 	export type ButtonVariant = 'default' | 'ghost' | 'destructive';
@@ -10,6 +11,7 @@
 		WithElementRef<HTMLAnchorAttributes> & {
 			variant?: ButtonVariant;
 			size?: ButtonSize;
+			motionColors?: GradientColors;
 		};
 
 	const variants: Record<ButtonVariant, string> = {
@@ -35,6 +37,7 @@
 		href = undefined,
 		type = 'button',
 		disabled,
+		motionColors,
 		children,
 		...restProps
 	}: ButtonProps = $props();
@@ -45,7 +48,7 @@
 		bind:this={ref}
 		data-slot="button"
 		class={cn(
-			'inline-flex cursor-pointer items-center justify-center whitespace-nowrap transition-all duration-150 outline-none select-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+			'inline-flex cursor-pointer touch-manipulation items-center justify-center whitespace-nowrap outline-none select-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 			variants[variant],
 			sizes[size],
 			className
@@ -54,6 +57,7 @@
 		aria-disabled={disabled}
 		role={disabled ? 'link' : undefined}
 		tabindex={disabled ? -1 : undefined}
+		use:gradientColors={motionColors}
 		{...restProps}
 	>
 		{@render children?.()}
@@ -63,13 +67,14 @@
 		bind:this={ref}
 		data-slot="button"
 		class={cn(
-			'inline-flex cursor-pointer items-center justify-center whitespace-nowrap transition-all duration-150 outline-none select-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+			'inline-flex cursor-pointer touch-manipulation items-center justify-center whitespace-nowrap outline-none select-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 			variants[variant],
 			sizes[size],
 			className
 		)}
 		{type}
 		{disabled}
+		use:gradientColors={motionColors}
 		{...restProps}
 	>
 		{@render children?.()}

@@ -1,17 +1,8 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
 
 /* lily design system — written into your stylesheet by the lily CLI; yours to edit. */
 
 @custom-variant dark (&:is(.dark *));
-
-/* Motion: a gentle spring easing used as the default transition timing.
- * Mild overshoot for transforms; negligible on color/opacity tints. */
-@theme {
-	--ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
-	--default-transition-timing-function: var(--ease-spring);
-	--default-transition-duration: 150ms;
-}
 
 /* ----------------------------------------------------------------------------
  * Radius scale (applied via utility classes, by ROLE not pixel size)
@@ -31,10 +22,6 @@
  * Design tokens & base styles
  * ------------------------------------------------------------------------- */
 @layer base {
-	html {
-		scroll-behavior: smooth;
-	}
-
 	:root {
 		--bg: #f8f8f8;
 		--bg-elevated: #ffffff;
@@ -110,17 +97,9 @@
 		text-decoration: none;
 	}
 
-	/* Press feedback — only button-like controls scale on press. Plain text /
-	 * navigation links (sidebar, TOC, lists) must NOT jump when clicked. The
-	 * Button component carries data-slot="button" even when rendered as <a>. */
-	button,
-	a[data-slot='button'] {
-		transition: transform 0.2s var(--ease-spring);
-	}
-
-	button:active,
-	a[data-slot='button']:active {
-		transform: scale(0.96);
+	:is(button, a[data-slot='button'], [data-motion-press], [role='button'][tabindex]) {
+		scale: var(--motion-press-scale, 1);
+		transform-origin: center;
 	}
 }
 
@@ -142,10 +121,6 @@
 		background-position: 0 100%;
 		background-repeat: no-repeat;
 		background-size: 0% 1px;
-		transition:
-			color 0.15s cubic-bezier(0.2, 0, 0, 1),
-			background-size 0.25s cubic-bezier(0.2, 0, 0, 1),
-			transform 0.15s cubic-bezier(0.2, 0, 0, 1);
 	}
 
 	.link:hover {
@@ -162,60 +137,6 @@
 	--color-chart-3: var(--chart-3);
 	--color-chart-4: var(--chart-4);
 	--color-chart-5: var(--chart-5);
-
-	--animate-accordion-down: accordion-down 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-	--animate-accordion-up: accordion-up 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-	--animate-collapsible-down: collapsible-down 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-	--animate-collapsible-up: collapsible-up 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-	--animate-caret-blink: caret-blink 1s ease-out infinite;
-
-	@keyframes caret-blink {
-		0%,
-		70%,
-		100% {
-			opacity: 1;
-		}
-		20%,
-		50% {
-			opacity: 0;
-		}
-	}
-
-	@keyframes accordion-down {
-		from {
-			height: 0;
-		}
-		to {
-			height: var(--bits-accordion-content-height, var(--accordion-panel-height, auto));
-		}
-	}
-
-	@keyframes accordion-up {
-		from {
-			height: var(--bits-accordion-content-height, var(--accordion-panel-height, auto));
-		}
-		to {
-			height: 0;
-		}
-	}
-
-	@keyframes collapsible-down {
-		from {
-			height: 0;
-		}
-		to {
-			height: var(--bits-collapsible-content-height);
-		}
-	}
-
-	@keyframes collapsible-up {
-		from {
-			height: var(--bits-collapsible-content-height);
-		}
-		to {
-			height: 0;
-		}
-	}
 }
 
 @custom-variant data-open {
@@ -278,5 +199,19 @@
 
 	&::-webkit-scrollbar {
 		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
 	}
 }

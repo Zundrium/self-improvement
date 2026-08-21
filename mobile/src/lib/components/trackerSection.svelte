@@ -24,7 +24,7 @@
 	}: Props = $props();
 </script>
 
-<section class={cn('space-y-5', className)} aria-label={title}>
+<section class={cn('space-y-5', className)} aria-label={title} data-motion-item>
 	<header class="flex items-start justify-between gap-4">
 		<div class="min-w-0">
 			<h2

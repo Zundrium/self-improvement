@@ -28,6 +28,7 @@
 	const nextDate = $derived(parseDate(date).add({ days: 1 }).toString());
 	const primaryColor = $derived(colors[0]?.primary ?? '#262626');
 	const secondaryColor = $derived(colors[0]?.secondary ?? '#0d0d0d');
+	const pickerColors = $derived({ primary: primaryColor, secondary: secondaryColor });
 
 	$effect(() => {
 		if (calendarDate?.toString() !== date) calendarDate = parseDate(date);
@@ -55,8 +56,8 @@
 			{#snippet child({ props })}
 				<Button
 					variant="ghost"
-					class="date-picker-field w-full min-w-0 gap-2 px-3 text-white shadow-sm shadow-black/15 hover:text-white sm:px-4"
-					style={`--date-picker-primary: ${primaryColor}; --date-picker-secondary: ${secondaryColor}`}
+					class="date-picker-field w-full min-w-0 gap-2 px-3 text-white shadow-sm shadow-black/15 hover:bg-transparent hover:text-white sm:px-4"
+					motionColors={pickerColors}
 					{...props}
 				>
 					<CalendarDays class="size-4" />
@@ -90,30 +91,8 @@
 </section>
 
 <style>
-	@property --date-picker-primary {
-		syntax: '<color>';
-		inherits: false;
-		initial-value: #262626;
-	}
-
-	@property --date-picker-secondary {
-		syntax: '<color>';
-		inherits: false;
-		initial-value: #0d0d0d;
-	}
-
 	:global(.date-picker-field) {
-		background: linear-gradient(135deg, var(--date-picker-primary), var(--date-picker-secondary));
+		background: linear-gradient(135deg, var(--motion-primary), var(--motion-secondary));
 		color: #ffffff;
-		transition:
-			--date-picker-primary 250ms ease,
-			--date-picker-secondary 250ms ease,
-			filter 150ms ease,
-			transform 200ms var(--ease-spring);
-	}
-
-	:global(.date-picker-field:hover) {
-		color: #ffffff;
-		filter: brightness(1.08);
 	}
 </style>

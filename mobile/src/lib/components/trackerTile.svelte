@@ -50,7 +50,7 @@
 			style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`}
 		>
 			{#if pending}
-				<LoaderCircle class="size-8 animate-spin" />
+				<LoaderCircle class="size-8" data-motion-spin />
 			{:else}
 				<TrackerIcon class="size-8" />
 			{/if}

@@ -2,6 +2,7 @@
 	import type { TrackerColors } from '$lib/trackers/registry';
 	import MetricProgressRow from './metricProgressRow.svelte';
 	import TrackerSection from './trackerSection.svelte';
+	import { staggerChildren } from '$lib/motion/gsap';
 
 	type HistoryItem = {
 		key: string;
@@ -21,14 +22,16 @@
 	let { items, colors, title = 'Last 7 days', description }: Props = $props();
 </script>
 
-<TrackerSection {title} {description} {colors} contentClass="space-y-4">
-	{#each items as item (item.key)}
-		<MetricProgressRow
-			label={item.label}
-			value={item.value}
-			max={item.max}
-			displayValue={item.displayValue}
-			{colors}
-		/>
-	{/each}
+<TrackerSection {title} {description} {colors}>
+	<div class="space-y-4" use:staggerChildren>
+		{#each items as item (item.key)}
+			<MetricProgressRow
+				label={item.label}
+				value={item.value}
+				max={item.max}
+				displayValue={item.displayValue}
+				{colors}
+			/>
+		{/each}
+	</div>
 </TrackerSection>

@@ -14,9 +14,7 @@
 	data-slot="spinner"
 	role="status"
 	aria-label="Loading"
-	class={cn(
-		'size-5 animate-spin rounded-full border-2 border-(--text)/12 border-t-(--text)',
-		className
-	)}
+	data-motion-spin
+	class={cn('size-5 rounded-full border-2 border-(--text)/12 border-t-(--text)', className)}
 	{...restProps}
 ></div>

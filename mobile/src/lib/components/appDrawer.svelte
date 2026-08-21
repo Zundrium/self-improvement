@@ -4,6 +4,7 @@
 	import { getTrackerColors, type AppTracker, type AppTrackerId } from '$lib/trackers/registry';
 	import type { DaySummaryData } from '$lib/api-types';
 	import { Button } from '$lib/components/ui/button';
+	import { staggerChildren } from '$lib/motion/gsap';
 	import { formatScreenTime } from '../../routes/screen-time/screen-time';
 	import { formatSleepMinutes } from '../../routes/sleep/sleep';
 	import TrackerTile from './trackerTile.svelte';
@@ -116,7 +117,11 @@
 <div class="app-gutter py-(--app-overlay-padding)">
 	<div class="mx-auto w-full max-w-(--app-compact-max-width)">
 		{#if drawerTrackers.length}
-			<section class="grid grid-cols-3 gap-3" aria-label="Tracker apps">
+			<section
+				class="grid grid-cols-3 gap-3"
+				aria-label="Tracker apps"
+				use:staggerChildren={{ delay: 0.08, y: 18 }}
+			>
 				{#each drawerTrackers as tracker (tracker.id)}
 					<TrackerTile
 						href={tracker.href}

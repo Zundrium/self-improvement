@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { getTrackerColorsForPathname } from '$lib/trackers/registry';
 	import { cn } from '$lib/utils';
+	import { gradientColors, pageEnter } from '$lib/motion/gsap';
 	import { useBottomActionBarState } from './bottomActionBarState.svelte';
 
 	const state = useBottomActionBarState();
@@ -16,7 +17,8 @@
 			'app-gutter shrink-0 bg-(--bg) py-(--app-bar-padding-block)',
 			state.actionBar.mobileOnly && 'sm:hidden'
 		)}
-		style={`--bottom-action-primary: ${primaryColor}; --bottom-action-secondary: ${secondaryColor}`}
+		use:gradientColors={{ primary: primaryColor, secondary: secondaryColor }}
+		use:pageEnter
 		data-bottom-action-bar
 	>
 		<div class={cn('mx-auto w-full', state.actionBar.contentClass)}>
@@ -26,30 +28,9 @@
 {/if}
 
 <style>
-	@property --bottom-action-primary {
-		syntax: '<color>';
-		inherits: true;
-		initial-value: #262626;
-	}
-
-	@property --bottom-action-secondary {
-		syntax: '<color>';
-		inherits: true;
-		initial-value: #0d0d0d;
-	}
-
 	:global([data-bottom-action-bar] [data-slot='button']) {
-		background: linear-gradient(
-			135deg,
-			var(--bottom-action-primary),
-			var(--bottom-action-secondary)
-		);
+		background: linear-gradient(135deg, var(--motion-primary), var(--motion-secondary));
 		color: #ffffff;
-		transition:
-			--bottom-action-primary 250ms ease,
-			--bottom-action-secondary 250ms ease,
-			filter 150ms ease,
-			transform 200ms var(--ease-spring);
 	}
 
 	:global([data-bottom-action-bar] [data-slot='button']:hover) {

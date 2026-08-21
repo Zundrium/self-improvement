@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { cn } from '$lib/utils';
 	import type { TrackerColors } from '$lib/trackers/registry';
+	import { progressRing } from '$lib/motion/gsap';
 
 	type Props = {
 		value: number;
@@ -55,8 +56,7 @@
 			stroke={colors ? `url(#${gradientId})` : 'currentColor'}
 			stroke-width="8"
 			stroke-linecap="round"
-			class="transition-all duration-500"
-			style={`stroke-dasharray: ${percentage} 100`}
+			use:progressRing={percentage}
 		/>
 	</svg>
 	<div class="relative text-center">

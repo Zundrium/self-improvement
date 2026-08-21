@@ -226,7 +226,7 @@
 					</Button>
 				{/if}
 				<Button type="button" disabled={busy} onclick={syncNow}>
-					<RefreshCw class={busy ? 'size-4 animate-spin' : 'size-4'} /> Sync now
+					<RefreshCw class="size-4" data-motion-spin={busy || undefined} /> Sync now
 				</Button>
 			</div>
 		{/if}

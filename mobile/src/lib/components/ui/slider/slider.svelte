@@ -38,7 +38,9 @@
 			<SliderPrimitive.Thumb
 				index={thumb.index}
 				data-slot="slider-thumb"
-				class="block size-5 shrink-0 rounded-full border border-(--text)/8 bg-(--bg-elevated) shadow-sm transition-[box-shadow,transform] outline-none focus-visible:ring-2 focus-visible:ring-(--text)/24 active:scale-110 disabled:pointer-events-none disabled:opacity-50"
+				class="block size-5 shrink-0 touch-none rounded-full border border-(--text)/8 bg-(--bg-elevated) shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-(--text)/24 disabled:pointer-events-none disabled:opacity-50"
+				data-motion-press
+				data-motion-press-scale="1.1"
 			/>
 		{/each}
 	{/snippet}

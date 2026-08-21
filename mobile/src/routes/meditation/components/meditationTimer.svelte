@@ -192,7 +192,7 @@
 				Timer paused
 			{:else if saveState === 'saving'}
 				<span class="inline-flex items-center gap-2"
-					><LoaderCircle class="animate-spin" size={15} /> Saving session</span
+					><LoaderCircle size={15} data-motion-spin /> Saving session</span
 				>
 			{:else if saveState === 'saved'}
 				<span class="inline-flex items-center gap-2"><Check size={15} /> Session saved</span>

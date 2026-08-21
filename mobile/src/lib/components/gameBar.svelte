@@ -45,7 +45,7 @@
 	}
 </script>
 
-<section class="grid grid-cols-3" aria-label="Game progress">
+<section class="grid grid-cols-3" aria-label="Game progress" data-motion-item>
 	<Button
 		href={featureHref('/achievements')}
 		variant="ghost"

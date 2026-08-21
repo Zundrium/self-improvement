@@ -204,7 +204,7 @@
 						<Smartphone class="size-4" /> Usage access
 					</Button>
 					<Button type="button" variant="ghost" disabled={Boolean(busy)} onclick={refreshAccess}>
-						<RefreshCw class={busy === 'check' ? 'size-4 animate-spin' : 'size-4'} /> Check again
+						<RefreshCw class="size-4" data-motion-spin={busy === 'check' || undefined} /> Check again
 					</Button>
 				</div>
 

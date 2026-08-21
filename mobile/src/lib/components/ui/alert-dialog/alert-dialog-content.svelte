@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { AlertDialog as AlertDialogPrimitive } from 'bits-ui';
 	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
+	import { watchMotionState } from '$lib/motion/gsap';
 
 	let {
 		ref = $bindable(null),
@@ -12,22 +13,38 @@
 		portalProps?: AlertDialogPrimitive.PortalProps;
 		children: import('svelte').Snippet;
 	} = $props();
+	let overlayRef = $state<HTMLElement | null>(null);
+
+	$effect(() => {
+		if (!ref) return;
+		return watchMotionState(ref, 'dialog');
+	});
+
+	$effect(() => {
+		if (!overlayRef) return;
+		return watchMotionState(overlayRef, 'overlay');
+	});
 </script>
 
 <AlertDialogPrimitive.Portal {...portalProps}>
 	<AlertDialogPrimitive.Overlay
+		bind:ref={overlayRef}
 		data-slot="alert-dialog-overlay"
-		class="fixed inset-0 z-50 bg-black/40 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+		class="fixed inset-0 z-50 bg-black/40"
+		forceMount
 	/>
-	<AlertDialogPrimitive.Content
-		bind:ref
-		data-slot="alert-dialog-content"
-		class={cn(
-			'fixed top-1/2 left-1/2 z-50 flex w-(--app-overlay-width) max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-3xl bg-(--bg-elevated) p-6 shadow-lg outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-			className
-		)}
-		{...restProps}
-	>
-		{@render children?.()}
+	<AlertDialogPrimitive.Content bind:ref forceMount {...restProps}>
+		{#snippet child({ props })}
+			<div
+				{...props}
+				data-slot="alert-dialog-content"
+				class={cn(
+					'fixed top-1/2 left-1/2 z-50 flex w-(--app-overlay-width) max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-3xl bg-(--bg-elevated) p-6 shadow-lg outline-none',
+					className
+				)}
+			>
+				{@render children?.()}
+			</div>
+		{/snippet}
 	</AlertDialogPrimitive.Content>
 </AlertDialogPrimitive.Portal>
