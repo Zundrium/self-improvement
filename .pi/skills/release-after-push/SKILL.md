@@ -12,7 +12,9 @@ description: Publish the next signed Android pre-1.0 GitHub Release after projec
 - Choose a unique `v0.MINOR.PATCH` tag without asking the user. Increment MINOR for user-facing capabilities or compatibility changes; increment PATCH for fixes, refactoring, documentation, and maintenance. Start at `v0.1.0` when no matching tag exists.
 - Never move, replace, delete, or force-push a tag.
 - Do not read signing secret values. Confirm only that all required secret names exist.
-- Stop on failed validation, push, build, signing, or release checks. Keep a failed tag and report the workflow URL.
+- Do not build the web, mobile, or Android app locally during this flow. GitHub Actions is the release build and validation environment.
+- Do not watch, poll, or wait for the GitHub Actions run. End after reporting that the remote build has started.
+- Stop on failed preflight or tag push. Never move or delete a pushed tag.
 
 ## Steps
 
@@ -53,24 +55,10 @@ git tag -a "$version" -m "Release $version"
 git push origin "refs/tags/$version"
 ```
 
-6. Find the tag-triggered Android workflow and wait for it:
+6. Query the tag-triggered workflow once without waiting:
 
 ```sh
-run_id=
-for attempt in $(seq 1 24); do
-  run_id="$(gh run list --workflow android.yml --branch "$version" --event push --limit 1 --json databaseId --jq '.[0].databaseId')"
-  test -n "$run_id" && break
-  sleep 5
-done
-test -n "$run_id"
-gh run watch "$run_id" --exit-status
+run_url="$(gh run list --workflow android.yml --branch "$version" --event push --limit 1 --json url --jq '.[0].url')"
 ```
 
-7. Verify that the GitHub Release targets the tag and includes an APK:
-
-```sh
-gh release view "$version" --json tagName,url,assets
-gh release view "$version" --json assets --jq '.assets[].name' | grep -E '\.apk$'
-```
-
-8. Report the version, commit, workflow URL, release URL, and APK filename.
+7. Report the version, commit, and that the Android build is running on GitHub Actions. Include `run_url` when available, then end the flow without checking completion or release assets.
