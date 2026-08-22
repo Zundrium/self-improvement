@@ -68,17 +68,12 @@ export const breathingPhaseScale: Action<HTMLElement, BreathingMotionOptions> = 
 };
 
 function setInitialScale(node: HTMLElement, options: BreathingMotionOptions) {
-	const scale = prefersReducedMotion()
-		? 1
-		: options.running
-			? phaseScale(options.phase)
-			: RESTING_SCALE;
+	const scale = options.running ? phaseScale(options.phase) : RESTING_SCALE;
 	gsap.set(node, { scale, transformOrigin: 'center center', force3D: true });
 }
 
 function animatePhase(node: HTMLElement, options: BreathingMotionOptions) {
 	gsap.killTweensOf(node);
-	if (prefersReducedMotion()) return void gsap.set(node, { scale: 1 });
 	if (!options.running) return resetSphere(node);
 	if (options.phase === 'hold') return;
 	gsap.to(node, {

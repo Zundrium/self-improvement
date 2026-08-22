@@ -58,6 +58,7 @@ export const interactionScale: Action<HTMLElement, InteractionScaleOptions | und
 	const scaleXTo = gsap.quickTo(node, 'scaleX', { duration: 0.2, ease: 'power2.out' });
 	const scaleYTo = gsap.quickTo(node, 'scaleY', { duration: 0.2, ease: 'power2.out' });
 	const moveTo = (scale: number, duration: number) => {
+		if (reducedMotion()) return void gsap.set(node, { scaleX: 1, scaleY: 1 });
 		scaleXTo.tween.duration(duration);
 		scaleYTo.tween.duration(duration);
 		scaleXTo(scale);
