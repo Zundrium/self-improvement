@@ -25,6 +25,8 @@
 		if (data.date === loadedDate) return;
 		loadedDate = data.date;
 		savedCompletions = [];
+		pendingCompletion = undefined;
+		saveState = 'idle';
 	});
 
 	$effect(() => {

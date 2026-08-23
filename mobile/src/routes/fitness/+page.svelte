@@ -19,7 +19,11 @@
 	const savingDateKeys = new SvelteSet<string>();
 	let exerciseSpeeds = $state(initialExerciseSpeeds());
 	let errorMessage = $state('');
+	let loadedDate = $state(untrack(() => data.date));
 	let audioManager = $state<AudioManager>();
+
+	$effect(() => resetDate(data.date));
+	$effect(() => replaceCompletedDates(data.completedDays.map((day) => day.dateKey)));
 
 	const selectedWorkout = $derived(
 		data.program.workouts.find((workout) => workout.day === Number(data.date.slice(-2)))
@@ -60,6 +64,17 @@
 		);
 	}
 
+	function resetDate(nextDate: string) {
+		if (loadedDate === nextDate) return;
+		loadedDate = nextDate;
+		errorMessage = '';
+	}
+
+	function replaceCompletedDates(dateKeys: string[]) {
+		completedDateKeys.clear();
+		for (const dateKey of dateKeys) completedDateKeys.add(dateKey);
+	}
+
 	function handleSpeedChange(exerciseId: number, speedPercent: number) {
 		exerciseSpeeds = { ...exerciseSpeeds, [exerciseId]: speedPercent };
 	}
@@ -97,7 +112,7 @@
 
 	function restoreCompletion(date: string, completed: boolean) {
 		setCompleted(date, completed);
-		errorMessage = 'Your progress could not be saved. Please try again.';
+		if (data.date === date) errorMessage = 'Your progress could not be saved. Please try again.';
 	}
 </script>
 
@@ -118,6 +133,7 @@
 
 	{#if selectedWorkoutWithSpeeds}
 		<WorkoutDay
+			date={data.date}
 			workout={selectedWorkoutWithSpeeds}
 			{audioManager}
 			completed={completedDateKeys.has(data.date)}

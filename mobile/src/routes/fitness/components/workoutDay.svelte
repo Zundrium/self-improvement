@@ -13,6 +13,7 @@
 	import WorkoutSession from './workoutSession.svelte';
 
 	interface Props {
+		date: string;
 		workout: Workout;
 		audioManager?: AudioManager;
 		completed: boolean;
@@ -22,6 +23,7 @@
 	}
 
 	let {
+		date,
 		workout,
 		audioManager,
 		completed,
@@ -31,9 +33,21 @@
 	}: Props = $props();
 	const colors = getTrackerColors('fitness');
 	let isSessionActive = $state(false);
+	let loadedDate = $state(untrack(() => date));
+	let loadedWorkoutId = $state(untrack(() => workout.id));
 	let configuredSets = $state(untrack(() => workout.sets));
 	const focus = $derived(workout.title.replace(/^Total Body - Day \d+:\s*/, ''));
 	const hasRepExercises = $derived(workout.activities.some((activity) => activity.type === 'reps'));
+
+	$effect(() => resetWorkout(date, workout));
+
+	function resetWorkout(nextDate: string, nextWorkout: Workout) {
+		if (loadedDate === nextDate && loadedWorkoutId === nextWorkout.id) return;
+		loadedDate = nextDate;
+		loadedWorkoutId = nextWorkout.id;
+		isSessionActive = false;
+		configuredSets = nextWorkout.sets;
+	}
 
 	function startSession() {
 		if (audioManager) isSessionActive = true;

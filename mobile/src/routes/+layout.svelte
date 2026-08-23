@@ -202,7 +202,7 @@
 			{/if}
 		</div>
 	{/if}
-	{#key page.url.pathname + page.url.search}
+	{#key page.route.id}
 		<div class={appShellActive ? 'flex min-h-0 flex-1 flex-col overflow-y-auto' : undefined}>
 			<div class="contents" use:pageEnter>{@render children()}</div>
 		</div>

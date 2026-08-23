@@ -28,9 +28,9 @@ function createMeditationTimeline(
 ) {
 	return gsap
 		.timeline({ defaults: { ease: 'power2.out' } })
-		.to(icon, { autoAlpha: 1, duration: 1.8 })
-		.to(timer, { autoAlpha: 1, duration: 1.5 }, '-=0.35')
-		.to(sounds, { autoAlpha: 1, duration: 1.2, stagger: 0.24 }, '-=0.25');
+		.to(icon, { autoAlpha: 1, duration: 1.6 })
+		.to(timer, { autoAlpha: 1, duration: 1.3 }, '-=0.35')
+		.to(sounds, { autoAlpha: 1, duration: 1.1, stagger: 0.24 }, '-=0.25');
 }
 
 function prefersReducedMotion() {
