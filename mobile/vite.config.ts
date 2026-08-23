@@ -6,7 +6,13 @@ export default defineConfig({
 	envDir: '..',
 	envPrefix: ['VITE_', 'PUBLIC_'],
 	plugins: [tailwindcss(), sveltekit()],
-	server: { port: 5173, strictPort: true },
+	server: {
+		host: '0.0.0.0',
+		port: 5173,
+		strictPort: true,
+		allowedHosts: ['dev.zund.cc'],
+		proxy: { '/api': 'http://127.0.0.1:3000' }
+	},
 	test: {
 		expect: { requireAssertions: true },
 		environment: 'node',

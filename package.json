@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "concurrently --kill-others --names api,mobile --prefix-colors cyan,magenta \"npm:dev:api\" \"npm:mobile:dev:local\"",
+		"dev": "concurrently --kill-others --names api,mobile --prefix-colors cyan,magenta \"npm:dev:api\" \"npm:mobile:dev\"",
 		"dev:api": "vite dev --host 0.0.0.0 --port 3000",
 		"build": "wrangler types --include-env=false --check && vite build",
 		"deploy": "npm run build && wrangler deploy",
