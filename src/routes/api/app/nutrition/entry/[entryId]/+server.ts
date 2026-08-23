@@ -1,10 +1,16 @@
 import { error, json } from '@sveltejs/kit';
 import { requireDb, requireUser } from '$lib/server/guards';
+import { todayIso } from '$lib/utils';
+import {
+	assertMealsAllowed,
+	isNutritionFastingConflict
+} from '../../../../../(trackers)/nutrition/server/fasting';
 import {
 	deleteEntry,
 	getEntryWithMeals,
 	localDateTime,
 	replaceEntry,
+	validDate,
 	type IngredientInput,
 	type MealInput
 } from '../../../../../(trackers)/nutrition/server/nutrition';
@@ -21,20 +27,34 @@ export const PUT: RequestHandler = async (event) => {
 	const user = requireUser(event);
 	const body = (await event.request.json().catch(() => null)) as Record<string, unknown> | null;
 	if (!body) error(400, 'Invalid meal entry.');
+	let input: Parameters<typeof replaceEntry>[3];
 	try {
 		const date = readString(body.date);
-		const createdAt = localDateTime(date, readString(body.time), Number(body.timeZoneOffset));
-		const result = await replaceEntry(requireDb(event.locals), event.params.entryId, user.id, {
+		if (!validDate(date) || date > todayIso()) {
+			throw new Error('Choose a valid date that is not in the future.');
+		}
+		input = {
 			date,
-			createdAt,
+			createdAt: localDateTime(date, readString(body.time), Number(body.timeZoneOffset)),
 			name: readString(body.name),
 			notes: readString(body.notes),
 			meals: parseMeals(body.meals)
-		});
+		};
+	} catch (cause) {
+		error(400, cause instanceof Error ? cause.message : 'Could not save this entry.');
+	}
+
+	const db = requireDb(event.locals);
+	try {
+		await assertMealsAllowed(db, user.id, input.date);
+		const result = await replaceEntry(db, event.params.entryId, user.id, input);
 		if (!result) error(404, 'Entry not found.');
 		return json({ entry: result });
 	} catch (cause) {
-		error(400, cause instanceof Error ? cause.message : 'Could not save this entry.');
+		if (isNutritionFastingConflict(cause)) {
+			error(409, 'Cancel the full-day fast before moving a meal to this date.');
+		}
+		throw cause;
 	}
 };
 

@@ -3,6 +3,11 @@ import { eq } from 'drizzle-orm';
 import type { Database } from '$lib/server/db';
 import { nutritionProfile } from '$lib/server/db/schema';
 import { calculateTdee, type ActivityLevel } from '../nutrition';
+import {
+	DEFAULT_EATING_WINDOW_END,
+	DEFAULT_EATING_WINDOW_START,
+	validateEatingWindow
+} from './eating-window';
 
 const ACTIVITY_LEVELS: ActivityLevel[] = [
 	'sedentary',
@@ -20,6 +25,9 @@ type ProfileInput = {
 	activityLevel: ActivityLevel;
 	goalMode: 'estimated' | 'custom';
 	customGoal?: number;
+	eatingWindowEnabled: boolean;
+	eatingWindowStart: string;
+	eatingWindowEnd: string;
 };
 
 export async function getProfile(db: Database, userId: string) {
@@ -51,6 +59,9 @@ export async function saveProfile(db: Database, userId: string, input: ProfileIn
 		activityLevel: validated.activityLevel,
 		dailyCalorieGoal,
 		goalMode: validated.goalMode,
+		eatingWindowEnabled: validated.eatingWindowEnabled,
+		eatingWindowStart: validated.eatingWindowStart,
+		eatingWindowEnd: validated.eatingWindowEnd,
 		updatedAt: new Date()
 	};
 
@@ -67,6 +78,9 @@ export async function saveProfile(db: Database, userId: string, input: ProfileIn
 				activityLevel: values.activityLevel,
 				dailyCalorieGoal: values.dailyCalorieGoal,
 				goalMode: values.goalMode,
+				eatingWindowEnabled: values.eatingWindowEnabled,
+				eatingWindowStart: values.eatingWindowStart,
+				eatingWindowEnd: values.eatingWindowEnd,
 				updatedAt: values.updatedAt
 			}
 		});
@@ -97,12 +111,37 @@ export function profileInputFromForm(form: FormData): ProfileInput {
 		: null;
 	const goalMode = form.get('goalMode') === 'custom' ? 'custom' : 'estimated';
 	const customGoal = Number(form.get('customGoal'));
+	const eatingWindowEnabled = parseEatingWindowEnabled(form.get('eatingWindowEnabled'));
+	const eatingWindowStart = form.has('eatingWindowStart')
+		? String(form.get('eatingWindowStart'))
+		: DEFAULT_EATING_WINDOW_START;
+	const eatingWindowEnd = form.has('eatingWindowEnd')
+		? String(form.get('eatingWindowEnd'))
+		: DEFAULT_EATING_WINDOW_END;
 
 	if (!gender || !activityLevel) throw new Error('Choose a valid gender and activity level.');
-	return { weightKg, heightCm, age, gender, activityLevel, goalMode, customGoal };
+	return {
+		weightKg,
+		heightCm,
+		age,
+		gender,
+		activityLevel,
+		goalMode,
+		customGoal,
+		eatingWindowEnabled,
+		eatingWindowStart,
+		eatingWindowEnd
+	};
+}
+
+function parseEatingWindowEnabled(value: FormDataEntryValue | null) {
+	if (value === null || ['false', 'off', '0'].includes(String(value))) return false;
+	if (['true', 'on', '1'].includes(String(value))) return true;
+	throw new Error('Choose whether to use a daily eating window.');
 }
 
 function validateProfileInput(input: ProfileInput): ProfileInput {
+	validateEatingWindow(input.eatingWindowStart, input.eatingWindowEnd);
 	if (!Number.isFinite(input.weightKg) || input.weightKg < 20 || input.weightKg > 300) {
 		throw new Error('Enter a weight between 20 and 300 kg.');
 	}

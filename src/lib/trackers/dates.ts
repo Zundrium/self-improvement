@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
 export function isValidTimeZone(value: string) {
+	if (!value || value.length > 100) return false;
 	try {
 		new Intl.DateTimeFormat('en', { timeZone: value }).format();
-		return value.length <= 100;
+		return true;
 	} catch {
 		return false;
 	}

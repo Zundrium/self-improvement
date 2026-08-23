@@ -1,12 +1,12 @@
 import { error, json } from '@sveltejs/kit';
 
-import { parseMealImageDataUrl } from '../../../server/meal-image';
 import {
 	refineMealEstimate,
 	validateAIRefinement,
 	validateMealEstimate
 } from '../../../server/meal-analysis';
 import { requireOpenRouterApiKey } from '../../../server/openrouter';
+import { parseMealSource } from '../../../server/meal-source';
 import type { RequestHandler } from './$types';
 
 const MAX_CORRECTION_LENGTH = 500;
@@ -24,10 +24,10 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 			: '';
 	if (correction.length < 2) error(400, 'Tell us what should change in the estimate.');
 
-	let image: ReturnType<typeof parseMealImageDataUrl>;
+	let source: ReturnType<typeof parseMealSource>;
 	let estimate: ReturnType<typeof validateMealEstimate>;
 	try {
-		image = parseMealImageDataUrl(body.image);
+		source = parseMealSource(body.image, body.description);
 		estimate = validateMealEstimate(body.estimate);
 	} catch (cause) {
 		error(400, cause instanceof Error ? cause.message : 'The current meal estimate is invalid.');
@@ -35,9 +35,9 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 
 	try {
 		const raw = await refineMealEstimate(
-			image.base64,
-			image.mimeType,
-			'',
+			source.image?.base64 ?? '',
+			source.image?.mimeType ?? '',
+			source.description,
 			estimate,
 			correction,
 			apiKey

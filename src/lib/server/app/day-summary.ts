@@ -10,7 +10,8 @@ import {
 	menstruationEntry
 } from '$lib/server/db/schema';
 import type { Database } from '$lib/server/db';
-import { localDateForInstant } from '$lib/trackers/dates';
+import { isValidTimeZone, localDateForInstant } from '$lib/trackers/dates';
+import { getFastingDay } from '../../../routes/(trackers)/nutrition/server/fasting';
 import {
 	getDailyEntries,
 	sumEntryTotals,
@@ -36,21 +37,27 @@ import {
 } from '../../../routes/(trackers)/steps/server/steps';
 import { DEFAULT_STEP_GOAL } from '../../../routes/(trackers)/steps/steps';
 
-export async function loadDaySummary(db: Database, userId: string, requestedDate: string | null) {
+export async function loadDaySummary(
+	db: Database,
+	userId: string,
+	requestedDate: string | null,
+	requestedTimeZone?: string,
+	now = new Date()
+) {
 	const [stepConnection, sleepConnection, screenTimeConnection] = await Promise.all([
 		getStepConnection(db, userId),
 		getSleepConnection(db, userId),
 		getScreenTimeConnection(db, userId)
 	]);
-	const timeZone =
-		stepConnection?.companionTimeZone ??
-		sleepConnection?.companionTimeZone ??
-		screenTimeConnection?.companionTimeZone ??
-		stepConnection?.timeZone ??
-		sleepConnection?.timeZone ??
-		screenTimeConnection?.timeZone ??
-		'UTC';
-	const today = localDateForInstant(new Date(), timeZone);
+	const timeZone = preferredTimeZone(requestedTimeZone, [
+		stepConnection?.companionTimeZone,
+		sleepConnection?.companionTimeZone,
+		screenTimeConnection?.companionTimeZone,
+		stepConnection?.timeZone,
+		sleepConnection?.timeZone,
+		screenTimeConnection?.timeZone
+	]);
+	const today = localDateForInstant(now, timeZone);
 	const date = requestedDate ?? today;
 	if (!validDate(date) || date > today) error(400, 'Choose today or an earlier valid date.');
 	const summaries = await Promise.all([
@@ -70,6 +77,7 @@ export async function loadDaySummary(db: Database, userId: string, requestedDate
 	return {
 		date,
 		today,
+		timeZone,
 		steps: summaries[0],
 		stepGoal: stepConnection?.dailyGoal ?? DEFAULT_STEP_GOAL,
 		stepsHaveMeasurements: summaries[9],
@@ -128,14 +136,34 @@ async function loadFitness(db: Database, userId: string, date: string) {
 }
 
 async function loadNutrition(db: Database, userId: string, date: string) {
-	const [entries, profile] = await Promise.all([
+	const [entries, profile, fastingDay] = await Promise.all([
 		getDailyEntries(db, userId, date),
-		getProfile(db, userId)
+		getProfile(db, userId),
+		getFastingDay(db, userId, date)
 	]);
 	return {
 		calories: sumEntryTotals(entries).calories,
-		calorieGoal: profile?.dailyCalorieGoal ?? null
+		calorieGoal: profile?.dailyCalorieGoal ?? null,
+		nutritionFasting: Boolean(fastingDay),
+		nutritionEatingWindow: profile
+			? {
+					enabled: profile.eatingWindowEnabled,
+					start: profile.eatingWindowStart,
+					end: profile.eatingWindowEnd
+				}
+			: null
 	};
+}
+
+export function preferredTimeZone(
+	requested: string | undefined,
+	fallbacks: Array<string | null | undefined>
+) {
+	return (
+		[requested, ...fallbacks].find(
+			(value): value is string => typeof value === 'string' && isValidTimeZone(value)
+		) ?? 'UTC'
+	);
 }
 
 async function loadMeditationDone(db: Database, userId: string, date: string) {

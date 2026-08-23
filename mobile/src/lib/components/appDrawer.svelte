@@ -21,9 +21,10 @@
 	const stepsDone = $derived(daySummary.steps >= daySummary.stepGoal);
 	const sleepDone = $derived(daySummary.sleepMinutes >= daySummary.sleepGoalMinutes);
 	const caloriesDone = $derived(
-		daySummary.calorieGoal !== null &&
-			daySummary.calories > 0 &&
-			daySummary.calories <= daySummary.calorieGoal
+		daySummary.nutritionFasting ||
+			(daySummary.calorieGoal !== null &&
+				daySummary.calories > 0 &&
+				daySummary.calories <= daySummary.calorieGoal)
 	);
 	const trackerDetails = $derived({
 		steps: trackerDetail(`${daySummary.steps.toLocaleString()} steps`, stepsDone, '/steps'),
@@ -42,7 +43,9 @@
 			daySummary.fitnessWorkoutTitle !== 'Rest day'
 		),
 		nutrition: {
-			value: `${daySummary.calories.toLocaleString()} kcal`,
+			value: daySummary.nutritionFasting
+				? 'Fasting'
+				: `${daySummary.calories.toLocaleString()} kcal`,
 			state: trackerState(caloriesDone),
 			href: `/nutrition/log/${daySummary.date}`
 		},

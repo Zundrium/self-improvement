@@ -6,6 +6,7 @@
 		CalendarDays,
 		Camera,
 		Check,
+		FileText,
 		ImagePlus,
 		RefreshCw,
 		Send,
@@ -30,7 +31,14 @@
 	let { data }: PageProps = $props();
 
 	type Phase =
-		'photo' | 'analyzing' | 'analysis-error' | 'review' | 'correction' | 'refining' | 'saving';
+		| 'photo'
+		| 'description'
+		| 'analyzing'
+		| 'analysis-error'
+		| 'review'
+		| 'correction'
+		| 'refining'
+		| 'saving';
 	type CameraState = 'opening' | 'ready' | 'error';
 	type MealEstimate = {
 		mealName: string;
@@ -47,10 +55,16 @@
 	};
 
 	const MAX_IMAGE_LENGTH = 740 * 1024;
+	const MAX_DESCRIPTION_LENGTH = 1000;
 	const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-	const ANALYSIS_STEPS = [
+	const PHOTO_ANALYSIS_STEPS = [
 		'Reading your photo',
 		'Identifying the food',
+		'Estimating portions and nutrition'
+	];
+	const DESCRIPTION_ANALYSIS_STEPS = [
+		'Reading your description',
+		'Identifying the ingredients',
 		'Estimating portions and nutrition'
 	];
 	const REFINEMENT_STEPS = [
@@ -65,8 +79,10 @@
 	let facingMode = $state<'environment' | 'user'>('environment');
 	let video = $state<HTMLVideoElement | null>(null);
 	let fileInput = $state<HTMLInputElement | null>(null);
+	let descriptionInput = $state<HTMLTextAreaElement | null>(null);
 	let correctionInput = $state<HTMLTextAreaElement | null>(null);
 	let selectedImage = $state('');
+	let mealDescription = $state('');
 	let estimate = $state<MealEstimate | null>(null);
 	let correction = $state('');
 	let requestError = $state('');
@@ -76,7 +92,10 @@
 	let stream: MediaStream | null = null;
 	let loadingTimer: ReturnType<typeof setInterval> | null = null;
 
-	const loadingLabels = $derived(loadingKind === 'analysis' ? ANALYSIS_STEPS : REFINEMENT_STEPS);
+	const analysisLabels = $derived(
+		selectedImage ? PHOTO_ANALYSIS_STEPS : DESCRIPTION_ANALYSIS_STEPS
+	);
+	const loadingLabels = $derived(loadingKind === 'analysis' ? analysisLabels : REFINEMENT_STEPS);
 	const totals = $derived.by(() => {
 		if (!estimate) return { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 };
 		return estimate.ingredients.reduce(
@@ -184,22 +203,37 @@
 	async function acceptPhoto(photo: string) {
 		if (!photo) throw new Error('The photo was empty.');
 		selectedImage = photo;
-		estimate = null;
-		correction = '';
-		requestError = '';
+		mealDescription = '';
+		resetEstimate();
 		stopCamera();
-		await analyzePhoto();
+		await analyzeMeal();
 	}
 
-	async function analyzePhoto() {
-		if (!selectedImage) return;
+	async function openDescription() {
+		stopCamera();
+		selectedImage = '';
+		resetEstimate();
+		phase = 'description';
+		await tick();
+		descriptionInput?.focus();
+	}
+
+	async function submitDescription(event: SubmitEvent) {
+		event.preventDefault();
+		mealDescription = mealDescription.trim();
+		if (mealDescription.length < 2) return;
+		await analyzeMeal();
+	}
+
+	async function analyzeMeal() {
+		if (!selectedImage && mealDescription.length < 2) return;
 		requestError = '';
 		phase = 'analyzing';
 		beginLoading('analysis');
 		try {
 			const result = await api<{ estimate: MealEstimate }>('/nutrition/api/meals/analyze', {
 				method: 'POST',
-				body: JSON.stringify({ image: selectedImage })
+				body: JSON.stringify(mealSource())
 			});
 			estimate = result.estimate;
 			phase = 'review';
@@ -215,12 +249,26 @@
 	async function retakePhoto() {
 		endLoading();
 		selectedImage = '';
-		estimate = null;
-		correction = '';
-		requestError = '';
+		mealDescription = '';
+		resetEstimate();
 		phase = 'photo';
 		await tick();
 		await startCamera();
+	}
+
+	async function editMealSource() {
+		if (selectedImage) await retakePhoto();
+		else await openDescription();
+	}
+
+	function resetEstimate() {
+		estimate = null;
+		correction = '';
+		requestError = '';
+	}
+
+	function mealSource() {
+		return { image: selectedImage || undefined, description: mealDescription };
 	}
 
 	async function openCorrection() {
@@ -242,7 +290,7 @@
 			const result = await api<{ estimate: MealEstimate }>('/nutrition/api/meals/refine', {
 				method: 'POST',
 				body: JSON.stringify({
-					image: selectedImage,
+					...mealSource(),
 					estimate,
 					correction: cleanCorrection
 				})
@@ -268,7 +316,7 @@
 		try {
 			await api('/nutrition/api/meals', {
 				method: 'POST',
-				body: JSON.stringify({ date: data.date, image: selectedImage, estimate })
+				body: JSON.stringify({ date: data.date, ...mealSource(), estimate })
 			});
 			toast.success('Meal added to your log');
 			await goto(resolve(`/nutrition/log/${data.date}`));
@@ -372,7 +420,7 @@
 
 <main class="min-h-[100svh] bg-(--bg)">
 	{#if phase === 'photo'}
-		<WorkflowHeader title="Add one meal" subtitle="Photo → quick review">
+		<WorkflowHeader title="Add one meal" subtitle="Photo or description → quick review">
 			{#snippet leading()}
 				<Button
 					href="/nutrition/log/{data.date}"
@@ -390,6 +438,9 @@
 				<p class="mt-2 text-sm leading-6 text-(--text)/56">
 					Keep the whole meal in frame. We will estimate it, then ask you to confirm or correct it.
 				</p>
+				<Button variant="ghost" size="lg" class="mt-3" onclick={openDescription}>
+					<FileText class="mr-2 size-4" /> Describe meal instead
+				</Button>
 			</div>
 
 			<div
@@ -483,6 +534,62 @@
 				{/if}
 			</div>
 		</section>
+	{:else if phase === 'description'}
+		<WorkflowHeader title="Add one meal" subtitle="Description → quick review">
+			{#snippet leading()}
+				<Button variant="ghost" size="icon" onclick={retakePhoto} aria-label="Use a photo">
+					<ArrowLeft class="size-5" />
+				</Button>
+			{/snippet}
+			{#snippet trailing()}<Badge>1 of 2</Badge>{/snippet}
+		</WorkflowHeader>
+
+		<section
+			class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-xl items-center py-8 sm:py-12"
+		>
+			<div class="w-full space-y-6">
+				<div>
+					<Badge><FileText class="size-3.5" /> No photo needed</Badge>
+					<h1 class="mt-4 text-3xl font-medium tracking-[-0.055em] sm:text-4xl">
+						Describe what you ate
+					</h1>
+					<p class="mt-2 text-sm leading-6 text-(--text)/56">
+						Include portions, ingredients, drinks, sauces, and cooking fats when you know them.
+					</p>
+				</div>
+
+				<form class="space-y-5" onsubmit={submitDescription}>
+					<Field>
+						<div class="flex items-end justify-between gap-3">
+							<FieldLabel for="meal-description">Meal description</FieldLabel>
+							<span class="text-xs text-(--text)/40 tabular-nums">
+								{mealDescription.length}/{MAX_DESCRIPTION_LENGTH}
+							</span>
+						</div>
+						<Textarea
+							bind:ref={descriptionInput}
+							id="meal-description"
+							bind:value={mealDescription}
+							maxlength={MAX_DESCRIPTION_LENGTH}
+							rows={8}
+							class="min-h-48 text-base leading-6"
+							placeholder="e.g. Two scrambled eggs cooked in butter, two slices of sourdough toast, and a small latte"
+						/>
+						<FieldDescription
+							>One meal per estimate. You can correct the result next.</FieldDescription
+						>
+					</Field>
+					<Button
+						type="submit"
+						size="lg"
+						class="w-full"
+						disabled={mealDescription.trim().length < 2}
+					>
+						Estimate nutrition <Send class="ml-2 size-4" />
+					</Button>
+				</form>
+			</div>
+		</section>
 	{:else if phase === 'analyzing' || phase === 'refining'}
 		<WorkflowHeader title={phase === 'analyzing' ? 'Analyzing meal' : 'Updating estimate'}>
 			{#snippet trailing()}
@@ -497,14 +604,22 @@
 			aria-live="polite"
 		>
 			<div class="w-full space-y-6">
-				<img
-					src={selectedImage}
-					alt=""
-					class="h-40 w-full rounded-3xl object-cover opacity-80 sm:h-48"
-				/>
+				{#if selectedImage}
+					<img
+						src={selectedImage}
+						alt=""
+						class="h-40 w-full rounded-3xl object-cover opacity-80 sm:h-48"
+					/>
+				{:else}
+					<div class="rounded-3xl bg-(--text)/4 px-5 py-6 text-left">
+						<p class="line-clamp-4 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
+					</div>
+				{/if}
 				<div class="relative mx-auto flex size-20 items-center justify-center">
 					<Spinner class="size-20 text-(--text)" />
-					<Camera class="absolute size-6" />
+					{#if selectedImage}<Camera class="absolute size-6" />{:else}<FileText
+							class="absolute size-6"
+						/>{/if}
 				</div>
 				<div>
 					<Badge>{phase === 'analyzing' ? 'Building your estimate' : 'Using your correction'}</Badge
@@ -539,9 +654,9 @@
 	{:else if phase === 'analysis-error'}
 		<WorkflowHeader title="Could not analyze meal">
 			{#snippet leading()}
-				<Button variant="ghost" size="icon" onclick={retakePhoto} aria-label="Take another photo"
-					><ArrowLeft class="size-5" /></Button
-				>
+				<Button variant="ghost" size="icon" onclick={editMealSource} aria-label="Edit meal input">
+					<ArrowLeft class="size-5" />
+				</Button>
 			{/snippet}
 			{#snippet trailing()}
 				<Button href="/nutrition/log/{data.date}" variant="ghost" size="icon" aria-label="Cancel"
@@ -552,15 +667,23 @@
 
 		<section class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center py-6">
 			<div class="w-full space-y-4">
-				<img src={selectedImage} alt="Your meal" class="h-56 w-full rounded-3xl object-cover" />
+				{#if selectedImage}
+					<img src={selectedImage} alt="Your meal" class="h-56 w-full rounded-3xl object-cover" />
+				{:else}
+					<div class="rounded-3xl bg-(--text)/4 px-5 py-6">
+						<p class="line-clamp-5 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
+					</div>
+				{/if}
 				<Alert variant="destructive"><AlertDescription>{requestError}</AlertDescription></Alert>
 				<div class="grid gap-2 sm:grid-cols-2">
-					<Button size="lg" onclick={analyzePhoto}
-						><RefreshCw class="mr-2 size-4" /> Try analysis again</Button
-					>
-					<Button size="lg" variant="ghost" onclick={retakePhoto}
-						><Camera class="mr-2 size-4" /> Take another photo</Button
-					>
+					<Button size="lg" onclick={analyzeMeal}>
+						<RefreshCw class="mr-2 size-4" /> Try analysis again
+					</Button>
+					<Button size="lg" variant="ghost" onclick={editMealSource}>
+						{#if selectedImage}<Camera class="mr-2 size-4" /> Take another photo{:else}<FileText
+								class="mr-2 size-4"
+							/> Edit description{/if}
+					</Button>
 				</div>
 			</div>
 		</section>
@@ -581,13 +704,28 @@
 			class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-xl items-center py-3 sm:py-6"
 		>
 			<div class="w-full space-y-4">
-				<img
-					src={selectedImage}
-					alt={estimate.mealName}
-					class="w-full rounded-3xl object-cover {phase === 'correction'
-						? 'h-[20svh] max-h-44 min-h-32'
-						: 'h-[26svh] max-h-56 min-h-40'}"
-				/>
+				{#if selectedImage}
+					<img
+						src={selectedImage}
+						alt={estimate.mealName}
+						class="w-full rounded-3xl object-cover {phase === 'correction'
+							? 'h-[20svh] max-h-44 min-h-32'
+							: 'h-[26svh] max-h-56 min-h-40'}"
+					/>
+				{:else}
+					<div class="rounded-3xl bg-(--text)/4 px-5 py-4">
+						<div class="flex items-center gap-2 text-xs font-medium text-(--text)/48">
+							<FileText class="size-3.5" /> Your description
+						</div>
+						<p
+							class="mt-2 {phase === 'correction'
+								? 'line-clamp-2'
+								: 'line-clamp-4'} text-sm leading-6"
+						>
+							{mealDescription}
+						</p>
+					</div>
+				{/if}
 				<div class="space-y-4 px-1">
 					<div class="flex items-center justify-between gap-3">
 						<Badge>AI estimate</Badge>

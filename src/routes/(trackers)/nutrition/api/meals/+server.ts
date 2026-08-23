@@ -1,8 +1,9 @@
 import { error, json } from '@sveltejs/kit';
 
 import { requireDb } from '$lib/server/guards';
-import { parseMealImageDataUrl } from '../../server/meal-image';
 import { toIngredientInputs, validateMealEstimate } from '../../server/meal-analysis';
+import { parseMealSource } from '../../server/meal-source';
+import { assertMealsAllowed, isNutritionFastingConflict } from '../../server/fasting';
 import {
 	addMeal,
 	createEntry,
@@ -23,16 +24,25 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!validDate(date) || date > todayIso())
 		error(400, 'Choose a valid date that is not in the future.');
 
-	let image: ReturnType<typeof parseMealImageDataUrl>;
+	let source: ReturnType<typeof parseMealSource>;
 	let analysis: ReturnType<typeof validateMealEstimate>;
 	try {
-		image = parseMealImageDataUrl(body.image);
+		source = parseMealSource(body.image, body.description);
 		analysis = validateMealEstimate(body.estimate);
 	} catch (cause) {
 		error(400, cause instanceof Error ? cause.message : 'The meal estimate is invalid.');
 	}
 
 	const db = requireDb(locals);
+	try {
+		await assertMealsAllowed(db, locals.user.id, date);
+	} catch (cause) {
+		if (isNutritionFastingConflict(cause)) {
+			error(409, cause instanceof Error ? cause.message : 'This is a fasting day.');
+		}
+		throw cause;
+	}
+
 	let entryId = '';
 	try {
 		const createdEntry = await createEntry(db, locals.user.id, {
@@ -44,7 +54,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const meal = await addMeal(db, entryId, {
 			name: analysis.mealName,
-			imageDataUrl: image.dataUrl,
+			imageDataUrl: source.image?.dataUrl ?? '',
 			ingredients: toIngredientInputs(analysis)
 		});
 		if (!meal) throw new Error('Could not save the meal.');
@@ -53,6 +63,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ entry: { ...createdEntry, name: analysis.mealName }, meal }, { status: 201 });
 	} catch (cause) {
 		if (entryId) await deleteEntry(db, entryId, locals.user.id).catch(() => undefined);
+		if (isNutritionFastingConflict(cause)) {
+			error(409, 'Cancel the full-day fast before adding a meal.');
+		}
 		error(500, cause instanceof Error ? cause.message : 'Could not save the meal.');
 	}
 };

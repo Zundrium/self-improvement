@@ -42,7 +42,8 @@ export const PATCH: RequestHandler = async ({ locals, request }) => {
 		return json({ message: 'Tracker visibility updated.' });
 	}
 	try {
-		const input = profileInputFromForm(profileForm(body));
+		const currentProfile = await getProfile(locals.db, locals.user.id);
+		const input = profileInputFromForm(profileForm(withEatingWindowDefaults(body, currentProfile)));
 		await saveProfile(locals.db, locals.user.id, input);
 		return json({ message: 'Nutrition profile updated.' });
 	} catch (cause) {
@@ -62,6 +63,19 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	}
 };
 
+function withEatingWindowDefaults(
+	body: Record<string, unknown>,
+	profile: Awaited<ReturnType<typeof getProfile>>
+) {
+	if (!profile) return body;
+	return {
+		eatingWindowEnabled: profile.eatingWindowEnabled,
+		eatingWindowStart: profile.eatingWindowStart,
+		eatingWindowEnd: profile.eatingWindowEnd,
+		...body
+	};
+}
+
 function profileForm(body: Record<string, unknown>) {
 	const form = new FormData();
 	for (const key of [
@@ -71,9 +85,12 @@ function profileForm(body: Record<string, unknown>) {
 		'gender',
 		'activityLevel',
 		'goalMode',
-		'customGoal'
+		'customGoal',
+		'eatingWindowEnabled',
+		'eatingWindowStart',
+		'eatingWindowEnd'
 	]) {
-		form.set(key, String(body[key] ?? ''));
+		if (Object.hasOwn(body, key)) form.set(key, String(body[key] ?? ''));
 	}
 	return form;
 }

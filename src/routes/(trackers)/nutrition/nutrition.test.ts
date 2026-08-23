@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { calculateBmr, calculateTdee } from './nutrition';
+import {
+	eatingWindowLabel,
+	formatHumanDuration,
+	validateEatingWindow
+} from './server/eating-window';
+import { consecutiveFastingDates } from './server/fasting';
 import { parseMealImageDataUrl } from './server/meal-image';
 import { validateAIResult, validateMealEstimate } from './server/meal-analysis';
+import { parseMealSource } from './server/meal-source';
 import { localDateTime, validDate } from './server/nutrition';
 import { profileInputFromForm } from './server/profiles';
 
@@ -23,8 +30,54 @@ describe('profile calorie goals', () => {
 		form.set('activityLevel', 'moderate');
 		form.set('goalMode', 'custom');
 		form.set('customGoal', '2200');
+		form.set('eatingWindowEnabled', 'true');
+		form.set('eatingWindowStart', '11:30');
+		form.set('eatingWindowEnd', '19:30');
 
-		expect(profileInputFromForm(form)).toMatchObject({ goalMode: 'custom', customGoal: 2200 });
+		expect(profileInputFromForm(form)).toMatchObject({
+			goalMode: 'custom',
+			customGoal: 2200,
+			eatingWindowEnabled: true,
+			eatingWindowStart: '11:30',
+			eatingWindowEnd: '19:30'
+		});
+		form.set('eatingWindowEnabled', 'sometimes');
+		expect(() => profileInputFromForm(form)).toThrow('whether to use a daily eating window');
+	});
+});
+
+describe('eating windows', () => {
+	const window = { enabled: true, start: '12:00', end: '20:00' };
+
+	it('validates complete same-day eating windows', () => {
+		expect(validateEatingWindow('08:00', '17:30')).toEqual({ start: '08:00', end: '17:30' });
+		expect(() => validateEatingWindow('8:00', '17:30')).toThrow('valid eating window times');
+		expect(() => validateEatingWindow('20:00', '12:00')).toThrow('after its start time');
+		expect(() => validateEatingWindow('12:00', '12:00')).toThrow('after its start time');
+	});
+
+	it('labels the exact start and end boundaries', () => {
+		expect(eatingWindowLabel(window, new Date('2026-08-21T10:30:00Z'), 'UTC')).toBe(
+			'Eating time starts in 1 hour 30 minutes'
+		);
+		expect(eatingWindowLabel(window, new Date('2026-08-21T12:00:00Z'), 'UTC')).toBe(
+			'Eating time lasts 8 hours'
+		);
+		expect(eatingWindowLabel(window, new Date('2026-08-21T20:00:00Z'), 'UTC')).toBe(
+			'Next eating time starts in 16 hours'
+		);
+	});
+
+	it('uses IANA timezone transitions for the next window', () => {
+		expect(eatingWindowLabel(window, new Date('2026-03-28T19:00:00Z'), 'Europe/Amsterdam')).toBe(
+			'Next eating time starts in 15 hours'
+		);
+	});
+
+	it('formats partial minutes and singular units', () => {
+		expect(formatHumanDuration(30_000)).toBe('1 minute');
+		expect(formatHumanDuration(60 * 60_000)).toBe('1 hour');
+		expect(formatHumanDuration(61 * 60_000)).toBe('1 hour 1 minute');
 	});
 });
 
@@ -63,6 +116,28 @@ describe('meal validation', () => {
 	});
 });
 
+describe('full-day fasting dates', () => {
+	it('builds consecutive completed dates from the selected day', () => {
+		expect(consecutiveFastingDates('2028-02-28', 3, '2028-03-05')).toEqual([
+			'2028-02-28',
+			'2028-02-29',
+			'2028-03-01'
+		]);
+	});
+
+	it('rejects invalid, excessive, and future ranges', () => {
+		expect(() => consecutiveFastingDates('2028-02-30', 1, '2028-03-05')).toThrow(
+			'Choose a valid start date'
+		);
+		expect(() => consecutiveFastingDates('2028-02-28', 31, '2028-03-30')).toThrow(
+			'Choose between 1 and 30'
+		);
+		expect(() => consecutiveFastingDates('2028-03-05', 2, '2028-03-05')).toThrow(
+			'cannot be marked in the future'
+		);
+	});
+});
+
 describe('meal inputs', () => {
 	it('accepts supported image data URLs', () => {
 		expect(parseMealImageDataUrl('data:image/jpg;base64,YQ==')).toEqual({
@@ -70,6 +145,26 @@ describe('meal inputs', () => {
 			base64: 'YQ==',
 			dataUrl: 'data:image/jpeg;base64,YQ=='
 		});
+	});
+
+	it('accepts a trimmed description without a photo', () => {
+		expect(parseMealSource(undefined, '  Two eggs and toast  ')).toEqual({
+			image: null,
+			description: 'Two eggs and toast'
+		});
+	});
+
+	it('requires a valid photo or useful description', () => {
+		expect(() => parseMealSource(undefined, ' ')).toThrow(
+			'Add a meal photo or describe what you ate.'
+		);
+		expect(() => parseMealSource('not-an-image', 'Two eggs')).toThrow(
+			'Use a JPG, PNG, or WebP image.'
+		);
+		expect(() => parseMealSource(undefined, 42)).toThrow('The meal description must be text.');
+		expect(() => parseMealSource(undefined, 'x'.repeat(1001))).toThrow(
+			'Keep the meal description under 1000 characters.'
+		);
 	});
 
 	it('validates real calendar dates', () => {

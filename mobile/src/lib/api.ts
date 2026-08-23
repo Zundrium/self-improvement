@@ -1,3 +1,4 @@
+import { isValidTimeZone } from '$lib/trackers/dates';
 import { SecureMobileRepository } from '$native/secure-repository';
 
 export const API_BASE_URL = (import.meta.env.PUBLIC_API_BASE_URL || 'https://self.zund.cc').replace(
@@ -11,6 +12,9 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 	const credentials = await mobileRepository.loadCredentials();
 	const headers = new Headers(init?.headers);
 	if (credentials?.token) headers.set('authorization', `Bearer ${credentials.token}`);
+	if (credentials && !headers.has('X-Time-Zone') && isValidTimeZone(credentials.timeZone)) {
+		headers.set('X-Time-Zone', credentials.timeZone);
+	}
 	if (init?.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
 	const response = await fetch(apiUrl(path), { ...init, headers });
 	const refreshedToken = response.headers.get('set-auth-token');

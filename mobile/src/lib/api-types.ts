@@ -69,6 +69,7 @@ export type DatedData = { date: string; today: string; markedDates?: string[] };
 export type DaySummaryData = {
 	date: string;
 	today: string;
+	timeZone: string;
 	steps: number;
 	stepGoal: number;
 	stepsHaveMeasurements: boolean;
@@ -83,6 +84,8 @@ export type DaySummaryData = {
 	fitnessWorkoutTitle: string;
 	calories: number;
 	calorieGoal: number | null;
+	nutritionFasting: boolean;
+	nutritionEatingWindow: EatingWindowSettings | null;
 	meditationDone: boolean;
 	breathingDone: boolean;
 	happinessRating: HappinessRating | null;
@@ -210,9 +213,13 @@ export type NutritionLogData = DatedData & {
 	entries: NutritionEntry[];
 	totals: NutritionTotals;
 	calorieGoal: number;
+	eatingWindow: Omit<EatingWindowSettings, 'enabled'> | null;
+	fasting: boolean;
 	trackedDates: string[];
 };
+export type NutritionFastingStatusData = { date: string; fasting: boolean };
 export type NutritionEntryData = { entry: NutritionEntry };
+export type EatingWindowSettings = { enabled: boolean; start: string; end: string };
 export type NutritionProfile = {
 	weightKg: number;
 	heightCm: number;
@@ -221,6 +228,9 @@ export type NutritionProfile = {
 	activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
 	dailyCalorieGoal: number;
 	goalMode: 'estimated' | 'custom';
+	eatingWindowEnabled: boolean;
+	eatingWindowStart: string;
+	eatingWindowEnd: string;
 };
 export type ProfileData = {
 	profileUser: AppUser;

@@ -1,25 +1,201 @@
 <script lang="ts">
-	import { Camera } from '@lucide/svelte';
+	import { invalidateAll } from '$app/navigation';
+	import { MoonStar, Plus } from '@lucide/svelte';
+	import { toast } from 'svelte-sonner';
+	import { apiRequest } from '$lib/api';
 	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import TrackerPage from '$lib/components/trackerPage.svelte';
+	import {
+		AlertDialog,
+		AlertDialogAction,
+		AlertDialogCancel,
+		AlertDialogContent,
+		AlertDialogDescription,
+		AlertDialogFooter,
+		AlertDialogHeader,
+		AlertDialogTitle,
+		AlertDialogTrigger
+	} from '$lib/components/ui/alert-dialog';
 	import { Button } from '$lib/components/ui/button';
-	import { fullDateLabel } from '$lib/dateFormatting';
+	import {
+		Dialog,
+		DialogContent,
+		DialogDescription,
+		DialogFooter,
+		DialogHeader,
+		DialogTitle
+	} from '$lib/components/ui/dialog';
+	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
+	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+	import { Input } from '$lib/components/ui/input';
+	import { Spinner } from '$lib/components/ui/spinner';
+	import { fullDateLabel, shortDateLabel } from '$lib/dateFormatting';
+	import { getTrackerColors } from '$lib/trackers/registry';
 	import FoodLog from './components/foodLog.svelte';
 	import NutritionSummary from './components/nutritionSummary.svelte';
 	import type { PageProps } from './$types';
 
+	const MAX_FASTING_DAYS = 30;
+	const colors = getTrackerColors('nutrition');
 	let { data }: PageProps = $props();
+	let markOpen = $state(false);
+	let days = $state(1);
+	let busy = $state(false);
+	let requestError = $state('');
+	const maxDays = $derived(daysThroughToday(data.date, data.today));
+	const lastFastingDate = $derived(addDays(data.date, Math.max(0, Number(days) - 1)));
+
+	function openMarkDialog() {
+		if (data.entries.length) {
+			toast.error('Remove logged meals before marking a fast.');
+			return;
+		}
+		days = 1;
+		requestError = '';
+		markOpen = true;
+	}
+
+	async function markFasting(event: SubmitEvent) {
+		event.preventDefault();
+		busy = true;
+		requestError = '';
+		try {
+			await apiRequest('/api/app/nutrition/fasting', {
+				method: 'POST',
+				body: JSON.stringify({ date: data.date, days: Number(days) })
+			});
+			markOpen = false;
+			toast.success(Number(days) === 1 ? 'Fasting day marked' : `${days} fasting days marked`);
+			await invalidateAll();
+		} catch (cause) {
+			requestError = cause instanceof Error ? cause.message : 'Could not mark these fasting days.';
+		} finally {
+			busy = false;
+		}
+	}
+
+	async function cancelFasting() {
+		busy = true;
+		try {
+			await apiRequest(`/api/app/nutrition/fasting/${data.date}`, { method: 'DELETE' });
+			toast.success('Fasting day cancelled');
+			await invalidateAll();
+		} catch (cause) {
+			toast.error(cause instanceof Error ? cause.message : 'Could not cancel this fasting day.');
+		} finally {
+			busy = false;
+		}
+	}
+
+	function daysThroughToday(date: string, today: string) {
+		const milliseconds = Date.parse(`${today}T00:00:00Z`) - Date.parse(`${date}T00:00:00Z`);
+		return Math.min(MAX_FASTING_DAYS, Math.floor(milliseconds / 86_400_000) + 1);
+	}
+
+	function addDays(date: string, offset: number) {
+		return new Date(Date.parse(`${date}T00:00:00Z`) + offset * 86_400_000)
+			.toISOString()
+			.slice(0, 10);
+	}
 </script>
 
 <svelte:head><title>{fullDateLabel(data.date)} · Self Improvement</title></svelte:head>
 
 <TrackerPage>
-	<NutritionSummary totals={data.totals} goal={data.calorieGoal} />
-	<FoodLog entries={data.entries} />
+	{#if data.fasting}
+		<Empty class="min-h-80 bg-(--bg-elevated) sm:min-h-96">
+			<EmptyMedia class="bg-(--text)/5" style={`color: ${colors.primary}`}>
+				<MoonStar />
+			</EmptyMedia>
+			<EmptyTitle>Full-day fast</EmptyTitle>
+			<EmptyDescription>
+				Meals are paused for this date. Cancel the fasting day before adding or moving a meal here.
+			</EmptyDescription>
+		</Empty>
+	{:else}
+		<NutritionSummary
+			totals={data.totals}
+			goal={data.calorieGoal}
+			date={data.date}
+			today={data.today}
+			eatingWindow={data.eatingWindow}
+		/>
+		<FoodLog entries={data.entries} />
+	{/if}
 </TrackerPage>
 
 <BottomActionBar contentClass="max-w-5xl" mobileOnly={false}>
-	<Button href="/nutrition/track?date={data.date}" size="lg" class="w-full">
-		<Camera class="mr-2 size-5" /> Add a meal
-	</Button>
+	{#if data.fasting}
+		<AlertDialog>
+			<AlertDialogTrigger>
+				{#snippet child({ props })}
+					<Button variant="destructive" size="lg" class="w-full" disabled={busy} {...props}>
+						{#if busy}<Spinner class="mr-2 size-4" />{:else}<MoonStar class="mr-2 size-5" />{/if}
+						Cancel fasting day
+					</Button>
+				{/snippet}
+			</AlertDialogTrigger>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>Cancel this fasting day?</AlertDialogTitle>
+					<AlertDialogDescription>
+						You will be able to add meals to {fullDateLabel(data.date)} again. Other fasting days will
+						stay marked.
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel>Keep fasting</AlertDialogCancel>
+					<AlertDialogAction class="bg-red-600 text-white hover:bg-red-700" onclick={cancelFasting}>
+						Cancel fasting day
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
+	{:else}
+		<div class="flex gap-2">
+			<Button variant="ghost" size="lg" onclick={openMarkDialog}>
+				<MoonStar class="mr-2 size-4" /> Fast
+			</Button>
+			<Button href="/nutrition/track?date={data.date}" size="lg" class="flex-1">
+				<Plus class="mr-2 size-5" /> Add a meal
+			</Button>
+		</div>
+	{/if}
 </BottomActionBar>
+
+<Dialog bind:open={markOpen}>
+	<DialogContent>
+		<form class="space-y-5" onsubmit={markFasting}>
+			<DialogHeader>
+				<DialogTitle>Mark a full-day fast</DialogTitle>
+				<DialogDescription>
+					Starting {fullDateLabel(data.date)}, meals will be paused for each selected day.
+				</DialogDescription>
+			</DialogHeader>
+			<Field>
+				<FieldLabel for="fasting-days">Consecutive days</FieldLabel>
+				<Input id="fasting-days" type="number" min={1} max={maxDays} bind:value={days} required />
+				<FieldDescription>
+					{#if Number(days) > 1}
+						{shortDateLabel(data.date)}–{shortDateLabel(lastFastingDate)}
+					{:else}
+						{shortDateLabel(data.date)} only
+					{/if}
+				</FieldDescription>
+			</Field>
+			{#if requestError}<p class="text-sm text-red-600 dark:text-red-400">{requestError}</p>{/if}
+			<DialogFooter>
+				<Button type="button" variant="ghost" onclick={() => (markOpen = false)}>Cancel</Button>
+				<Button
+					type="submit"
+					disabled={busy ||
+						Number(days) < 1 ||
+						Number(days) > maxDays ||
+						!Number.isInteger(Number(days))}
+				>
+					{#if busy}<Spinner class="mr-2 size-4" />{/if} Mark fasting
+				</Button>
+			</DialogFooter>
+		</form>
+	</DialogContent>
+</Dialog>

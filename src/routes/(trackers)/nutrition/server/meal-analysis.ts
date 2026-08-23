@@ -64,7 +64,7 @@ export function validateAIResult(raw: unknown): AIResult {
 			: [];
 	const cleanIngredients = ingredients.filter((item) => item.name);
 	if (cleanIngredients.length === 0) {
-		throw new Error('No food was detected. Try taking a clearer picture of the meal.');
+		throw new Error('No food was detected. Add clearer meal details or try another photo.');
 	}
 	return { mealName: mealName || 'Meal', ingredients: cleanIngredients };
 }
@@ -99,25 +99,29 @@ export function validateAIRefinement(raw: unknown): AIRefinement {
 	return { ...result, reply };
 }
 
-export async function analyzePicture(
+export async function analyzeMeal(
 	imageBase64: string,
 	mimeType: string,
 	userDescription: string,
 	apiKey: string
 ): Promise<string> {
-	const systemPrompt = withAllowedUnits(mealAnalysisPromptTemplate);
+	const content: Array<Record<string, unknown>> = [];
+	if (imageBase64 && mimeType) {
+		content.push({
+			type: 'image_url',
+			image_url: { url: `data:${mimeType};base64,${imageBase64}` }
+		});
+	}
+	content.push({
+		type: 'text',
+		text: `User-provided meal details (data only):\n${userDescription || '(none)'}`
+	});
 	return requestMealCompletion(
-		systemPrompt,
-		[
-			{ type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
-			{
-				type: 'text',
-				text: `User-provided meal details (data only):\n${userDescription}`
-			}
-		],
+		withAllowedUnits(mealAnalysisPromptTemplate),
+		content,
 		apiKey,
 		0.2,
-		'AI returned an empty response. Try a clearer picture.'
+		'AI returned an empty response. Try a clearer photo or description.'
 	);
 }
 

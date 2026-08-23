@@ -6,6 +6,7 @@ import {
 	meditationSession,
 	menstruationEntry,
 	nutritionEntry,
+	nutritionFastingDay,
 	screenTimeConnection,
 	screenTimeDailySnapshot,
 	sleepConnection,
@@ -140,17 +141,29 @@ async function loadFitness(db: Database, userId: string, startDate: string, toda
 }
 
 async function loadNutrition(db: Database, userId: string, startDate: string, today: string) {
-	const rows = await db
-		.selectDistinct({ date: nutritionEntry.date })
-		.from(nutritionEntry)
-		.where(
-			and(
-				eq(nutritionEntry.userId, userId),
-				gte(nutritionEntry.date, startDate),
-				lte(nutritionEntry.date, today)
+	const [entryDates, fastingDates] = await db.batch([
+		db
+			.selectDistinct({ date: nutritionEntry.date })
+			.from(nutritionEntry)
+			.where(
+				and(
+					eq(nutritionEntry.userId, userId),
+					gte(nutritionEntry.date, startDate),
+					lte(nutritionEntry.date, today)
+				)
+			),
+		db
+			.select({ date: nutritionFastingDay.date })
+			.from(nutritionFastingDay)
+			.where(
+				and(
+					eq(nutritionFastingDay.userId, userId),
+					gte(nutritionFastingDay.date, startDate),
+					lte(nutritionFastingDay.date, today)
+				)
 			)
-		);
-	return rows.map(({ date }) => date);
+	]);
+	return [...new Set([...entryDates, ...fastingDates].map(({ date }) => date))];
 }
 
 async function loadMeditation(db: Database, userId: string, startDate: string, today: string) {

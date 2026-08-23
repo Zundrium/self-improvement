@@ -3,6 +3,7 @@ import { and, asc, count, eq, gte, inArray, lte } from 'drizzle-orm';
 import type { Database } from '$lib/server/db';
 import {
 	nutritionEntry as entry,
+	nutritionFastingDay as fastingDay,
 	nutritionIngredient as ingredient,
 	nutritionMeal as meal,
 	type NutritionEntry as Entry,
@@ -177,12 +178,23 @@ export async function getTrackedDates(
 	startDate: string,
 	endDate: string
 ) {
-	const rows = await db
-		.selectDistinct({ date: entry.date })
-		.from(entry)
-		.where(and(eq(entry.userId, userId), gte(entry.date, startDate), lte(entry.date, endDate)))
-		.orderBy(asc(entry.date));
-	return rows.map((row) => row.date);
+	const [entryDates, fastingDates] = await db.batch([
+		db
+			.selectDistinct({ date: entry.date })
+			.from(entry)
+			.where(and(eq(entry.userId, userId), gte(entry.date, startDate), lte(entry.date, endDate))),
+		db
+			.select({ date: fastingDay.date })
+			.from(fastingDay)
+			.where(
+				and(
+					eq(fastingDay.userId, userId),
+					gte(fastingDay.date, startDate),
+					lte(fastingDay.date, endDate)
+				)
+			)
+	]);
+	return [...new Set([...entryDates, ...fastingDates].map(({ date }) => date))].sort();
 }
 
 export function sumEntryTotals(entries: EntryWithMeals[]) {

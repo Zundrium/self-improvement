@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { requireDb, requireUser } from '$lib/server/guards';
 import { todayIso } from '$lib/utils';
+import { getFastingDay } from '../../../../../(trackers)/nutrition/server/fasting';
 import {
 	getDailyEntries,
 	getTrackedDates,
@@ -18,10 +19,11 @@ export const GET: RequestHandler = async (event) => {
 	if (!validDate(date) || date > today)
 		error(400, 'Choose a valid date that is not in the future.');
 	const monthStart = `${date.slice(0, 7)}-01`;
-	const [profile, entries, trackedDates] = await Promise.all([
+	const [profile, entries, trackedDates, fastingDay] = await Promise.all([
 		getProfile(db, user.id),
 		getDailyEntries(db, user.id, date),
-		getTrackedDates(db, user.id, monthStart, endOfMonth(date))
+		getTrackedDates(db, user.id, monthStart, endOfMonth(date)),
+		getFastingDay(db, user.id, date)
 	]);
 	if (!profile) error(409, 'Nutrition setup required.');
 	return json({
@@ -29,6 +31,10 @@ export const GET: RequestHandler = async (event) => {
 		entries,
 		totals: sumEntryTotals(entries),
 		calorieGoal: profile.dailyCalorieGoal,
+		eatingWindow: profile.eatingWindowEnabled
+			? { start: profile.eatingWindowStart, end: profile.eatingWindowEnd }
+			: null,
+		fasting: Boolean(fastingDay),
 		trackedDates,
 		today
 	});

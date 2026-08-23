@@ -4,6 +4,7 @@ import { getBreathingActions } from '../../routes/(trackers)/breathing/server/ac
 import { getFitnessActions } from '../../routes/(trackers)/fitness/server/actions';
 import { getHappinessActions } from '../../routes/(trackers)/happiness/server/actions';
 import { getMeditationActions } from '../../routes/(trackers)/meditation/server/actions';
+import { getNutritionActions } from '../../routes/(trackers)/nutrition/server/actions';
 import { getScreenTimeActions } from '../../routes/(trackers)/screen-time/server/actions';
 import { getSleepActions } from '../../routes/(trackers)/sleep/server/actions';
 
@@ -16,6 +17,17 @@ describe('tracker action providers', () => {
 		expect(getMeditationActions(date, true)).toEqual([]);
 		expect(getBreathingActions(date, false)).toHaveLength(1);
 		expect(getHappinessActions(date, false)).toHaveLength(1);
+	});
+
+	it('keeps a fasting nutrition day available for review', () => {
+		expect(getNutritionActions(nutritionState(false))).toEqual([]);
+		expect(getNutritionActions(nutritionState(true))).toEqual([
+			expect.objectContaining({
+				id: `nutrition:fasting:${date}`,
+				title: 'Full-day fast marked',
+				action: { type: 'navigate', href: `/nutrition/log/${date}` }
+			})
+		]);
 	});
 
 	it('flags a tracker that has never received sleep measurements', () => {
@@ -50,6 +62,17 @@ describe('action feed ordering', () => {
 		]);
 	});
 });
+
+function nutritionState(fasting: boolean) {
+	return {
+		date,
+		today: date,
+		fasting,
+		eatingWindow: null,
+		now: new Date('2026-08-20T12:00:00Z'),
+		timeZone: 'UTC'
+	};
+}
 
 function screenTimeState(overrides: Partial<Parameters<typeof getScreenTimeActions>[0]> = {}) {
 	return {

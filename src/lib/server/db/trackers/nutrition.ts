@@ -3,6 +3,7 @@ import {
 	check,
 	index,
 	integer,
+	primaryKey,
 	real,
 	sqliteTable,
 	text,
@@ -29,6 +30,11 @@ export const nutritionProfile = sqliteTable(
 		goalMode: text('goal_mode', { enum: ['estimated', 'custom'] })
 			.notNull()
 			.default('estimated'),
+		eatingWindowEnabled: integer('eating_window_enabled', { mode: 'boolean' })
+			.notNull()
+			.default(false),
+		eatingWindowStart: text('eating_window_start').notNull().default('12:00'),
+		eatingWindowEnd: text('eating_window_end').notNull().default('20:00'),
 		createdAt: integer('created_at', { mode: 'timestamp_ms' })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
@@ -49,6 +55,18 @@ export const nutritionProfile = sqliteTable(
 		check(
 			'nutritionProfile_calorieGoal_check',
 			sql`${table.dailyCalorieGoal} >= 500 AND ${table.dailyCalorieGoal} <= 10000`
+		),
+		check(
+			'nutritionProfile_eatingWindowStart_check',
+			sql`${table.eatingWindowStart} GLOB '[01][0-9]:[0-5][0-9]' OR ${table.eatingWindowStart} GLOB '2[0-3]:[0-5][0-9]'`
+		),
+		check(
+			'nutritionProfile_eatingWindowEnd_check',
+			sql`${table.eatingWindowEnd} GLOB '[01][0-9]:[0-5][0-9]' OR ${table.eatingWindowEnd} GLOB '2[0-3]:[0-5][0-9]'`
+		),
+		check(
+			'nutritionProfile_eatingWindowOrder_check',
+			sql`${table.eatingWindowStart} < ${table.eatingWindowEnd}`
 		)
 	]
 );
@@ -76,6 +94,29 @@ export const nutritionEntry = sqliteTable(
 		index('nutritionEntry_userId_date_idx').on(table.userId, table.date),
 		check(
 			'nutritionEntry_date_check',
+			sql`${table.date} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`
+		)
+	]
+);
+
+export const nutritionFastingDay = sqliteTable(
+	'nutrition_fasting_day',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => authSchema.user.id, { onDelete: 'cascade' }),
+		date: text('date').notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull()
+	},
+	(table) => [
+		primaryKey({
+			columns: [table.userId, table.date],
+			name: 'nutritionFastingDay_userId_date_pk'
+		}),
+		check(
+			'nutritionFastingDay_date_check',
 			sql`${table.date} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`
 		)
 	]
@@ -134,12 +175,20 @@ export const nutritionIngredient = sqliteTable(
 
 export const nutritionUserRelations = relations(authSchema.user, ({ many, one }) => ({
 	nutritionProfile: one(nutritionProfile),
-	nutritionEntries: many(nutritionEntry)
+	nutritionEntries: many(nutritionEntry),
+	nutritionFastingDays: many(nutritionFastingDay)
 }));
 
 export const nutritionProfileRelations = relations(nutritionProfile, ({ one }) => ({
 	user: one(authSchema.user, {
 		fields: [nutritionProfile.userId],
+		references: [authSchema.user.id]
+	})
+}));
+
+export const nutritionFastingDayRelations = relations(nutritionFastingDay, ({ one }) => ({
+	user: one(authSchema.user, {
+		fields: [nutritionFastingDay.userId],
 		references: [authSchema.user.id]
 	})
 }));
@@ -169,5 +218,6 @@ export const nutritionIngredientRelations = relations(nutritionIngredient, ({ on
 
 export type NutritionProfile = typeof nutritionProfile.$inferSelect;
 export type NutritionEntry = typeof nutritionEntry.$inferSelect;
+export type NutritionFastingDay = typeof nutritionFastingDay.$inferSelect;
 export type NutritionMeal = typeof nutritionMeal.$inferSelect;
 export type NutritionIngredient = typeof nutritionIngredient.$inferSelect;
