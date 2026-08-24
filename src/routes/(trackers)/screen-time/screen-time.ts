@@ -26,6 +26,10 @@ const payloadSchema = z.object({
 	source: z.literal('screen_time').optional(),
 	screen_time: z.array(daySchema).max(MAX_SCREEN_TIME_DAYS)
 });
+const trackedAppChoiceSchema = z.object({
+	package: z.string().trim().min(1).max(255),
+	tracked: z.boolean()
+});
 
 export type ScreenTimePayload = z.infer<typeof payloadSchema>;
 export type ScreenTimeApp = ScreenTimePayload['screen_time'][number]['apps'][number];
@@ -36,6 +40,10 @@ export function parseScreenTimePayload(input: unknown) {
 	assertUniqueDates(payload.screen_time);
 	for (const day of payload.screen_time) assertUniqueApps(day);
 	return payload;
+}
+
+export function parseScreenTimeTrackedAppChoice(input: unknown) {
+	return trackedAppChoiceSchema.parse(input);
 }
 
 export function formatScreenTime(minutes: number) {

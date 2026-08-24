@@ -7,6 +7,7 @@ import { validationFailure } from '../domain/errors';
 import type { PermissionCheck } from '../domain/model';
 import { usageProviderFailure } from '../domain/native-failures';
 import type { NativeUsageDay } from '../domain/screen-time';
+import { resolveAndroidApplicationIdentities } from './application-identity';
 import { requireNativeAndroid } from './platform';
 
 export class AndroidUsageAdapter {
@@ -27,7 +28,7 @@ export class AndroidUsageAdapter {
 		for (const range of days) {
 			results.push(await this.readDay(range, collectionMilliseconds));
 		}
-		return results;
+		return withApplicationLabels(results);
 	}
 
 	async openSettings() {
@@ -50,6 +51,21 @@ export class AndroidUsageAdapter {
 
 function usageStats(stats: Record<string, UsageStats>) {
 	return stats;
+}
+
+async function withApplicationLabels(days: NativeUsageDay[]) {
+	const packageNames = days.flatMap((day) => Object.keys(day.stats));
+	const applications = await resolveAndroidApplicationIdentities(packageNames, false);
+	const appLabels = applicationLabels(applications);
+	return days.map((day) => ({ ...day, appLabels }));
+}
+
+function applicationLabels(applications: Record<string, { label?: string }>) {
+	return Object.fromEntries(
+		Object.entries(applications).flatMap(([packageName, application]) =>
+			typeof application.label === 'string' ? [[packageName, application.label]] : []
+		)
+	);
 }
 
 function validCollectionTime(now: Date) {

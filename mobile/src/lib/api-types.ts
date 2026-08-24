@@ -140,6 +140,7 @@ export type ScreenTimeData = DatedData & {
 		totalMinutes: number;
 		apps: Array<{ package: string; name: string; minutes: number; last_used: string }>;
 	};
+	knownApps: Array<{ package: string; name: string; tracked: boolean }>;
 	averageMinutes: number;
 	historyMaxMinutes: number;
 	days: Array<{ date: string; totalMinutes: number }>;

@@ -44,6 +44,26 @@ export const screenTimeConnection = sqliteTable(
 	]
 );
 
+export const screenTimeTrackedApp = sqliteTable(
+	'screen_time_tracked_app',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => authSchema.user.id, { onDelete: 'cascade' }),
+		packageName: text('package_name').notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull()
+	},
+	(table) => [
+		primaryKey({ columns: [table.userId, table.packageName] }),
+		check(
+			'screenTimeTrackedApp_packageName_check',
+			sql`length(${table.packageName}) >= 1 AND length(${table.packageName}) <= 255`
+		)
+	]
+);
+
 export const screenTimeDailySnapshot = sqliteTable(
 	'screen_time_daily_snapshot',
 	{
@@ -75,12 +95,20 @@ export const screenTimeDailySnapshot = sqliteTable(
 
 export const screenTimeUserRelations = relations(authSchema.user, ({ many, one }) => ({
 	screenTimeConnection: one(screenTimeConnection),
-	screenTimeDailySnapshots: many(screenTimeDailySnapshot)
+	screenTimeDailySnapshots: many(screenTimeDailySnapshot),
+	screenTimeTrackedApps: many(screenTimeTrackedApp)
 }));
 
 export const screenTimeConnectionRelations = relations(screenTimeConnection, ({ one }) => ({
 	user: one(authSchema.user, {
 		fields: [screenTimeConnection.userId],
+		references: [authSchema.user.id]
+	})
+}));
+
+export const screenTimeTrackedAppRelations = relations(screenTimeTrackedApp, ({ one }) => ({
+	user: one(authSchema.user, {
+		fields: [screenTimeTrackedApp.userId],
 		references: [authSchema.user.id]
 	})
 }));
@@ -93,4 +121,5 @@ export const screenTimeDailySnapshotRelations = relations(screenTimeDailySnapsho
 }));
 
 export type ScreenTimeConnection = typeof screenTimeConnection.$inferSelect;
+export type ScreenTimeTrackedApp = typeof screenTimeTrackedApp.$inferSelect;
 export type ScreenTimeDailySnapshot = typeof screenTimeDailySnapshot.$inferSelect;

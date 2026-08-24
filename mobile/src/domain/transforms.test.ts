@@ -190,6 +190,28 @@ describe('screen-time payload transformation', () => {
 		expect(day.apps.some((app) => app.package === 'com.example.too-short')).toBe(false);
 	});
 
+	it('uses Android labels and falls back to packages when unavailable', () => {
+		const payload = buildScreenTimePayload(
+			[
+				{
+					range,
+					stats: {
+						browser: usage('com.example.browser', 60_000),
+						unknown: usage('com.example.unknown', 60_000)
+					},
+					appLabels: { 'com.example.browser': 'Browser' }
+				}
+			],
+			timestamp,
+			appVersion
+		);
+
+		expect(payload.screen_time[0].apps).toMatchObject([
+			{ package: 'com.example.browser', name: 'Browser' },
+			{ package: 'com.example.unknown', name: 'com.example.unknown' }
+		]);
+	});
+
 	it('keeps a 255-character package with a safe 120-character fallback label', () => {
 		const packageName = `com.example.${'a'.repeat(243)}`;
 		const payload = buildScreenTimePayload(

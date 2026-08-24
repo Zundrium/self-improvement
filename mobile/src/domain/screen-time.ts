@@ -19,6 +19,7 @@ export type NativeUsageStats = {
 export type NativeUsageDay = {
 	range: LocalDayRange;
 	stats: Record<string, NativeUsageStats>;
+	appLabels?: Record<string, string>;
 };
 
 type ScreenTimeApp = ScreenTimePayload['screen_time'][number]['apps'][number];
@@ -38,7 +39,7 @@ export function buildScreenTimePayload(
 }
 
 function toScreenTimeDay(day: NativeUsageDay) {
-	const apps = mergeApps(Object.values(day.stats)).sort(compareApps);
+	const apps = mergeApps(Object.values(day.stats), day.appLabels).sort(compareApps);
 	return {
 		date: day.range.date,
 		total_screen_time_minutes: totalMinutes(apps),
@@ -46,27 +47,34 @@ function toScreenTimeDay(day: NativeUsageDay) {
 	};
 }
 
-function mergeApps(stats: NativeUsageStats[]) {
+function mergeApps(stats: NativeUsageStats[], appLabels?: Record<string, string>) {
 	const apps = new Map<string, ScreenTimeApp>();
-	for (const usage of stats) mergeApp(apps, usage);
+	for (const usage of stats) mergeApp(apps, usage, appLabels);
 	return [...apps.values()];
 }
 
-function mergeApp(apps: Map<string, ScreenTimeApp>, usage: NativeUsageStats) {
-	const app = toScreenTimeApp(usage);
+function mergeApp(
+	apps: Map<string, ScreenTimeApp>,
+	usage: NativeUsageStats,
+	appLabels?: Record<string, string>
+) {
+	const app = toScreenTimeApp(usage, appLabels);
 	if (!app) return;
 	const existing = apps.get(app.package);
 	apps.set(app.package, existing ? combineUsage(existing, app) : app);
 }
 
-function toScreenTimeApp(usage: NativeUsageStats): ScreenTimeApp | undefined {
+function toScreenTimeApp(
+	usage: NativeUsageStats,
+	appLabels?: Record<string, string>
+): ScreenTimeApp | undefined {
 	const packageName = validPackageName(usage.packageName);
 	if (packageName === APP_PACKAGE) return;
 	const minutes = foregroundMinutes(usage.totalTimeInForeground);
 	if (!minutes) return;
 	return {
 		package: packageName,
-		name: fallbackLabel(packageName),
+		name: appLabel(packageName, appLabels),
 		minutes,
 		last_used: lastUsedInstant(usage.lastTimeUsed)
 	};
@@ -107,6 +115,11 @@ function validPackageName(value: string) {
 	const packageName = value.trim();
 	if (!packageName || packageName.length > MAX_PACKAGE_LENGTH) throw validationFailure();
 	return packageName;
+}
+
+function appLabel(packageName: string, appLabels?: Record<string, string>) {
+	const label = appLabels?.[packageName]?.trim().slice(0, MAX_LABEL_LENGTH);
+	return label || fallbackLabel(packageName);
 }
 
 function fallbackLabel(packageName: string) {

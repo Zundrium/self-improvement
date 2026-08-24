@@ -1,4 +1,4 @@
-import { and, eq, gte, lt, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import {
 	breathingExercise,
 	fitnessWorkoutProgress,
@@ -8,7 +8,6 @@ import {
 	nutritionEntry,
 	nutritionFastingDay,
 	screenTimeConnection,
-	screenTimeDailySnapshot,
 	sleepConnection,
 	sleepSession,
 	stepConnection,
@@ -16,6 +15,7 @@ import {
 } from '$lib/server/db/schema';
 import type { Database } from '$lib/server/db';
 import { localDateForInstant } from '$lib/trackers/dates';
+import { getDailyScreenTime } from '../../../routes/(trackers)/screen-time/server/screen-time';
 import { DEFAULT_SLEEP_GOAL_MINUTES } from '../../../routes/(trackers)/sleep/sleep';
 import { DEFAULT_STEP_GOAL } from '../../../routes/(trackers)/steps/steps';
 import { emptyCompletionDates, SCREEN_TIME_LIMIT_MINUTES, type CompletionDates } from './rules';
@@ -112,18 +112,13 @@ async function loadSleep(
 }
 
 async function loadScreenTime(db: Database, userId: string, startDate: string, today: string) {
-	const rows = await db
-		.select({ date: screenTimeDailySnapshot.localDate })
-		.from(screenTimeDailySnapshot)
-		.where(
-			and(
-				eq(screenTimeDailySnapshot.userId, userId),
-				gte(screenTimeDailySnapshot.localDate, startDate),
-				lt(screenTimeDailySnapshot.localDate, today),
-				lte(screenTimeDailySnapshot.totalMinutes, SCREEN_TIME_LIMIT_MINUTES)
-			)
-		);
-	return rows.map(({ date }) => date);
+	const rows = await getDailyScreenTime(db, userId, startDate, today);
+	return rows
+		.filter(
+			({ localDate, totalMinutes }) =>
+				localDate < today && totalMinutes <= SCREEN_TIME_LIMIT_MINUTES
+		)
+		.map(({ localDate }) => localDate);
 }
 
 async function loadFitness(db: Database, userId: string, startDate: string, today: string) {

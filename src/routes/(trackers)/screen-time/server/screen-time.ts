@@ -1,6 +1,12 @@
-import { and, asc, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import type { Database } from '$lib/server/db';
-import { screenTimeConnection, screenTimeDailySnapshot } from '$lib/server/db/trackers/screen-time';
+import {
+	screenTimeConnection,
+	screenTimeDailySnapshot,
+	screenTimeTrackedApp,
+	type ScreenTimeAppValue,
+	type ScreenTimeDailySnapshot
+} from '$lib/server/db/trackers/screen-time';
 import { isValidTimeZone } from '$lib/trackers/dates';
 import type { ScreenTimeDay, ScreenTimePayload } from '../screen-time';
 
@@ -86,6 +92,81 @@ export async function getDailyScreenTime(
 	startDate: string,
 	endDate: string
 ) {
+	const [snapshots, trackedPackages] = await Promise.all([
+		getRawDailyScreenTime(db, userId, startDate, endDate),
+		getTrackedScreenTimePackages(db, userId)
+	]);
+	const allowlist = new Set(trackedPackages);
+	return snapshots.map((snapshot) => trackedScreenTimeSnapshot(snapshot, allowlist));
+}
+
+export async function getTrackedScreenTimePackages(db: Database, userId: string) {
+	const rows = await db
+		.select({ packageName: screenTimeTrackedApp.packageName })
+		.from(screenTimeTrackedApp)
+		.where(eq(screenTimeTrackedApp.userId, userId));
+	return rows.map(({ packageName }) => packageName);
+}
+
+export async function getKnownScreenTimeApps(db: Database, userId: string) {
+	const [snapshots, trackedPackages] = await Promise.all([
+		getAllScreenTimeApps(db, userId),
+		getTrackedScreenTimePackages(db, userId)
+	]);
+	return knownScreenTimeApps(snapshots, new Set(trackedPackages));
+}
+
+export async function setScreenTimeAppTracked(
+	db: Database,
+	userId: string,
+	packageName: string,
+	tracked: boolean
+) {
+	if (tracked) await addTrackedScreenTimeApp(db, userId, packageName);
+	else await removeTrackedScreenTimeApp(db, userId, packageName);
+}
+
+export function trackedScreenTimeSnapshot(
+	snapshot: ScreenTimeDailySnapshot,
+	allowlist: Set<string>
+) {
+	const apps = snapshot.apps.filter((app) => allowlist.has(app.package));
+	const totalMinutes = apps.reduce((total, app) => total + app.minutes, 0);
+	return { ...snapshot, totalMinutes, apps };
+}
+
+function knownScreenTimeApps(
+	snapshots: Array<{ apps: ScreenTimeAppValue[] }>,
+	trackedPackages: Set<string>
+) {
+	const apps = new Map<string, Pick<ScreenTimeAppValue, 'package' | 'name'>>();
+	for (const snapshot of snapshots) rememberKnownApps(apps, snapshot.apps);
+	for (const packageName of trackedPackages) rememberTrackedApp(apps, packageName);
+	return [...apps.values()]
+		.map((app) => ({ ...app, tracked: trackedPackages.has(app.package) }))
+		.sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function rememberKnownApps(
+	knownApps: Map<string, Pick<ScreenTimeAppValue, 'package' | 'name'>>,
+	apps: ScreenTimeAppValue[]
+) {
+	for (const app of apps) {
+		if (!knownApps.has(app.package)) {
+			knownApps.set(app.package, { package: app.package, name: app.name });
+		}
+	}
+}
+
+function rememberTrackedApp(
+	knownApps: Map<string, Pick<ScreenTimeAppValue, 'package' | 'name'>>,
+	packageName: string
+) {
+	if (!knownApps.has(packageName))
+		knownApps.set(packageName, { package: packageName, name: packageName });
+}
+
+function getRawDailyScreenTime(db: Database, userId: string, startDate: string, endDate: string) {
 	return db
 		.select()
 		.from(screenTimeDailySnapshot)
@@ -97,6 +178,34 @@ export async function getDailyScreenTime(
 			)
 		)
 		.orderBy(asc(screenTimeDailySnapshot.localDate));
+}
+
+function getAllScreenTimeApps(db: Database, userId: string) {
+	return db
+		.select({ apps: screenTimeDailySnapshot.apps })
+		.from(screenTimeDailySnapshot)
+		.where(eq(screenTimeDailySnapshot.userId, userId))
+		.orderBy(desc(screenTimeDailySnapshot.localDate));
+}
+
+async function addTrackedScreenTimeApp(db: Database, userId: string, packageName: string) {
+	await db
+		.insert(screenTimeTrackedApp)
+		.values({ userId, packageName })
+		.onConflictDoNothing({
+			target: [screenTimeTrackedApp.userId, screenTimeTrackedApp.packageName]
+		});
+}
+
+async function removeTrackedScreenTimeApp(db: Database, userId: string, packageName: string) {
+	await db
+		.delete(screenTimeTrackedApp)
+		.where(
+			and(
+				eq(screenTimeTrackedApp.userId, userId),
+				eq(screenTimeTrackedApp.packageName, packageName)
+			)
+		);
 }
 
 export async function recordScreenTimePayload(

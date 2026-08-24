@@ -44,5 +44,5 @@
 		<NativeDataHelpAlert tracker="screen-time" isSynced={data.isSynced} />
 	{/if}
 	<TrackerHistory items={history} {colors} />
-	<ScreenTimeApps apps={data.usage.apps} totalMinutes={data.usage.totalMinutes} />
+	<ScreenTimeApps apps={data.usage.apps} knownApps={data.knownApps} />
 </TrackerPage>
