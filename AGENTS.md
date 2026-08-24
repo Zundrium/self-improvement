@@ -13,5 +13,5 @@
 - Register every tracker in `src/lib/trackers/registry.ts` and `mobile/src/lib/trackers/registry.ts`; profile visibility and Android navigation are driven by this registry.
 - Keep Cloudflare code free of page components and static frontend assets; `self.zund.cc` exposes API responses only.
 - Keep only genuinely shared frontend logic and components under `mobile/src/lib`.
-- After each successful push of a new project commit, follow `.pi/skills/release-after-push/SKILL.md` to publish the next pre-1.0 signed Android release.
+- Use `.pi/skills/feature-development/SKILL.md` for feature work. After each successful push of a new project commit, follow its release steps to publish the next pre-1.0 signed Android release.
 - Run `npm run check`, `npm run lint`, `npm run test`, and `npm run build` before handoff.
