@@ -54,7 +54,7 @@ function appendCorsHeaders(response: Response, origin: string) {
 	response.headers.set('access-control-allow-credentials', 'true');
 	response.headers.set(
 		'access-control-allow-headers',
-		'Authorization, Content-Type, X-Time-Zone, X-Steps-Token, X-Sleep-Token, X-Screen-Time-Token'
+		'Authorization, Content-Type, X-Time-Zone, X-Steps-Token, X-Screen-Time-Token'
 	);
 	response.headers.set('access-control-allow-methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 	response.headers.set('access-control-expose-headers', 'set-auth-token');

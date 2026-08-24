@@ -12,7 +12,7 @@ export const load: PageLoad = async () => {
 	return {
 		trackers: [
 			trackerStatus('steps', 'Steps', 'Health Connect', steps),
-			trackerStatus('sleep', 'Sleep', 'Health Connect', sleep),
+			trackerStatus('sleep', 'Sleep', 'Android Usage Access', sleep),
 			trackerStatus('screen-time', 'Screen time', 'Android Usage Access', screenTime)
 		]
 	};
@@ -25,7 +25,8 @@ function trackerStatus(
 	data: {
 		isSynced: boolean;
 		hasData: boolean;
-		connection: { lastReceivedAt: string | null } | null;
+		lastReceivedAt?: string | null;
+		connection?: { lastReceivedAt: string | null } | null;
 	}
 ) {
 	return {
@@ -34,7 +35,7 @@ function trackerStatus(
 		provider,
 		isSynced: data.isSynced,
 		hasData: data.hasData,
-		lastReceivedAt: data.connection?.lastReceivedAt ?? null
+		lastReceivedAt: data.lastReceivedAt ?? data.connection?.lastReceivedAt ?? null
 	};
 }
 

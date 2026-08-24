@@ -1,136 +1,163 @@
+import { CalendarDateTime, toZoned } from '@internationalized/date';
 import { z } from 'zod';
-import type { StoredSleepStage } from '$lib/server/db/trackers/sleep';
-import { localDateForInstant } from '$lib/trackers/dates';
+import type { SleepAdherenceStatus, StoredSleepUsageApp } from '$lib/server/db/trackers/sleep';
 
-export const DEFAULT_SLEEP_GOAL_MINUTES = 420;
-export const SLEEP_TOKEN_HEADER = 'X-Sleep-Token';
-export const MAX_SLEEP_SESSIONS = 100;
-export const MAX_SLEEP_STAGES = 200;
+export const DEFAULT_BEDTIME = '22:30';
+export const LATE_USAGE_LIMIT_SECONDS = 300;
+export const BEDTIME_WINDOW_SECONDS = 4 * 60 * 60;
+export const MAX_SLEEP_DAYS = 7;
+export const MAX_ACTIVITY_INTERVALS = 5_000;
+export const MAX_SCREEN_INTERACTIVE_EVENTS = 2_000;
 
-const MAX_SLEEP_DURATION_SECONDS = 36 * 60 * 60;
-const AWAKE_STAGE_TYPES = new Set(['1', '3', '7', 'awake', 'out_of_bed', 'awake_in_bed']);
-const instantSchema = z.iso.datetime();
-const metadataSchema = z
-	.object({
-		data_origin: z.string().trim().max(255).optional(),
-		recording_method: z.string().trim().max(100).optional()
-	})
-	.passthrough();
-const stageSchema = z
-	.object({
-		stage: z.string().trim().min(1).max(64),
-		start_time: instantSchema,
-		end_time: instantSchema,
-		duration_seconds: z.number().int().min(0).max(MAX_SLEEP_DURATION_SECONDS)
-	})
-	.passthrough();
-const sessionSchema = z
-	.object({
-		session_end_time: instantSchema,
-		duration_seconds: z.number().int().min(1).max(MAX_SLEEP_DURATION_SECONDS),
-		stages: z.array(stageSchema).max(MAX_SLEEP_STAGES),
-		metadata: metadataSchema.optional()
-	})
-	.passthrough();
-const payloadSchema = z
-	.object({
-		timestamp: instantSchema,
-		app_version: z.string().trim().min(1).max(40),
-		sleep: z.array(sessionSchema).max(MAX_SLEEP_SESSIONS).optional().default([])
-	})
-	.passthrough();
-
-export type HealthConnectSleepPayload = z.infer<typeof payloadSchema>;
-export type HealthConnectSleepRecord = HealthConnectSleepPayload['sleep'][number];
 export class SleepPayloadError extends Error {}
 
-export type CalculatedSleepSession = {
-	sessionStartAt: Date;
-	sessionEndAt: Date;
+const instantSchema = z.iso.datetime();
+const usageIntervalSchema = z.object({
+	package: z.string().trim().min(1).max(255),
+	name: z.string().trim().min(1).max(120),
+	start_time: instantSchema,
+	end_time: instantSchema
+});
+const payloadSchema = z.object({
+	timestamp: instantSchema,
+	app_version: z.string().trim().min(1).max(40),
+	source: z.literal('usage_events'),
+	dates: z.array(z.iso.date()).min(1).max(MAX_SLEEP_DAYS),
+	activity_intervals: z.array(usageIntervalSchema).max(MAX_ACTIVITY_INTERVALS),
+	screen_interactive: z.array(instantSchema).max(MAX_SCREEN_INTERACTIVE_EVENTS)
+});
+
+export type SleepUsagePayload = z.infer<typeof payloadSchema>;
+export type SleepUsageInterval = SleepUsagePayload['activity_intervals'][number];
+type SummarizedUsageApp = StoredSleepUsageApp & { milliseconds: number };
+
+export type CalculatedSleepAdherence = {
 	localDate: string;
-	sessionDurationSeconds: number;
-	sleepDurationSeconds: number;
-	stages: StoredSleepStage[];
-	dataOrigin: string | null;
+	configuredBedtime: string;
+	windowStartAt: Date;
+	windowEndAt: Date;
+	lateUsageSeconds: number;
+	latestScreenActivityAt: Date | null;
+	usedApps: StoredSleepUsageApp[];
+	violatingApps: StoredSleepUsageApp[];
+	status: SleepAdherenceStatus;
+	sourceTimestamp: Date;
 };
 
-export function parseHealthConnectSleepPayload(input: unknown) {
+export function parseSleepUsagePayload(input: unknown) {
 	const payload = payloadSchema.parse(input);
-	for (const session of payload.sleep) validateStages(session.stages);
+	if (new Set(payload.dates).size !== payload.dates.length) {
+		throw new SleepPayloadError('Sleep adherence dates must be unique.');
+	}
+	for (const interval of payload.activity_intervals) validateInterval(interval);
 	return payload;
 }
 
-export function parseSleepGoal(value: FormDataEntryValue | null) {
-	const goal = Number(value);
-	if (!Number.isInteger(goal) || goal < 60 || goal > 1_440) {
-		throw new Error('Enter a daily goal between 60 and 1,440 minutes.');
+export function parseBedtime(value: unknown) {
+	const bedtime = String(value ?? '').trim();
+	if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(bedtime)) {
+		throw new Error('Choose a valid bedtime.');
 	}
-	return goal;
+	return bedtime;
 }
 
-export function calculateSleepSession(
-	record: HealthConnectSleepRecord,
-	timeZone: string
-): CalculatedSleepSession {
-	const sessionEndAt = new Date(record.session_end_time);
-	const sessionStartAt = new Date(sessionEndAt.getTime() - record.duration_seconds * 1000);
+export function parseRemindersEnabled(value: unknown) {
+	if (typeof value !== 'boolean') throw new Error('Choose whether bedtime reminders are enabled.');
+	return value;
+}
+
+export function calculateSleepAdherence(input: {
+	date: string;
+	bedtime: string;
+	timeZone: string;
+	payload: SleepUsagePayload;
+	trackedPackages: Set<string>;
+}): CalculatedSleepAdherence {
+	const { start, end } = bedtimeWindow(input.date, input.bedtime, input.timeZone);
+	const usageApps = summarizeApps(input.payload.activity_intervals, start, end);
+	const selectedUsage = usageApps.filter((app) => input.trackedPackages.has(app.package));
+	const selectedMilliseconds = selectedUsage.reduce((total, app) => total + app.milliseconds, 0);
+	const lateUsageSeconds = Math.ceil(selectedMilliseconds / 1_000);
+	const failed = selectedMilliseconds > LATE_USAGE_LIMIT_SECONDS * 1_000;
+	const usedApps = usageApps.map(storedUsageApp);
+	const collectedAt = new Date(input.payload.timestamp);
 	return {
-		sessionStartAt,
-		sessionEndAt,
-		localDate: localDateForInstant(sessionEndAt, timeZone),
-		sessionDurationSeconds: record.duration_seconds,
-		sleepDurationSeconds: measuredSleepSeconds(record),
-		stages: record.stages.map(toStoredStage),
-		dataOrigin: record.metadata?.data_origin ?? null
+		localDate: input.date,
+		configuredBedtime: input.bedtime,
+		windowStartAt: start,
+		windowEndAt: end,
+		lateUsageSeconds,
+		latestScreenActivityAt: latestScreenActivity(input.payload.screen_interactive, start, end),
+		usedApps,
+		violatingApps: selectedUsage.map(storedUsageApp),
+		status: adherenceStatus(collectedAt, end, input.trackedPackages.size, failed),
+		sourceTimestamp: collectedAt
 	};
 }
 
-export function measuredSleepSeconds(record: HealthConnectSleepRecord) {
-	const awakeSeconds = record.stages
-		.filter((stage) => isAwakeStage(stage.stage))
-		.reduce((total, stage) => total + stage.duration_seconds, 0);
-	return Math.max(0, record.duration_seconds - awakeSeconds);
+export function bedtimeWindow(date: string, bedtime: string, timeZone: string) {
+	const [year, month, day] = date.split('-').map(Number);
+	const [hour, minute] = parseBedtime(bedtime).split(':').map(Number);
+	const start = toZoned(new CalendarDateTime(year, month, day, hour, minute), timeZone).toDate();
+	return { start, end: new Date(start.getTime() + BEDTIME_WINDOW_SECONDS * 1_000) };
 }
 
-export function averageSleepMinutes(days: Array<{ durationSeconds: number }>) {
-	const recordedDays = days.filter((day) => day.durationSeconds > 0);
-	if (!recordedDays.length) return 0;
-	const totalSeconds = recordedDays.reduce((total, day) => total + day.durationSeconds, 0);
-	return Math.round(totalSeconds / recordedDays.length / 60);
-}
-
-export function formatSleepMinutes(totalMinutes: number) {
-	const hours = Math.floor(totalMinutes / 60);
-	const minutes = totalMinutes % 60;
-	if (!hours) return `${minutes}m`;
-	return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
-}
-
-function validateStages(stages: HealthConnectSleepRecord['stages']) {
-	let previousStart = -Infinity;
-	for (const stage of stages) {
-		const start = Date.parse(stage.start_time);
-		const end = Date.parse(stage.end_time);
-		if (end < start) throw new SleepPayloadError('A sleep stage ends before it starts.');
-		if (Math.floor((end - start) / 1000) !== stage.duration_seconds) {
-			throw new SleepPayloadError('A sleep stage duration does not match its interval.');
-		}
-		if (start < previousStart) {
-			throw new SleepPayloadError('Sleep stages must be ordered by start time.');
-		}
-		previousStart = start;
+function validateInterval(interval: SleepUsageInterval) {
+	if (Date.parse(interval.end_time) <= Date.parse(interval.start_time)) {
+		throw new SleepPayloadError('Activity intervals must end after they start.');
 	}
 }
 
-function isAwakeStage(stage: string) {
-	return AWAKE_STAGE_TYPES.has(stage.toLowerCase().replace(/^stage_type_/, ''));
+function summarizeApps(intervals: SleepUsageInterval[], start: Date, end: Date) {
+	const byPackage = new Map<string, SummarizedUsageApp>();
+	for (const interval of intervals) addInterval(byPackage, interval, start, end);
+	return [...byPackage.values()].sort(
+		(left, right) => right.seconds - left.seconds || left.name.localeCompare(right.name)
+	);
 }
 
-function toStoredStage(stage: HealthConnectSleepRecord['stages'][number]): StoredSleepStage {
-	return {
-		stage: stage.stage,
-		startTime: stage.start_time,
-		endTime: stage.end_time,
-		durationSeconds: stage.duration_seconds
-	};
+function addInterval(
+	apps: Map<string, SummarizedUsageApp>,
+	interval: SleepUsageInterval,
+	windowStart: Date,
+	windowEnd: Date
+) {
+	const milliseconds = overlapMilliseconds(interval, windowStart, windowEnd);
+	if (!milliseconds) return;
+	const existing = apps.get(interval.package);
+	const totalMilliseconds = (existing?.milliseconds ?? 0) + milliseconds;
+	apps.set(interval.package, {
+		package: interval.package,
+		name: interval.name,
+		seconds: Math.ceil(totalMilliseconds / 1_000),
+		milliseconds: totalMilliseconds
+	});
+}
+
+function overlapMilliseconds(interval: SleepUsageInterval, start: Date, end: Date) {
+	const overlapStart = Math.max(Date.parse(interval.start_time), start.getTime());
+	const overlapEnd = Math.min(Date.parse(interval.end_time), end.getTime());
+	return Math.max(0, overlapEnd - overlapStart);
+}
+
+function storedUsageApp(app: SummarizedUsageApp): StoredSleepUsageApp {
+	return { package: app.package, name: app.name, seconds: app.seconds };
+}
+
+function latestScreenActivity(events: string[], start: Date, end: Date) {
+	const latest = events
+		.map(Date.parse)
+		.filter((instant) => instant >= start.getTime() && instant < end.getTime())
+		.sort((left, right) => right - left)[0];
+	return latest === undefined ? null : new Date(latest);
+}
+
+function adherenceStatus(
+	collectedAt: Date,
+	windowEnd: Date,
+	trackedAppCount: number,
+	failed: boolean
+): SleepAdherenceStatus {
+	if (!trackedAppCount || collectedAt < windowEnd) return 'pending';
+	return failed ? 'fail' : 'pass';
 }

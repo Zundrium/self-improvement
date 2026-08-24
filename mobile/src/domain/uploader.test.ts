@@ -10,7 +10,7 @@ const credentials: AppCredentials = {
 
 const uploads: Array<[TrackerId, string]> = [
 	['steps', 'https://example.com/steps/api/health-connect'],
-	['sleep', 'https://example.com/sleep/api/health-connect'],
+	['sleep', 'https://example.com/sleep/api/usage'],
 	['screenTime', 'https://example.com/screen-time/api/usage']
 ];
 

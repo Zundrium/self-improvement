@@ -1,8 +1,11 @@
 import { apiRequest } from '$lib/api';
-import type { ProfileData } from '$lib/api-types';
+import type { SleepData } from '$lib/api-types';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async () => {
-	const profile = await apiRequest<ProfileData>('/api/app/profile');
-	return { goal: profile.sleepGoalMinutes };
+	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+	const data = await apiRequest<SleepData>(
+		`/api/app/sleep?timeZone=${encodeURIComponent(timeZone)}`
+	);
+	return { settings: data.settings };
 };

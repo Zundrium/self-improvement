@@ -51,9 +51,9 @@ Cloudflare allows only configured mobile development origins and the Capacitor `
 
 Native collection is part of the authenticated app rather than a separately paired companion.
 
-- Steps and Sleep read Health Connect.
-- Screen time reads UsageStatsManager.
-- Each collector uses the device IANA time zone and builds a validated seven-day payload.
+- Steps read Health Connect.
+- Sleep and screen time read UsageStatsManager; sleep uses detailed activity and screen-interactive events for bedtime adherence.
+- Each collector uses the device IANA time zone; aggregate trackers upload seven days, while detailed bedtime events are limited to the latest two days because Android retains them only briefly.
 - Uploads use the Better Auth bearer session and `X-Time-Zone`; no QR token is required.
 - The backend ensures tracker connection rows exist for authenticated users and keeps existing goals and records.
 - Trackers upload independently so one denied permission does not block the others.
@@ -72,7 +72,7 @@ Mutations use JSON API requests rather than SvelteKit server form actions becaus
 Tracker screens keep their prior behavior:
 
 - dated dashboard summaries;
-- seven-day steps, sleep, and screen-time histories;
+- seven-day steps, bedtime-adherence, and screen-time histories;
 - guided fitness sessions and rep-speed settings;
 - photo-first nutrition analysis, correction, logs, and entry editing;
 - meditation sounds and persisted sessions;
@@ -104,7 +104,7 @@ npm run mobile:dev -- --host 0.0.0.0
 
 The existing signed GitHub release workflow remains the frontend delivery mechanism. It now builds the complete mobile SvelteKit application before Capacitor synchronization. Cloudflare deployments update only the API.
 
-The Android release must continue to request only Internet, camera, package installation, Usage Access, and read-only Steps and Sleep permissions. The custom reset-password deep link is declared on the exported main activity.
+The Android release must continue to request only Internet, camera, package installation, notifications, Usage Access, and read-only Steps permission. Exact-alarm permission remains excluded. The custom reset-password deep link is declared on the exported main activity.
 
 ## Validation
 

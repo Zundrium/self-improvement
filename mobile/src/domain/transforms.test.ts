@@ -1,11 +1,10 @@
 import { CalendarDate } from '@internationalized/date';
 import { describe, expect, it } from 'vitest';
 import { parseScreenTimePayload } from '../routes/screen-time/screen-time';
-import { parseHealthConnectSleepPayload } from '../routes/sleep/sleep';
 import { parseHealthConnectPayload } from '../routes/steps/steps';
 import { toLocalDayRange } from './day-ranges';
 import { APP_PACKAGE, buildScreenTimePayload, type NativeUsageStats } from './screen-time';
-import { buildSleepPayload, type NativeSleepSample } from './sleep';
+import { buildSleepPayload } from './sleep';
 import { buildStepsPayload, rollingStepDayRanges } from './steps';
 
 const timestamp = new Date('2025-11-03T12:00:00.000Z');
@@ -69,97 +68,59 @@ describe('steps payload transformation', () => {
 
 describe('sleep payload transformation', () => {
 	const days = [toLocalDayRange(new CalendarDate(2025, 11, 2), 'UTC')];
-	const sample: NativeSleepSample = {
-		startDate: '2025-11-02T22:00:00.000Z',
-		endDate: '2025-11-02T23:30:00.000Z',
-		sourceName: 'Device name',
-		sourceId: 'com.health.source',
-		hasStageData: true,
-		stages: [
+
+	it('preserves detailed foreground intervals, labels, and screen-interactive events', () => {
+		const payload = buildSleepPayload(
 			{
-				stage: 'light',
-				startDate: '2025-11-02T22:00:00.000Z',
-				endDate: '2025-11-02T23:00:00.000Z'
+				activityIntervals: [
+					{
+						packageName: 'com.example.social',
+						startTime: Date.parse('2025-11-02T22:30:00.000Z'),
+						endTime: Date.parse('2025-11-02T22:35:01.000Z')
+					},
+					{
+						packageName: APP_PACKAGE,
+						startTime: Date.parse('2025-11-02T23:00:00.000Z'),
+						endTime: Date.parse('2025-11-02T23:01:00.000Z')
+					}
+				],
+				screenInteractive: [Date.parse('2025-11-02T22:45:00.000Z')],
+				appLabels: { 'com.example.social': 'Social' }
 			},
-			{
-				stage: 'rem',
-				startDate: '2025-11-02T23:00:00.000Z',
-				endDate: '2025-11-02T23:30:00.000Z'
-			}
-		]
-	};
+			days,
+			timestamp,
+			appVersion
+		);
 
-	it('preserves session end, calculated duration, stage detail, and source', () => {
-		const payload = buildSleepPayload([sample], days, timestamp, appVersion);
-		const session = payload.sleep[0];
-
-		expect(parseHealthConnectSleepPayload(payload)).toEqual(payload);
-		expect(session).toEqual({
-			session_end_time: '2025-11-02T23:30:00.000Z',
-			duration_seconds: 5_400,
-			stages: [
+		expect(payload).toEqual({
+			timestamp: timestamp.toISOString(),
+			app_version: appVersion,
+			source: 'usage_events',
+			dates: ['2025-11-02'],
+			activity_intervals: [
 				{
-					stage: 'light',
-					start_time: '2025-11-02T22:00:00.000Z',
-					end_time: '2025-11-02T23:00:00.000Z',
-					duration_seconds: 3_600
-				},
-				{
-					stage: 'rem',
-					start_time: '2025-11-02T23:00:00.000Z',
-					end_time: '2025-11-02T23:30:00.000Z',
-					duration_seconds: 1_800
+					package: 'com.example.social',
+					name: 'Social',
+					start_time: '2025-11-02T22:30:00.000Z',
+					end_time: '2025-11-02T22:35:01.000Z'
 				}
 			],
-			metadata: { data_origin: 'com.health.source' }
+			screen_interactive: ['2025-11-02T22:45:00.000Z']
 		});
 	});
 
-	it('assigns a session crossing into the first day by its end time', () => {
-		const crossingSession: NativeSleepSample = {
-			...sample,
-			startDate: '2025-11-01T23:00:00.000Z',
-			endDate: '2025-11-02T01:00:00.000Z',
-			stages: [
-				{
-					stage: 'asleep',
-					startDate: '2025-11-01T23:00:00.000Z',
-					endDate: '2025-11-02T01:00:00.000Z'
-				}
-			]
-		};
-
-		expect(buildSleepPayload([crossingSession], days, timestamp, appVersion).sleep).toMatchObject([
-			{ session_end_time: '2025-11-02T01:00:00.000Z', duration_seconds: 7_200 }
-		]);
-	});
-
-	it('fails the tracker when Health Connect reports stage detail unavailable', () => {
+	it('rejects invalid native activity intervals', () => {
 		expect(() =>
-			buildSleepPayload([{ ...sample, hasStageData: false }], days, timestamp, appVersion)
-		).toThrow('Sleep stage detail is unavailable');
-	});
-
-	it('enforces the endpoint session limit without truncating', () => {
-		const samples = Array.from({ length: 101 }, (_, index) => ({
-			...sample,
-			endDate: new Date(Date.parse('2025-11-02T02:00:00.000Z') + index * 60_000).toISOString()
-		}));
-
-		expect(() => buildSleepPayload(samples, days, timestamp, appVersion)).toThrow(
-			'Too many sleep sessions'
-		);
-	});
-
-	it('enforces the endpoint stage limit without truncating', () => {
-		const stages = Array.from(
-			{ length: 201 },
-			() => sample.stages?.[0] as NonNullable<NativeSleepSample['stages']>[number]
-		);
-
-		expect(() => buildSleepPayload([{ ...sample, stages }], days, timestamp, appVersion)).toThrow(
-			'Too many sleep stages'
-		);
+			buildSleepPayload(
+				{
+					activityIntervals: [{ packageName: 'app', startTime: 200, endTime: 100 }],
+					screenInteractive: []
+				},
+				days,
+				timestamp,
+				appVersion
+			)
+		).toThrow();
 	});
 });
 

@@ -17,13 +17,13 @@ export function createNativeTrackerJobs(
 ): Record<TrackerId, TrackerJob> {
 	return {
 		steps: trackerJob(
-			() => health.checkPermission('steps'),
+			() => health.checkPermission(),
 			(credentials, now) => collectSteps(health, credentials, now),
 			(payload, credentials) => uploader.upload('steps', credentials, payload)
 		),
 		sleep: trackerJob(
-			() => health.checkPermission('sleep'),
-			(credentials, now) => collectSleep(health, credentials, now),
+			() => usage.checkPermission(),
+			(credentials, now) => collectSleep(usage, credentials, now),
 			(payload, credentials) => uploader.upload('sleep', credentials, payload)
 		),
 		screenTime: trackerJob(
@@ -40,10 +40,13 @@ async function collectSteps(health: AndroidHealthAdapter, credentials: AppCreden
 	return buildStepsPayload(samples, now, version);
 }
 
-async function collectSleep(health: AndroidHealthAdapter, credentials: AppCredentials, now: Date) {
-	const days = rollingLocalDayRanges(now, credentials.timeZone);
-	const [samples, version] = await Promise.all([health.readSleep(days), getAppVersion()]);
-	return buildSleepPayload(samples, days, now, version);
+async function collectSleep(usage: AndroidUsageAdapter, credentials: AppCredentials, now: Date) {
+	const days = rollingLocalDayRanges(now, credentials.timeZone, 2);
+	const [events, version] = await Promise.all([
+		usage.readActivityEvents(days, now),
+		getAppVersion()
+	]);
+	return buildSleepPayload(events, days, now, version);
 }
 
 async function collectScreenTime(

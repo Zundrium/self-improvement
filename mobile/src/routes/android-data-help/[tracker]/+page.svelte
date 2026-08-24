@@ -17,9 +17,8 @@
 		},
 		sleep: {
 			label: 'Sleep',
-			title: 'Set up sleep measurement',
-			description:
-				'Use your Galaxy Watch as the measuring source and Samsung Health as the connection.'
+			title: 'Set up bedtime tracking',
+			description: 'Choose tracked apps and allow Self Improvement to read Android activity events.'
 		},
 		'screen-time': {
 			label: 'Screen time',

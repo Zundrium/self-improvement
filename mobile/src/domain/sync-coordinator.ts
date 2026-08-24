@@ -111,7 +111,7 @@ function resultStatus(
 
 function copyStatus(status: MobileSyncStatus): MobileSyncStatus {
 	return {
-		version: 1,
+		version: 2,
 		trackers: {
 			steps: { ...status.trackers.steps },
 			sleep: { ...status.trackers.sleep },

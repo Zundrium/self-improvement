@@ -30,9 +30,13 @@ describe('tracker action providers', () => {
 		]);
 	});
 
-	it('flags a tracker that has never received sleep measurements', () => {
-		expect(getSleepActions(false)[0]?.id).toBe('sleep:no-measurements');
-		expect(getSleepActions(true)).toEqual([]);
+	it('shows bedtime setup, pending, pass, and fail actions', () => {
+		expect(getSleepActions(sleepState({ setupRequired: true }))[0]?.id).toBe('sleep:select-apps');
+		expect(getSleepActions(sleepState())[0]?.id).toBe(`sleep:bedtime:${date}`);
+		expect(getSleepActions(sleepState({ status: 'pass' }))).toEqual([]);
+		expect(getSleepActions(sleepState({ status: 'fail', lateUsageSeconds: 301 }))[0]?.id).toBe(
+			`sleep:late-usage:${date}`
+		);
 	});
 
 	it('warns when one hour of screen time remains', () => {
@@ -71,6 +75,17 @@ function nutritionState(fasting: boolean) {
 		eatingWindow: null,
 		now: new Date('2026-08-20T12:00:00Z'),
 		timeZone: 'UTC'
+	};
+}
+
+function sleepState(overrides: Partial<Parameters<typeof getSleepActions>[0]> = {}) {
+	return {
+		date,
+		status: 'pending' as const,
+		bedtime: '22:30',
+		lateUsageSeconds: 0,
+		setupRequired: false,
+		...overrides
 	};
 }
 

@@ -72,6 +72,24 @@ describe('sync coordinator', () => {
 		expect(repository.status.trackers.sleep.failure).toBeUndefined();
 	});
 
+	it('refreshes sleep on every stale sync so app opens collect detailed events', async () => {
+		const repository = new MemoryRepository();
+		const jobs = successfulJobs();
+		const coordinator = new SyncCoordinator(
+			repository,
+			jobs,
+			() => new Date('2025-03-09T12:00:00.000Z')
+		);
+
+		await coordinator.syncAll();
+		const report = await coordinator.syncStale();
+
+		expect(report.results).toEqual([
+			expect.objectContaining({ tracker: 'sleep', outcome: 'success' })
+		]);
+		expect(jobs.sleep.collect).toHaveBeenCalledTimes(2);
+	});
+
 	it('retains the previous success timestamp when a later upload fails', async () => {
 		const repository = new MemoryRepository();
 		const jobs = successfulJobs();

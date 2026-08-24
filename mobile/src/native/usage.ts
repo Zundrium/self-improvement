@@ -1,3 +1,4 @@
+import { registerPlugin } from '@capacitor/core';
 import {
 	CapacitorUsageStatsManager,
 	type UsageStats
@@ -7,8 +8,18 @@ import { validationFailure } from '../domain/errors';
 import type { PermissionCheck } from '../domain/model';
 import { usageProviderFailure } from '../domain/native-failures';
 import type { NativeUsageDay } from '../domain/screen-time';
+import type { NativeActivityInterval, NativeUsageEvents } from '../domain/sleep';
 import { resolveAndroidApplicationIdentities } from './application-identity';
 import { requireNativeAndroid } from './platform';
+
+type AndroidUsageEventsPlugin = {
+	queryEvents(options: { beginTime: number; endTime: number }): Promise<{
+		activityIntervals: NativeActivityInterval[];
+		screenInteractive: number[];
+	}>;
+};
+
+const AndroidUsageEvents = registerPlugin<AndroidUsageEventsPlugin>('AndroidUsageEvents');
 
 export class AndroidUsageAdapter {
 	async checkPermission(): Promise<PermissionCheck> {
@@ -29,6 +40,22 @@ export class AndroidUsageAdapter {
 			results.push(await this.readDay(range, collectionMilliseconds));
 		}
 		return withApplicationLabels(results);
+	}
+
+	async readActivityEvents(days: LocalDayRange[], now: Date): Promise<NativeUsageEvents> {
+		requireNativeAndroid();
+		if (!days.length) throw validationFailure();
+		try {
+			const events = await AndroidUsageEvents.queryEvents({
+				beginTime: days[0].startMilliseconds,
+				endTime: validCollectionTime(now)
+			});
+			const packageNames = events.activityIntervals.map(({ packageName }) => packageName);
+			const applications = await resolveAndroidApplicationIdentities(packageNames, false);
+			return { ...events, appLabels: applicationLabels(applications) };
+		} catch (cause) {
+			throw usageProviderFailure(cause);
+		}
 	}
 
 	async openSettings() {

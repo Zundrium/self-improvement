@@ -1,163 +1,138 @@
 import { describe, expect, it } from 'vitest';
 import {
-	DEFAULT_SLEEP_GOAL_MINUTES,
-	MAX_SLEEP_SESSIONS,
-	MAX_SLEEP_STAGES,
-	averageSleepMinutes,
-	calculateSleepSession,
-	measuredSleepSeconds,
-	parseHealthConnectSleepPayload,
-	parseSleepGoal
+	bedtimeWindow,
+	calculateSleepAdherence,
+	DEFAULT_BEDTIME,
+	LATE_USAGE_LIMIT_SECONDS,
+	parseBedtime,
+	parseSleepUsagePayload
 } from './sleep';
 
-const sleepRecord = {
-	session_end_time: '2026-08-17T07:00:00Z',
-	duration_seconds: 27_000,
-	stages: [
-		{
-			stage: 'deep',
-			start_time: '2026-08-16T23:30:00Z',
-			end_time: '2026-08-17T01:30:00Z',
-			duration_seconds: 7_200
-		},
-		{
-			stage: 'rem',
-			start_time: '2026-08-17T01:30:00Z',
-			end_time: '2026-08-17T05:00:00Z',
-			duration_seconds: 12_600
-		}
-	],
-	metadata: { data_origin: 'com.example.sleep' }
-};
+const selectedPackage = 'com.example.social';
+const date = '2026-08-17';
 
-const validPayload = {
-	timestamp: '2026-08-17T12:00:00Z',
-	app_version: '1.9.14',
-	sleep: [sleepRecord]
-};
+function payload(overrides: Record<string, unknown> = {}) {
+	return parseSleepUsagePayload({
+		timestamp: '2026-08-18T03:00:00.000Z',
+		app_version: '1.0.0',
+		source: 'usage_events',
+		dates: [date],
+		activity_intervals: [],
+		screen_interactive: [],
+		...overrides
+	});
+}
 
-describe('HC Webhook sleep payloads', () => {
-	it('accepts the documented session and stage shape', () => {
-		const payload = parseHealthConnectSleepPayload(validPayload);
-		expect(payload.sleep[0].duration_seconds).toBe(27_000);
-		expect(payload.sleep[0].stages[0].stage).toBe('deep');
+function calculate(input = payload(), trackedPackages = new Set([selectedPackage])) {
+	return calculateSleepAdherence({
+		date,
+		bedtime: DEFAULT_BEDTIME,
+		timeZone: 'UTC',
+		payload: input,
+		trackedPackages
+	});
+}
+
+describe('sleep usage payloads', () => {
+	it('validates unique dates and ordered activity intervals', () => {
+		expect(() => payload({ dates: [date, date] })).toThrow('must be unique');
+		expect(() =>
+			payload({
+				activity_intervals: [usage('2026-08-17T23:00:00Z', '2026-08-17T22:59:00Z')]
+			})
+		).toThrow('must end after');
 	});
 
-	it('accepts a payload without sleep records', () => {
-		const payload = parseHealthConnectSleepPayload({
-			timestamp: validPayload.timestamp,
-			app_version: validPayload.app_version
-		});
-		expect(payload.sleep).toEqual([]);
-	});
-
-	it('rejects invalid stage intervals and durations', () => {
-		expect(() =>
-			parseHealthConnectSleepPayload({
-				...validPayload,
-				sleep: [
-					{
-						...sleepRecord,
-						stages: [
-							{
-								stage: 'deep',
-								start_time: '2026-08-17T02:00:00Z',
-								end_time: '2026-08-17T01:00:00Z',
-								duration_seconds: 3_600
-							}
-						]
-					}
-				]
-			})
-		).toThrow('ends before it starts');
-
-		expect(() =>
-			parseHealthConnectSleepPayload({
-				...validPayload,
-				sleep: [
-					{
-						...sleepRecord,
-						stages: [{ ...sleepRecord.stages[0], duration_seconds: 60 }]
-					}
-				]
-			})
-		).toThrow('duration does not match');
-	});
-
-	it('caps sessions and stages', () => {
-		expect(() =>
-			parseHealthConnectSleepPayload({
-				...validPayload,
-				sleep: Array.from({ length: MAX_SLEEP_SESSIONS + 1 }, () => sleepRecord)
-			})
-		).toThrow();
-		expect(() =>
-			parseHealthConnectSleepPayload({
-				...validPayload,
-				sleep: [
-					{
-						...sleepRecord,
-						stages: Array.from({ length: MAX_SLEEP_STAGES + 1 }, () => sleepRecord.stages[0])
-					}
-				]
-			})
-		).toThrow();
+	it('uses 22:30 as the default and validates a local wall-clock bedtime', () => {
+		expect(DEFAULT_BEDTIME).toBe('22:30');
+		expect(parseBedtime('07:05')).toBe('07:05');
+		expect(() => parseBedtime('24:00')).toThrow('valid bedtime');
 	});
 });
 
-describe('sleep goals', () => {
-	it('uses seven hours by default and validates custom goals', () => {
-		expect(DEFAULT_SLEEP_GOAL_MINUTES).toBe(420);
-		expect(parseSleepGoal('480')).toBe(480);
-		expect(() => parseSleepGoal('59')).toThrow('between 60 and 1,440');
-		expect(() => parseSleepGoal('1441')).toThrow('between 60 and 1,440');
-		expect(() => parseSleepGoal('420.5')).toThrow('between 60 and 1,440');
-	});
-});
-
-describe('sleep date and session calculations', () => {
-	it('derives the session start from its end and duration', () => {
-		const record = parseHealthConnectSleepPayload(validPayload).sleep[0];
-		const session = calculateSleepSession(record, 'UTC');
-		expect(session.sessionStartAt.toISOString()).toBe('2026-08-16T23:30:00.000Z');
-		expect(session.sessionEndAt.toISOString()).toBe('2026-08-17T07:00:00.000Z');
-	});
-
-	it('subtracts awake stages and falls back to the full session without stages', () => {
-		const record = parseHealthConnectSleepPayload(validPayload).sleep[0];
-		const withAwakeStage = {
-			...record,
-			stages: [
-				...record.stages,
-				{
-					stage: '1',
-					start_time: '2026-08-17T05:00:00Z',
-					end_time: '2026-08-17T05:30:00Z',
-					duration_seconds: 1_800
-				}
-			]
-		};
-		expect(measuredSleepSeconds(withAwakeStage)).toBe(25_200);
-		expect(measuredSleepSeconds({ ...record, stages: [] })).toBe(27_000);
-	});
-
-	it('assigns a session to the local date on which it ends', () => {
-		const payload = parseHealthConnectSleepPayload({
-			...validPayload,
-			sleep: [{ ...sleepRecord, session_end_time: '2026-08-17T22:30:00Z', stages: [] }]
-		});
-		expect(calculateSleepSession(payload.sleep[0], 'Europe/Amsterdam').localDate).toBe(
-			'2026-08-18'
+describe('bedtime adherence', () => {
+	it('fails only above 300 cumulative selected-app foreground seconds', () => {
+		const atLimit = calculate(
+			payload({
+				activity_intervals: [usage('2026-08-17T22:30:00Z', '2026-08-17T22:35:00Z')]
+			})
 		);
+		const aboveLimit = calculate(
+			payload({
+				activity_intervals: [usage('2026-08-17T22:30:00Z', '2026-08-17T22:35:01Z')]
+			})
+		);
+
+		expect(LATE_USAGE_LIMIT_SECONDS).toBe(300);
+		expect(atLimit).toMatchObject({ lateUsageSeconds: 300, status: 'pass' });
+		expect(aboveLimit).toMatchObject({ lateUsageSeconds: 301, status: 'fail' });
+		expect(aboveLimit.violatingApps).toEqual([
+			expect.objectContaining({ package: selectedPackage, seconds: 301 })
+		]);
 	});
 
-	it('averages recorded nights in the seven-day history', () => {
-		expect(
-			averageSleepMinutes([
-				{ durationSeconds: 420 * 60 },
-				{ durationSeconds: 480 * 60 },
-				{ durationSeconds: 0 }
-			])
-		).toBe(450);
+	it('compares cumulative foreground milliseconds before rounding for display', () => {
+		const result = calculate(
+			payload({
+				activity_intervals: [
+					usage('2026-08-17T22:30:00.000Z', '2026-08-17T22:32:30.000Z'),
+					usage('2026-08-17T22:33:00.000Z', '2026-08-17T22:35:30.001Z')
+				]
+			})
+		);
+
+		expect(result).toMatchObject({ lateUsageSeconds: 301, status: 'fail' });
+	});
+
+	it('ignores unselected apps when deciding the result', () => {
+		const result = calculate(
+			payload({
+				activity_intervals: [
+					usage('2026-08-17T22:30:00Z', '2026-08-17T23:30:00Z', 'com.example.reader')
+				]
+			})
+		);
+
+		expect(result.status).toBe('pass');
+		expect(result.lateUsageSeconds).toBe(0);
+		expect(result.usedApps[0]).toMatchObject({ package: 'com.example.reader', seconds: 3_600 });
+	});
+
+	it('retains the latest screen-interactive event without using it to fail', () => {
+		const result = calculate(
+			payload({
+				screen_interactive: [
+					'2026-08-17T23:00:00.000Z',
+					'2026-08-18T01:45:00.000Z',
+					'2026-08-18T03:00:00.000Z'
+				]
+			})
+		);
+
+		expect(result.status).toBe('pass');
+		expect(result.latestScreenActivityAt?.toISOString()).toBe('2026-08-18T01:45:00.000Z');
+	});
+
+	it('stays pending until the window ends or while no apps are selected', () => {
+		const beforeWindowEnd = calculate(payload({ timestamp: '2026-08-18T02:29:59.000Z' }));
+		const noAllowlist = calculate(payload(), new Set());
+
+		expect(beforeWindowEnd.status).toBe('pending');
+		expect(noAllowlist.status).toBe('pending');
+	});
+
+	it('builds a four-hour instant window from the configured local bedtime', () => {
+		const window = bedtimeWindow(date, '22:30', 'Europe/Amsterdam');
+		expect(window.start.toISOString()).toBe('2026-08-17T20:30:00.000Z');
+		expect(window.end.getTime() - window.start.getTime()).toBe(4 * 60 * 60 * 1_000);
 	});
 });
+
+function usage(start_time: string, end_time: string, packageName = selectedPackage) {
+	return {
+		package: packageName,
+		name: 'Example app',
+		start_time,
+		end_time
+	};
+}

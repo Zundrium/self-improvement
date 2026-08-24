@@ -16,7 +16,22 @@ describe('native action feed', () => {
 			permissions: { steps: 'granted', sleep: 'denied', screenTime: 'granted' },
 			status
 		});
-		expect(actions.map(({ id }) => id)).toEqual(['permission:health-connect']);
+		expect(actions.map(({ id }) => id)).toEqual(['permission:usage-access']);
+	});
+
+	it('uses one Usage Access blocker for sleep and screen time', () => {
+		const actions = buildNativeActionFeedItems({
+			enabledTrackerIds: ['sleep', 'screen-time'],
+			healthAvailable: true,
+			permissions: { steps: 'granted', sleep: 'denied', screenTime: 'denied' },
+			status: createEmptyStatus()
+		});
+		expect(actions).toEqual([
+			expect.objectContaining({
+				id: 'permission:usage-access',
+				trackerIds: ['sleep', 'screen-time']
+			})
+		]);
 	});
 
 	it('groups failed granted trackers into one retry action', () => {

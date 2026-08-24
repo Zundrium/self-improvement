@@ -12,7 +12,7 @@ export const trackers = [
 	{
 		id: 'sleep',
 		label: 'Sleep',
-		description: 'Sleep duration, averages, and a daily Health Connect goal.',
+		description: 'Bedtime adherence from selected Android app activity.',
 		href: '/sleep',
 		settingsHref: '/sleep/settings',
 		colors: { primary: '#4338ca', secondary: '#7e22ce' },

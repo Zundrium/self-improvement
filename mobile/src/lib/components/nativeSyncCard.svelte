@@ -30,11 +30,16 @@
 	let message = $state('');
 	let failed = $state(false);
 	const visibleTrackers = $derived(focusedTracker ? [focusedTracker] : TRACKER_IDS);
-	const usesHealthConnect = $derived(focusedTracker !== 'screenTime');
-	const usesUsageAccess = $derived(!focusedTracker || focusedTracker === 'screenTime');
-	const screenTimeNeedsAccess = $derived(
-		usesUsageAccess && loaded && status.trackers.screenTime.permission !== 'granted'
+	const usesHealthConnect = $derived(!focusedTracker || focusedTracker === 'steps');
+	const usesUsageAccess = $derived(
+		!focusedTracker || focusedTracker === 'sleep' || focusedTracker === 'screenTime'
 	);
+	const usagePermission = $derived(
+		focusedTracker === 'sleep'
+			? status.trackers.sleep.permission
+			: status.trackers.screenTime.permission
+	);
+	const usageNeedsAccess = $derived(usesUsageAccess && loaded && usagePermission !== 'granted');
 
 	onMount(() => {
 		if (!isNativeAndroid()) return;
@@ -158,12 +163,12 @@
 				Health Connect and Usage Access are available in the Android app.
 			</p>
 		{:else}
-			{#if screenTimeNeedsAccess}
+			{#if usageNeedsAccess}
 				<Alert variant="destructive">
-					<AlertTitle>Screen time is not being processed</AlertTitle>
+					<AlertTitle>Android app activity is not being processed</AlertTitle>
 					<AlertDescription>
-						Android Usage Access is off. If Android calls it a restricted setting, open App
-						settings, tap ⋮, choose Allow restricted settings, then return and open Usage access.
+						Usage Access is off. If Android calls it a restricted setting, open App settings, tap ⋮,
+						choose Allow restricted settings, then return and open Usage access.
 					</AlertDescription>
 				</Alert>
 			{/if}
@@ -211,7 +216,7 @@
 					</Button>
 				{/if}
 				{#if usesUsageAccess}
-					{#if screenTimeNeedsAccess}
+					{#if usageNeedsAccess}
 						<Button type="button" variant="ghost" disabled={busy} onclick={openAppSettings}>
 							<Settings class="size-4" /> App settings
 						</Button>

@@ -11,17 +11,15 @@ export type StepsPayload = {
 export type SleepPayload = {
 	timestamp: string;
 	app_version: string;
-	sleep: Array<{
-		session_end_time: string;
-		duration_seconds: number;
-		stages: Array<{
-			stage: string;
-			start_time: string;
-			end_time: string;
-			duration_seconds: number;
-		}>;
-		metadata?: { data_origin: string };
+	source: 'usage_events';
+	dates: string[];
+	activity_intervals: Array<{
+		package: string;
+		name: string;
+		start_time: string;
+		end_time: string;
 	}>;
+	screen_interactive: string[];
 };
 
 export type ScreenTimePayload = {

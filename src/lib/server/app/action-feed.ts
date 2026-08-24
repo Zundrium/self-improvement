@@ -18,7 +18,14 @@ type ActionProvider = (summary: DaySummary, context: ActionContext) => ActionFee
 
 const actionProviders: Partial<Record<AppTrackerId, ActionProvider>> = {
 	steps: (summary) => getStepActions(summary.stepsHaveMeasurements),
-	sleep: (summary) => getSleepActions(summary.sleepHasMeasurements),
+	sleep: (summary) =>
+		getSleepActions({
+			date: summary.date,
+			status: summary.sleepStatus,
+			bedtime: summary.sleepBedtime,
+			lateUsageSeconds: summary.sleepLateUsageSeconds,
+			setupRequired: summary.sleepSetupRequired
+		}),
 	'screen-time': (summary) =>
 		getScreenTimeActions({
 			date: summary.date,

@@ -34,10 +34,7 @@
 
 <svelte:head>
 	<title>Android data help · Self Improvement</title>
-	<meta
-		name="description"
-		content="Set up Health Connect and Android Usage Access tracker sources."
-	/>
+	<meta name="description" content="Set up Android tracker data access." />
 </svelte:head>
 
 <main class="app-gutter mx-auto w-full max-w-3xl flex-1 space-y-6 py-6 pb-10 sm:py-10">
@@ -87,26 +84,25 @@
 	<Card>
 		<CardHeader>
 			<CardTitle>Know the source before checking the connection</CardTitle>
-			<CardDescription>These trackers use two different Android systems.</CardDescription>
+			<CardDescription>Steps and app activity come from two Android systems.</CardDescription>
 		</CardHeader>
 		<CardContent class="divide-y divide-(--text)/8">
 			<div class="space-y-3 pb-5">
-				<h2 class="font-medium">Steps and sleep</h2>
+				<h2 class="font-medium">Steps</h2>
 				<p class="text-sm leading-6 text-(--text)/64">
-					Health Connect stores and shares measurements. A phone, wearable, or health app must
-					create them first.
+					Health Connect stores step measurements created by a phone, wearable, or health app.
 				</p>
 				<DataFlow
 					items={['Measuring device', 'Health app', 'Health Connect', 'Self Improvement']}
 				/>
 			</div>
 			<div class="space-y-3 pt-5">
-				<h2 class="font-medium">Screen time</h2>
+				<h2 class="font-medium">Sleep and screen time</h2>
 				<p class="text-sm leading-6 text-(--text)/64">
-					Self Improvement reads Android’s usage history directly. Digital Wellbeing is another
-					reader, not the provider for this tracker.
+					Self Improvement reads Android app activity directly. Sleep evaluates selected apps in the
+					four hours after bedtime.
 				</p>
-				<DataFlow items={['Android app usage', 'Usage Access', 'Self Improvement']} />
+				<DataFlow items={['Android app activity', 'Usage Access', 'Self Improvement']} />
 			</div>
 		</CardContent>
 	</Card>

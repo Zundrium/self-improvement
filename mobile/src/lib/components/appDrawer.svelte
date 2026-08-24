@@ -6,7 +6,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { staggerChildren } from '$lib/motion/gsap';
 	import { formatScreenTime } from '../../routes/screen-time/screen-time';
-	import { formatSleepMinutes } from '../../routes/sleep/sleep';
+	import { formatBedtime, formatUsageSeconds } from '../../routes/sleep/sleep';
 	import TrackerTile from './trackerTile.svelte';
 
 	type TrackerState = 'complete' | 'attention' | 'incomplete';
@@ -19,7 +19,16 @@
 
 	let { trackers, daySummary, onSelect }: Props = $props();
 	const stepsDone = $derived(daySummary.steps >= daySummary.stepGoal);
-	const sleepDone = $derived(daySummary.sleepMinutes >= daySummary.sleepGoalMinutes);
+	const sleepDone = $derived(daySummary.sleepStatus === 'pass');
+	const sleepValue = $derived(
+		daySummary.sleepSetupRequired
+			? 'Choose apps'
+			: daySummary.sleepStatus === 'fail'
+				? `${formatUsageSeconds(daySummary.sleepLateUsageSeconds)} late`
+				: daySummary.sleepStatus === 'pass'
+					? 'On time'
+					: `${formatBedtime(daySummary.sleepBedtime)} bedtime`
+	);
 	const caloriesDone = $derived(
 		daySummary.nutritionFasting ||
 			(daySummary.calorieGoal !== null &&
@@ -28,7 +37,12 @@
 	);
 	const trackerDetails = $derived({
 		steps: trackerDetail(`${daySummary.steps.toLocaleString()} steps`, stepsDone, '/steps'),
-		sleep: trackerDetail(formatSleepMinutes(daySummary.sleepMinutes), sleepDone, '/sleep'),
+		sleep: trackerDetail(
+			sleepValue,
+			sleepDone,
+			'/sleep',
+			daySummary.sleepSetupRequired || daySummary.sleepStatus === 'fail'
+		),
 		'screen-time': trackerDetail(
 			daySummary.screenTimeRecorded ? formatScreenTime(daySummary.screenTimeMinutes) : 'Not synced',
 			daySummary.screenTimeRecorded &&

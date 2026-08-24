@@ -65,13 +65,13 @@ jobs:
 
           android_namespace = 'http://schemas.android.com/apk/res/android'
           allowed_health_reads = {
-              'android.permission.health.READ_SLEEP',
               'android.permission.health.READ_STEPS',
           }
           required_permissions = allowed_health_reads | {
               'android.permission.INTERNET',
               'android.permission.CAMERA',
               'android.permission.PACKAGE_USAGE_STATS',
+              'android.permission.POST_NOTIFICATIONS',
               'android.permission.REQUEST_INSTALL_PACKAGES',
           }
           root = ElementTree.parse(sys.argv[1]).getroot()
@@ -83,7 +83,11 @@ jobs:
           forbidden_permissions = sorted(
               permission
               for permission in permissions
-              if permission == 'android.permission.QUERY_ALL_PACKAGES'
+              if permission in {
+                  'android.permission.QUERY_ALL_PACKAGES',
+                  'android.permission.SCHEDULE_EXACT_ALARM',
+                  'android.permission.USE_EXACT_ALARM',
+              }
               or permission.startswith('android.permission.health.WRITE_')
               or (
                   permission.startswith('android.permission.health.READ_')

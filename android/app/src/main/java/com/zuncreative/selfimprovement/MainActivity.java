@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(AndroidAppIdentityPlugin.class);
         registerPlugin(AndroidSettingsPlugin.class);
+        registerPlugin(AndroidUsageEventsPlugin.class);
         super.onCreate(savedInstanceState);
         appUpdater = new AppUpdater(this);
         appUpdater.checkForUpdate();

@@ -21,15 +21,12 @@ import { getProfile } from '../../../routes/(trackers)/nutrition/server/profiles
 import {
 	getDailyScreenTime,
 	getScreenTimeConnection,
+	getTrackedScreenTimePackages,
 	hasScreenTimeMeasurements
 } from '../../../routes/(trackers)/screen-time/server/screen-time';
 import { DEFAULT_SCREEN_TIME_LIMIT_MINUTES } from '../../../routes/(trackers)/screen-time/screen-time';
-import {
-	getDailySleep,
-	getSleepConnection,
-	hasSleepMeasurements
-} from '../../../routes/(trackers)/sleep/server/sleep';
-import { DEFAULT_SLEEP_GOAL_MINUTES } from '../../../routes/(trackers)/sleep/sleep';
+import { getSleepAdherence, getSleepSettings } from '../../../routes/(trackers)/sleep/server/sleep';
+import { DEFAULT_BEDTIME } from '../../../routes/(trackers)/sleep/sleep';
 import {
 	getDailySteps,
 	getStepConnection,
@@ -44,17 +41,16 @@ export async function loadDaySummary(
 	requestedTimeZone?: string,
 	now = new Date()
 ) {
-	const [stepConnection, sleepConnection, screenTimeConnection] = await Promise.all([
+	const [stepConnection, sleepSettings, screenTimeConnection] = await Promise.all([
 		getStepConnection(db, userId),
-		getSleepConnection(db, userId),
+		getSleepSettings(db, userId),
 		getScreenTimeConnection(db, userId)
 	]);
 	const timeZone = preferredTimeZone(requestedTimeZone, [
 		stepConnection?.companionTimeZone,
-		sleepConnection?.companionTimeZone,
+		sleepSettings?.timeZone,
 		screenTimeConnection?.companionTimeZone,
 		stepConnection?.timeZone,
-		sleepConnection?.timeZone,
 		screenTimeConnection?.timeZone
 	]);
 	const today = localDateForInstant(now, timeZone);
@@ -62,7 +58,7 @@ export async function loadDaySummary(
 	if (!validDate(date) || date > today) error(400, 'Choose today or an earlier valid date.');
 	const summaries = await Promise.all([
 		loadSteps(db, userId, date),
-		loadSleep(db, userId, date),
+		loadSleep(db, userId, date, sleepSettings?.bedtime ?? DEFAULT_BEDTIME),
 		loadScreenTime(db, userId, date),
 		loadFitness(db, userId, date),
 		loadNutrition(db, userId, date),
@@ -71,7 +67,6 @@ export async function loadDaySummary(
 		loadHappinessRating(db, userId, date),
 		loadPeriodFlow(db, userId, date),
 		hasStepMeasurements(db, userId),
-		hasSleepMeasurements(db, userId),
 		hasScreenTimeMeasurements(db, userId)
 	]);
 	return {
@@ -81,12 +76,10 @@ export async function loadDaySummary(
 		steps: summaries[0],
 		stepGoal: stepConnection?.dailyGoal ?? DEFAULT_STEP_GOAL,
 		stepsHaveMeasurements: summaries[9],
-		sleepMinutes: summaries[1],
-		sleepGoalMinutes: sleepConnection?.dailyGoalMinutes ?? DEFAULT_SLEEP_GOAL_MINUTES,
-		sleepHasMeasurements: summaries[10],
+		...summaries[1],
 		...summaries[2],
 		screenTimeLimitMinutes: DEFAULT_SCREEN_TIME_LIMIT_MINUTES,
-		screenTimeHasMeasurements: summaries[11],
+		screenTimeHasMeasurements: summaries[10],
 		...summaries[3],
 		...summaries[4],
 		meditationDone: summaries[5],
@@ -100,8 +93,17 @@ async function loadSteps(db: Database, userId: string, date: string) {
 	return (await getDailySteps(db, userId, date, date))[0]?.count ?? 0;
 }
 
-async function loadSleep(db: Database, userId: string, date: string) {
-	return Math.round(((await getDailySleep(db, userId, date, date))[0]?.durationSeconds ?? 0) / 60);
+async function loadSleep(db: Database, userId: string, date: string, bedtime: string) {
+	const [summary, trackedPackages] = await Promise.all([
+		getSleepAdherence(db, userId, date, date),
+		getTrackedScreenTimePackages(db, userId)
+	]);
+	return {
+		sleepStatus: summary[0]?.status ?? ('pending' as const),
+		sleepBedtime: summary[0]?.configuredBedtime ?? bedtime,
+		sleepLateUsageSeconds: summary[0]?.lateUsageSeconds ?? 0,
+		sleepSetupRequired: trackedPackages.length === 0
+	};
 }
 
 async function loadScreenTime(db: Database, userId: string, date: string) {

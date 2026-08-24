@@ -30,6 +30,7 @@
 	import { ANDROID_SETUP_PATH } from '$native/android-setup';
 	import { getLaunchUrl, listenForAppUrls, listenForResume } from '$native/app';
 	import { isNativeAndroid } from '$native/platform';
+	import { rescheduleBedtimeReminderFromApi } from './sleep/reminders';
 	import type { LayoutProps } from './$types';
 
 	type DatedPageData = {
@@ -80,11 +81,16 @@
 		dismissLoadingScreen();
 		audioVolumeState.hydrate();
 		if (!isNativeAndroid()) return;
-		if (data.user) void syncAndroidData();
+		if (data.user) {
+			void syncAndroidData();
+			void rescheduleBedtimeReminder();
+		}
 		let removeResume = () => {};
 		let removeUrls = () => {};
 		void listenForResume(async () => {
-			if (data.user) await syncAndroidData();
+			if (!data.user) return;
+			await syncAndroidData();
+			await rescheduleBedtimeReminder();
 		}).then((remove) => (removeResume = remove));
 		void getLaunchUrl().then((url) => url && openAppUrl(url));
 		void listenForAppUrls(openAppUrl).then((remove) => (removeUrls = remove));
@@ -101,6 +107,14 @@
 			showSyncStatus(failedTrackerIds(await mobileRepository.loadStatus()));
 		} catch {
 			showSyncFailure('Android data could not be synchronized.');
+		}
+	}
+
+	async function rescheduleBedtimeReminder() {
+		try {
+			await rescheduleBedtimeReminderFromApi();
+		} catch {
+			return;
 		}
 	}
 

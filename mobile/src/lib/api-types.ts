@@ -73,9 +73,10 @@ export type DaySummaryData = {
 	steps: number;
 	stepGoal: number;
 	stepsHaveMeasurements: boolean;
-	sleepMinutes: number;
-	sleepGoalMinutes: number;
-	sleepHasMeasurements: boolean;
+	sleepStatus: SleepAdherenceStatus;
+	sleepBedtime: string;
+	sleepLateUsageSeconds: number;
+	sleepSetupRequired: boolean;
 	screenTimeMinutes: number;
 	screenTimeLimitMinutes: number;
 	screenTimeRecorded: boolean;
@@ -95,7 +96,7 @@ export type DaySummaryData = {
 export type ActionPriority = 'blocking' | 'warning' | 'activity';
 export type ActionFeedCommand =
 	| { type: 'navigate'; href: string }
-	| { type: 'request-health-access'; trackerIds: Array<'steps' | 'sleep'> }
+	| { type: 'request-health-access'; trackerIds: Array<'steps'> }
 	| { type: 'open-usage-access' }
 	| {
 			type: 'sync-android-data';
@@ -123,13 +124,28 @@ export type StepsData = DatedData & {
 	days: Array<{ date: string; count: number }>;
 };
 
+export type SleepAdherenceStatus = 'pending' | 'pass' | 'fail';
+export type SleepSettingsData = { bedtime: string; remindersEnabled: boolean };
+export type SleepUsageApp = { package: string; name: string; seconds: number };
+export type SleepAdherenceSummary = {
+	localDate: string;
+	configuredBedtime: string;
+	windowStartAt: string | null;
+	windowEndAt: string | null;
+	lateUsageSeconds: number;
+	latestScreenActivityAt: string | null;
+	usedApps: SleepUsageApp[];
+	violatingApps: SleepUsageApp[];
+	status: SleepAdherenceStatus;
+};
 export type SleepData = DatedData & {
-	connection: { dailyGoalMinutes: number; lastReceivedAt: string | null } | null;
+	settings: SleepSettingsData;
+	lastReceivedAt: string | null;
 	isSynced: boolean;
 	hasData: boolean;
-	durationSeconds: number;
-	days: Array<{ date: string; durationSeconds: number; sessionCount: number }>;
-	averageMinutes: number;
+	setupRequired: boolean;
+	summary: SleepAdherenceSummary;
+	days: SleepAdherenceSummary[];
 };
 
 export type ScreenTimeData = DatedData & {
@@ -237,7 +253,6 @@ export type ProfileData = {
 	profileUser: AppUser;
 	nutritionProfile: NutritionProfile | null;
 	trackerPreferences: Array<AppTracker & { enabled: boolean }>;
-	sleepGoalMinutes: number;
 	estimatedTdee: number | null;
 	rewards: Reward[];
 };

@@ -9,7 +9,7 @@
 	let { tracker, isSynced }: Props = $props();
 	const labels: Record<NativeTracker, string> = {
 		steps: 'step',
-		sleep: 'sleep',
+		sleep: 'bedtime activity',
 		'screen-time': 'screen time'
 	};
 	const label = $derived(labels[tracker]);
@@ -20,7 +20,7 @@
 	<AlertTitle>No recent {label} data found</AlertTitle>
 	<AlertDescription>
 		{#if isSynced}
-			Android completed an upload, but its data provider returned no usable measurements.
+			Android completed an upload, but this tracker has no usable summary yet.
 		{:else}
 			This tracker has not completed its first Android upload.
 		{/if}

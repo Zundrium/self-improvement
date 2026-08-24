@@ -36,7 +36,7 @@ export function buildNativeActionFeedItems(state: NativeActionState) {
 	const items: ActionFeedItem[] = [];
 	const blocked = new Set<TrackerId>();
 	addHealthAccessAction(items, blocked, enabled, state);
-	addUsageAccessAction(items, blocked, enabled, state.permissions.screenTime);
+	addUsageAccessAction(items, blocked, enabled, state.permissions.sleep);
 	addSyncAction(items, blocked, enabled, state.status);
 	return items;
 }
@@ -47,13 +47,9 @@ function addHealthAccessAction(
 	enabled: TrackerId[],
 	state: NativeActionState
 ) {
-	const trackers = enabled.filter((id) => id !== 'screenTime');
-	const missing = trackers.filter((id) => state.permissions[id] !== 'granted');
-	if (!missing.length) return;
-	missing.forEach((id) => blocked.add(id));
-	items.push(
-		state.healthAvailable ? healthPermissionAction(missing) : healthUnavailableAction(missing)
-	);
+	if (!enabled.includes('steps') || state.permissions.steps === 'granted') return;
+	blocked.add('steps');
+	items.push(state.healthAvailable ? healthPermissionAction() : healthUnavailableAction());
 }
 
 function addUsageAccessAction(
@@ -62,9 +58,10 @@ function addUsageAccessAction(
 	enabled: TrackerId[],
 	permission: PermissionState
 ) {
-	if (!enabled.includes('screenTime') || permission === 'granted') return;
-	blocked.add('screenTime');
-	items.push(usagePermissionAction());
+	const trackers = enabled.filter((id) => id === 'sleep' || id === 'screenTime');
+	if (!trackers.length || permission === 'granted') return;
+	trackers.forEach((id) => blocked.add(id));
+	items.push(usagePermissionAction(trackers));
 }
 
 function addSyncAction(
@@ -79,21 +76,21 @@ function addSyncAction(
 	if (failed.length) items.push(syncAction(failed));
 }
 
-function healthPermissionAction(trackers: Array<'steps' | 'sleep'>): ActionFeedItem {
+function healthPermissionAction(): ActionFeedItem {
 	return {
 		id: 'permission:health-connect',
-		trackerIds: trackers,
+		trackerIds: ['steps'],
 		priority: 'blocking',
 		icon: 'permission',
 		title: 'Allow Health Connect access',
-		action: { type: 'request-health-access', trackerIds: trackers }
+		action: { type: 'request-health-access', trackerIds: ['steps'] }
 	};
 }
 
-function healthUnavailableAction(trackers: Array<'steps' | 'sleep'>): ActionFeedItem {
+function healthUnavailableAction(): ActionFeedItem {
 	return {
 		id: 'permission:health-connect-unavailable',
-		trackerIds: trackers,
+		trackerIds: ['steps'],
 		priority: 'blocking',
 		icon: 'permission',
 		title: 'Health Connect is unavailable',
@@ -101,13 +98,16 @@ function healthUnavailableAction(trackers: Array<'steps' | 'sleep'>): ActionFeed
 	};
 }
 
-function usagePermissionAction(): ActionFeedItem {
+function usagePermissionAction(trackers: TrackerId[]): ActionFeedItem {
 	return {
 		id: 'permission:usage-access',
-		trackerIds: ['screen-time'],
+		trackerIds: trackers.map(toAppTrackerId),
 		priority: 'blocking',
 		icon: 'permission',
-		title: 'Allow screen-time access',
+		title:
+			trackers.length > 1
+				? 'Allow bedtime and screen-time access'
+				: `Allow ${trackerNames(trackers)} access`,
 		action: { type: 'open-usage-access' }
 	};
 }

@@ -105,7 +105,7 @@ npm run mobile:android
 
 Production sessions are returned by Better Auth through the `set-auth-token` header and stored with Android Keystore-backed secure storage. Authenticated app and native-ingestion requests send that signed session as a bearer token. QR pairing and separate tracker credentials are not part of the current app.
 
-The app requests camera access for meal capture, read-only Steps and Sleep access from Health Connect, and Usage Access for screen time. It uploads seven local days on demand and retries stale trackers when the app returns to the foreground. Trackers without recent measurements link to a shared Android data help page with permission, source-data, and synchronization checks. Profile → Android data shows permissions, individual sync status, failure details, settings links, and manual controls.
+The app requests camera access for meal capture, read-only Steps access from Health Connect, and Usage Access for screen time and bedtime adherence. It uploads aggregate tracker history and the latest two days of detailed bedtime events on demand, then retries stale trackers when the app returns to the foreground. Sleep passes when selected apps stay within five cumulative foreground minutes during the four hours after bedtime. Trackers without recent data link to a shared Android data help page with permission, source-data, and synchronization checks. Profile → Android data shows permissions, individual sync status, failure details, settings links, and manual controls.
 
 Password-reset email links pass through `/api/mobile/reset-password` and open the app through the `selfimprovement://reset-password` deep link.
 

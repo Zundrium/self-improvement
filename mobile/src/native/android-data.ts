@@ -13,19 +13,19 @@ export const androidSyncCoordinator = new SyncCoordinator(
 );
 
 export async function checkAndroidPermissions() {
-	const { available } = await androidHealth.isAvailable();
-	const unavailable = Promise.resolve({ state: 'unavailable' as const });
-	const [steps, sleep, screenTime] = await Promise.all([
-		available ? androidHealth.checkPermission('steps') : unavailable,
-		available ? androidHealth.checkPermission('sleep') : unavailable,
+	const [{ available }, usage] = await Promise.all([
+		androidHealth.isAvailable(),
 		androidUsage.checkPermission()
 	]);
+	const steps = available
+		? await androidHealth.checkPermission()
+		: ({ state: 'unavailable' } as const);
 	return {
 		healthAvailable: available,
 		permissions: {
 			steps: steps.state,
-			sleep: sleep.state,
-			screenTime: screenTime.state
+			sleep: usage.state,
+			screenTime: usage.state
 		} satisfies Record<'steps' | 'sleep' | 'screenTime', PermissionState>
 	};
 }

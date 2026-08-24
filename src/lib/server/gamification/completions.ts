@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, lte } from 'drizzle-orm';
 import {
 	breathingExercise,
 	fitnessWorkoutProgress,
@@ -8,22 +8,21 @@ import {
 	nutritionEntry,
 	nutritionFastingDay,
 	screenTimeConnection,
-	sleepConnection,
-	sleepSession,
+	sleepDailyAdherence,
+	sleepSettings,
 	stepConnection,
 	stepDailyTotal
 } from '$lib/server/db/schema';
 import type { Database } from '$lib/server/db';
 import { localDateForInstant } from '$lib/trackers/dates';
 import { getDailyScreenTime } from '../../../routes/(trackers)/screen-time/server/screen-time';
-import { DEFAULT_SLEEP_GOAL_MINUTES } from '../../../routes/(trackers)/sleep/sleep';
 import { DEFAULT_STEP_GOAL } from '../../../routes/(trackers)/steps/steps';
 import { emptyCompletionDates, SCREEN_TIME_LIMIT_MINUTES, type CompletionDates } from './rules';
 
 export async function gamificationToday(db: Database, userId: string) {
 	const [steps, sleep, screenTime] = await Promise.all([
 		loadStepConnection(db, userId),
-		loadSleepConnection(db, userId),
+		loadSleepSettings(db, userId),
 		loadScreenTimeConnection(db, userId)
 	]);
 	const timeZone = preferredTimeZone(steps, sleep, screenTime);
@@ -36,13 +35,10 @@ export async function loadCompletionDates(
 	startDate: string,
 	today: string
 ): Promise<CompletionDates> {
-	const [stepGoal, sleepGoal] = await Promise.all([
-		loadStepGoal(db, userId),
-		loadSleepGoal(db, userId)
-	]);
+	const stepGoal = await loadStepGoal(db, userId);
 	const results = await Promise.all([
 		loadSteps(db, userId, startDate, today, stepGoal),
-		loadSleep(db, userId, startDate, today, sleepGoal),
+		loadSleep(db, userId, startDate, today),
 		loadScreenTime(db, userId, startDate, today),
 		loadFitness(db, userId, startDate, today),
 		loadNutrition(db, userId, startDate, today),
@@ -87,28 +83,19 @@ async function loadSteps(
 	return rows.map(({ date }) => date);
 }
 
-async function loadSleep(
-	db: Database,
-	userId: string,
-	startDate: string,
-	today: string,
-	goalMinutes: number
-) {
+async function loadSleep(db: Database, userId: string, startDate: string, today: string) {
 	const rows = await db
-		.select({
-			date: sleepSession.localDate,
-			seconds: sql<number>`sum(${sleepSession.sleepDurationSeconds})`
-		})
-		.from(sleepSession)
+		.select({ date: sleepDailyAdherence.localDate })
+		.from(sleepDailyAdherence)
 		.where(
 			and(
-				eq(sleepSession.userId, userId),
-				gte(sleepSession.localDate, startDate),
-				lte(sleepSession.localDate, today)
+				eq(sleepDailyAdherence.userId, userId),
+				gte(sleepDailyAdherence.localDate, startDate),
+				lte(sleepDailyAdherence.localDate, today),
+				eq(sleepDailyAdherence.status, 'pass')
 			)
-		)
-		.groupBy(sleepSession.localDate);
-	return rows.filter(({ seconds }) => Number(seconds) >= goalMinutes * 60).map(({ date }) => date);
+		);
+	return rows.map(({ date }) => date);
 }
 
 async function loadScreenTime(db: Database, userId: string, startDate: string, today: string) {
@@ -221,16 +208,12 @@ async function loadStepGoal(db: Database, userId: string) {
 	return (await loadStepConnection(db, userId))?.dailyGoal ?? DEFAULT_STEP_GOAL;
 }
 
-async function loadSleepGoal(db: Database, userId: string) {
-	return (await loadSleepConnection(db, userId))?.dailyGoalMinutes ?? DEFAULT_SLEEP_GOAL_MINUTES;
-}
-
 async function loadStepConnection(db: Database, userId: string) {
 	return db.query.stepConnection.findFirst({ where: eq(stepConnection.userId, userId) });
 }
 
-async function loadSleepConnection(db: Database, userId: string) {
-	return db.query.sleepConnection.findFirst({ where: eq(sleepConnection.userId, userId) });
+async function loadSleepSettings(db: Database, userId: string) {
+	return db.query.sleepSettings.findFirst({ where: eq(sleepSettings.userId, userId) });
 }
 
 async function loadScreenTimeConnection(db: Database, userId: string) {
@@ -241,15 +224,14 @@ async function loadScreenTimeConnection(db: Database, userId: string) {
 
 function preferredTimeZone(
 	steps: Awaited<ReturnType<typeof loadStepConnection>>,
-	sleep: Awaited<ReturnType<typeof loadSleepConnection>>,
+	sleep: Awaited<ReturnType<typeof loadSleepSettings>>,
 	screenTime: Awaited<ReturnType<typeof loadScreenTimeConnection>>
 ) {
 	return (
 		steps?.companionTimeZone ??
-		sleep?.companionTimeZone ??
+		sleep?.timeZone ??
 		screenTime?.companionTimeZone ??
 		steps?.timeZone ??
-		sleep?.timeZone ??
 		screenTime?.timeZone ??
 		'UTC'
 	);

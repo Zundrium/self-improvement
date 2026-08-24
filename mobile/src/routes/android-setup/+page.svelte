@@ -103,7 +103,7 @@
 
 	function trackerDescription(tracker: TrackerId) {
 		if (tracker === 'steps') return 'Daily step totals from Health Connect';
-		if (tracker === 'sleep') return 'Sleep sessions from Health Connect';
+		if (tracker === 'sleep') return 'Bedtime activity from Android Usage Access';
 		return 'App usage from Android Usage Access';
 	}
 
@@ -133,7 +133,7 @@
 			</span>
 			<h1 class="text-3xl font-medium tracking-[-0.05em]">Connect Android data</h1>
 			<p class="mt-2 leading-6 text-(--text)/56">
-				Complete these two steps before opening the app.
+				Allow Health Connect for steps and Usage Access for bedtime and screen time.
 			</p>
 		</header>
 

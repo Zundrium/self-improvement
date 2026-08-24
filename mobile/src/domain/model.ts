@@ -27,7 +27,7 @@ export type TrackerStatus = {
 };
 
 export type MobileSyncStatus = {
-	version: 1;
+	version: 2;
 	trackers: Record<TrackerId, TrackerStatus>;
 };
 

@@ -4,6 +4,8 @@
 	import TrackerSection from '$lib/components/trackerSection.svelte';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import { toast } from 'svelte-sonner';
+	import { androidSyncCoordinator } from '$native/android-data';
+	import { isNativeAndroid } from '$native/platform';
 	import ScreenTimeAppItem from './screenTimeAppItem.svelte';
 
 	type App = { package: string; name: string; icon?: string };
@@ -22,6 +24,7 @@
 		pendingPackage = app.package;
 		try {
 			await saveTrackedChoice(app.package, tracked);
+			if (isNativeAndroid()) await androidSyncCoordinator.sync(['sleep']);
 			await invalidateAll();
 		} catch (cause) {
 			toast.error(cause instanceof Error ? cause.message : 'Could not update tracked apps.');

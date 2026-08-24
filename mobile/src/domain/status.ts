@@ -16,7 +16,7 @@ const trackerStatusSchema = z.object({
 });
 
 const mobileSyncStatusSchema = z.object({
-	version: z.literal(1),
+	version: z.literal(2),
 	trackers: z.object({
 		steps: trackerStatusSchema,
 		sleep: trackerStatusSchema,
@@ -26,7 +26,7 @@ const mobileSyncStatusSchema = z.object({
 
 export function createEmptyStatus(): MobileSyncStatus {
 	return {
-		version: 1,
+		version: 2,
 		trackers: {
 			steps: emptyTracker(),
 			sleep: emptyTracker(),
@@ -66,6 +66,7 @@ function trackerIsStale(
 ) {
 	const trackerStatus = status.trackers[tracker];
 	if (trackerStatus.outcome === 'failed') return trackerStatus.failure?.retryable ?? true;
+	if (tracker === 'sleep') return true;
 	if (!trackerStatus.lastSuccessAt) return true;
 	return now.getTime() - Date.parse(trackerStatus.lastSuccessAt) >= staleAfterMs;
 }

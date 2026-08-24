@@ -3,13 +3,13 @@ import type { AppCredentials, TrackerId } from './model';
 
 const ENDPOINTS: Record<TrackerId, string> = {
 	steps: 'steps/api/health-connect',
-	sleep: 'sleep/api/health-connect',
+	sleep: 'sleep/api/usage',
 	screenTime: 'screen-time/api/usage'
 };
 
 const BODY_LIMITS: Record<TrackerId, number> = {
 	steps: 128 * 1024,
-	sleep: 128 * 1024,
+	sleep: 1024 * 1024,
 	screenTime: 256 * 1024
 };
 

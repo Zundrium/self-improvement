@@ -1,126 +1,87 @@
 import type { LocalDayRange } from './day-ranges';
 import { validationFailure } from './errors';
-import {
-	intervalSeconds,
-	normalizedInstant,
-	payloadAppVersion,
-	payloadTimestamp
-} from './payload-validation';
+import { APP_PACKAGE } from './screen-time';
+import { normalizedInstant, payloadAppVersion, payloadTimestamp } from './payload-validation';
 import type { SleepPayload } from './payloads';
 
-const MAX_SESSION_SECONDS = 36 * 60 * 60;
-const MAX_SESSIONS = 100;
-const MAX_STAGES = 200;
+const MAX_INTERVALS = 5_000;
+const MAX_SCREEN_EVENTS = 2_000;
+const MAX_PACKAGE_LENGTH = 255;
+const MAX_LABEL_LENGTH = 120;
 
-export type NativeSleepStage = {
-	startDate: string;
-	endDate: string;
-	stage: string;
-	durationMinutes?: number;
+export type NativeActivityInterval = {
+	packageName: string;
+	startTime: number;
+	endTime: number;
 };
 
-export type NativeSleepSample = {
-	startDate: string;
-	endDate: string;
-	sourceName?: string;
-	sourceId?: string;
-	stages?: NativeSleepStage[];
-	hasStageData?: boolean;
+export type NativeUsageEvents = {
+	activityIntervals: NativeActivityInterval[];
+	screenInteractive: number[];
+	appLabels?: Record<string, string>;
 };
 
 export function buildSleepPayload(
-	samples: NativeSleepSample[],
+	events: NativeUsageEvents,
 	days: LocalDayRange[],
 	timestamp: Date,
 	appVersion: string
 ): SleepPayload {
-	const sessions = uniqueSessions(samplesInRange(samples, days));
-	if (sessions.length > MAX_SESSIONS) throw validationFailure('Too many sleep sessions to sync.');
+	validateDays(days);
+	if (events.activityIntervals.length > MAX_INTERVALS) {
+		throw validationFailure('Too many app activity intervals to sync.');
+	}
+	if (events.screenInteractive.length > MAX_SCREEN_EVENTS) {
+		throw validationFailure('Too many screen activity events to sync.');
+	}
 	return {
 		timestamp: payloadTimestamp(timestamp),
 		app_version: payloadAppVersion(appVersion),
-		sleep: sessions.map(toSleepSession)
+		source: 'usage_events',
+		dates: days.map(({ date }) => date),
+		activity_intervals: events.activityIntervals.flatMap((interval) =>
+			interval.packageName === APP_PACKAGE ? [] : [toActivityInterval(interval, events.appLabels)]
+		),
+		screen_interactive: events.screenInteractive.map(toInstant)
 	};
 }
 
-function toSleepSession(sample: NativeSleepSample): SleepPayload['sleep'][number] {
-	const start = normalizedInstant(sample.startDate);
-	const end = normalizedInstant(sample.endDate);
-	const duration = intervalSeconds(start, end);
-	if (duration < 1 || duration > MAX_SESSION_SECONDS) throw validationFailure();
-	const session = {
-		session_end_time: end,
-		duration_seconds: duration,
-		stages: sleepStages(sample, start, end)
-	};
-	const source = dataOrigin(sample);
-	return source ? { ...session, metadata: { data_origin: source } } : session;
-}
-
-function sleepStages(sample: NativeSleepSample, sessionStart: string, sessionEnd: string) {
-	if (sample.hasStageData === false) throw validationFailure('Sleep stage detail is unavailable.');
-	if (!sample.stages?.length) throw validationFailure('Sleep stage detail is unavailable.');
-	if (sample.stages.length > MAX_STAGES) throw validationFailure('Too many sleep stages to sync.');
-	return [...sample.stages]
-		.sort((left, right) => Date.parse(left.startDate) - Date.parse(right.startDate))
-		.map((stage) => toSleepStage(stage, sessionStart, sessionEnd));
-}
-
-function toSleepStage(stage: NativeSleepStage, sessionStart: string, sessionEnd: string) {
-	const start = normalizedInstant(stage.startDate);
-	const end = normalizedInstant(stage.endDate);
-	const duration = intervalSeconds(start, end);
-	if (start < sessionStart || end > sessionEnd || duration < 0 || duration > MAX_SESSION_SECONDS) {
+function toActivityInterval(
+	interval: NativeActivityInterval,
+	appLabels?: Record<string, string>
+): SleepPayload['activity_intervals'][number] {
+	const packageName = validPackageName(interval.packageName);
+	if (!Number.isFinite(interval.startTime) || !Number.isFinite(interval.endTime)) {
 		throw validationFailure();
 	}
+	if (interval.endTime <= interval.startTime) throw validationFailure();
 	return {
-		stage: stageName(stage.stage),
-		start_time: start,
-		end_time: end,
-		duration_seconds: duration
+		package: packageName,
+		name: appLabel(packageName, appLabels),
+		start_time: toInstant(interval.startTime),
+		end_time: toInstant(interval.endTime)
 	};
 }
 
-function samplesInRange(samples: NativeSleepSample[], days: LocalDayRange[]) {
-	validateDays(days);
-	const start = Math.min(...days.map((day) => day.startMilliseconds));
-	const end = Math.max(...days.map((day) => day.endMilliseconds));
-	return samples.filter((sample) => sessionBelongsInRange(sample, start, end));
+function toInstant(milliseconds: number) {
+	if (!Number.isFinite(milliseconds) || milliseconds < 0) throw validationFailure();
+	return normalizedInstant(new Date(milliseconds).toISOString());
 }
 
-function sessionBelongsInRange(sample: NativeSleepSample, start: number, end: number) {
-	const sessionEnd = Date.parse(sample.endDate);
-	if (!Number.isFinite(sessionEnd) || !Number.isFinite(Date.parse(sample.startDate))) {
-		throw validationFailure();
-	}
-	return sessionEnd >= start && sessionEnd < end;
+function validPackageName(value: string) {
+	const packageName = value.trim();
+	if (!packageName || packageName.length > MAX_PACKAGE_LENGTH) throw validationFailure();
+	return packageName;
+}
+
+function appLabel(packageName: string, appLabels?: Record<string, string>) {
+	return (
+		appLabels?.[packageName]?.trim().slice(0, MAX_LABEL_LENGTH) ||
+		packageName.slice(0, MAX_LABEL_LENGTH)
+	);
 }
 
 function validateDays(days: LocalDayRange[]) {
 	if (!days.length || days.length > 7) throw validationFailure();
-	if (new Set(days.map((day) => day.date)).size !== days.length) throw validationFailure();
-}
-
-function uniqueSessions(samples: NativeSleepSample[]) {
-	const ordered = [...samples].sort(compareSessions);
-	const sessions = new Map<number, NativeSleepSample>();
-	for (const sample of ordered) sessions.set(Date.parse(sample.endDate), sample);
-	return [...sessions.values()];
-}
-
-function compareSessions(left: NativeSleepSample, right: NativeSleepSample) {
-	const endDifference = Date.parse(left.endDate) - Date.parse(right.endDate);
-	return endDifference || Date.parse(left.startDate) - Date.parse(right.startDate);
-}
-
-function stageName(value: string) {
-	const stage = value.trim();
-	if (!stage || stage.length > 64) throw validationFailure();
-	return stage === 'inBed' ? 'in_bed' : stage;
-}
-
-function dataOrigin(sample: NativeSleepSample) {
-	const source = (sample.sourceId || sample.sourceName || '').trim();
-	if (source.length > 255) throw validationFailure();
-	return source;
+	if (new Set(days.map(({ date }) => date)).size !== days.length) throw validationFailure();
 }
