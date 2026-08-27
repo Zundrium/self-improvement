@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { onMount, untrack } from 'svelte';
-	import { toast } from 'svelte-sonner';
+	import { toast } from '$lib/components/ui/toast';
 	import type { ActionFeedItem } from '$lib/api-types';
 	import GameBar from '$lib/components/gameBar.svelte';
 	import { loadNativeActionFeedItems } from '$native/action-feed';

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Coins, Flame, Trophy } from '@lucide/svelte';
-	import { toast } from 'svelte-sonner';
 	import { apiRequest, GAMIFICATION_CHANGED_EVENT } from '$lib/api';
 	import type { GamificationData } from '$lib/api-types';
 	import { Button } from '$lib/components/ui/button';
@@ -27,16 +26,9 @@
 		try {
 			const refreshed = await apiRequest<GamificationData>('/api/app/gamification');
 			gamification = refreshed;
-			if (refreshed.earnedNow) celebrateEarnings(refreshed.earnedNow);
 		} catch {
 			return;
 		}
-	}
-
-	function celebrateEarnings(points: number) {
-		toast.success(`✨ +${points} Glimmers`, {
-			description: 'Your completed tracker paid off.'
-		});
 	}
 
 	function featureHref(path: string) {

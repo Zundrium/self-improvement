@@ -4,6 +4,7 @@ import GuidedRoutineRunner, {
 	type GuidedRoutineSounds
 } from '$lib/components/guidedRoutineRunner.svelte';
 import { apiRequest } from '$lib/api';
+import { toast } from '$lib/components/ui/toast';
 import type {
 	CadencedRepGuidedRoutineActivity,
 	GuidedRoutineActivity
@@ -74,6 +75,7 @@ async function saveCadence(activity: CadencedRepGuidedRoutineActivity, speedPerc
 			method: 'PUT',
 			body: JSON.stringify({ speedPercent })
 		});
+		toast.success('Exercise speed updated.');
 	} catch (error) {
 		console.error('Exercise speed save failed:', error);
 	}

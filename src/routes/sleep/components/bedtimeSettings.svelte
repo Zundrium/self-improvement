@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
-	import { toast } from 'svelte-sonner';
+	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { SleepSettingsData } from '$lib/api-types';
 	import { Button } from '$lib/components/ui/button';

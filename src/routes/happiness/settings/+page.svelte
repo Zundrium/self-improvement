@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
-	import { toast } from 'svelte-sonner';
+	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { HappinessSettingsData } from '$lib/api-types';
 	import TrackerPage from '$lib/components/trackerPage.svelte';

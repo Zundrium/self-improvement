@@ -16,6 +16,7 @@
 	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { Spinner } from '$lib/components/ui/spinner';
+	import { toast } from '$lib/components/ui/toast';
 	import { gameGradient, gamificationColors } from '$lib/gamification/theme';
 
 	let { initialRewards }: { initialRewards: Reward[] } = $props();
@@ -66,6 +67,7 @@
 				? rewards.map((reward) => (reward.id === saved.id ? saved : reward))
 				: [...rewards, saved].sort((left, right) => left.price - right.price);
 			editorOpen = false;
+			toast.success(selectedReward ? 'Reward updated.' : 'Reward added.');
 		} catch (cause) {
 			errorMessage = cause instanceof Error ? cause.message : 'Could not save this reward.';
 		} finally {
@@ -81,6 +83,7 @@
 			await apiRequest(`/api/app/rewards/${selectedReward.id}`, { method: 'DELETE' });
 			rewards = rewards.filter(({ id }) => id !== selectedReward?.id);
 			deleteOpen = false;
+			toast.success('Reward deleted.');
 		} catch (cause) {
 			errorMessage = cause instanceof Error ? cause.message : 'Could not delete this reward.';
 		} finally {

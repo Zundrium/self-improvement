@@ -2,7 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import type { Snippet } from 'svelte';
 	import { untrack } from 'svelte';
-	import { toast } from 'svelte-sonner';
+	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { ScreenTimeSettingsData } from '$lib/api-types';
 	import TrackerSection from '$lib/components/trackerSection.svelte';

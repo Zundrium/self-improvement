@@ -20,10 +20,10 @@ import type {
 	Reward,
 	RewardsData,
 	ScreenTimeData,
-	StretchData,
 	SleepData,
 	SleepSettingsData,
 	StepsData,
+	StretchData,
 	TrackerSettingsDataMap
 } from '$lib/api-types';
 import { dateKeysEndingAt, isValidDateKey, localDateForInstant } from '$lib/trackers/dates';
@@ -40,6 +40,7 @@ import { cycleSummary, flowOptions, type MenstruationFlow } from '../../routes/p
 import { summarizeUsage } from '../../routes/screen-time/screen-time';
 import { isStretchScheduled } from '../../routes/stretch/stretch';
 import { buildActionSnapshot } from './action-snapshot';
+import { notifyNewTrackerCompletions } from './completion-events';
 import { exercisePreferences, fitnessProgram, workoutDay } from './fitness-program';
 import { buildGamification } from './gamification';
 import {
@@ -242,7 +243,7 @@ export class LocalAppService {
 			throw badRequest('Expected a valid completion date.');
 		if (Number(String(completedDate).slice(-2)) !== day)
 			throw badRequest('The completion date does not match the workout day.');
-		await this.store.update((state) =>
+		await this.updateWithCompletionNotification((state) =>
 			setFitnessCompletion(state, workoutId, String(completedDate), method !== 'DELETE')
 		);
 		return { completed: method !== 'DELETE', completedDate };
@@ -270,7 +271,7 @@ export class LocalAppService {
 			);
 		if (method !== 'POST') throw methodNotAllowed();
 		const session = validMeditation(body, this.clock());
-		await this.store.update((state) => {
+		await this.updateWithCompletionNotification((state) => {
 			if (!state.meditation.sessions.some(({ id }) => id === session.id))
 				state.meditation.sessions.push(session);
 		});
@@ -282,7 +283,7 @@ export class LocalAppService {
 			return breathingData(await this.store.read(), selectedDate(url, this.today()), this.today());
 		if (method !== 'POST') throw methodNotAllowed();
 		let exercise: LocalAppState['breathing']['exercises'][number] | undefined;
-		await this.store.update((state) => {
+		await this.updateWithCompletionNotification((state) => {
 			const completion = validBreathing(body, state.breathing, this.today(), this.clock());
 			exercise = completion;
 			if (!state.breathing.exercises.some(({ localDate }) => localDate === completion.localDate))
@@ -297,7 +298,7 @@ export class LocalAppService {
 			return stretchData(await this.store.read(), selectedDate(url, this.today()), this.today());
 		if (method !== 'POST') throw methodNotAllowed();
 		let session: LocalAppState['stretch']['sessions'][number] | null = null;
-		await this.store.update((state) => {
+		await this.updateWithCompletionNotification((state) => {
 			const created = validStretch(body, state.stretch.holdSeconds, this.today(), this.clock());
 			state.stretch.sessions.push(created);
 			session = created;
@@ -313,7 +314,7 @@ export class LocalAppService {
 			return this.deleteDatedEntry('happiness', url.searchParams.get('date'));
 		if (method !== 'PUT') throw methodNotAllowed();
 		let entry: LocalAppState['happiness']['entries'][number] | undefined;
-		await this.store.update((state) => {
+		await this.updateWithCompletionNotification((state) => {
 			const existing = state.happiness.entries.find(
 				({ localDate }) => localDate === body.localDate
 			);
@@ -335,7 +336,7 @@ export class LocalAppService {
 		if (method === 'DELETE') return this.deleteDatedEntry('period', url.searchParams.get('date'));
 		if (method !== 'PUT') throw methodNotAllowed();
 		let entry: LocalAppState['period']['entries'][number] | undefined;
-		await this.store.update((state) => {
+		await this.updateWithCompletionNotification((state) => {
 			const existing = state.period.entries.find(({ localDate }) => localDate === body.localDate);
 			entry = validPeriod(
 				body,
@@ -394,7 +395,7 @@ export class LocalAppService {
 		if (method !== 'PUT') throw methodNotAllowed();
 		if (!validPastDate(body.date, this.today())) throw badRequest('Choose a valid date.');
 		let entry: NutritionEntry;
-		await this.store.update((state) => {
+		await this.updateWithCompletionNotification((state) => {
 			const existing = state.nutrition.entries.find(({ id }) => id === entryId);
 			if (!existing) throw new LocalServiceError(404, 'Entry not found.');
 			if (state.nutrition.fastingDates.includes(String(body.date)))
@@ -447,7 +448,7 @@ export class LocalAppService {
 
 	private async markFasting(body: Record<string, unknown>) {
 		const dates = consecutiveDates(body.date, body.days, this.today());
-		await this.store.update((state) => {
+		await this.updateWithCompletionNotification((state) => {
 			if (state.nutrition.entries.some((entry) => dates.includes(entry.date)))
 				throw new LocalServiceError(409, 'A fasting day already has a meal.');
 			if (dates.some((date) => state.nutrition.fastingDates.includes(date)))
@@ -463,7 +464,7 @@ export class LocalAppService {
 		const meals = body.meals;
 		if (!Array.isArray(meals)) throw badRequest('Add at least one meal.');
 		let entry: NutritionEntry;
-		await this.store.update((state) => {
+		await this.updateWithCompletionNotification((state) => {
 			if (state.nutrition.fastingDates.includes(date))
 				throw new LocalServiceError(409, 'Cancel the full-day fast first.');
 			entry = createNutritionEntry({
@@ -557,6 +558,14 @@ export class LocalAppService {
 			daySummary: summary,
 			items: selectActionFeedItems(actionCandidates, snapshot, environment)
 		};
+	}
+
+	private async updateWithCompletionNotification(
+		mutator: (state: LocalAppState) => void | Promise<void>
+	) {
+		const { before, after } = await this.store.updateWithPrevious(mutator);
+		notifyNewTrackerCompletions(before, after, this.clock());
+		return after;
 	}
 
 	private today() {

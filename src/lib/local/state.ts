@@ -1,8 +1,8 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { z } from 'zod';
+import { localDateForInstant } from '$lib/trackers/dates';
 import type { AppTrackerId } from '$lib/trackers/registry';
 import { appTrackers } from '$lib/trackers/registry';
-import { localDateForInstant } from '$lib/trackers/dates';
 import { TRACKER_DEFAULTS } from './tracker-settings';
 
 export const LOCAL_STATE_VERSION = 1 as const;
@@ -258,6 +258,10 @@ export class LocalAppStore {
 		return this.serialize(() => this.updateTransaction(mutator));
 	}
 
+	updateWithPrevious(mutator: (state: LocalAppState) => void | Promise<void>) {
+		return this.serialize(() => this.updateWithPreviousTransaction(mutator));
+	}
+
 	async exportState() {
 		return this.read();
 	}
@@ -288,14 +292,26 @@ export class LocalAppStore {
 	}
 
 	private updateTransaction(mutator: (state: LocalAppState) => void | Promise<void>) {
+		return this.persistUpdatedState(mutator, (_, after) => after);
+	}
+
+	private updateWithPreviousTransaction(mutator: (state: LocalAppState) => void | Promise<void>) {
+		return this.persistUpdatedState(mutator, (before, after) => ({ before, after }));
+	}
+
+	private persistUpdatedState<T>(
+		mutator: (state: LocalAppState) => void | Promise<void>,
+		select: (before: LocalAppState, after: LocalAppState) => T
+	) {
 		return this.database.transaction('rw', this.database.appState, async () => {
 			const row = await this.database.appState.get(STATE_ID);
 			const state = validateLocalAppState(clone(row?.document ?? createDefaultAppState()));
+			const before = clone(state);
 			await mutator(state);
 			state.updatedAt = new Date().toISOString();
-			const validState = validateLocalAppState(state);
-			await this.database.appState.put({ id: STATE_ID, document: validState });
-			return clone(validState);
+			const after = validateLocalAppState(state);
+			await this.database.appState.put({ id: STATE_ID, document: after });
+			return select(before, clone(after));
 		});
 	}
 
@@ -384,7 +400,8 @@ function defaultTrackerIds(): AppTrackerId[] {
 }
 
 function withStretchMigration(input: unknown) {
-	if (!input || typeof input !== 'object' || Array.isArray(input) || 'stretch' in input) return input;
+	if (!input || typeof input !== 'object' || Array.isArray(input) || 'stretch' in input)
+		return input;
 	const state = input as Record<string, unknown>;
 	const enabledTrackerIds = Array.isArray(state.enabledTrackerIds)
 		? [...new Set([...state.enabledTrackerIds, 'stretch'])]

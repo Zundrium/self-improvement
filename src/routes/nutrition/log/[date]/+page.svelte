@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { MoonStar, Plus } from '@lucide/svelte';
-	import { toast } from 'svelte-sonner';
+	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import TrackerPage from '$lib/components/trackerPage.svelte';

@@ -9,6 +9,7 @@
 	import TrackerPage from '$lib/components/trackerPage.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Spinner } from '$lib/components/ui/spinner';
+	import { toast } from '$lib/components/ui/toast';
 	import EntryEditor, { type EditableMeal } from '../components/entryEditor.svelte';
 
 	let { data }: PageProps = $props();
@@ -30,6 +31,7 @@
 				method: 'POST',
 				body: JSON.stringify({ date, time, timeZoneOffset, name, notes, meals })
 			});
+			toast.success('Meal added.');
 			await goto(resolve('/nutrition/log/[date]', { date }));
 		} catch (cause) {
 			formError = cause instanceof Error ? cause.message : 'Could not save this meal.';

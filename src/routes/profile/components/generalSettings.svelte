@@ -9,6 +9,7 @@
 	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { Spinner } from '$lib/components/ui/spinner';
+	import { toast } from '$lib/components/ui/toast';
 	import type { LocalProfile } from '$lib/api-types';
 
 	let { profile }: { profile: LocalProfile } = $props();
@@ -27,6 +28,7 @@
 			});
 			failed = false;
 			message = 'Profile updated.';
+			toast.success(message);
 			await invalidateAll();
 		} catch (cause) {
 			failed = true;

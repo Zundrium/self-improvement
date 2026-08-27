@@ -9,6 +9,7 @@
 	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
+	import { toast } from '$lib/components/ui/toast';
 
 	let formError = $state('');
 	let gender = $state('');
@@ -24,6 +25,7 @@
 				method: 'POST',
 				body: JSON.stringify(Object.fromEntries(form))
 			});
+			toast.success('Nutrition profile created.');
 			await goto(resolve('/nutrition/log/[date]', { date: 'today' }));
 		} catch (cause) {
 			formError = cause instanceof Error ? cause.message : 'Could not save your profile.';

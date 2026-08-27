@@ -21,6 +21,7 @@
 		AlertDialogTrigger
 	} from '$lib/components/ui/alert-dialog';
 	import { Button } from '$lib/components/ui/button';
+	import { toast } from '$lib/components/ui/toast';
 
 	let { data }: PageProps = $props();
 	const initial = untrack(() => data.entry);
@@ -60,6 +61,7 @@
 				method: 'PUT',
 				body: JSON.stringify({ date, time, timeZoneOffset, name, notes, meals })
 			});
+			toast.success('Meal updated.');
 			await goto(resolve('/nutrition/log/[date]', { date }));
 		} catch (cause) {
 			formError = cause instanceof Error ? cause.message : 'Could not save this meal.';
@@ -71,6 +73,7 @@
 			const result = await apiRequest<{ date: string }>(`/api/app/nutrition/entry/${initial.id}`, {
 				method: 'DELETE'
 			});
+			toast.success('Meal deleted.');
 			await goto(resolve('/nutrition/log/[date]', { date: result.date }));
 		} catch (cause) {
 			formError = cause instanceof Error ? cause.message : 'Could not delete this meal.';

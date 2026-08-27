@@ -8,6 +8,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Slider } from '$lib/components/ui/slider';
+	import { toast } from '$lib/components/ui/toast';
 	import { getTrackerColors } from '$lib/trackers/registry';
 
 	let { exercises }: ExerciseData = $props();
@@ -38,6 +39,7 @@
 		)
 			return;
 		savedId = exerciseId;
+		toast.success('Exercise speed updated.');
 		setTimeout(() => savedId === exerciseId && (savedId = null), 1800);
 	}
 
@@ -45,6 +47,7 @@
 		if (!(await persistSpeed(exerciseId, { method: 'DELETE' }))) return;
 		speeds[exerciseId] = 100;
 		savedId = exerciseId;
+		toast.success('Exercise speed reset.');
 	}
 
 	async function persistSpeed(exerciseId: number, request: RequestInit) {

@@ -6,6 +6,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { toast } from '$lib/components/ui/toast';
 	import type { ProfileData } from '$lib/api-types';
 	import type { AppTrackerId } from '$lib/trackers/registry';
 
@@ -33,6 +34,7 @@
 			});
 			failed = false;
 			message = 'Tracker visibility updated.';
+			toast.success(message);
 			await invalidateAll();
 		} catch (cause) {
 			failed = true;

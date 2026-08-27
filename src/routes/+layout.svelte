@@ -6,16 +6,17 @@
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
 	import { ModeWatcher } from 'mode-watcher';
-	import { toast } from 'svelte-sonner';
+	import { toast, Toaster } from '$lib/components/ui/toast';
 	import { audioVolumeState } from '$lib/audio/audio-volume.svelte';
 	import AppNavbar from '$lib/components/appNavbar.svelte';
 	import BottomActionBarOutlet from '$lib/components/bottomActionBarOutlet.svelte';
 	import { provideBottomActionBarState } from '$lib/components/bottomActionBarState.svelte';
 	import DateSelector from '$lib/components/dateSelector.svelte';
+	import GamificationToast from '$lib/components/gamificationToast.svelte';
 	import { provideDateSelectorState } from '$lib/components/dateSelectorState.svelte';
+	import TrackerCompleteOverlay from '$lib/components/trackerCompleteOverlay.svelte';
 	import TrackerTitle from '$lib/components/trackerTitle.svelte';
 	import { getShopColorsForPathname, getShopFeatureForPathname } from '$lib/gamification/registry';
-	import { Toaster } from '$lib/components/ui/sonner';
 	import {
 		getTrackerColorsForPathname,
 		getTrackerForPathname,
@@ -217,8 +218,9 @@
 		/>
 	{/if}
 </div>
+<TrackerCompleteOverlay />
+<GamificationToast gamification={data.gamification} />
 <Toaster
 	position="bottom-center"
-	richColors
 	offset={appShellActive ? { bottom: 'calc(5rem + env(safe-area-inset-bottom))' } : undefined}
 />

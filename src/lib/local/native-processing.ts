@@ -6,7 +6,8 @@ import type { ScreenTimePayload, SleepPayload, StepsPayload } from '$domain/payl
 import { dateKeysEndingAt, isLocalDayStart, localDateForInstant } from '$lib/trackers/dates';
 import { parseScreenTimePayload } from '../../routes/screen-time/screen-time';
 import { parseHealthConnectPayload } from '../../routes/steps/steps';
-import { localAppStore, type LocalAppState } from './state';
+import { notifyNewTrackerCompletions } from './completion-events';
+import { type LocalAppState, localAppStore } from './state';
 
 const sleepIntervalSchema = z.object({
 	package: z.string().trim().min(1).max(255),
@@ -33,7 +34,10 @@ export async function ingestNativePayload(
 	payload: unknown
 ) {
 	try {
-		await localAppStore.update((state) => processNativePayload(state, tracker, context, payload));
+		const { before, after } = await localAppStore.updateWithPrevious((state) =>
+			processNativePayload(state, tracker, context, payload)
+		);
+		notifyNewTrackerCompletions(before, after);
 	} catch (cause) {
 		if (cause instanceof Error && cause.name === 'SyncFailure') throw cause;
 		throw validationFailure(cause instanceof Error ? cause.message : undefined);
