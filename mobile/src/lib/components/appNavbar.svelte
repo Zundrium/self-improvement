@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
-	import { ChevronDown, Grid2X2, House, LoaderCircle, Settings, UserRound } from '@lucide/svelte';
+	import { ChevronDown, Grip, House, LoaderCircle, Settings, UserRound } from '@lucide/svelte';
 	import { apiRequest } from '$lib/api';
 	import {
 		DropdownMenu,
@@ -179,7 +179,7 @@
 					{#if appLauncherOpen}
 						<ChevronDown class="size-6" />
 					{:else}
-						<Grid2X2 class="size-6" aria-hidden="true" />
+						<Grip class="size-6" aria-hidden="true" />
 					{/if}
 				</span>
 			</button>
