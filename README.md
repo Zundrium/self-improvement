@@ -2,12 +2,12 @@
 
 A local-only Android self-improvement app for steps, sleep, screen time, fitness, nutrition, meditation, breathing, happiness, and period tracking.
 
-The repository contains one SvelteKit/Svelte 5 application under `mobile/`. Capacitor packages its static output as the Android app. There is no account system, hosted frontend, custom API, analytics, advertising, or remote application database.
+The repository root contains one SvelteKit/Svelte 5 application. Capacitor packages its static output as the Android app. There is no account system, hosted frontend, custom API, analytics, advertising, or remote application database.
 
 ## Architecture
 
 ```text
-mobile/
+src/ and static/
   SvelteKit SPA + Svelte 5 + Lily UI
   Dexie local state
   manual tracker entry and local gamification
@@ -21,11 +21,12 @@ android/
   Google Drive SAF document-provider backups
 ```
 
-- `mobile/src/routes/` contains the app screens and tracker UI.
-- `mobile/src/lib/local/` owns Dexie state, local mutations, native-data processing, gamification, and JSON backup validation.
-- `mobile/src/native/` owns Android lifecycle, Health Connect, Usage Access, notifications, file selection, and Google Drive backup integration.
-- `mobile/src/domain/` validates and transforms native tracker data before it is saved locally.
-- `mobile/static/` contains bundled fitness media and the privacy policy.
+- `src/routes/` contains the app screens and tracker UI.
+- `src/lib/local/` owns Dexie state, local mutations, native-data processing, gamification, and JSON backup validation.
+- `src/native/` owns Android lifecycle, Health Connect, Usage Access, notifications, file selection, and Google Drive backup integration.
+- `src/domain/` validates and transforms native tracker data before it is saved locally.
+- `static/` contains bundled fitness media and the privacy policy.
+- Root SvelteKit, Vite, TypeScript, and component configuration files configure the app.
 - `android/` contains the committed Capacitor Android project and native plugins.
 - `capacitor.config.ts` packages `dist-mobile/` into Android.
 
@@ -65,7 +66,7 @@ npm run mobile:sync
 npm run mobile:android
 ```
 
-`mobile:build` writes the static SPA to `dist-mobile/`. `mobile:sync` copies it and the configured Capacitor plugins into `android/`. `mobile:android:open` opens Android Studio.
+Root scripts are canonical. The retained `mobile:*` aliases support existing Android workflows: `mobile:build` writes the static SPA to `dist-mobile/`, `mobile:sync` copies it and the configured Capacitor plugins into `android/`, and `mobile:android:open` opens Android Studio.
 
 The merged release manifest is limited to notification support, Usage Access, read-only Steps, wake lock, and boot-completed access for local reminders. Internet, camera, package installation, exact alarm, Health write, and unrelated Health read permissions are rejected in CI.
 

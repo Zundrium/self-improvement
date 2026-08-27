@@ -6,7 +6,7 @@ Self Improvement is one SvelteKit/Svelte 5 application packaged for Android with
 
 ## Runtime boundary
 
-`mobile/` contains the complete application:
+The repository root contains the complete application under `src/` and `static/`:
 
 - dashboard, profile, gamification, rewards, and tracker screens;
 - Lily UI components and bundled media;
@@ -19,7 +19,7 @@ The static adapter writes `dist-mobile/`. `capacitor.config.ts` and `android/` p
 
 ## Local state
 
-`mobile/src/lib/local/state.ts` defines and validates one versioned app-state document. Dexie stores that document in IndexedDB and serializes updates through transactions. The state includes:
+`src/lib/local/state.ts` defines and validates one versioned app-state document. Dexie stores that document in IndexedDB and serializes updates through transactions. The state includes:
 
 - the local display profile and tracker visibility;
 - tracker history and settings;
@@ -27,7 +27,7 @@ The static adapter writes `dist-mobile/`. `capacitor.config.ts` and `android/` p
 - manual nutrition entries, macros, calorie goals, eating windows, and fasting dates;
 - gamification awards, rewards, and redemptions.
 
-`mobile/src/lib/local/service.ts` preserves the existing loader and mutation call shape without making HTTP requests. `mobile/src/lib/api.ts` dispatches directly to that service. There are no credentials or sessions.
+`src/lib/local/service.ts` preserves the existing loader and mutation call shape without making HTTP requests. `src/lib/api.ts` dispatches directly to that service. There are no credentials or sessions.
 
 ## Native tracker processing
 
@@ -49,7 +49,7 @@ The app has no camera surface, photo storage, AI estimate, or correction flow.
 
 ## Backups
 
-`mobile/src/lib/local/backup.ts` wraps the state in a versioned JSON envelope and validates both the envelope and nested state before restore.
+`src/lib/local/backup.ts` wraps the state in a versioned JSON envelope and validates both the envelope and nested state before restore.
 
 Users can export or restore a JSON file through Android's document picker. They can also explicitly select a Google Drive folder through the Storage Access Framework. The Drive app remains responsible for network transfer; Self Improvement receives only persisted document-provider access to the selected tree.
 
@@ -88,6 +88,6 @@ npm run test
 npm run build
 ```
 
-Mobile and Capacitor aliases remain available for Android work. There is no deploy script or non-Android deployment target.
+The `mobile:*` compatibility aliases and `cap:*` Capacitor aliases remain available for Android work. There is no deploy script or non-Android deployment target.
 
 Feature work remains uncommitted until local approval and must not run `npm run build` before that approval. GitHub Actions performs app and Android builds, creates signed APK/AAB artifacts for version tags, and publishes the GitHub release. There is no in-app update checker.

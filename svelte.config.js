@@ -3,8 +3,8 @@ import adapter from '@sveltejs/adapter-static';
 const config = {
 	kit: {
 		adapter: adapter({
-			pages: '../dist-mobile',
-			assets: '../dist-mobile',
+			pages: 'dist-mobile',
+			assets: 'dist-mobile',
 			fallback: 'index.html'
 		}),
 		alias: {

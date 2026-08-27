@@ -1,7 +1,7 @@
 node_modules
 
 # Output
-/mobile/.svelte-kit
+/.svelte-kit
 /build
 /dist-mobile
 

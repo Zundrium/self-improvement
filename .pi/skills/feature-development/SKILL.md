@@ -7,7 +7,7 @@ description: Develop and release local-only Self Improvement Android features wi
 
 ## Project boundary
 
-- Work on the single SvelteKit/Svelte 5 app under `mobile/` and its Capacitor Android project under `android/`.
+- Work on the single root SvelteKit/Svelte 5 app and its Capacitor Android project under `android/`.
 - Keep application state in Dexie and native tracker processing on-device.
 - Preserve manual nutrition, JSON export/restore, optional daily Google Drive SAF backups, and the five-file backup maximum.
 - Do not add accounts, a backend, custom network requests, web deployment, analytics, ads, AI nutrition, or in-app update checks.

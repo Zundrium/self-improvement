@@ -1,0 +1,32 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
+	"files": {
+		"includes": ["**/*.{js,ts,svelte}", "!!android", "!!dist-mobile", "!!.svelte-kit", "!!static"]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"lineWidth": 100
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"correctness": {
+				"noUnusedImports": "off",
+				"noUnusedVariables": "off"
+			},
+			"suspicious": {
+				"noAssignInExpressions": "off",
+				"noShadowRestrictedNames": "off",
+				"useIterableCallbackReturn": "off"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
+			"trailingCommas": "none"
+		}
+	}
+}
