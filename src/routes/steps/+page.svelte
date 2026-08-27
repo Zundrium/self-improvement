@@ -5,12 +5,11 @@
 	import { shortDayLabel } from '$lib/dateFormatting';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import StepsSummary from './components/stepsSummary.svelte';
-	import { DEFAULT_STEP_GOAL } from './steps';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	const colors = getTrackerColors('steps');
-	const dailyGoal = $derived(data.connection?.dailyGoal ?? DEFAULT_STEP_GOAL);
+	const dailyGoal = $derived(data.settings.dailyGoal);
 	const history = $derived(
 		data.days.map((day) => ({
 			key: day.date,

@@ -47,7 +47,9 @@ export function completionDates(state: LocalAppState, today: string): Completion
 	dates.steps = state.steps.days.filter((day) => day.count >= state.steps.dailyGoal).map(dayDate);
 	dates.sleep = state.sleep.days.filter((day) => day.status === 'pass').map(localDate);
 	dates['screen-time'] = state.screenTime.days
-		.filter((day) => day.date < today && trackedMinutes(state, day) <= 240)
+		.filter(
+			(day) => day.date < today && trackedMinutes(state, day) <= state.screenTime.dailyLimitMinutes
+		)
 		.map(dayDate);
 	dates.fitness = state.fitness.completedDays.map(({ dateKey }) => dateKey);
 	dates.nutrition = [...state.nutrition.entries.map(dayDate), ...state.nutrition.fastingDates];

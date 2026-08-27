@@ -67,6 +67,8 @@
 >
 	<BreathingExercise
 		localDate={data.date}
+		rounds={data.settings.rounds}
+		includeHold={data.settings.includeHold}
 		{saveState}
 		complete={exerciseCompleted}
 		interactive={isToday && !exerciseCompleted}

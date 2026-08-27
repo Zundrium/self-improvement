@@ -5,9 +5,8 @@
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
 	import { shortDayLabel } from '$lib/dateFormatting';
 	import { getTrackerColors } from '$lib/trackers/registry';
-	import ScreenTimeApps from './components/screenTimeApps.svelte';
 	import ScreenTimeSummary from './components/screenTimeSummary.svelte';
-	import { DEFAULT_SCREEN_TIME_LIMIT_MINUTES, formatScreenTime } from './screen-time';
+	import { formatScreenTime } from './screen-time';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -22,7 +21,7 @@
 			key: day.date,
 			label: shortDayLabel(day.date, data.today),
 			value: day.totalMinutes,
-			max: DEFAULT_SCREEN_TIME_LIMIT_MINUTES,
+			max: data.settings.dailyLimitMinutes,
 			displayValue: formatScreenTime(day.totalMinutes)
 		}))
 	);
@@ -34,7 +33,7 @@
 </svelte:head>
 
 <TrackerPage class="max-w-3xl">
-	<ScreenTimeSummary totalMinutes={data.usage.totalMinutes} />
+	<ScreenTimeSummary totalMinutes={data.usage.totalMinutes} limit={data.settings.dailyLimitMinutes} />
 	{#if data.hasData}
 		<Alert>
 			<AlertTitle>Android data processed</AlertTitle>
@@ -44,5 +43,4 @@
 		<NativeDataHelpAlert tracker="screen-time" isSynced={data.isSynced} />
 	{/if}
 	<TrackerHistory items={history} {colors} />
-	<ScreenTimeApps apps={data.usage.apps} knownApps={data.knownApps} />
 </TrackerPage>

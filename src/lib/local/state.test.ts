@@ -35,6 +35,12 @@ describe('local app state', () => {
 			'period'
 		]);
 		expect(state.steps.days).toEqual([]);
+		expect(state.screenTime.dailyLimitMinutes).toBe(240);
+		expect(state.fitness.defaultSets).toBe(2);
+		expect(state.meditation.defaultDurationSeconds).toBe(300);
+		expect(state.breathing).toMatchObject({ rounds: 6, includeHold: true });
+		expect(state.happiness.defaultRating).toBe(3);
+		expect(state.period).toMatchObject({ defaultFlow: 'medium', fallbackCycleDays: 28 });
 		expect(state.nutrition.entries).toEqual([]);
 		expect(state.gamification.awards).toEqual([]);
 	});

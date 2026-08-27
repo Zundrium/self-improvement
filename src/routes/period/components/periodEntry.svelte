@@ -18,7 +18,8 @@
 	let saving = $state(false);
 	let loadedDate = $state(untrack(() => data.date));
 	let loadedUpdatedAt = $state(untrack(() => String(data.entry?.updatedAt ?? '')));
-	let flow = $state<MenstruationFlow>(untrack(() => data.entry?.flow ?? 'medium'));
+	let loadedDefaultFlow = $state(untrack(() => data.settings.defaultFlow));
+	let flow = $state<MenstruationFlow>(untrack(() => data.entry?.flow ?? data.settings.defaultFlow));
 	let notes = $state(untrack(() => data.entry?.notes ?? ''));
 	let savedFlow = $state<MenstruationFlow | undefined>(untrack(() => data.entry?.flow));
 	let savedNotes = $state(untrack(() => data.entry?.notes ?? ''));
@@ -29,10 +30,17 @@
 
 	function syncEntry(nextData: PeriodData) {
 		const updatedAt = String(nextData.entry?.updatedAt ?? '');
-		if (loadedDate === nextData.date && loadedUpdatedAt === updatedAt) return;
+		const defaultFlow = nextData.settings.defaultFlow;
+		if (
+			loadedDate === nextData.date &&
+			loadedUpdatedAt === updatedAt &&
+			loadedDefaultFlow === defaultFlow
+		)
+			return;
 		loadedDate = nextData.date;
 		loadedUpdatedAt = updatedAt;
-		flow = nextData.entry?.flow ?? 'medium';
+		loadedDefaultFlow = defaultFlow;
+		flow = nextData.entry?.flow ?? defaultFlow;
 		notes = nextData.entry?.notes ?? '';
 		markSaved(Boolean(nextData.entry));
 	}

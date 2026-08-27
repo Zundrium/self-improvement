@@ -1,5 +1,4 @@
 import type { ActionCandidate } from '$lib/actions/contracts';
-import { BREATHING_DURATION_SECONDS } from './breathing';
 
 export const breathingActionCandidates: ActionCandidate[] = [
 	{
@@ -14,7 +13,7 @@ export const breathingActionCandidates: ActionCandidate[] = [
 				score: 40,
 				icon: 'tracker',
 				title: "Let's breathe now",
-				reason: `${Math.ceil(BREATHING_DURATION_SECONDS / 60)} minutes to feel at ease`,
+				reason: 'A guided exercise to feel at ease',
 				action: { type: 'navigate', href: '/breathing' }
 			};
 		}

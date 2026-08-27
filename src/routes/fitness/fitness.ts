@@ -57,8 +57,8 @@ export interface ExercisePreference {
 	workoutCount: number;
 }
 
-export function defaultWorkoutSets(configuredSets: number) {
-	return Math.min(DEFAULT_WORKOUT_SETS, configuredSets);
+export function defaultWorkoutSets(configuredSets: number, preferredSets = DEFAULT_WORKOUT_SETS) {
+	return Math.min(preferredSets, configuredSets);
 }
 
 export function workoutSetDurations(workout: Workout) {
@@ -66,7 +66,8 @@ export function workoutSetDurations(workout: Workout) {
 		(total, activity) => total + activityDurationSeconds(activity),
 		0
 	);
-	const exerciseRestSeconds = Math.max(0, workout.activities.length - 1) * workout.restBetweenExercises;
+	const exerciseRestSeconds =
+		Math.max(0, workout.activities.length - 1) * workout.restBetweenExercises;
 	return {
 		firstSetDurationSeconds: Math.ceil(10 + exerciseSeconds + exerciseRestSeconds),
 		additionalSetDurationSeconds: Math.ceil(

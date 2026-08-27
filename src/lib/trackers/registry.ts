@@ -4,7 +4,7 @@ export const trackers = [
 		label: 'Steps',
 		description: 'Daily steps and Health Connect history.',
 		href: '/steps',
-		settingsHref: null,
+		settingsHref: '/steps/settings',
 		colors: { primary: '#047857', secondary: '#0f766e' },
 		hasAppIcon: true,
 		defaultEnabled: true
@@ -24,7 +24,7 @@ export const trackers = [
 		label: 'Screen time',
 		description: 'Daily Android usage and per-app screen-time history.',
 		href: '/screen-time',
-		settingsHref: null,
+		settingsHref: '/screen-time/settings',
 		colors: { primary: '#1d4ed8', secondary: '#0369a1' },
 		hasAppIcon: true,
 		defaultEnabled: true
@@ -54,7 +54,7 @@ export const trackers = [
 		label: 'Meditation',
 		description: 'Timed sessions and meditation history.',
 		href: '/meditation',
-		settingsHref: null,
+		settingsHref: '/meditation/settings',
 		colors: { primary: '#6d28d9', secondary: '#a21caf' },
 		hasAppIcon: true,
 		defaultEnabled: true
@@ -64,7 +64,7 @@ export const trackers = [
 		label: 'Breathing',
 		description: 'A guided daily 4-7-8 breathing exercise.',
 		href: '/breathing',
-		settingsHref: null,
+		settingsHref: '/breathing/settings',
 		colors: { primary: '#0e7490', secondary: '#2563eb' },
 		hasAppIcon: true,
 		defaultEnabled: true
@@ -74,7 +74,7 @@ export const trackers = [
 		label: 'Happiness',
 		description: 'Daily happiness levels and the reasons behind them.',
 		href: '/happiness',
-		settingsHref: null,
+		settingsHref: '/happiness/settings',
 		colors: { primary: '#c2410c', secondary: '#a16207' },
 		hasAppIcon: true,
 		defaultEnabled: true
@@ -84,7 +84,7 @@ export const trackers = [
 		label: 'Period',
 		description: 'Menstruation flow, notes, and recent history.',
 		href: '/period',
-		settingsHref: null,
+		settingsHref: '/period/settings',
 		colors: { primary: '#be123c', secondary: '#be185d' },
 		hasAppIcon: true,
 		defaultEnabled: true

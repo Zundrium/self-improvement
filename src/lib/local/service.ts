@@ -22,11 +22,13 @@ import type {
 	ScreenTimeData,
 	SleepData,
 	SleepSettingsData,
-	StepsData
+	StepsData,
+	TrackerSettingsDataMap
 } from '$lib/api-types';
 import { dateKeysEndingAt, isValidDateKey, localDateForInstant } from '$lib/trackers/dates';
 import { type AppTrackerId, appTrackers, isAppTrackerId } from '$lib/trackers/registry';
 import { breathingDurationSeconds } from '../../routes/breathing/breathing';
+import { defaultWorkoutSets } from '../../routes/fitness/fitness';
 import {
 	type HappinessRating,
 	type HappinessReason,
@@ -95,6 +97,12 @@ export class LocalAppService {
 
 	private dispatchParameterized(url: URL, method: string, body: Record<string, unknown>) {
 		const segments = url.pathname.split('/').filter(Boolean);
+		if (
+			segments.length === 4 &&
+			segments.slice(0, 2).join('/') === 'api/app' &&
+			segments[3] === 'settings'
+		)
+			return this.trackerSettings(segments[2], method, body);
 		if (segments.slice(0, 4).join('/') === 'api/app/fitness/progress')
 			return this.fitnessProgress(Number(segments[4]), url, method, body);
 		if (segments.slice(0, 4).join('/') === 'api/app/fitness/exercises' && segments[5] === 'speed')
@@ -139,6 +147,17 @@ export class LocalAppService {
 		return { message: method === 'POST' ? 'Nutrition profile created.' : 'Profile updated.' };
 	}
 
+	private async trackerSettings(trackerId: string, method: string, body: Record<string, unknown>) {
+		if (!isSettingsTrackerId(trackerId))
+			throw new LocalServiceError(404, 'Tracker settings not found.');
+		if (method === 'GET') return settingsForTracker(await this.store.read(), trackerId);
+		if (method !== 'PATCH') throw methodNotAllowed();
+		const state = await this.store.update((state) => {
+			updateTrackerSettings(state, trackerId, body);
+		});
+		return settingsForTracker(state, trackerId);
+	}
+
 	private async steps(url: URL): Promise<StepsData> {
 		const state = await this.store.read();
 		const today = this.today();
@@ -146,6 +165,7 @@ export class LocalAppService {
 		const keys = dateKeysEndingAt(today, 7);
 		const counts = new Map(state.steps.days.map((day) => [day.date, day.count]));
 		return {
+			settings: settingsForTracker(state, 'steps'),
 			connection: { dailyGoal: state.steps.dailyGoal, lastReceivedAt: state.steps.lastReceivedAt },
 			isSynced: Boolean(state.steps.lastReceivedAt),
 			hasData: state.steps.days.some(({ count }) => count > 0),
@@ -190,7 +210,13 @@ export class LocalAppService {
 		return {
 			date,
 			today,
-			program: programWithRequestedSets(program, date, url.searchParams.get('sets')),
+			settings: settingsForTracker(state, 'fitness'),
+			program: programWithRequestedSets(
+				program,
+				date,
+				url.searchParams.get('sets'),
+				state.fitness.defaultSets
+			),
 			completedDays: state.fitness.completedDays
 		};
 	}
@@ -233,7 +259,12 @@ export class LocalAppService {
 
 	private async meditation(url: URL, method: string, body: Record<string, unknown>) {
 		if (method === 'GET')
-			return meditationData(await this.store.read(), selectedDate(url, this.today()), this.today());
+			return meditationData(
+				await this.store.read(),
+				selectedDate(url, this.today()),
+				this.today(),
+				url.searchParams.get('duration')
+			);
 		if (method !== 'POST') throw methodNotAllowed();
 		const session = validMeditation(body, this.clock());
 		await this.store.update((state) => {
@@ -247,12 +278,15 @@ export class LocalAppService {
 		if (method === 'GET')
 			return breathingData(await this.store.read(), selectedDate(url, this.today()), this.today());
 		if (method !== 'POST') throw methodNotAllowed();
-		const exercise = validBreathing(body, this.today(), this.clock());
+		let exercise: LocalAppState['breathing']['exercises'][number] | undefined;
 		await this.store.update((state) => {
-			if (!state.breathing.exercises.some(({ localDate }) => localDate === exercise.localDate))
-				state.breathing.exercises.push(exercise);
+			const completion = validBreathing(body, state.breathing, this.today(), this.clock());
+			exercise = completion;
+			if (!state.breathing.exercises.some(({ localDate }) => localDate === completion.localDate))
+				state.breathing.exercises.push(completion);
 		});
-		return { ...body, ...exercise };
+		if (!exercise) throw new Error('Breathing exercise was not created.');
+		return { ...body, includeHold: exercise.technique === '4-7-8', ...exercise };
 	}
 
 	private async happiness(url: URL, method: string, body: Record<string, unknown>) {
@@ -261,8 +295,20 @@ export class LocalAppService {
 		if (method === 'DELETE')
 			return this.deleteDatedEntry('happiness', url.searchParams.get('date'));
 		if (method !== 'PUT') throw methodNotAllowed();
-		const entry = validHappiness(body, this.today(), this.clock());
-		await this.store.update((state) => replaceByDate(state.happiness.entries, entry));
+		let entry: LocalAppState['happiness']['entries'][number] | undefined;
+		await this.store.update((state) => {
+			const existing = state.happiness.entries.find(
+				({ localDate }) => localDate === body.localDate
+			);
+			entry = validHappiness(
+				body,
+				existing?.rating ?? state.happiness.defaultRating,
+				this.today(),
+				this.clock()
+			);
+			replaceByDate(state.happiness.entries, entry);
+		});
+		if (!entry) throw new Error('Happiness entry was not created.');
 		return { entry };
 	}
 
@@ -271,8 +317,18 @@ export class LocalAppService {
 			return periodData(await this.store.read(), selectedDate(url, this.today()), this.today());
 		if (method === 'DELETE') return this.deleteDatedEntry('period', url.searchParams.get('date'));
 		if (method !== 'PUT') throw methodNotAllowed();
-		const entry = validPeriod(body, this.today(), this.clock());
-		await this.store.update((state) => replaceByDate(state.period.entries, entry));
+		let entry: LocalAppState['period']['entries'][number] | undefined;
+		await this.store.update((state) => {
+			const existing = state.period.entries.find(({ localDate }) => localDate === body.localDate);
+			entry = validPeriod(
+				body,
+				existing?.flow ?? state.period.defaultFlow,
+				this.today(),
+				this.clock()
+			);
+			replaceByDate(state.period.entries, entry);
+		});
+		if (!entry) throw new Error('Period entry was not created.');
 		return { entry };
 	}
 
@@ -491,6 +547,85 @@ export class LocalAppService {
 	}
 }
 
+type SettingsTrackerId = keyof TrackerSettingsDataMap;
+
+function isSettingsTrackerId(value: string): value is SettingsTrackerId {
+	return [
+		'steps',
+		'screen-time',
+		'fitness',
+		'meditation',
+		'breathing',
+		'happiness',
+		'period'
+	].includes(value);
+}
+
+function settingsForTracker<T extends SettingsTrackerId>(
+	state: LocalAppState,
+	trackerId: T
+): TrackerSettingsDataMap[T] {
+	const settings = {
+		steps: { dailyGoal: state.steps.dailyGoal },
+		'screen-time': { dailyLimitMinutes: state.screenTime.dailyLimitMinutes },
+		fitness: { defaultSets: state.fitness.defaultSets },
+		meditation: { defaultDurationSeconds: state.meditation.defaultDurationSeconds },
+		breathing: { rounds: state.breathing.rounds, includeHold: state.breathing.includeHold },
+		happiness: { defaultRating: state.happiness.defaultRating },
+		period: {
+			defaultFlow: state.period.defaultFlow,
+			fallbackCycleDays: state.period.fallbackCycleDays
+		}
+	};
+	return settings[trackerId] as TrackerSettingsDataMap[T];
+}
+
+function updateTrackerSettings(
+	state: LocalAppState,
+	trackerId: SettingsTrackerId,
+	body: Record<string, unknown>
+) {
+	if (trackerId === 'steps')
+		state.steps.dailyGoal = integerSetting(body.dailyGoal, state.steps.dailyGoal, 1_000, 100_000);
+	if (trackerId === 'screen-time')
+		state.screenTime.dailyLimitMinutes = integerSetting(
+			body.dailyLimitMinutes,
+			state.screenTime.dailyLimitMinutes,
+			1,
+			1_440
+		);
+	if (trackerId === 'fitness')
+		state.fitness.defaultSets = integerSetting(body.defaultSets, state.fitness.defaultSets, 1, 10);
+	if (trackerId === 'meditation')
+		state.meditation.defaultDurationSeconds = integerSetting(
+			body.defaultDurationSeconds,
+			state.meditation.defaultDurationSeconds,
+			60,
+			7_200
+		);
+	if (trackerId === 'breathing') {
+		state.breathing.rounds = integerSetting(body.rounds, state.breathing.rounds, 1, 20);
+		state.breathing.includeHold = optionalBooleanSetting(
+			body.includeHold,
+			state.breathing.includeHold
+		);
+	}
+	if (trackerId === 'happiness')
+		state.happiness.defaultRating = happinessRatingSetting(
+			body.defaultRating,
+			state.happiness.defaultRating
+		);
+	if (trackerId === 'period') {
+		state.period.defaultFlow = periodFlowSetting(body.defaultFlow, state.period.defaultFlow);
+		state.period.fallbackCycleDays = integerSetting(
+			body.fallbackCycleDays,
+			state.period.fallbackCycleDays,
+			15,
+			60
+		);
+	}
+}
+
 function profileData(state: LocalAppState): ProfileData {
 	return {
 		profile: state.user,
@@ -555,6 +690,7 @@ function screenTimeData(state: LocalAppState, date: string, today: string): Scre
 	}));
 	const summary = summarizeUsage(history);
 	return {
+		settings: settingsForTracker(state, 'screen-time'),
 		connection: { lastReceivedAt: state.screenTime.lastReceivedAt },
 		isSynced: Boolean(state.screenTime.lastReceivedAt),
 		hasData: state.screenTime.days.length > 0,
@@ -569,11 +705,21 @@ function screenTimeData(state: LocalAppState, date: string, today: string): Scre
 	};
 }
 
-function meditationData(state: LocalAppState, date: string, today: string): MeditationData {
+function meditationData(
+	state: LocalAppState,
+	date: string,
+	today: string,
+	requestedDuration: string | null
+): MeditationData {
 	const sessions = state.meditation.sessions.filter((session) => session.localDate === date);
 	return {
 		date,
 		today,
+		settings: settingsForTracker(state, 'meditation'),
+		initialDurationSeconds: meditationDurationSetting(
+			requestedDuration,
+			state.meditation.defaultDurationSeconds
+		),
 		markedDates: unique(state.meditation.sessions.map(({ localDate }) => localDate)),
 		meditationHistory: sessions.length
 			? [
@@ -591,6 +737,7 @@ function breathingData(state: LocalAppState, date: string, today: string): Breat
 	return {
 		date,
 		today,
+		settings: settingsForTracker(state, 'breathing'),
 		markedDates: state.breathing.exercises.map(({ localDate }) => localDate),
 		exercise: state.breathing.exercises.find((exercise) => exercise.localDate === date) ?? null
 	};
@@ -602,6 +749,7 @@ function happinessData(state: LocalAppState, date: string, today: string): Happi
 	return {
 		date,
 		today,
+		settings: settingsForTracker(state, 'happiness'),
 		entry: selected ? { ...selected, reasons: selected.reasons as HappinessReason[] } : null,
 		markedDates: entries.map(({ localDate }) => localDate),
 		recentEntries: entries.slice(0, 10).map(({ localDate, rating }) => ({ localDate, rating }))
@@ -614,28 +762,33 @@ function periodData(state: LocalAppState, date: string, today: string): PeriodDa
 	return {
 		date,
 		today,
+		settings: settingsForTracker(state, 'period'),
 		entry: entries.find((entry) => entry.localDate === date) ?? null,
 		markedDates,
 		recentEntries: entries.slice(0, 10).map(({ localDate, flow }) => ({ localDate, flow })),
-		cycle: cycleSummary(markedDates, today)
+		cycle: cycleSummary(markedDates, today, state.period.fallbackCycleDays)
 	};
 }
 
 function programWithRequestedSets(
 	program: FitnessData['program'],
 	date: string,
-	requestedValue: string | null
+	requestedValue: string | null,
+	defaultSets: number
 ) {
-	const requestedSets = Number(requestedValue);
 	const workoutDay = Number(date.slice(-2));
 	const workout = program.workouts.find(({ day }) => day === workoutDay);
-	if (!workout || !Number.isInteger(requestedSets)) return program;
-	if (requestedSets < 1 || requestedSets > workout.sets) return program;
+	if (!workout) return program;
+	const requestedSets = Number(requestedValue);
+	const validOverride =
+		requestedValue !== null &&
+		Number.isInteger(requestedSets) &&
+		requestedSets >= 1 &&
+		requestedSets <= workout.sets;
+	const sets = validOverride ? requestedSets : defaultWorkoutSets(workout.sets, defaultSets);
 	return {
 		...program,
-		workouts: program.workouts.map((item) =>
-			item.day === workoutDay ? { ...item, sets: requestedSets } : item
-		)
+		workouts: program.workouts.map((item) => (item.day === workoutDay ? { ...item, sets } : item))
 	};
 }
 
@@ -663,7 +816,7 @@ function daySummaryData(state: LocalAppState, date: string, today: string): DayS
 		sleepLateUsageSeconds: sleepDay?.lateUsageSeconds ?? 0,
 		sleepSetupRequired: state.screenTime.trackedPackages.length === 0,
 		screenTimeMinutes: trackedDay.totalMinutes,
-		screenTimeLimitMinutes: 240,
+		screenTimeLimitMinutes: state.screenTime.dailyLimitMinutes,
 		screenTimeRecorded: Boolean(state.screenTime.days.find((day) => day.date === date)),
 		screenTimeHasMeasurements: state.screenTime.days.length > 0,
 		fitnessDone: state.fitness.completedDays.some(({ dateKey }) => dateKey === date),
@@ -706,10 +859,15 @@ function validMeditation(body: Record<string, unknown>, now: Date) {
 	return session;
 }
 
-function validBreathing(body: Record<string, unknown>, today: string, now: Date) {
+function validBreathing(
+	body: Record<string, unknown>,
+	settings: Pick<LocalAppState['breathing'], 'rounds' | 'includeHold'>,
+	today: string,
+	now: Date
+) {
 	const localDate = String(body.localDate ?? '');
 	const startedAt = Number(body.startedAt);
-	const includeHold = booleanSetting(body.includeHold);
+	const includeHold = optionalBooleanSetting(body.includeHold, settings.includeHold);
 	if (
 		localDate !== today ||
 		!Number.isInteger(startedAt) ||
@@ -720,13 +878,18 @@ function validBreathing(body: Record<string, unknown>, today: string, now: Date)
 		localDate,
 		startedAt,
 		technique: includeHold ? '4-7-8' : '4-8',
-		durationSeconds: breathingDurationSeconds(includeHold)
+		durationSeconds: breathingDurationSeconds(includeHold, settings.rounds)
 	};
 }
 
-function validHappiness(body: Record<string, unknown>, today: string, now: Date) {
+function validHappiness(
+	body: Record<string, unknown>,
+	defaultRating: HappinessRating,
+	today: string,
+	now: Date
+) {
 	const localDate = String(body.localDate ?? '');
-	const rating = Number(body.rating) as HappinessRating;
+	const rating = Number(body.rating ?? defaultRating) as HappinessRating;
 	const reasons = Array.isArray(body.reasons)
 		? (unique(body.reasons.map(String)) as HappinessReason[])
 		: [];
@@ -738,9 +901,14 @@ function validHappiness(body: Record<string, unknown>, today: string, now: Date)
 	return { localDate, rating, reasons, updatedAt: now.toISOString() };
 }
 
-function validPeriod(body: Record<string, unknown>, today: string, now: Date) {
+function validPeriod(
+	body: Record<string, unknown>,
+	defaultFlow: MenstruationFlow,
+	today: string,
+	now: Date
+) {
 	const localDate = String(body.localDate ?? '');
-	const flow = String(body.flow ?? '') as MenstruationFlow;
+	const flow = String(body.flow ?? defaultFlow) as MenstruationFlow;
 	const notes = String(body.notes ?? '').trim();
 	if (
 		!validPastDate(localDate, today) ||
@@ -920,6 +1088,41 @@ function bedtime(value: unknown) {
 function booleanSetting(value: unknown) {
 	if (typeof value !== 'boolean') throw badRequest('Expected a true or false value.');
 	return value;
+}
+
+function optionalBooleanSetting(value: unknown, current: boolean) {
+	return value === undefined ? current : booleanSetting(value);
+}
+
+function integerSetting(value: unknown, current: number, minimum: number, maximum: number) {
+	if (value === undefined) return current;
+	const setting = Number(value);
+	if (!Number.isInteger(setting) || setting < minimum || setting > maximum)
+		throw badRequest(`Choose a whole number between ${minimum} and ${maximum}.`);
+	return setting;
+}
+
+function happinessRatingSetting(value: unknown, current: HappinessRating) {
+	if (value === undefined) return current;
+	const rating = Number(value) as HappinessRating;
+	if (!happinessRatings.includes(rating)) throw badRequest('Choose a happiness level.');
+	return rating;
+}
+
+function periodFlowSetting(value: unknown, current: MenstruationFlow) {
+	if (value === undefined) return current;
+	const flow = String(value) as MenstruationFlow;
+	if (!flowOptions.some((option) => option.value === flow))
+		throw badRequest('Choose a valid flow.');
+	return flow;
+}
+
+function meditationDurationSetting(value: string | null, defaultDurationSeconds: number) {
+	if (value === null) return defaultDurationSeconds;
+	const durationSeconds = Number(value);
+	if (!Number.isInteger(durationSeconds) || durationSeconds < 60 || durationSeconds > 7_200)
+		return defaultDurationSeconds;
+	return durationSeconds;
 }
 
 function cleanRequiredText(value: unknown, message: string) {

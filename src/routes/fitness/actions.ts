@@ -4,7 +4,6 @@ import type {
 	ActionResolution,
 	FitnessActionState
 } from '$lib/actions/contracts';
-import { defaultWorkoutSets } from './fitness';
 
 const MORNING_START = 5 * 60;
 const MORNING_END = 12 * 60;
@@ -37,7 +36,7 @@ export const fitnessActionCandidates: ActionCandidate[] = [
 		resolve(snapshot, environment) {
 			const fitness = eligibleWorkout(snapshot.trackers.fitness, environment);
 			if (!fitness || environment.localMinuteOfDay < QUICK_EVENING_START) return null;
-			const sets = Math.max(1, Math.ceil(defaultWorkoutSets(fitness.sets) / 2));
+			const sets = Math.max(1, Math.ceil(fitness.sets / 2));
 			return workoutResolution(
 				fitness,
 				'quick-evening-workout',
@@ -74,7 +73,7 @@ function workoutResolution(
 	variant: string,
 	score: number,
 	title: string,
-	sets = defaultWorkoutSets(fitness.sets)
+	sets = fitness.sets
 ): ActionResolution {
 	return {
 		id: `fitness.${variant}:${fitness.date}`,
@@ -96,7 +95,8 @@ function workoutDuration(
 	sets: number,
 	fitness: { firstSetDurationSeconds: number; additionalSetDurationSeconds: number }
 ) {
-	const seconds = fitness.firstSetDurationSeconds + (sets - 1) * fitness.additionalSetDurationSeconds;
+	const seconds =
+		fitness.firstSetDurationSeconds + (sets - 1) * fitness.additionalSetDurationSeconds;
 	const minutes = Math.max(1, Math.ceil(seconds / 60));
 	return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
 }

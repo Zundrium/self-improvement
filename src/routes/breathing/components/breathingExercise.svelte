@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { Check, Play, Square } from '@lucide/svelte';
-	import { onDestroy, onMount, untrack } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import {
 		breathingDurationSeconds,
@@ -22,6 +21,8 @@
 	type TimerStatus = 'idle' | 'running' | 'stopping' | 'completed';
 	type Props = {
 		localDate: string;
+		rounds: number;
+		includeHold: boolean;
 		saveState: SaveState;
 		complete?: boolean;
 		interactive?: boolean;
@@ -29,9 +30,10 @@
 		onretry: () => void;
 	};
 
-	const HOLD_PREFERENCE_KEY = 'breathing-include-hold';
 	let {
 		localDate,
+		rounds,
+		includeHold,
 		saveState,
 		complete = false,
 		interactive = true,
@@ -43,15 +45,13 @@
 	let loadedComplete = $state(untrack(() => complete));
 	let status = $state<TimerStatus>(untrack(() => (complete ? 'completed' : 'idle')));
 	let elapsedMilliseconds = $state(0);
-	let includeHold = $state(true);
-	let preferenceLoaded = $state(false);
 	let startedAt = 0;
 	let timerId: number | undefined;
 	let resetTimerId: number | undefined;
 
-	const durationSeconds = $derived(breathingDurationSeconds(includeHold));
+	const durationSeconds = $derived(breathingDurationSeconds(includeHold, rounds));
 	const durationMilliseconds = $derived(durationSeconds * 1000);
-	const step = $derived(breathingStep(elapsedMilliseconds, includeHold));
+	const step = $derived(breathingStep(elapsedMilliseconds, includeHold, rounds));
 	const remainingSeconds = $derived(
 		Math.max(0, durationSeconds - Math.floor(elapsedMilliseconds / 1000))
 	);
@@ -64,16 +64,7 @@
 	);
 
 	$effect(() => resetForDate(localDate, complete));
-	$effect(() => {
-		if (preferenceLoaded) localStorage.setItem(HOLD_PREFERENCE_KEY, String(includeHold));
-	});
-	onMount(loadHoldPreference);
 	onDestroy(clearTimers);
-
-	function loadHoldPreference() {
-		includeHold = localStorage.getItem(HOLD_PREFERENCE_KEY) !== 'false';
-		preferenceLoaded = true;
-	}
 
 	function resetForDate(nextDate: string, isComplete: boolean) {
 		if (loadedDate === nextDate && loadedComplete === isComplete) return;
@@ -199,14 +190,6 @@
 		{/if}
 	</div>
 
-	<div class="flex min-h-8 items-center">
-		{#if status === 'idle' && interactive}
-			<label class="flex cursor-pointer items-center gap-3 text-sm font-medium">
-				<Checkbox bind:checked={includeHold} />
-				Include breath hold
-			</label>
-		{/if}
-	</div>
 
 	<div class="hidden w-full sm:block">
 		{@render actions()}

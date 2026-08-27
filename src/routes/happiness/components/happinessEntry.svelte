@@ -23,35 +23,41 @@
 	let saving = $state(false);
 	let loadedDate = $state(untrack(() => data.date));
 	let loadedUpdatedAt = $state(untrack(() => String(data.entry?.updatedAt ?? '')));
-	let rating = $state<HappinessRating>(untrack(() => data.entry?.rating ?? 3));
+	let loadedDefaultRating = $state(untrack(() => data.settings.defaultRating));
+	let rating = $state<HappinessRating>(
+		untrack(() => data.entry?.rating ?? data.settings.defaultRating)
+	);
 	let selectedReasons = $state<string[]>(untrack(() => data.entry?.reasons ?? []));
 	let savedRating = $state<HappinessRating | undefined>(untrack(() => data.entry?.rating));
 	let savedReasons = $state<string[]>(untrack(() => data.entry?.reasons ?? []));
 	let hasSavedEntry = $state(untrack(() => Boolean(data.entry)));
 	const reasonOptions = $derived(reasonOptionsForRating(rating));
 	const dirty = $derived(
-		!hasSavedEntry ||
-			rating !== savedRating ||
-			reasonKey(selectedReasons) !== reasonKey(savedReasons)
+		!hasSavedEntry || rating !== savedRating || reasonKey(selectedReasons) !== reasonKey(savedReasons)
 	);
 
 	$effect(() => syncEntry(data));
 
 	function syncEntry(nextData: HappinessData) {
 		const updatedAt = String(nextData.entry?.updatedAt ?? '');
-		if (loadedDate === nextData.date && loadedUpdatedAt === updatedAt) return;
+		const defaultRating = nextData.settings.defaultRating;
+		if (
+			loadedDate === nextData.date &&
+			loadedUpdatedAt === updatedAt &&
+			loadedDefaultRating === defaultRating
+		)
+			return;
 		loadedDate = nextData.date;
 		loadedUpdatedAt = updatedAt;
-		rating = nextData.entry?.rating ?? 3;
+		loadedDefaultRating = defaultRating;
+		rating = nextData.entry?.rating ?? defaultRating;
 		selectedReasons = nextData.entry?.reasons ?? [];
 		markSaved(Boolean(nextData.entry));
 	}
 
 	function chooseRating(value: HappinessRating) {
 		rating = value;
-		const validReasons = new Set<string>(
-			reasonOptionsForRating(value).map((option) => option.value)
-		);
+		const validReasons = new Set<string>(reasonOptionsForRating(value).map((option) => option.value));
 		selectedReasons = selectedReasons.filter((reason) => validReasons.has(reason));
 	}
 

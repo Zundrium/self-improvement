@@ -7,8 +7,6 @@ export const BREATHING_PHASES = [
 ] as const;
 
 export const BREATHING_ROUNDS = 6;
-export const BREATHING_CYCLE_SECONDS = breathingCycleSeconds(true);
-export const BREATHING_DURATION_SECONDS = breathingDurationSeconds(true);
 
 export type BreathingPhase = (typeof BREATHING_PHASES)[number];
 export type BreathingCompletion = {
@@ -26,11 +24,15 @@ export function breathingCycleSeconds(includeHold: boolean) {
 	return breathingPhases(includeHold).reduce((total, phase) => total + phase.seconds, 0);
 }
 
-export function breathingDurationSeconds(includeHold: boolean) {
-	return breathingCycleSeconds(includeHold) * BREATHING_ROUNDS;
+export function breathingDurationSeconds(includeHold: boolean, rounds = BREATHING_ROUNDS) {
+	return breathingCycleSeconds(includeHold) * rounds;
 }
 
-export function breathingStep(elapsedMilliseconds: number, includeHold = true) {
+export function breathingStep(
+	elapsedMilliseconds: number,
+	includeHold = true,
+	rounds = BREATHING_ROUNDS
+) {
 	const phases = breathingPhases(includeHold);
 	const cycleSeconds = breathingCycleSeconds(includeHold);
 	const elapsedSeconds = Math.max(0, elapsedMilliseconds / 1000);
@@ -41,13 +43,13 @@ export function breathingStep(elapsedMilliseconds: number, includeHold = true) {
 		if (cycleElapsed < phaseEnd) {
 			return {
 				phase,
-				round: Math.min(Math.floor(elapsedSeconds / cycleSeconds) + 1, BREATHING_ROUNDS),
+				round: Math.min(Math.floor(elapsedSeconds / cycleSeconds) + 1, rounds),
 				remainingSeconds: Math.ceil(phaseEnd - cycleElapsed)
 			};
 		}
 		phaseStart = phaseEnd;
 	}
-	return { phase: phases[0], round: BREATHING_ROUNDS, remainingSeconds: 1 };
+	return { phase: phases[0], round: rounds, remainingSeconds: 1 };
 }
 
 export function formatTimer(totalSeconds: number) {

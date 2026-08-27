@@ -101,7 +101,28 @@ export type ActionFeedData = {
 	items: ActionFeedItem[];
 };
 
+export type StepsSettingsData = { dailyGoal: number };
+export type ScreenTimeSettingsData = { dailyLimitMinutes: number };
+export type FitnessSettingsData = { defaultSets: number };
+export type MeditationSettingsData = { defaultDurationSeconds: number };
+export type BreathingSettingsData = { rounds: number; includeHold: boolean };
+export type HappinessSettingsData = { defaultRating: HappinessRating };
+export type PeriodSettingsData = {
+	defaultFlow: MenstruationFlow;
+	fallbackCycleDays: number;
+};
+export type TrackerSettingsDataMap = {
+	steps: StepsSettingsData;
+	'screen-time': ScreenTimeSettingsData;
+	fitness: FitnessSettingsData;
+	meditation: MeditationSettingsData;
+	breathing: BreathingSettingsData;
+	happiness: HappinessSettingsData;
+	period: PeriodSettingsData;
+};
+
 export type StepsData = DatedData & {
+	settings: StepsSettingsData;
 	connection: { dailyGoal: number; lastReceivedAt: string | null } | null;
 	isSynced: boolean;
 	hasData: boolean;
@@ -134,6 +155,7 @@ export type SleepData = DatedData & {
 };
 
 export type ScreenTimeData = DatedData & {
+	settings: ScreenTimeSettingsData;
 	connection: { lastReceivedAt: string | null } | null;
 	isSynced: boolean;
 	hasData: boolean;
@@ -148,18 +170,23 @@ export type ScreenTimeData = DatedData & {
 };
 
 export type FitnessData = DatedData & {
+	settings: FitnessSettingsData;
 	program: WorkoutProgram;
 	completedDays: CompletedWorkoutDay[];
 };
 
 export type ExerciseData = { exercises: ExercisePreference[] };
 export type MeditationData = DatedData & {
+	settings: MeditationSettingsData;
+	initialDurationSeconds: number;
 	meditationHistory: Array<{ localDate: string; totalSeconds: number; sessionCount: number }>;
 };
 export type BreathingData = DatedData & {
+	settings: BreathingSettingsData;
 	exercise: { localDate: string; technique: string; durationSeconds: number } | null;
 };
 export type HappinessData = DatedData & {
+	settings: HappinessSettingsData;
 	entry: {
 		localDate: string;
 		rating: HappinessRating;
@@ -171,6 +198,7 @@ export type HappinessData = DatedData & {
 type CycleSummary = NonNullable<ReturnType<typeof cycleSummary>>;
 
 export type PeriodData = DatedData & {
+	settings: PeriodSettingsData;
 	entry: { localDate: string; flow: MenstruationFlow; notes: string; updatedAt: string } | null;
 	recentEntries: Array<{ localDate: string; flow: MenstruationFlow }>;
 	cycle: CycleSummary | null;

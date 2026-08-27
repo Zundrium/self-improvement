@@ -62,15 +62,10 @@
 	}
 </script>
 
-{#snippet actions()}
-	<Button href="/fitness" variant="ghost">Back</Button>
-{/snippet}
-
 <TrackerSection
 	title="Rep speeds"
 	description={`Set a cadence for rep-based exercises. ${customizedCount} customized.`}
 	{colors}
-	trailing={actions}
 	contentClass="space-y-6"
 >
 	{#if errorMessage}

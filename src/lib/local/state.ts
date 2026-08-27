@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { AppTrackerId } from '$lib/trackers/registry';
 import { appTrackers } from '$lib/trackers/registry';
 import { localDateForInstant } from '$lib/trackers/dates';
+import { TRACKER_DEFAULTS } from './tracker-settings';
 
 export const LOCAL_STATE_VERSION = 1 as const;
 const STATE_ID = 'current';
@@ -129,6 +130,12 @@ const stateSchema = z.strictObject({
 		days: z.array(sleepSummarySchema)
 	}),
 	screenTime: z.object({
+		dailyLimitMinutes: z
+			.number()
+			.int()
+			.min(1)
+			.max(1_440)
+			.default(TRACKER_DEFAULTS.screenTime.dailyLimitMinutes),
 		lastReceivedAt: instant.nullable(),
 		trackedPackages: z.array(z.string().min(1)),
 		days: z.array(
@@ -141,6 +148,7 @@ const stateSchema = z.strictObject({
 		)
 	}),
 	fitness: z.object({
+		defaultSets: z.number().int().min(1).max(10).default(TRACKER_DEFAULTS.fitness.defaultSets),
 		completedDays: z.array(z.object({ workoutId: z.number().int().positive(), dateKey: date })),
 		exerciseSpeeds: z.record(z.string(), z.number().int().min(25).max(200))
 	}),
@@ -150,6 +158,12 @@ const stateSchema = z.strictObject({
 		fastingDates: z.array(date)
 	}),
 	meditation: z.object({
+		defaultDurationSeconds: z
+			.number()
+			.int()
+			.min(60)
+			.max(7_200)
+			.default(TRACKER_DEFAULTS.meditation.defaultDurationSeconds),
 		sessions: z.array(
 			z.object({
 				id: z.string().min(1),
@@ -160,6 +174,8 @@ const stateSchema = z.strictObject({
 		)
 	}),
 	breathing: z.object({
+		rounds: z.number().int().min(1).max(20).default(TRACKER_DEFAULTS.breathing.rounds),
+		includeHold: z.boolean().default(TRACKER_DEFAULTS.breathing.includeHold),
 		exercises: z.array(
 			z.object({
 				localDate: date,
@@ -170,6 +186,9 @@ const stateSchema = z.strictObject({
 		)
 	}),
 	happiness: z.object({
+		defaultRating: z
+			.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)])
+			.default(TRACKER_DEFAULTS.happiness.defaultRating),
 		entries: z.array(
 			z.object({
 				localDate: date,
@@ -180,6 +199,15 @@ const stateSchema = z.strictObject({
 		)
 	}),
 	period: z.object({
+		defaultFlow: z
+			.enum(['spotting', 'light', 'medium', 'heavy'])
+			.default(TRACKER_DEFAULTS.period.defaultFlow),
+		fallbackCycleDays: z
+			.number()
+			.int()
+			.min(15)
+			.max(60)
+			.default(TRACKER_DEFAULTS.period.fallbackCycleDays),
 		entries: z.array(
 			z.object({
 				localDate: date,
@@ -232,7 +260,7 @@ export class LocalAppStore {
 
 	private async ensureState() {
 		const existing = await this.database.appState.get(STATE_ID);
-		if (existing) return existing.document;
+		if (existing) return validateLocalAppState(existing.document);
 		return this.serialize(() => this.createStateTransaction());
 	}
 
@@ -248,7 +276,7 @@ export class LocalAppStore {
 	private updateTransaction(mutator: (state: LocalAppState) => void | Promise<void>) {
 		return this.database.transaction('rw', this.database.appState, async () => {
 			const row = await this.database.appState.get(STATE_ID);
-			const state = clone(row?.document ?? createDefaultAppState());
+			const state = validateLocalAppState(clone(row?.document ?? createDefaultAppState()));
 			await mutator(state);
 			state.updatedAt = new Date().toISOString();
 			const validState = validateLocalAppState(state);
@@ -285,15 +313,38 @@ export function createDefaultAppState(now = new Date()): LocalAppState {
 		gamification: { startedLocalDate: localDateForInstant(now, localTimeZone()), awards: [] },
 		rewards: [],
 		redemptions: [],
-		steps: { dailyGoal: 5_000, lastReceivedAt: null, days: [] },
+		steps: { dailyGoal: TRACKER_DEFAULTS.steps.dailyGoal, lastReceivedAt: null, days: [] },
 		sleep: { bedtime: '22:30', remindersEnabled: true, lastReceivedAt: null, days: [] },
-		screenTime: { lastReceivedAt: null, trackedPackages: [], days: [] },
-		fitness: { completedDays: [], exerciseSpeeds: {} },
+		screenTime: {
+			dailyLimitMinutes: TRACKER_DEFAULTS.screenTime.dailyLimitMinutes,
+			lastReceivedAt: null,
+			trackedPackages: [],
+			days: []
+		},
+		fitness: {
+			defaultSets: TRACKER_DEFAULTS.fitness.defaultSets,
+			completedDays: [],
+			exerciseSpeeds: {}
+		},
 		nutrition: { profile: null, entries: [], fastingDates: [] },
-		meditation: { sessions: [] },
-		breathing: { exercises: [] },
-		happiness: { entries: [] },
-		period: { entries: [] }
+		meditation: {
+			defaultDurationSeconds: TRACKER_DEFAULTS.meditation.defaultDurationSeconds,
+			sessions: []
+		},
+		breathing: {
+			rounds: TRACKER_DEFAULTS.breathing.rounds,
+			includeHold: TRACKER_DEFAULTS.breathing.includeHold,
+			exercises: []
+		},
+		happiness: {
+			defaultRating: TRACKER_DEFAULTS.happiness.defaultRating,
+			entries: []
+		},
+		period: {
+			defaultFlow: TRACKER_DEFAULTS.period.defaultFlow,
+			fallbackCycleDays: TRACKER_DEFAULTS.period.fallbackCycleDays,
+			entries: []
+		}
 	};
 }
 

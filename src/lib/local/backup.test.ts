@@ -27,6 +27,38 @@ describe('backup envelope', () => {
 		).toThrow();
 	});
 
+	it('fills standardized settings when reading an older v1 export', () => {
+		const current = envelope();
+		const { dailyLimitMinutes: _dailyLimitMinutes, ...screenTime } = current.state.screenTime;
+		const { defaultSets: _defaultSets, ...fitness } = current.state.fitness;
+		const { defaultDurationSeconds: _defaultDurationSeconds, ...meditation } =
+			current.state.meditation;
+		const { rounds: _rounds, includeHold: _includeHold, ...breathing } = current.state.breathing;
+		const { defaultRating: _defaultRating, ...happiness } = current.state.happiness;
+		const {
+			defaultFlow: _defaultFlow,
+			fallbackCycleDays: _fallbackCycleDays,
+			...period
+		} = current.state.period;
+		const legacyEnvelope = {
+			...current,
+			state: { ...current.state, screenTime, fitness, meditation, breathing, happiness, period }
+		};
+
+		const restored = validateBackupEnvelope(legacyEnvelope);
+
+		expect(restored.version).toBe(1);
+		expect(restored.state.screenTime.dailyLimitMinutes).toBe(240);
+		expect(restored.state.fitness.defaultSets).toBe(2);
+		expect(restored.state.meditation.defaultDurationSeconds).toBe(300);
+		expect(restored.state.breathing).toMatchObject({ rounds: 6, includeHold: true });
+		expect(restored.state.happiness.defaultRating).toBe(3);
+		expect(restored.state.period).toMatchObject({
+			defaultFlow: 'medium',
+			fallbackCycleDays: 28
+		});
+	});
+
 	it('uses a deterministic timestamped JSON file name', () => {
 		expect(backupFileName(createdAt)).toBe('self-improvement-backup-2026-03-21T12-34-56-789Z.json');
 	});

@@ -7,7 +7,8 @@ import { defaultWorkoutSets } from './fitness';
 describe('fitness action candidates', () => {
 	it('starts workouts at no more than two sets', () => {
 		expect(defaultWorkoutSets(7)).toBe(2);
-		expect(defaultWorkoutSets(1)).toBe(1);
+		expect(defaultWorkoutSets(7, 4)).toBe(4);
+		expect(defaultWorkoutSets(1, 4)).toBe(1);
 	});
 
 	it.each([
@@ -22,7 +23,7 @@ describe('fitness action candidates', () => {
 		expect(item?.id).toBe(expectedId);
 	});
 
-	it('uses a two-set default and one set for the late-evening variant', () => {
+	it('uses the configured default and halves it for the late-evening variant', () => {
 		const [standard] = selectActionFeedItems(
 			fitnessActionCandidates,
 			snapshot(),
@@ -94,7 +95,7 @@ function snapshot(): ActionSnapshot {
 				scheduled: true,
 				completed: false,
 				workoutId: 10,
-				sets: 5,
+				sets: 2,
 				firstSetDurationSeconds: 130,
 				additionalSetDurationSeconds: 240
 			},

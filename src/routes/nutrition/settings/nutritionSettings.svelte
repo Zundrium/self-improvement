@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import { apiRequest } from '$lib/api';
 	import type { NutritionProfile } from '$lib/api-types';
-	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Field, FieldDescription, FieldGroup, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
@@ -19,8 +18,6 @@
 	let eatingWindowEnabled = $state(untrack(() => profile?.eatingWindowEnabled ?? false));
 	let eatingWindowStart = $state(untrack(() => profile?.eatingWindowStart ?? '12:00'));
 	let eatingWindowEnd = $state(untrack(() => profile?.eatingWindowEnd ?? '20:00'));
-	let message = $state('');
-	let failed = $state(false);
 	let saving = $state(false);
 	const activityLabel = $derived(
 		(
@@ -41,28 +38,18 @@
 		const form = { ...fields, eatingWindowEnabled, eatingWindowStart, eatingWindowEnd };
 		try {
 			await apiRequest('/api/app/profile', { method: 'PATCH', body: JSON.stringify(form) });
-			failed = false;
-			message = 'Nutrition settings updated.';
+			toast.success('Nutrition settings updated.');
 			await invalidateAll();
 		} catch (cause) {
-			failed = true;
-			message = cause instanceof Error ? cause.message : 'Could not update nutrition settings.';
+			toast.error(cause instanceof Error ? cause.message : 'Could not update nutrition settings.');
 		} finally {
 			saving = false;
 		}
 	}
 </script>
 
-<Card>
-	<CardHeader><CardTitle>Nutrition goals</CardTitle></CardHeader>
-	<CardContent>
-		{#if profile}
-			<form class="space-y-5" onsubmit={saveNutrition}>
-				{#if message}
-					<Alert variant={failed ? 'destructive' : 'default'}>
-						<AlertDescription>{message}</AlertDescription>
-					</Alert>
-				{/if}
+{#if profile}
+	<form class="space-y-5" onsubmit={saveNutrition}>
 				<p class="text-sm text-(--text)/64">
 					Your estimated maintenance is {estimatedTdee} kcal per day.
 				</p>
@@ -197,14 +184,12 @@
 					</div>
 				</FieldGroup>
 				<Button type="submit" disabled={saving}>Save nutrition settings</Button>
-			</form>
-		{:else}
-			<div class="space-y-4">
+	</form>
+{:else}
+	<div class="space-y-4">
 				<p class="text-sm leading-6 text-(--text)/64">
 					Set a daily calorie goal before tracking meals.
 				</p>
 				<Button href="/nutrition/onboarding">Set up nutrition</Button>
-			</div>
-		{/if}
-	</CardContent>
-</Card>
+	</div>
+{/if}

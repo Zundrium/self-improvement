@@ -10,6 +10,7 @@ describe('action snapshot', () => {
 			count: 0,
 			sourceEndAt: '2026-04-10T12:00:00.000Z'
 		});
+		state.fitness.defaultSets = 4;
 		state.screenTime.trackedPackages = ['app.focus'];
 		state.screenTime.days.push({
 			date: '2026-04-10',
@@ -49,7 +50,7 @@ describe('action snapshot', () => {
 		expect(snapshot.trackers.fitness).toMatchObject({
 			scheduled: true,
 			workoutId: 10,
-			sets: 7,
+			sets: 4,
 			firstSetDurationSeconds: 130,
 			additionalSetDurationSeconds: 240
 		});

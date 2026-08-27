@@ -13,8 +13,9 @@ describe('tracker registry', () => {
 		expect(appTrackerIds).not.toContain('achievements');
 	});
 
-	it('registers settings only for configurable trackers', () => {
-		expect(getTrackerForPathname('/sleep')?.settingsHref).toBe('/sleep/settings');
-		expect(getTrackerForPathname('/steps')?.settingsHref).toBeNull();
+	it('registers settings for every app tracker', () => {
+		for (const tracker of appTrackers) {
+			expect(tracker.settingsHref).toBe(`/${tracker.id}/settings`);
+		}
 	});
 });

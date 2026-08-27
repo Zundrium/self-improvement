@@ -1,5 +1,5 @@
 import type { ActionSnapshot, TrackerActionStates } from '$lib/actions/contracts';
-import { workoutSetDurations } from '../../routes/fitness/fitness';
+import { defaultWorkoutSets, workoutSetDurations } from '../../routes/fitness/fitness';
 import { fitnessProgram } from './fitness-program';
 import { sumEntries } from './nutrition';
 import type { LocalAppState } from './state';
@@ -48,15 +48,12 @@ function sleepState(state: LocalAppState, date: string): TrackerActionStates['sl
 	};
 }
 
-function screenTimeState(
-	state: LocalAppState,
-	date: string
-): TrackerActionStates['screen-time'] {
+function screenTimeState(state: LocalAppState, date: string): TrackerActionStates['screen-time'] {
 	const day = state.screenTime.days.find((item) => item.date === date);
 	return {
 		date,
 		minutes: trackedScreenTimeMinutes(day, state.screenTime.trackedPackages),
-		limitMinutes: 240,
+		limitMinutes: state.screenTime.dailyLimitMinutes,
 		recorded: day !== undefined,
 		hasMeasurements: day !== undefined
 	};
@@ -72,7 +69,7 @@ function fitnessState(state: LocalAppState, date: string): TrackerActionStates['
 		scheduled: workout !== undefined,
 		completed: state.fitness.completedDays.some(({ dateKey }) => dateKey === date),
 		workoutId: workout?.id ?? null,
-		sets: workout?.sets ?? null,
+		sets: workout ? defaultWorkoutSets(workout.sets, state.fitness.defaultSets) : null,
 		firstSetDurationSeconds: durations?.firstSetDurationSeconds ?? null,
 		additionalSetDurationSeconds: durations?.additionalSetDurationSeconds ?? null
 	};
@@ -97,10 +94,7 @@ function eatingWindow(profile: LocalAppState['nutrition']['profile']) {
 	return { start: profile.eatingWindowStart, end: profile.eatingWindowEnd };
 }
 
-function meditationState(
-	state: LocalAppState,
-	date: string
-): TrackerActionStates['meditation'] {
+function meditationState(state: LocalAppState, date: string): TrackerActionStates['meditation'] {
 	return {
 		date,
 		completed: state.meditation.sessions.some((session) => session.localDate === date),

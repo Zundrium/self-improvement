@@ -31,16 +31,18 @@ export function flowLabel(flow: MenstruationFlow) {
 	return flowOptions.find((option) => option.value === flow)?.label ?? flow;
 }
 
-export function cycleSummary(localDates: string[], today?: string) {
+export function cycleSummary(localDates: string[], today?: string, fallbackCycleDays = 28) {
 	const starts = cycleStarts(localDates);
 	if (!starts.length) return null;
 	const lengths = cycleLengths(starts);
-	const averageCycleDays = average(lengths) ?? 28;
+	const averageCycleDays = average(lengths) ?? fallbackCycleDays;
+	const lastPeriodStarted = starts.at(-1);
+	if (!lastPeriodStarted) return null;
 	return {
-		lastPeriodStarted: starts.at(-1)!,
+		lastPeriodStarted,
 		averageCycleDays,
 		averageFromHistory: lengths.length > 0,
-		estimatedNextPeriod: nextPeriod(starts.at(-1)!, averageCycleDays, today)
+		estimatedNextPeriod: nextPeriod(lastPeriodStarted, averageCycleDays, today)
 	};
 }
 
