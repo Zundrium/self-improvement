@@ -12,6 +12,7 @@ import type {
 	NutritionEntryData,
 	PeriodData,
 	ScreenTimeData,
+	StretchData,
 	TrackerSettingsDataMap
 } from '$lib/api-types';
 import { LocalAppService } from './service';
@@ -44,7 +45,7 @@ describe('local app service', () => {
 		const secondGamification = await service.request<GamificationData>('/api/app/gamification');
 
 		expect(app.profile.id).toBe('local-profile');
-		expect(app.enabledTrackers).toHaveLength(9);
+		expect(app.enabledTrackers).toHaveLength(10);
 		expect(happiness.entry).toMatchObject({ rating: 4, reasons: ['gratitude'] });
 		expect(firstGamification).toMatchObject({ score: 10, glimmers: 10, earnedNow: 10 });
 		expect(secondGamification.earnedNow).toBe(0);
@@ -83,6 +84,9 @@ describe('local app service', () => {
 			await service.request<TrackerSettingsDataMap['breathing']>('/api/app/breathing/settings')
 		).toEqual({ rounds: 6, includeHold: true });
 		expect(
+			await service.request<TrackerSettingsDataMap['stretch']>('/api/app/stretch/settings')
+		).toEqual({ holdSeconds: 30 });
+		expect(
 			await service.request<TrackerSettingsDataMap['happiness']>('/api/app/happiness/settings')
 		).toEqual({ defaultRating: 3 });
 		expect(
@@ -94,6 +98,7 @@ describe('local app service', () => {
 		await service.request('/api/app/fitness/settings', patch({ defaultSets: 4 }));
 		await service.request('/api/app/meditation/settings', patch({ defaultDurationSeconds: 600 }));
 		await service.request('/api/app/breathing/settings', patch({ rounds: 2, includeHold: false }));
+		await service.request('/api/app/stretch/settings', patch({ holdSeconds: 45 }));
 		await service.request('/api/app/happiness/settings', patch({ defaultRating: 4 }));
 		await service.request(
 			'/api/app/period/settings',
@@ -106,6 +111,7 @@ describe('local app service', () => {
 		expect(state.fitness.defaultSets).toBe(4);
 		expect(state.meditation.defaultDurationSeconds).toBe(600);
 		expect(state.breathing).toMatchObject({ rounds: 2, includeHold: false });
+		expect(state.stretch.holdSeconds).toBe(45);
 		expect(state.happiness.defaultRating).toBe(4);
 		expect(state.period).toMatchObject({ defaultFlow: 'heavy', fallbackCycleDays: 35 });
 	});
@@ -159,6 +165,76 @@ describe('local app service', () => {
 		expect(happiness.entry?.rating).toBe(4);
 		expect(period.entry?.flow).toBe('heavy');
 		expect(period.cycle).toMatchObject({ averageCycleDays: 35, averageFromHistory: false });
+	});
+
+	it('records stretch sessions and awards their completion dates', async () => {
+		const now = new Date('2026-03-20T12:00:00.000Z');
+		const store = trackedStore();
+		await store.replaceState(createDefaultAppState(now));
+		const service = new LocalAppService(store, () => now);
+
+		const empty = await service.request<StretchData>('/api/app/stretch');
+		const session = await service.request<StretchData['sessions'][number]>('/api/app/stretch', {
+			method: 'POST',
+			body: JSON.stringify({ localDate: '2026-03-20' })
+		});
+		const data = await service.request<StretchData>('/api/app/stretch');
+		const summary = await service.request<DaySummaryData>('/api/app/day-summary');
+		const gamification = await service.request<GamificationData>('/api/app/gamification');
+
+		expect(empty).toMatchObject({
+			settings: { holdSeconds: 30 },
+			scheduled: true,
+			sessions: []
+		});
+		expect(session).toMatchObject({ localDate: '2026-03-20', holdSeconds: 30 });
+		expect(data.markedDates).toEqual(['2026-03-20']);
+		expect(data.sessions).toHaveLength(1);
+		expect(summary).toMatchObject({ stretchDone: true, stretchScheduled: true });
+		expect(gamification.streaks.find(({ trackerId }) => trackerId === 'stretch')).toMatchObject({
+			points: 10,
+			current: 1,
+			total: 1
+		});
+	});
+
+	it('keeps stretch weekends as rest days without breaking the weekday streak', async () => {
+		const now = new Date('2026-03-23T12:00:00.000Z');
+		const store = trackedStore();
+		const state = createDefaultAppState(now);
+		state.enabledTrackerIds = ['steps', 'stretch'];
+		state.gamification.startedLocalDate = '2026-03-20';
+		state.steps.days.push({
+			date: '2026-03-22',
+			count: state.steps.dailyGoal,
+			sourceEndAt: '2026-03-22T12:00:00.000Z'
+		});
+		state.stretch.sessions = ['2026-03-20', '2026-03-23'].map((localDate) => ({
+			id: localDate,
+			localDate,
+			holdSeconds: 30,
+			completedAt: `${localDate}T12:00:00.000Z`
+		}));
+		await store.replaceState(state);
+		const service = new LocalAppService(store, () => now);
+
+		const restDay = await service.request<StretchData>('/api/app/stretch?date=2026-03-22');
+		const restSummary = await service.request<DaySummaryData>(
+			'/api/app/day-summary?date=2026-03-22'
+		);
+		const gamification = await service.request<GamificationData>('/api/app/gamification');
+		const stretchStreak = gamification.streaks.find(({ trackerId }) => trackerId === 'stretch');
+
+		expect(restDay.scheduled).toBe(false);
+		expect(restSummary.stretchScheduled).toBe(false);
+		expect(stretchStreak).toMatchObject({ current: 2, best: 2, total: 2 });
+		expect(gamification.dayStreak.total).toBe(1);
+		await expect(
+			service.request('/api/app/stretch', {
+				method: 'POST',
+				body: JSON.stringify({ localDate: '2026-03-22' })
+			})
+		).rejects.toMatchObject({ status: 400 });
 	});
 
 	it('uses the screen-time limit in data, actions, and gamification', async () => {

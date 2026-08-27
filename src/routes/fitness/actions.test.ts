@@ -110,6 +110,7 @@ function snapshot(): ActionSnapshot {
 			},
 			meditation: { date: '2026-04-10', completed: false, daysSinceLastSession: null },
 			breathing: { date: '2026-04-10', completed: false },
+			stretch: { date: '2026-04-10', scheduled: true, completed: false },
 			happiness: { date: '2026-04-10', rating: null },
 			period: { date: '2026-04-10', flow: null }
 		}

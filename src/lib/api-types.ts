@@ -86,6 +86,8 @@ export type DaySummaryData = {
 	nutritionEatingWindow: EatingWindowSettings | null;
 	meditationDone: boolean;
 	breathingDone: boolean;
+	stretchDone: boolean;
+	stretchScheduled: boolean;
 	happinessRating: HappinessRating | null;
 	periodFlow: MenstruationFlow | null;
 };
@@ -106,6 +108,7 @@ export type ScreenTimeSettingsData = { dailyLimitMinutes: number };
 export type FitnessSettingsData = { defaultSets: number };
 export type MeditationSettingsData = { defaultDurationSeconds: number };
 export type BreathingSettingsData = { rounds: number; includeHold: boolean };
+export type StretchSettingsData = { holdSeconds: number };
 export type HappinessSettingsData = { defaultRating: HappinessRating };
 export type PeriodSettingsData = {
 	defaultFlow: MenstruationFlow;
@@ -117,6 +120,7 @@ export type TrackerSettingsDataMap = {
 	fitness: FitnessSettingsData;
 	meditation: MeditationSettingsData;
 	breathing: BreathingSettingsData;
+	stretch: StretchSettingsData;
 	happiness: HappinessSettingsData;
 	period: PeriodSettingsData;
 };
@@ -184,6 +188,17 @@ export type MeditationData = DatedData & {
 export type BreathingData = DatedData & {
 	settings: BreathingSettingsData;
 	exercise: { localDate: string; technique: string; durationSeconds: number } | null;
+};
+export type StretchSession = {
+	id: string;
+	localDate: string;
+	holdSeconds: number;
+	completedAt: string;
+};
+export type StretchData = DatedData & {
+	settings: StretchSettingsData;
+	scheduled: boolean;
+	sessions: StretchSession[];
 };
 export type HappinessData = DatedData & {
 	settings: HappinessSettingsData;

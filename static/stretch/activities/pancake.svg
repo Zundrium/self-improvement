@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">Pancake stretch</title>
+  <desc id="desc">A person seated with straight legs wide apart, hinging forward from the hips with the chest lowered between the legs.</desc>
+  <style>
+    .line { fill: none; stroke: #52525b; stroke-linecap: round; stroke-linejoin: round; stroke-width: 10; }
+    .soft { fill: #e4e4e7; stroke: #52525b; stroke-linecap: round; stroke-linejoin: round; stroke-width: 7; }
+    .ground { fill: none; stroke: #a1a1aa; stroke-linecap: round; stroke-width: 4; }
+    @media (prefers-color-scheme: dark) { .line { stroke: #e4e4e7; } .soft { fill: #3f3f46; stroke: #e4e4e7; } .ground { stroke: #71717a; } }
+  </style>
+  <path class="ground" d="M36 205H284"/>
+  <path class="line" d="M151 126 L99 169 L45 197 M169 126 L221 169 L275 197"/>
+  <path class="line" d="M45 197 L29 200 M275 197 L291 200"/>
+  <path class="soft" d="M149 121 Q137 108 119 99 L105 112 Q128 133 157 143 L174 134 Q164 128 149 121Z"/>
+  <circle class="soft" cx="96" cy="103" r="16"/>
+  <path class="line" d="M122 106 L133 151 L145 176 M133 108 L149 149 L160 174"/>
+  <path class="line" d="M145 176 L139 184 M160 174 L168 181"/>
+</svg>

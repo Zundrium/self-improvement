@@ -78,6 +78,12 @@ export type BreathingActionState = {
 	completed: boolean;
 };
 
+export type StretchActionState = {
+	date: string;
+	scheduled: boolean;
+	completed: boolean;
+};
+
 export type HappinessActionState = {
 	date: string;
 	rating: 1 | 2 | 3 | 4 | 5 | null;
@@ -96,6 +102,7 @@ export type TrackerActionStates = {
 	nutrition: NutritionActionState;
 	meditation: MeditationActionState;
 	breathing: BreathingActionState;
+	stretch: StretchActionState;
 	happiness: HappinessActionState;
 	period: PeriodActionState;
 };

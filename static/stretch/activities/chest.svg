@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">Chest stretch</title>
+  <desc id="desc">A person standing tall, holding a broom or pole across the shoulders with both hands and pressing it backward to open the chest.</desc>
+  <style>
+    .line { fill: none; stroke: #52525b; stroke-linecap: round; stroke-linejoin: round; stroke-width: 10; }
+    .soft { fill: #e4e4e7; stroke: #52525b; stroke-linecap: round; stroke-linejoin: round; stroke-width: 7; }
+    .ground { fill: none; stroke: #a1a1aa; stroke-linecap: round; stroke-linejoin: round; stroke-width: 4; }
+    .pole { fill: none; stroke: #71717a; stroke-linecap: round; stroke-width: 8; }
+    @media (prefers-color-scheme: dark) { .line { stroke: #e4e4e7; } .soft { fill: #3f3f46; stroke: #e4e4e7; } .ground { stroke: #71717a; } .pole { stroke: #a1a1aa; } }
+  </style>
+  <path class="ground" d="M46 203H274"/>
+  <path class="pole" d="M63 82H257"/>
+  <path class="pole" d="M63 72V92 M257 72V92"/>
+  <circle class="soft" cx="145" cy="52" r="17"/>
+  <path class="soft" d="M135 73 Q153 67 168 83 L171 141 L132 141 L119 95Z"/>
+  <path class="line" d="M134 88 Q111 81 91 82 L72 82 M164 88 Q187 81 209 82 L248 82"/>
+  <circle class="soft" cx="68" cy="82" r="7"/>
+  <circle class="soft" cx="252" cy="82" r="7"/>
+  <path class="line" d="M143 138 L126 198 M160 138 L178 198"/>
+  <path class="line" d="M126 198 L112 200 M178 198 L192 200"/>
+</svg>

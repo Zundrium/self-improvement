@@ -1,6 +1,7 @@
 import type { GamificationData } from '$lib/api-types';
 import { appTrackers, type AppTrackerId } from '$lib/trackers/registry';
 import { localDateForInstant } from '$lib/trackers/dates';
+import { isStretchScheduled } from '../../routes/stretch/stretch';
 import type { LocalAppState } from './state';
 
 export type CompletionDates = Record<AppTrackerId, string[]>;
@@ -14,6 +15,7 @@ export const trackerPoints: Record<AppTrackerId, number> = {
 	nutrition: 15,
 	meditation: 15,
 	breathing: 10,
+	stretch: 10,
 	happiness: 10,
 	period: 10
 };
@@ -55,6 +57,7 @@ export function completionDates(state: LocalAppState, today: string): Completion
 	dates.nutrition = [...state.nutrition.entries.map(dayDate), ...state.nutrition.fastingDates];
 	dates.meditation = state.meditation.sessions.map(localDate);
 	dates.breathing = state.breathing.exercises.map(localDate);
+	dates.stretch = state.stretch.sessions.map(localDate);
 	dates.happiness = state.happiness.entries.map(localDate);
 	dates.period = state.period.entries.map(localDate);
 	return trimCompletionDates(dates, state.gamification.startedLocalDate, today);
@@ -71,8 +74,8 @@ export function buildStreaks(
 			trackerId: id,
 			label,
 			points: trackerPoints[id],
-			current: currentStreak(completions[id], today),
-			best: bestStreak(completions[id]),
+			current: trackerCurrentStreak(id, completions[id], today),
+			best: trackerBestStreak(id, completions[id]),
 			total: uniqueDates(completions[id]).length
 		}));
 }
@@ -102,10 +105,69 @@ export function bestStreak(dates: string[]) {
 
 export function completeDayDates(completions: CompletionDates, activeIds: AppTrackerId[]) {
 	if (!activeIds.length) return [];
-	const [first, ...remaining] = activeIds;
-	return uniqueDates(completions[first]).filter((date) =>
-		remaining.every((trackerId) => completions[trackerId].includes(date))
+	const candidateDates = uniqueDates(activeIds.flatMap((trackerId) => completions[trackerId]));
+	return candidateDates.filter((date) =>
+		activeIds.every((trackerId) => trackerCompletedOnDate(trackerId, date, completions))
 	);
+}
+
+function trackerCurrentStreak(id: AppTrackerId, dates: string[], today: string) {
+	return id === 'stretch' ? currentScheduledStreak(dates, today) : currentStreak(dates, today);
+}
+
+function trackerBestStreak(id: AppTrackerId, dates: string[]) {
+	return id === 'stretch' ? bestScheduledStreak(dates) : bestStreak(dates);
+}
+
+function currentScheduledStreak(dates: string[], today: string) {
+	const completed = new Set(dates);
+	let cursor = latestScheduledDate(today);
+	if (isStretchScheduled(today) && !completed.has(today)) cursor = previousScheduledDate(today);
+	let streak = 0;
+	while (completed.has(cursor)) {
+		streak += 1;
+		cursor = previousScheduledDate(cursor);
+	}
+	return streak;
+}
+
+function bestScheduledStreak(dates: string[]) {
+	let best = 0;
+	let streak = 0;
+	let previous = '';
+	for (const date of uniqueDates(dates)) {
+		streak = previous && date === nextScheduledDate(previous) ? streak + 1 : 1;
+		best = Math.max(best, streak);
+		previous = date;
+	}
+	return best;
+}
+
+function latestScheduledDate(date: string) {
+	let cursor = date;
+	while (!isStretchScheduled(cursor)) cursor = shiftDate(cursor, -1);
+	return cursor;
+}
+
+function previousScheduledDate(date: string) {
+	let cursor = shiftDate(date, -1);
+	while (!isStretchScheduled(cursor)) cursor = shiftDate(cursor, -1);
+	return cursor;
+}
+
+function nextScheduledDate(date: string) {
+	let cursor = shiftDate(date, 1);
+	while (!isStretchScheduled(cursor)) cursor = shiftDate(cursor, 1);
+	return cursor;
+}
+
+function trackerCompletedOnDate(
+	trackerId: AppTrackerId,
+	date: string,
+	completions: CompletionDates
+) {
+	if (trackerId === 'stretch' && !isStretchScheduled(date)) return true;
+	return completions[trackerId].includes(date);
 }
 
 function reconcileAwards(state: LocalAppState, completions: CompletionDates) {

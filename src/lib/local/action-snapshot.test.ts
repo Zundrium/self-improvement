@@ -37,6 +37,12 @@ describe('action snapshot', () => {
 			durationSeconds: 300,
 			startedAt: Date.parse('2026-04-05T12:00:00.000Z')
 		});
+		state.stretch.sessions.push({
+			id: 'stretch',
+			localDate: '2026-04-10',
+			holdSeconds: 30,
+			completedAt: '2026-04-10T12:00:00.000Z'
+		});
 
 		const snapshot = buildActionSnapshot(state, '2026-04-10', '2026-04-10');
 
@@ -56,6 +62,7 @@ describe('action snapshot', () => {
 		});
 		expect(snapshot.trackers.nutrition.configured).toBe(false);
 		expect(snapshot.trackers.meditation.daysSinceLastSession).toBe(5);
+		expect(snapshot.trackers.stretch).toMatchObject({ scheduled: true, completed: true });
 	});
 
 	it('keeps missing Android measurements distinct from measured zero', () => {

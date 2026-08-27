@@ -102,6 +102,7 @@ const stateSchema = z.strictObject({
 			'nutrition',
 			'meditation',
 			'breathing',
+			'stretch',
 			'happiness',
 			'period'
 		])
@@ -185,6 +186,19 @@ const stateSchema = z.strictObject({
 			})
 		)
 	}),
+	stretch: z
+		.object({
+			holdSeconds: z.number().int().min(5).max(600).default(TRACKER_DEFAULTS.stretch.holdSeconds),
+			sessions: z.array(
+				z.object({
+					id: z.string().min(1),
+					localDate: date,
+					holdSeconds: z.number().int().min(5).max(600),
+					completedAt: instant
+				})
+			)
+		})
+		.default({ holdSeconds: TRACKER_DEFAULTS.stretch.holdSeconds, sessions: [] }),
 	happiness: z.object({
 		defaultRating: z
 			.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)])
@@ -336,6 +350,7 @@ export function createDefaultAppState(now = new Date()): LocalAppState {
 			includeHold: TRACKER_DEFAULTS.breathing.includeHold,
 			exercises: []
 		},
+		stretch: { holdSeconds: TRACKER_DEFAULTS.stretch.holdSeconds, sessions: [] },
 		happiness: {
 			defaultRating: TRACKER_DEFAULTS.happiness.defaultRating,
 			entries: []
@@ -349,7 +364,7 @@ export function createDefaultAppState(now = new Date()): LocalAppState {
 }
 
 export function validateLocalAppState(input: unknown) {
-	return stateSchema.parse(input);
+	return stateSchema.parse(withStretchMigration(input));
 }
 
 export const localAppStore = new LocalAppStore();
@@ -366,6 +381,15 @@ export const importLocalAppState = replaceLocalAppState;
 
 function defaultTrackerIds(): AppTrackerId[] {
 	return appTrackers.filter(({ defaultEnabled }) => defaultEnabled).map(({ id }) => id);
+}
+
+function withStretchMigration(input: unknown) {
+	if (!input || typeof input !== 'object' || Array.isArray(input) || 'stretch' in input) return input;
+	const state = input as Record<string, unknown>;
+	const enabledTrackerIds = Array.isArray(state.enabledTrackerIds)
+		? [...new Set([...state.enabledTrackerIds, 'stretch'])]
+		: state.enabledTrackerIds;
+	return { ...state, enabledTrackerIds };
 }
 
 function localTimeZone() {

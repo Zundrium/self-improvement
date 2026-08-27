@@ -4,6 +4,7 @@ export const TRACKER_DEFAULTS = {
 	fitness: { defaultSets: 2 },
 	meditation: { defaultDurationSeconds: 300 },
 	breathing: { rounds: 6, includeHold: true },
+	stretch: { holdSeconds: 30 },
 	happiness: { defaultRating: 3 },
 	period: { defaultFlow: 'medium', fallbackCycleDays: 28 }
 } as const;

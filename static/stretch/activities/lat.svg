@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">Lat stretch</title>
+  <desc id="desc">A person kneeling with hips back, arms long overhead and both hands supported on an elevated surface.</desc>
+  <style>
+    .line { fill: none; stroke: #52525b; stroke-linecap: round; stroke-linejoin: round; stroke-width: 10; }
+    .soft { fill: #e4e4e7; stroke: #52525b; stroke-linecap: round; stroke-linejoin: round; stroke-width: 7; }
+    .ground { fill: none; stroke: #a1a1aa; stroke-linecap: round; stroke-linejoin: round; stroke-width: 4; }
+    .support { fill: none; stroke: #a1a1aa; stroke-linecap: round; stroke-linejoin: round; stroke-width: 8; }
+    @media (prefers-color-scheme: dark) { .line { stroke: #e4e4e7; } .soft { fill: #3f3f46; stroke: #e4e4e7; } .ground { stroke: #71717a; } .support { stroke: #a1a1aa; } }
+  </style>
+  <path class="ground" d="M36 203H284"/>
+  <path class="support" d="M219 69H285 M242 69V203 M274 69V203"/>
+  <path class="support" d="M211 69H227 M211 82H227"/>
+  <circle class="soft" cx="119" cy="104" r="16"/>
+  <path class="soft" d="M133 112 Q151 111 177 130 L171 157 Q144 153 119 137Z"/>
+  <path class="line" d="M137 113 L190 78 L219 78 M148 125 L199 91 L219 91"/>
+  <circle class="soft" cx="222" cy="78" r="6"/>
+  <circle class="soft" cx="222" cy="91" r="6"/>
+  <path class="line" d="M170 153 L132 178 L115 198 M174 153 L207 177 L228 198"/>
+  <path class="line" d="M115 198 L101 200 M228 198 L242 200"/>
+</svg>

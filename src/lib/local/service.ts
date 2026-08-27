@@ -20,6 +20,7 @@ import type {
 	Reward,
 	RewardsData,
 	ScreenTimeData,
+	StretchData,
 	SleepData,
 	SleepSettingsData,
 	StepsData,
@@ -37,6 +38,7 @@ import {
 } from '../../routes/happiness/happiness';
 import { cycleSummary, flowOptions, type MenstruationFlow } from '../../routes/period/period';
 import { summarizeUsage } from '../../routes/screen-time/screen-time';
+import { isStretchScheduled } from '../../routes/stretch/stretch';
 import { buildActionSnapshot } from './action-snapshot';
 import { exercisePreferences, fitnessProgram, workoutDay } from './fitness-program';
 import { buildGamification } from './gamification';
@@ -84,6 +86,7 @@ export class LocalAppService {
 		if (path === '/api/app/fitness/exercises' && method === 'GET') return this.exercises();
 		if (path === '/api/app/meditation') return this.meditation(url, method, body);
 		if (path === '/api/app/breathing') return this.breathing(url, method, body);
+		if (path === '/api/app/stretch') return this.stretch(url, method, body);
 		if (path === '/api/app/happiness') return this.happiness(url, method, body);
 		if (path === '/api/app/period') return this.period(url, method, body);
 		if (path === '/api/app/rewards' && method === 'GET') return this.rewards();
@@ -287,6 +290,20 @@ export class LocalAppService {
 		});
 		if (!exercise) throw new Error('Breathing exercise was not created.');
 		return { ...body, includeHold: exercise.technique === '4-7-8', ...exercise };
+	}
+
+	private async stretch(url: URL, method: string, body: Record<string, unknown>) {
+		if (method === 'GET')
+			return stretchData(await this.store.read(), selectedDate(url, this.today()), this.today());
+		if (method !== 'POST') throw methodNotAllowed();
+		let session: LocalAppState['stretch']['sessions'][number] | null = null;
+		await this.store.update((state) => {
+			const created = validStretch(body, state.stretch.holdSeconds, this.today(), this.clock());
+			state.stretch.sessions.push(created);
+			session = created;
+		});
+		if (!session) throw new Error('Stretch session was not created.');
+		return session;
 	}
 
 	private async happiness(url: URL, method: string, body: Record<string, unknown>) {
@@ -556,6 +573,7 @@ function isSettingsTrackerId(value: string): value is SettingsTrackerId {
 		'fitness',
 		'meditation',
 		'breathing',
+		'stretch',
 		'happiness',
 		'period'
 	].includes(value);
@@ -571,6 +589,7 @@ function settingsForTracker<T extends SettingsTrackerId>(
 		fitness: { defaultSets: state.fitness.defaultSets },
 		meditation: { defaultDurationSeconds: state.meditation.defaultDurationSeconds },
 		breathing: { rounds: state.breathing.rounds, includeHold: state.breathing.includeHold },
+		stretch: { holdSeconds: state.stretch.holdSeconds },
 		happiness: { defaultRating: state.happiness.defaultRating },
 		period: {
 			defaultFlow: state.period.defaultFlow,
@@ -610,6 +629,8 @@ function updateTrackerSettings(
 			state.breathing.includeHold
 		);
 	}
+	if (trackerId === 'stretch')
+		state.stretch.holdSeconds = integerSetting(body.holdSeconds, state.stretch.holdSeconds, 5, 600);
 	if (trackerId === 'happiness')
 		state.happiness.defaultRating = happinessRatingSetting(
 			body.defaultRating,
@@ -743,6 +764,17 @@ function breathingData(state: LocalAppState, date: string, today: string): Breat
 	};
 }
 
+function stretchData(state: LocalAppState, date: string, today: string): StretchData {
+	return {
+		date,
+		today,
+		settings: settingsForTracker(state, 'stretch'),
+		scheduled: isStretchScheduled(date),
+		markedDates: unique(state.stretch.sessions.map(({ localDate }) => localDate)),
+		sessions: state.stretch.sessions.filter((session) => session.localDate === date)
+	};
+}
+
 function happinessData(state: LocalAppState, date: string, today: string): HappinessData {
 	const entries = [...state.happiness.entries].sort(byLocalDateDescending);
 	const selected = entries.find((entry) => entry.localDate === date);
@@ -833,6 +865,8 @@ function daySummaryData(state: LocalAppState, date: string, today: string): DayS
 			: null,
 		meditationDone: state.meditation.sessions.some((session) => session.localDate === date),
 		breathingDone: state.breathing.exercises.some((exercise) => exercise.localDate === date),
+		stretchDone: state.stretch.sessions.some((session) => session.localDate === date),
+		stretchScheduled: isStretchScheduled(date),
 		happinessRating:
 			state.happiness.entries.find((entry) => entry.localDate === date)?.rating ?? null,
 		periodFlow: state.period.entries.find((entry) => entry.localDate === date)?.flow ?? null
@@ -879,6 +913,23 @@ function validBreathing(
 		startedAt,
 		technique: includeHold ? '4-7-8' : '4-8',
 		durationSeconds: breathingDurationSeconds(includeHold, settings.rounds)
+	};
+}
+
+function validStretch(
+	body: Record<string, unknown>,
+	defaultHoldSeconds: number,
+	today: string,
+	now: Date
+) {
+	const localDate = String(body.localDate ?? '');
+	if (!validPastDate(localDate, today) || !isStretchScheduled(localDate))
+		throw badRequest('Stretch sessions are scheduled Monday through Friday.');
+	return {
+		id: crypto.randomUUID(),
+		localDate,
+		holdSeconds: integerSetting(body.holdSeconds, defaultHoldSeconds, 5, 600),
+		completedAt: now.toISOString()
 	};
 }
 

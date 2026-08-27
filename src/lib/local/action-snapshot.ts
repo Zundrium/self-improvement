@@ -1,5 +1,6 @@
 import type { ActionSnapshot, TrackerActionStates } from '$lib/actions/contracts';
 import { defaultWorkoutSets, workoutSetDurations } from '../../routes/fitness/fitness';
+import { isStretchScheduled } from '../../routes/stretch/stretch';
 import { fitnessProgram } from './fitness-program';
 import { sumEntries } from './nutrition';
 import type { LocalAppState } from './state';
@@ -21,6 +22,7 @@ export function buildActionSnapshot(
 			nutrition: nutritionState(state, date),
 			meditation: meditationState(state, date),
 			breathing: breathingState(state, date),
+			stretch: stretchState(state, date),
 			happiness: happinessState(state, date),
 			period: periodState(state, date)
 		}
@@ -106,6 +108,14 @@ function breathingState(state: LocalAppState, date: string): TrackerActionStates
 	return {
 		date,
 		completed: state.breathing.exercises.some((exercise) => exercise.localDate === date)
+	};
+}
+
+function stretchState(state: LocalAppState, date: string): TrackerActionStates['stretch'] {
+	return {
+		date,
+		scheduled: isStretchScheduled(date),
+		completed: state.stretch.sessions.some((session) => session.localDate === date)
 	};
 }
 

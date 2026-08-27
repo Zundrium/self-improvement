@@ -6,6 +6,7 @@ import { nutritionActionCandidates } from '../../routes/nutrition/actions';
 import { screenTimeActionCandidates } from '../../routes/screen-time/actions';
 import { sleepActionCandidates } from '../../routes/sleep/actions';
 import { stepActionCandidates } from '../../routes/steps/actions';
+import { stretchActionCandidates } from '../../routes/stretch/actions';
 import type { ActionCandidate } from './contracts';
 
 export const actionCandidates: ActionCandidate[] = [
@@ -16,5 +17,6 @@ export const actionCandidates: ActionCandidate[] = [
 	...nutritionActionCandidates,
 	...meditationActionCandidates,
 	...breathingActionCandidates,
+	...stretchActionCandidates,
 	...happinessActionCandidates
 ];

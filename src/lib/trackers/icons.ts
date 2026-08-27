@@ -5,6 +5,7 @@ import {
 	Dumbbell,
 	Footprints,
 	Moon,
+	PersonStanding,
 	Smile,
 	Smartphone,
 	Wind
@@ -22,6 +23,7 @@ export const trackerIcons = {
 	nutrition: Apple,
 	meditation: MeditationIcon,
 	breathing: Wind,
+	stretch: PersonStanding,
 	happiness: Smile,
 	period: Droplet
 } satisfies Record<AppTrackerId, TrackerIconComponent>;

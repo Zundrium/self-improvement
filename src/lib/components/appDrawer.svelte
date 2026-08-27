@@ -75,6 +75,16 @@
 			'/breathing',
 			true
 		),
+		stretch: trackerDetail(
+			daySummary.stretchScheduled
+				? daySummary.stretchDone
+					? 'Completed'
+					: 'Not yet'
+				: 'Rest day',
+			daySummary.stretchDone || !daySummary.stretchScheduled,
+			'/stretch',
+			daySummary.stretchScheduled
+		),
 		happiness: trackerDetail(
 			daySummary.happinessRating ? `${daySummary.happinessRating}/5` : 'Not logged',
 			daySummary.happinessRating !== null,

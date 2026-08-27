@@ -1,14 +1,18 @@
 <script lang="ts">
-	import { Slider as SliderPrimitive } from 'bits-ui';
-	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
+import { Slider as SliderPrimitive } from 'bits-ui';
+import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 
-	let {
-		ref = $bindable(null),
-		value = $bindable(),
-		orientation = 'horizontal',
-		class: className,
-		...restProps
-	}: WithoutChildrenOrChild<SliderPrimitive.RootProps> = $props();
+let {
+	ref = $bindable(null),
+	value = $bindable(),
+	orientation = 'horizontal',
+	'aria-label': ariaLabel,
+	'aria-labelledby': ariaLabelledby,
+	'aria-describedby': ariaDescribedby,
+	'aria-valuetext': ariaValuetext,
+	class: className,
+	...restProps
+}: WithoutChildrenOrChild<SliderPrimitive.RootProps> = $props();
 </script>
 
 <SliderPrimitive.Root
@@ -37,6 +41,10 @@
 		{#each thumbItems as thumb (thumb.index)}
 			<SliderPrimitive.Thumb
 				index={thumb.index}
+				aria-label={ariaLabel}
+				aria-labelledby={ariaLabelledby}
+				aria-describedby={ariaDescribedby}
+				aria-valuetext={ariaValuetext}
 				data-slot="slider-thumb"
 				class="block size-5 shrink-0 touch-none rounded-full border border-(--text)/8 bg-(--bg-elevated) shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-(--text)/24 disabled:pointer-events-none disabled:opacity-50"
 				data-motion-press

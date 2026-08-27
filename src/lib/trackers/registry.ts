@@ -70,12 +70,23 @@ export const trackers = [
 		defaultEnabled: true
 	},
 	{
+		id: 'stretch',
+		label: 'Stretch',
+		description: 'Daily stretch holds and completion history.',
+		href: '/stretch',
+		settingsHref: '/stretch/settings',
+		infoHref: 'https://www.youtube.com/watch?v=QaKuVOhikaY',
+		colors: { primary: '#c2410c', secondary: '#9a3412' },
+		hasAppIcon: true,
+		defaultEnabled: true
+	},
+	{
 		id: 'happiness',
 		label: 'Happiness',
 		description: 'Daily happiness levels and the reasons behind them.',
 		href: '/happiness',
 		settingsHref: '/happiness/settings',
-		colors: { primary: '#c2410c', secondary: '#a16207' },
+		colors: { primary: '#a16207', secondary: '#ca8a04' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},

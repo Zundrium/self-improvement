@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Settings } from '@lucide/svelte';
+	import { Info, Settings } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
 	import type { TrackerColors } from '$lib/trackers/registry';
@@ -8,6 +8,7 @@
 		label: string;
 		colors: TrackerColors;
 		settingsHref: string | null;
+		infoHref?: string;
 	};
 	type Props = { tracker: TitledFeature; settingsActive?: boolean; class?: string };
 
@@ -20,7 +21,20 @@
 		className
 	)}
 >
-	<span aria-hidden="true"></span>
+	{#if tracker.infoHref}
+		<a
+			href={tracker.infoHref}
+			target="_blank"
+			rel="noreferrer"
+			class="inline-flex size-8 items-center justify-center rounded-3xl bg-transparent outline-none hover:bg-(--text)/8 focus-visible:ring-2 focus-visible:ring-(--text)/20"
+			aria-label={`About ${tracker.label}`}
+			title={`Watch the ${tracker.label.toLowerCase()} source video on YouTube`}
+		>
+			<Info class="size-4" style={`color: ${tracker.colors.primary}`} />
+		</a>
+	{:else}
+		<span aria-hidden="true"></span>
+	{/if}
 	<h1 class="text-center text-sm font-medium" style={`color: ${tracker.colors.primary}`}>
 		{tracker.label}
 	</h1>
