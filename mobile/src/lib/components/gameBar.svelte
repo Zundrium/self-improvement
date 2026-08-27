@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Icon from '@iconify/svelte';
-	import { Flame, Trophy } from '@lucide/svelte';
+	import { Coins, Flame, Trophy } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 	import { apiRequest, GAMIFICATION_CHANGED_EVENT } from '$lib/api';
 	import type { GamificationData } from '$lib/api-types';
@@ -72,8 +71,7 @@
 		class="h-12 min-w-0 gap-2 rounded-2xl bg-transparent px-2 text-(--text) hover:bg-(--text)/5 hover:text-(--text)"
 		aria-label={`${gamification.glimmers} Glimmers. Open shop.`}
 	>
-		<Icon
-			icon="ph:coin-vertical"
+		<Coins
 			class="size-5"
 			style={`color: ${gamificationColors.glimmers.primary}`}
 			aria-hidden="true"

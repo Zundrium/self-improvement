@@ -1,15 +1,12 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { Database, Settings2, SlidersHorizontal } from '@lucide/svelte';
 	import { untrack } from 'svelte';
-	import { signOut as endSession } from '$lib/auth-client';
 	import NativeSyncCard from '$lib/components/nativeSyncCard.svelte';
 	import { Avatar } from '$lib/components/ui/avatar';
-	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
+	import DataBackupCard from './components/dataBackupCard.svelte';
 	import GeneralSettings from './components/generalSettings.svelte';
 	import TrackerPreferences from './components/trackerPreferences.svelte';
 	import type { PageProps } from './$types';
@@ -22,11 +19,6 @@
 	function tabFromUrl(value: string | null): ProfileTab {
 		return value === 'trackers' || value === 'data' ? value : 'general';
 	}
-
-	async function signOut() {
-		await endSession();
-		await goto(resolve('/sign-in'));
-	}
 </script>
 
 <svelte:head><title>Settings · Self Improvement</title></svelte:head>
@@ -36,19 +28,9 @@
 >
 	<Card class="h-fit">
 		<CardContent class="items-center text-center">
-			<Avatar size="xl" src={data.profileUser.image ?? undefined} alt={data.profileUser.name} />
-			<div>
-				<h1 class="text-xl font-semibold">{data.profileUser.name}</h1>
-				<p class="text-sm text-(--text)/64">{data.profileUser.email}</p>
-			</div>
-			<Badge>{data.profileUser.role ?? 'user'}</Badge>
-			<div class="flex flex-wrap justify-center gap-2">
-				<Button href="/" variant="ghost">Home</Button>
-				{#if data.profileUser.role === 'admin'}
-					<Button href="/admin" variant="ghost">Users</Button>
-				{/if}
-				<Button type="button" variant="ghost" onclick={signOut}>Sign out</Button>
-			</div>
+			<Avatar size="xl" alt={data.profile.name} />
+			<h1 class="text-xl font-semibold">{data.profile.name}</h1>
+			<Button href="/" variant="ghost">Home</Button>
 		</CardContent>
 	</Card>
 
@@ -89,11 +71,14 @@
 
 		<div role="tabpanel">
 			{#if activeTab === 'general'}
-				<GeneralSettings user={data.profileUser} />
+				<GeneralSettings profile={data.profile} />
 			{:else if activeTab === 'trackers'}
 				<TrackerPreferences trackers={data.trackerPreferences} />
 			{:else}
-				<NativeSyncCard />
+				<div class="space-y-4">
+					<DataBackupCard />
+					<NativeSyncCard />
+				</div>
 			{/if}
 		</div>
 	</div>

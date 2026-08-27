@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import Icon from '@iconify/svelte';
-	import { Sparkles, Star } from '@lucide/svelte';
+	import { Coins, Sparkles, Star } from '@lucide/svelte';
 	import { apiRequest } from '$lib/api';
 	import type { Reward } from '$lib/api-types';
 	import TrackerPage from '$lib/components/trackerPage.svelte';
@@ -68,7 +67,7 @@
 		aria-label="Available Glimmers"
 	>
 		<div class="flex items-center justify-center gap-2.5">
-			<Icon icon="ph:coin-vertical-fill" class="size-8" aria-hidden="true" />
+			<Coins class="size-8" aria-hidden="true" />
 			<strong class="text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl">
 				{glimmers.toLocaleString()}
 			</strong>
@@ -103,7 +102,7 @@
 								class="flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-white tabular-nums"
 								style={`background: ${affordable ? colors.primary : '#737373'}`}
 							>
-								<Icon icon="ph:coin-vertical-fill" class="size-5" />
+								<Coins class="size-5" />
 								<strong class="text-xl font-semibold tracking-[-0.04em]">
 									{reward.price.toLocaleString()}
 								</strong>

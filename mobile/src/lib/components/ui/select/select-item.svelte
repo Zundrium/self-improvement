@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '@iconify/svelte';
+	import { Check } from '@lucide/svelte';
 	import { Select as SelectPrimitive } from 'bits-ui';
 	import { cn, type WithoutChild } from '$lib/utils.js';
 
@@ -33,7 +33,7 @@
 		</span>
 		{#if selected}
 			<span class="absolute end-2.5 flex size-4 items-center justify-center">
-				<Icon icon="heroicons:check-solid" class="size-4" aria-hidden="true" />
+				<Check class="size-4" aria-hidden="true" />
 			</span>
 		{/if}
 	{/snippet}

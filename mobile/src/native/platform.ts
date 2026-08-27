@@ -7,6 +7,6 @@ export function isNativeAndroid() {
 
 export function requireNativeAndroid() {
 	if (!isNativeAndroid()) {
-		throw new SyncFailure('session', 'This feature requires the native Android app.', false);
+		throw new SyncFailure('native', 'This feature requires the native Android app.', false);
 	}
 }

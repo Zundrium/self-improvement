@@ -1,11 +1,10 @@
 <script lang="ts">
-	import Icon from '@iconify/svelte';
+	import { PersonStanding } from '@lucide/svelte';
 
 	let { class: className, color }: { class?: string; color?: string } = $props();
 </script>
 
-<Icon
-	icon="iconoir:yoga"
+<PersonStanding
 	class={className}
 	style={color ? `color: ${color}` : undefined}
 	aria-hidden="true"

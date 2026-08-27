@@ -1,28 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SyncFailure } from './errors';
-import type { MobileSyncStatus, AppCredentials, TrackerId } from './model';
+import type { MobileSyncStatus, SyncContext, TrackerId } from './model';
 import { createEmptyStatus } from './status';
 import { SyncCoordinator, type TrackerJob } from './sync-coordinator';
 import type { MobileRepository } from '../native/secure-repository';
 
-const defaultCredentials: AppCredentials = {
-	apiBaseUrl: 'https://example.com',
-	timeZone: 'America/New_York',
-	token: 'signed-session-token'
-};
+const defaultContext: SyncContext = { timeZone: 'America/New_York' };
 
 class MemoryRepository implements MobileRepository {
 	constructor(
-		public credentials: AppCredentials | null = structuredClone(defaultCredentials),
+		public context: SyncContext = structuredClone(defaultContext),
 		public status: MobileSyncStatus = createEmptyStatus()
 	) {}
 
-	async loadCredentials() {
-		return this.credentials;
-	}
-
-	async saveCredentials(value: AppCredentials) {
-		this.credentials = value;
+	async loadSyncContext() {
+		return this.context;
 	}
 
 	async loadStatus() {
@@ -32,20 +24,15 @@ class MemoryRepository implements MobileRepository {
 	async saveStatus(value: MobileSyncStatus) {
 		this.status = structuredClone(value);
 	}
-
-	async disconnect() {
-		this.credentials = null;
-		this.status = createEmptyStatus();
-	}
 }
 
 describe('sync coordinator', () => {
 	it('records partial success and retries only the failed tracker', async () => {
 		const repository = new MemoryRepository();
 		const jobs = successfulJobs();
-		jobs.sleep.upload = vi
-			.fn<TrackerJob['upload']>()
-			.mockRejectedValueOnce(new SyncFailure('network'))
+		jobs.sleep.process = vi
+			.fn<TrackerJob['process']>()
+			.mockRejectedValueOnce(new SyncFailure('native'))
 			.mockResolvedValue(undefined);
 		const coordinator = new SyncCoordinator(
 			repository,
@@ -62,9 +49,9 @@ describe('sync coordinator', () => {
 			overall: 'success',
 			results: [{ tracker: 'sleep', outcome: 'success' }]
 		});
-		expect(jobs.steps.upload).toHaveBeenCalledTimes(1);
-		expect(jobs.sleep.upload).toHaveBeenCalledTimes(2);
-		expect(jobs.screenTime.upload).toHaveBeenCalledTimes(1);
+		expect(jobs.steps.process).toHaveBeenCalledTimes(1);
+		expect(jobs.sleep.process).toHaveBeenCalledTimes(2);
+		expect(jobs.screenTime.process).toHaveBeenCalledTimes(1);
 		expect(repository.status.trackers.sleep).toMatchObject({
 			outcome: 'success',
 			lastSuccessAt: '2025-03-09T12:00:00.000Z'
@@ -90,13 +77,13 @@ describe('sync coordinator', () => {
 		expect(jobs.sleep.collect).toHaveBeenCalledTimes(2);
 	});
 
-	it('retains the previous success timestamp when a later upload fails', async () => {
+	it('retains the previous success timestamp when later processing fails', async () => {
 		const repository = new MemoryRepository();
 		const jobs = successfulJobs();
 		let now = new Date('2025-03-09T12:00:00.000Z');
 		const coordinator = new SyncCoordinator(repository, jobs, () => now);
 		await coordinator.sync(['steps']);
-		jobs.steps.upload = vi.fn().mockRejectedValue(new SyncFailure('server'));
+		jobs.steps.process = vi.fn().mockRejectedValue(new SyncFailure('native'));
 		now = new Date('2025-03-09T13:00:00.000Z');
 
 		await coordinator.sync(['steps']);
@@ -105,26 +92,8 @@ describe('sync coordinator', () => {
 			outcome: 'failed',
 			lastAttemptAt: '2025-03-09T13:00:00.000Z',
 			lastSuccessAt: '2025-03-09T12:00:00.000Z',
-			failure: { category: 'server', retryable: true }
+			failure: { category: 'native', retryable: true }
 		});
-	});
-
-	it('classifies missing credentials independently without invoking collectors', async () => {
-		const repository = new MemoryRepository(null);
-		const jobs = successfulJobs();
-		const report = await new SyncCoordinator(repository, jobs).syncAll();
-
-		expect(report.overall).toBe('failed');
-		expect(report.results).toHaveLength(3);
-		expect(report.results.every((result) => result.outcome === 'failed')).toBe(true);
-		expect(
-			report.results.every(
-				(result) => result.outcome === 'failed' && result.failure.category === 'session'
-			)
-		).toBe(true);
-		expect(jobs.steps.collect).not.toHaveBeenCalled();
-		expect(jobs.sleep.collect).not.toHaveBeenCalled();
-		expect(jobs.screenTime.collect).not.toHaveBeenCalled();
 	});
 
 	it('classifies denied permission, transient providers, and validated data separately', async () => {
@@ -144,7 +113,7 @@ describe('sync coordinator', () => {
 			{
 				tracker: 'sleep',
 				outcome: 'failed',
-				failure: { category: 'server', retryable: true }
+				failure: { category: 'native', retryable: true }
 			},
 			{ tracker: 'screenTime', outcome: 'failed', failure: { category: 'validation' } }
 		]);
@@ -161,6 +130,6 @@ function successfulJob(): TrackerJob {
 	return {
 		checkPermission: vi.fn().mockResolvedValue({ state: 'granted' }),
 		collect: vi.fn().mockResolvedValue({}),
-		upload: vi.fn().mockResolvedValue(undefined)
+		process: vi.fn().mockResolvedValue(undefined)
 	};
 }

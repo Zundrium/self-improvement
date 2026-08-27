@@ -7,13 +7,9 @@ import type {
 } from '../routes/fitness/fitness';
 import type { AppTracker, AppTrackerId } from '$lib/trackers/registry';
 
-export type AppUser = {
+export type LocalProfile = {
 	id: string;
 	name: string;
-	email: string;
-	image?: string | null;
-	role?: string | null;
-	banned?: boolean | null;
 	createdAt: string;
 };
 
@@ -59,8 +55,8 @@ export type RewardsData = {
 	rewards: Reward[];
 	redemptions: RewardRedemption[];
 };
-export type SessionData = {
-	user: AppUser;
+export type AppBootstrapData = {
+	profile: LocalProfile;
 	enabledTrackers: AppTracker[];
 	gamification: GamificationData;
 };
@@ -212,7 +208,6 @@ export type NutritionIngredient = {
 export type NutritionMeal = {
 	id: string;
 	name: string;
-	imageDataUrl: string;
 	ingredients: NutritionIngredient[];
 	totals: NutritionTotals;
 };
@@ -222,7 +217,6 @@ export type NutritionEntry = {
 	name: string;
 	notes: string;
 	createdAt: string;
-	thumbnail: string;
 	meals: NutritionMeal[];
 	totals: NutritionTotals;
 };
@@ -250,24 +244,11 @@ export type NutritionProfile = {
 	eatingWindowEnd: string;
 };
 export type ProfileData = {
-	profileUser: AppUser;
+	profile: LocalProfile;
 	nutritionProfile: NutritionProfile | null;
 	trackerPreferences: Array<AppTracker & { enabled: boolean }>;
 	estimatedTdee: number | null;
 	rewards: Reward[];
-};
-export type AdminData = {
-	currentUser: AppUser;
-	users: { users: AppUser[]; total: number };
-	page: number;
-	pageSize: number;
-	search: string;
-};
-
-export type LayoutData = {
-	user: AppUser | null;
-	enabledTrackers: AppTracker[];
-	gamification: GamificationData | null;
 };
 
 export type TrackerPreferencesPayload = { trackers: AppTrackerId[] };

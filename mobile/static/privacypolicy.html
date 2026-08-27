@@ -28,55 +28,53 @@
 	<body>
 		<main>
 			<h1>Self Improvement Privacy Policy</h1>
-			<p>Effective August 18, 2026</p>
+			<p>Effective August 27, 2026</p>
 
-			<h2>Data the app handles</h2>
+			<h2>Local-only app</h2>
 			<p>
-				With your permission, the Android app reads step totals from Health Connect. It reads
-				daily foreground app usage, detailed foreground intervals, and screen-interactive times from
-				Android Usage Access for screen time and bedtime adherence. These permissions are read-only.
-				The app does not write to Health Connect and does not read screen contents.
-			</p>
-			<p>
-				The app stores the tracker information you enter, including workouts, meals, meditation,
-				breathing, happiness reasons, menstruation notes, profile settings, and account details. If
-				you use nutrition photo analysis, the app uses the camera or a photo you select.
+				Self Improvement has no account system, application backend, analytics, advertising,
+				custom server, or AI service. Your profile, settings, tracker history, rewards, and manual
+				nutrition entries are stored in the app on your device.
 			</p>
 
-			<h2>How data is used</h2>
+			<h2>Android data</h2>
 			<p>
-				The app sends native tracker data to your authenticated account at self.zund.cc. Package
-				names are sent for screen-time and bedtime entries; the app does not request a list of all
-				installed applications. Data is used to provide the tracker screens and persistent history
-				you request.
+				With your permission, the app reads step totals from Health Connect. It reads foreground
+				app usage, foreground intervals, and screen-interactive times through Android Usage Access
+				for screen-time and bedtime-adherence tracking. Access is read-only. The app does not write
+				to Health Connect, inspect screen contents, or upload native tracker data.
 			</p>
 			<p>
-				Nutrition photos, estimates, and corrections are sent through OpenRouter to the configured
-				AI model for meal analysis. Confirmed meal photos and nutrition results are stored in your
-				account so they remain available in your food log.
-			</p>
-
-			<h2>On-device security</h2>
-			<p>
-				Your signed login session and synchronization status are encrypted with an Android
-				Keystore-backed secure store. They are removed from this device when you sign out. Health
-				and usage payloads are prepared in memory for upload and are not retained as local files.
+				Optional bedtime reminders are scheduled and displayed on your device. Nutrition is entered
+				manually; the app does not request camera access or analyze photos.
 			</p>
 
-			<h2>Sharing and retention</h2>
+			<h2>Exports and Google Drive backups</h2>
 			<p>
-				Self Improvement does not sell personal, health, or usage data and does not send it to
-				advertising or analytics services. Apart from nutrition analysis through OpenRouter, tracker
-				data is not shared with third-party processing services. Uploaded records remain in your
-				private account until they are changed or deleted through the app.
+				You can explicitly export a JSON backup or restore a JSON backup through Android's document
+				picker. You can also choose a Google Drive folder through Android's Storage Access Framework.
+				If you choose one, the app can write one backup per day when it opens or resumes and keeps
+				only its five newest timestamped backup files in that folder.
+			</p>
+			<p>
+				The installed Google Drive document provider handles transfer to your Google Drive account.
+				Self Improvement does not receive Google credentials, access other Drive locations, or send
+				backups through a custom server. Unrelated files in the selected folder are not rotated.
 			</p>
 
 			<h2>Your choices</h2>
 			<p>
-				You can revoke Health Connect, Usage Access, or notification permission in Android settings
-				at any time. Bedtime reminders are optional and scheduled only on your device. You can sign
-				out to erase the local session and manage your persistent records through the Self
-				Improvement app.
+				You can revoke Health Connect, Usage Access, notification, or selected-folder access in
+				Android settings. Google Drive backup is optional. You can choose a different folder, export
+				a backup manually, or keep all data only in the app.
+			</p>
+
+			<h2>Sharing and retention</h2>
+			<p>
+				Self Improvement does not sell or share personal, health, nutrition, or usage data. Local data
+				remains until it is edited, deleted, replaced by a restore, or removed with the app's storage.
+				User-selected Drive backup files remain subject to the backup retention described above and
+				to your Google Drive settings.
 			</p>
 
 			<h2>Questions</h2>

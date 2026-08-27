@@ -2,18 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
-	import Icon from '@iconify/svelte';
-	import {
-		ChevronDown,
-		House,
-		LoaderCircle,
-		LogOut,
-		Settings,
-		Shield,
-		UserRound
-	} from '@lucide/svelte';
+	import { ChevronDown, Grid2X2, House, LoaderCircle, Settings, UserRound } from '@lucide/svelte';
 	import { apiRequest } from '$lib/api';
-	import { signOut as endSession } from '$lib/auth-client';
 	import {
 		DropdownMenu,
 		DropdownMenuContent,
@@ -28,17 +18,13 @@
 	import AppDrawer from './appDrawer.svelte';
 	import AudioVolumeControl from './audioVolumeControl.svelte';
 
-	type User = {
-		name: string;
-		email: string;
-		role?: string | null;
-	};
+	type Profile = { name: string };
 
 	let {
-		user,
+		profile,
 		trackers,
 		daySummary
-	}: { user: User; trackers: AppTracker[]; daySummary?: DaySummaryData } = $props();
+	}: { profile: Profile; trackers: AppTracker[]; daySummary?: DaySummaryData } = $props();
 	let appLauncherOpen = $state(false);
 	let daySummaryLoading = $state(false);
 	let daySummaryFailed = $state(false);
@@ -117,15 +103,6 @@
 	function openProfile() {
 		void goto(resolve('/profile'));
 	}
-
-	function openAdmin() {
-		void goto(resolve('/admin'));
-	}
-
-	async function signOut() {
-		await endSession();
-		await goto(resolve('/sign-in'));
-	}
 </script>
 
 <svelte:window onpointerdown={closeDrawerOutside} onkeydown={closeDrawerOnEscape} />
@@ -202,7 +179,7 @@
 					{#if appLauncherOpen}
 						<ChevronDown class="size-6" />
 					{:else}
-						<Icon icon="material-symbols-light:apps" class="size-6" aria-hidden="true" />
+						<Grid2X2 class="size-6" aria-hidden="true" />
 					{/if}
 				</span>
 			</button>
@@ -220,28 +197,16 @@
 					</span>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent side="top" align="end" sideOffset={10} class="w-56">
-					<DropdownMenuLabel class="space-y-0.5 py-2">
-						<p class="truncate text-sm font-medium text-(--text)">{user.name}</p>
-						<p class="truncate font-normal">{user.email}</p>
+					<DropdownMenuLabel class="py-2">
+						<p class="truncate text-sm font-medium text-(--text)">{profile.name}</p>
 					</DropdownMenuLabel>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem onSelect={openProfile}>
 						<Settings />
 						Settings
 					</DropdownMenuItem>
-					{#if user.role === 'admin'}
-						<DropdownMenuItem onSelect={openAdmin}>
-							<Shield />
-							Users
-						</DropdownMenuItem>
-					{/if}
 					<DropdownMenuSeparator />
 					<AudioVolumeControl />
-					<DropdownMenuSeparator />
-					<DropdownMenuItem variant="destructive" onSelect={() => void signOut()}>
-						<LogOut />
-						Sign out
-					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</div>

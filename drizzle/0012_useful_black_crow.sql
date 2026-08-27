@@ -1,1 +1,0 @@
-ALTER TABLE `nutrition_meal` DROP COLUMN `notes`;

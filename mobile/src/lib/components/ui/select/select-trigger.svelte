@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '@iconify/svelte';
+	import { ChevronsUpDown } from '@lucide/svelte';
 	import { Select as SelectPrimitive } from 'bits-ui';
 	import { cn, type WithoutChild } from '$lib/utils.js';
 
@@ -21,9 +21,5 @@
 	{...restProps}
 >
 	{@render children?.()}
-	<Icon
-		icon="heroicons:chevron-up-down-solid"
-		class="size-4 shrink-0 text-(--text)/40"
-		aria-hidden="true"
-	/>
+	<ChevronsUpDown class="size-4 shrink-0 text-(--text)/40" aria-hidden="true" />
 </SelectPrimitive.Trigger>

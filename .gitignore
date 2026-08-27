@@ -1,11 +1,6 @@
 node_modules
 
 # Output
-.output
-.vercel
-.netlify
-.wrangler
-/.svelte-kit
 /mobile/.svelte-kit
 /build
 /dist-mobile
@@ -24,13 +19,9 @@ node_modules
 .DS_Store
 Thumbs.db
 
-# Env
+# Local environment
 .env
 .env.*
-!.env.example
-!.env.test
-.dev.vars
-!.dev.vars.example
 
 # Vite
 vite.config.js.timestamp-*

@@ -20,9 +20,9 @@
 	<AlertTitle>No recent {label} data found</AlertTitle>
 	<AlertDescription>
 		{#if isSynced}
-			Android completed an upload, but this tracker has no usable summary yet.
+			Android data was processed, but this tracker has no usable summary yet.
 		{:else}
-			This tracker has not completed its first Android upload.
+			This tracker has not completed its first on-device processing run.
 		{/if}
 	</AlertDescription>
 	<div class="col-start-2 mt-2">

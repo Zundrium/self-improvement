@@ -6,16 +6,16 @@ const priorityOrder: Record<ActionPriority, number> = {
 	activity: 2
 };
 
-export function mergeActionFeedItems(serverItems: ActionFeedItem[], nativeItems: ActionFeedItem[]) {
+export function mergeActionFeedItems(localItems: ActionFeedItem[], nativeItems: ActionFeedItem[]) {
 	const blockedTrackers = new Set(
 		nativeItems
 			.filter(({ priority }) => priority === 'blocking')
 			.flatMap(({ trackerIds }) => trackerIds)
 	);
-	const relevantServerItems = serverItems.filter(
+	const relevantLocalItems = localItems.filter(
 		({ trackerIds }) => !trackerIds.some((trackerId) => blockedTrackers.has(trackerId))
 	);
-	return [...nativeItems, ...relevantServerItems].toSorted(
+	return [...nativeItems, ...relevantLocalItems].toSorted(
 		(left, right) => priorityOrder[left.priority] - priorityOrder[right.priority]
 	);
 }

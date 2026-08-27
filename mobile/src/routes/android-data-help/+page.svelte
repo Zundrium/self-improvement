@@ -28,7 +28,7 @@
 	}
 
 	function lastReceived(value: string | null) {
-		return value ? new Date(value).toLocaleString() : 'No upload received yet';
+		return value ? new Date(value).toLocaleString() : 'No data processed yet';
 	}
 </script>
 

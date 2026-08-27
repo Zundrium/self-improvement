@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 jobs:
-  web-mobile:
-    name: Web and mobile validation
+  app-validation:
+    name: App validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,12 +25,10 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run build
-      - run: npm run mobile:check
-      - run: npm run mobile:build
 
   android:
     name: Android test, lint, and package
-    needs: web-mobile
+    needs: app-validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,7 +45,7 @@ jobs:
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - run: npm ci
-      - run: npm run mobile:build
+      - run: npm run build
       - run: npx cap sync android
       - name: Run Android tests and lint
         working-directory: android
@@ -64,15 +62,12 @@ jobs:
           import xml.etree.ElementTree as ElementTree
 
           android_namespace = 'http://schemas.android.com/apk/res/android'
-          allowed_health_reads = {
-              'android.permission.health.READ_STEPS',
-          }
-          required_permissions = allowed_health_reads | {
-              'android.permission.INTERNET',
-              'android.permission.CAMERA',
+          allowed_permissions = {
               'android.permission.PACKAGE_USAGE_STATS',
               'android.permission.POST_NOTIFICATIONS',
-              'android.permission.REQUEST_INSTALL_PACKAGES',
+              'android.permission.RECEIVE_BOOT_COMPLETED',
+              'android.permission.WAKE_LOCK',
+              'android.permission.health.READ_STEPS',
           }
           root = ElementTree.parse(sys.argv[1]).getroot()
           permissions = {
@@ -80,26 +75,13 @@ jobs:
               for element in root.iter()
               if element.tag.rsplit('}', 1)[-1].startswith('uses-permission')
           }
-          forbidden_permissions = sorted(
-              permission
-              for permission in permissions
-              if permission in {
-                  'android.permission.QUERY_ALL_PACKAGES',
-                  'android.permission.SCHEDULE_EXACT_ALARM',
-                  'android.permission.USE_EXACT_ALARM',
-              }
-              or permission.startswith('android.permission.health.WRITE_')
-              or (
-                  permission.startswith('android.permission.health.READ_')
-                  and permission not in allowed_health_reads
-              )
-          )
-          missing_permissions = sorted(required_permissions - permissions)
-          for permission in forbidden_permissions:
-              print(f'::error::Forbidden merged manifest permission: {permission}')
+          unexpected_permissions = sorted(permissions - allowed_permissions)
+          missing_permissions = sorted(allowed_permissions - permissions)
+          for permission in unexpected_permissions:
+              print(f'::error::Unexpected merged manifest permission: {permission}')
           for permission in missing_permissions:
               print(f'::error::Missing merged manifest permission: {permission}')
-          if forbidden_permissions or missing_permissions:
+          if unexpected_permissions or missing_permissions:
               raise SystemExit(1)
           PY
       - name: Build debug APK

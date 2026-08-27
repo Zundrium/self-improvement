@@ -1,16 +1,11 @@
 export const TRACKER_IDS = ['steps', 'sleep', 'screenTime'] as const;
 
 export type TrackerId = (typeof TRACKER_IDS)[number];
-export type FailureCategory =
-	'session' | 'permission' | 'validation' | 'auth' | 'network' | 'server';
+export type FailureCategory = 'permission' | 'validation' | 'native';
 export type PermissionState = 'unknown' | 'granted' | 'denied' | 'unavailable';
 export type SyncOutcome = 'idle' | 'success' | 'failed';
 
-export type AppCredentials = {
-	apiBaseUrl: string;
-	timeZone: string;
-	token: string;
-};
+export type SyncContext = { timeZone: string };
 
 export type SyncFailureDetails = {
 	category: FailureCategory;

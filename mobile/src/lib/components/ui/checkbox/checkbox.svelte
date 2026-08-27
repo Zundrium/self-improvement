@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '@iconify/svelte';
+	import { Check, Minus } from '@lucide/svelte';
 	import { Checkbox as CheckboxPrimitive } from 'bits-ui';
 	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 
@@ -25,9 +25,9 @@
 >
 	{#snippet children({ checked, indeterminate })}
 		{#if indeterminate}
-			<Icon icon="heroicons:minus-solid" class="size-3.5" aria-hidden="true" />
+			<Minus class="size-3.5" aria-hidden="true" />
 		{:else if checked}
-			<Icon icon="heroicons:check-solid" class="size-3.5" aria-hidden="true" />
+			<Check class="size-3.5" aria-hidden="true" />
 		{/if}
 	{/snippet}
 </CheckboxPrimitive.Root>

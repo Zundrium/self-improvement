@@ -2,7 +2,7 @@ import { SyncFailure, classifyFailure } from './errors';
 import {
 	TRACKER_IDS,
 	type MobileSyncStatus,
-	type AppCredentials,
+	type SyncContext,
 	type PermissionCheck,
 	type PermissionState,
 	type SyncReport,
@@ -16,8 +16,8 @@ export const DEFAULT_STALE_AFTER_MS = 15 * 60 * 1000;
 
 export interface TrackerJob {
 	checkPermission(): Promise<PermissionCheck>;
-	collect(credentials: AppCredentials, now: Date): Promise<unknown>;
-	upload(credentials: AppCredentials, payload: unknown): Promise<void>;
+	collect(context: SyncContext, now: Date): Promise<unknown>;
+	process(context: SyncContext, payload: unknown): Promise<void>;
 }
 
 export class SyncCoordinator {
@@ -59,24 +59,21 @@ export class SyncCoordinator {
 
 	private async resultsForTrackers(trackers: TrackerId[], now: Date) {
 		try {
-			const credentials = await this.repository.loadCredentials();
-			if (!credentials) return trackerFailures(trackers, new SyncFailure('session'));
-			return await Promise.all(
-				trackers.map((tracker) => this.runTracker(tracker, credentials, now))
-			);
+			const context = await this.repository.loadSyncContext();
+			return await Promise.all(trackers.map((tracker) => this.runTracker(tracker, context, now)));
 		} catch (cause) {
 			return trackerFailures(trackers, cause);
 		}
 	}
 
-	private async runTracker(tracker: TrackerId, credentials: AppCredentials, now: Date) {
+	private async runTracker(tracker: TrackerId, context: SyncContext, now: Date) {
 		let permission: PermissionState = 'unknown';
 		try {
 			const check = await this.jobs[tracker].checkPermission();
 			permission = check.state;
 			if (permission !== 'granted') throw permissionFailure(permission);
-			const payload = await this.jobs[tracker].collect(credentials, now);
-			await this.jobs[tracker].upload(credentials, payload);
+			const payload = await this.jobs[tracker].collect(context, now);
+			await this.jobs[tracker].process(context, payload);
 			return successResult(tracker, permission, now);
 		} catch (cause) {
 			return failedResult(tracker, permission, cause);
@@ -141,7 +138,7 @@ function permissionFailure(state: PermissionState) {
 	const message =
 		state === 'unavailable'
 			? 'The Android data source is unavailable on this device.'
-			: 'Android permission is required before this tracker can sync.';
+			: 'Android permission is required before this tracker can be processed.';
 	return new SyncFailure('permission', message);
 }
 

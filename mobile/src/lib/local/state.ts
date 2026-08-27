@@ -1,0 +1,326 @@
+import Dexie, { type EntityTable } from 'dexie';
+import { z } from 'zod';
+import type { AppTrackerId } from '$lib/trackers/registry';
+import { appTrackers } from '$lib/trackers/registry';
+import { localDateForInstant } from '$lib/trackers/dates';
+
+export const LOCAL_STATE_VERSION = 1 as const;
+const STATE_ID = 'current';
+
+const date = z.iso.date();
+const instant = z.iso.datetime();
+const userSchema = z.object({
+	id: z.string().min(1),
+	name: z.string().min(1).max(120),
+	createdAt: instant
+});
+const nutritionTotalsSchema = z.object({
+	calories: z.number().nonnegative(),
+	proteinG: z.number().nonnegative(),
+	carbsG: z.number().nonnegative(),
+	fatG: z.number().nonnegative(),
+	count: z.number().int().nonnegative()
+});
+const ingredientSchema = z.object({
+	id: z.string().min(1),
+	name: z.string(),
+	quantity: z.number().nonnegative(),
+	unit: z.string(),
+	calories: z.number().nonnegative(),
+	proteinG: z.number().nonnegative(),
+	carbsG: z.number().nonnegative(),
+	fatG: z.number().nonnegative(),
+	notes: z.string()
+});
+const mealSchema = z.object({
+	id: z.string().min(1),
+	name: z.string(),
+	ingredients: z.array(ingredientSchema),
+	totals: nutritionTotalsSchema
+});
+const nutritionEntrySchema = z.object({
+	id: z.string().min(1),
+	date,
+	name: z.string(),
+	notes: z.string(),
+	createdAt: instant,
+	meals: z.array(mealSchema),
+	totals: nutritionTotalsSchema
+});
+const nutritionProfileSchema = z.object({
+	weightKg: z.number().min(20).max(300),
+	heightCm: z.number().min(100).max(250),
+	age: z.number().int().min(10).max(120),
+	gender: z.enum(['male', 'female']),
+	activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
+	dailyCalorieGoal: z.number().int().min(500).max(10_000),
+	goalMode: z.enum(['estimated', 'custom']),
+	eatingWindowEnabled: z.boolean(),
+	eatingWindowStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+	eatingWindowEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+});
+const sleepUsageAppSchema = z.object({
+	package: z.string().min(1),
+	name: z.string().min(1),
+	seconds: z.number().int().nonnegative()
+});
+const sleepSummarySchema = z.object({
+	localDate: date,
+	configuredBedtime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+	windowStartAt: instant.nullable(),
+	windowEndAt: instant.nullable(),
+	lateUsageSeconds: z.number().int().nonnegative(),
+	latestScreenActivityAt: instant.nullable(),
+	usedApps: z.array(sleepUsageAppSchema),
+	violatingApps: z.array(sleepUsageAppSchema),
+	status: z.enum(['pending', 'pass', 'fail']),
+	sourceTimestamp: instant.nullable()
+});
+const screenTimeAppSchema = z.object({
+	package: z.string().min(1),
+	name: z.string().min(1),
+	minutes: z.number().int().min(0).max(1_440),
+	last_used: instant
+});
+const rewardSchema = z.object({
+	id: z.string().min(1),
+	name: z.string().min(1).max(80),
+	emoji: z.string().min(1).max(16),
+	price: z.number().int().min(1).max(1_000_000)
+});
+const stateSchema = z.strictObject({
+	version: z.literal(LOCAL_STATE_VERSION),
+	updatedAt: instant,
+	user: userSchema,
+	enabledTrackerIds: z.array(
+		z.enum([
+			'steps',
+			'sleep',
+			'screen-time',
+			'fitness',
+			'nutrition',
+			'meditation',
+			'breathing',
+			'happiness',
+			'period'
+		])
+	),
+	gamification: z.object({
+		startedLocalDate: date,
+		awards: z.array(
+			z.object({
+				trackerId: z.string().min(1),
+				localDate: date,
+				points: z.number().int().positive()
+			})
+		)
+	}),
+	rewards: z.array(rewardSchema),
+	redemptions: z.array(rewardSchema.extend({ redeemedAt: instant })),
+	steps: z.object({
+		dailyGoal: z.number().int().min(1_000).max(100_000),
+		lastReceivedAt: instant.nullable(),
+		days: z.array(z.object({ date, count: z.number().int().nonnegative(), sourceEndAt: instant }))
+	}),
+	sleep: z.object({
+		bedtime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+		remindersEnabled: z.boolean(),
+		lastReceivedAt: instant.nullable(),
+		days: z.array(sleepSummarySchema)
+	}),
+	screenTime: z.object({
+		lastReceivedAt: instant.nullable(),
+		trackedPackages: z.array(z.string().min(1)),
+		days: z.array(
+			z.object({
+				date,
+				totalMinutes: z.number().int().min(0).max(1_440),
+				apps: z.array(screenTimeAppSchema),
+				sourceTimestamp: instant
+			})
+		)
+	}),
+	fitness: z.object({
+		completedDays: z.array(z.object({ workoutId: z.number().int().positive(), dateKey: date })),
+		exerciseSpeeds: z.record(z.string(), z.number().int().min(25).max(200))
+	}),
+	nutrition: z.object({
+		profile: nutritionProfileSchema.nullable(),
+		entries: z.array(nutritionEntrySchema),
+		fastingDates: z.array(date)
+	}),
+	meditation: z.object({
+		sessions: z.array(
+			z.object({
+				id: z.string().min(1),
+				localDate: date,
+				durationSeconds: z.number().int().positive(),
+				startedAt: z.number().int().positive()
+			})
+		)
+	}),
+	breathing: z.object({
+		exercises: z.array(
+			z.object({
+				localDate: date,
+				technique: z.string().min(1),
+				durationSeconds: z.number().int().positive(),
+				startedAt: z.number().int().positive()
+			})
+		)
+	}),
+	happiness: z.object({
+		entries: z.array(
+			z.object({
+				localDate: date,
+				rating: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+				reasons: z.array(z.string().min(1)),
+				updatedAt: instant
+			})
+		)
+	}),
+	period: z.object({
+		entries: z.array(
+			z.object({
+				localDate: date,
+				flow: z.enum(['spotting', 'light', 'medium', 'heavy']),
+				notes: z.string().max(1_000),
+				updatedAt: instant
+			})
+		)
+	})
+});
+
+export type LocalAppState = z.infer<typeof stateSchema>;
+type StateRow = { id: typeof STATE_ID; document: LocalAppState };
+
+export class LocalAppDatabase extends Dexie {
+	appState!: EntityTable<StateRow, 'id'>;
+
+	constructor(name = 'self-improvement-local') {
+		super(name);
+		this.version(1).stores({ appState: 'id' });
+	}
+}
+
+export class LocalAppStore {
+	private writeQueue = Promise.resolve();
+
+	constructor(private readonly database = new LocalAppDatabase()) {}
+
+	async read() {
+		return clone(await this.ensureState());
+	}
+
+	update(mutator: (state: LocalAppState) => void | Promise<void>) {
+		return this.serialize(() => this.updateTransaction(mutator));
+	}
+
+	async exportState() {
+		return this.read();
+	}
+
+	replaceState(input: unknown) {
+		const state = validateLocalAppState(input);
+		return this.serialize(() => this.replaceTransaction(state));
+	}
+
+	async deleteDatabase() {
+		this.database.close();
+		await this.database.delete();
+	}
+
+	private async ensureState() {
+		const existing = await this.database.appState.get(STATE_ID);
+		if (existing) return existing.document;
+		return this.serialize(() => this.createStateTransaction());
+	}
+
+	private serialize<T>(operation: () => Promise<T>) {
+		const result = this.writeQueue.then(operation, operation);
+		this.writeQueue = result.then(
+			() => undefined,
+			() => undefined
+		);
+		return result;
+	}
+
+	private updateTransaction(mutator: (state: LocalAppState) => void | Promise<void>) {
+		return this.database.transaction('rw', this.database.appState, async () => {
+			const row = await this.database.appState.get(STATE_ID);
+			const state = clone(row?.document ?? createDefaultAppState());
+			await mutator(state);
+			state.updatedAt = new Date().toISOString();
+			const validState = validateLocalAppState(state);
+			await this.database.appState.put({ id: STATE_ID, document: validState });
+			return clone(validState);
+		});
+	}
+
+	private createStateTransaction() {
+		return this.database.transaction('rw', this.database.appState, async () => {
+			const existing = await this.database.appState.get(STATE_ID);
+			if (existing) return existing.document;
+			const document = createDefaultAppState();
+			await this.database.appState.add({ id: STATE_ID, document });
+			return document;
+		});
+	}
+
+	private replaceTransaction(document: LocalAppState) {
+		return this.database.transaction('rw', this.database.appState, async () => {
+			await this.database.appState.put({ id: STATE_ID, document: clone(document) });
+			return clone(document);
+		});
+	}
+}
+
+export function createDefaultAppState(now = new Date()): LocalAppState {
+	const createdAt = now.toISOString();
+	return {
+		version: LOCAL_STATE_VERSION,
+		updatedAt: createdAt,
+		user: { id: 'local-profile', name: 'You', createdAt },
+		enabledTrackerIds: defaultTrackerIds(),
+		gamification: { startedLocalDate: localDateForInstant(now, localTimeZone()), awards: [] },
+		rewards: [],
+		redemptions: [],
+		steps: { dailyGoal: 5_000, lastReceivedAt: null, days: [] },
+		sleep: { bedtime: '22:30', remindersEnabled: true, lastReceivedAt: null, days: [] },
+		screenTime: { lastReceivedAt: null, trackedPackages: [], days: [] },
+		fitness: { completedDays: [], exerciseSpeeds: {} },
+		nutrition: { profile: null, entries: [], fastingDates: [] },
+		meditation: { sessions: [] },
+		breathing: { exercises: [] },
+		happiness: { entries: [] },
+		period: { entries: [] }
+	};
+}
+
+export function validateLocalAppState(input: unknown) {
+	return stateSchema.parse(input);
+}
+
+export const localAppStore = new LocalAppStore();
+
+export function exportLocalAppState() {
+	return localAppStore.exportState();
+}
+
+export function replaceLocalAppState(input: unknown) {
+	return localAppStore.replaceState(input);
+}
+
+export const importLocalAppState = replaceLocalAppState;
+
+function defaultTrackerIds(): AppTrackerId[] {
+	return appTrackers.filter(({ defaultEnabled }) => defaultEnabled).map(({ id }) => id);
+}
+
+function localTimeZone() {
+	return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
+function clone<T>(value: T): T {
+	return structuredClone(value);
+}

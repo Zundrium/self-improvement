@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '@iconify/svelte';
+	import { ChevronDown } from '@lucide/svelte';
 	import { Accordion as AccordionPrimitive } from 'bits-ui';
 	import { cn, type WithoutChild } from '$lib/utils.js';
 	import { watchExpanded } from '$lib/motion/gsap';
@@ -31,8 +31,7 @@
 		{...restProps}
 	>
 		{@render children?.()}
-		<Icon
-			icon="heroicons:chevron-down-solid"
+		<ChevronDown
 			class="size-4 shrink-0 text-(--text)/40"
 			data-motion-chevron="true"
 			aria-hidden="true"

@@ -1,130 +1,93 @@
-# Android Frontend Migration
+# Local-Only Android Implementation
 
 ## Goal
 
-Make the Android application the only complete Self Improvement frontend. Keep `self.zund.cc` as an API-only SvelteKit service for login, server logic, AI requests, updates, and persistent D1 data.
+Self Improvement is one SvelteKit/Svelte 5 application packaged for Android with Capacitor. All application behavior and persistent state are local. The project has no authentication, backend, custom network API, AI service, or hosted web target.
 
-## Runtime boundaries
+## Runtime boundary
 
-### Android SvelteKit application
+`mobile/` contains the complete application:
 
-`mobile/` contains the complete user experience:
+- dashboard, profile, gamification, rewards, and tracker screens;
+- Lily UI components and bundled media;
+- local endpoint-compatible reads and mutations;
+- Dexie state and backup validation;
+- native data collection and on-device processing;
+- JSON export, restore, and optional Google Drive SAF backup controls.
 
-- authentication and password recovery;
-- daily dashboard and date navigation;
-- steps, sleep, screen time, fitness, nutrition, meditation, breathing, happiness, and period screens;
-- profile, tracker visibility, nutrition preferences, password changes, and administrator user management;
-- Health Connect and Android Usage Access permissions;
-- foreground and resume synchronization;
-- fitness and meditation media;
-- Android deep-link handling and secure session storage.
+The static adapter writes `dist-mobile/`. `capacitor.config.ts` and `android/` package that output into the Android app.
 
-The static adapter writes the SPA to `dist-mobile/`, which Capacitor packages from `capacitor.config.ts`.
+## Local state
 
-### Cloudflare SvelteKit application
+`mobile/src/lib/local/state.ts` defines and validates one versioned app-state document. Dexie stores that document in IndexedDB and serializes updates through transactions. The state includes:
 
-The root `src/` application exposes endpoints only:
+- the local display profile and tracker visibility;
+- tracker history and settings;
+- fitness progress and exercise speed preferences;
+- manual nutrition entries, macros, calorie goals, eating windows, and fasting dates;
+- gamification awards, rewards, and redemptions.
 
-- `/api/auth/*` for Better Auth;
-- `/api/app/*` for authenticated frontend queries and mutations;
-- `/api/android-update/*` for private signed release delivery;
-- bounded tracker ingestion endpoints;
-- JSON `404` responses for all other paths.
+`mobile/src/lib/local/service.ts` preserves the existing loader and mutation call shape without making HTTP requests. `mobile/src/lib/api.ts` dispatches directly to that service. There are no credentials or sessions.
 
-It contains no tracker pages, navigation, forms, media, or hosted app shell.
+## Native tracker processing
 
-## Authentication
+- Steps use read-only Health Connect `READ_STEPS` access.
+- Sleep and screen time use Android Usage Access.
+- Native payloads are validated, transformed, and written directly to Dexie.
+- Trackers process independently so denied access for one source does not block the others.
+- Bounded permission, validation, and native-provider failures are retained on-device for troubleshooting.
+- Stale data is processed when the app opens or resumes and can be refreshed manually.
+- Bedtime adherence evaluates selected app activity during the four hours after the configured bedtime.
 
-Better Auth uses the bearer plugin in addition to administrator support.
+No tracker payload is uploaded or sent to a server.
 
-1. The Android login screen posts credentials to `/api/auth/sign-in/email`.
-2. Better Auth returns the signed session through `set-auth-token`.
-3. The frontend stores it through `@aparajita/capacitor-secure-storage` on Android.
-4. Every app API request sends `Authorization: Bearer <token>`.
-5. Server hooks resolve the session before API handlers and expose refreshed tokens.
-6. A `401` clears the local session and returns the user to login.
-7. Sign-out invalidates the server session before deleting local credentials.
+## Nutrition
 
-Cloudflare allows only configured mobile development origins and the Capacitor `https://localhost` origin. Password-reset callbacks use an API endpoint that redirects into the `selfimprovement://reset-password` Android deep link.
+Nutrition is manual-only. The create and edit screens share the Lily-based `EntryEditor` fields for date, time, name, notes, meals, ingredients, quantities, units, calories, protein, carbohydrates, and fat. Entries are saved locally through an endpoint-compatible create mutation. Edit, delete, fasting, calorie goals, eating windows, and nutrition settings remain local and available.
 
-## Native tracker synchronization
+The app has no camera surface, photo storage, AI estimate, or correction flow.
 
-Native collection is part of the authenticated app rather than a separately paired companion.
+## Backups
 
-- Steps read Health Connect.
-- Sleep and screen time read UsageStatsManager; sleep uses detailed activity and screen-interactive events for bedtime adherence.
-- Each collector uses the device IANA time zone; aggregate trackers upload seven days, while detailed bedtime events are limited to the latest two days because Android retains them only briefly.
-- Uploads use the Better Auth bearer session and `X-Time-Zone`; no QR token is required.
-- The backend ensures tracker connection rows exist for authenticated users and keeps existing goals and records.
-- Trackers upload independently so one denied permission does not block the others.
-- Successful times, permission state, and bounded failures persist in secure storage.
-- Stale trackers retry when the app returns to the foreground.
-- Profile → Android data provides permission and manual sync controls.
+`mobile/src/lib/local/backup.ts` wraps the state in a versioned JSON envelope and validates both the envelope and nested state before restore.
 
-Legacy webhook token columns and ingestion authentication remain compatible with previously configured integrations, but the current app does not expose pairing or setup flows.
+Users can export or restore a JSON file through Android's document picker. They can also explicitly select a Google Drive folder through the Storage Access Framework. The Drive app remains responsible for network transfer; Self Improvement receives only persisted document-provider access to the selected tree.
 
-## Frontend data flow
+The Android backup plugin:
 
-Universal SvelteKit `+page.ts` loaders call `mobile/src/lib/api.ts`. The root layout loads `/api/app/session`, redirects unauthenticated routes to login, and supplies the authenticated user and enabled tracker registry to navigation.
+1. validates that the selected tree belongs to the Google Drive document provider;
+2. persists read and write access;
+3. writes one timestamped JSON backup per scheduled or manual run;
+4. enumerates direct children of the selected tree every time retention runs;
+5. recognizes only files with a valid timestamp and the exact `self-improvement-backup-YYYY-MM-DDTHH-mm-ss-SSSZ.json` name;
+6. keeps the five newest recognized files and never rotates unrelated files.
 
-Mutations use JSON API requests rather than SvelteKit server form actions because the Android build is a static SPA. Components update optimistically where appropriate and invalidate page data after persistent changes.
+Enumeration makes retention independent of SharedPreferences metadata and handles a reselected folder safely. Automatic backup is due once every 24 hours and runs when the Android app opens or resumes.
 
-Tracker screens keep their prior behavior:
+## Permissions
 
-- dated dashboard summaries;
-- seven-day steps, bedtime-adherence, and screen-time histories;
-- guided fitness sessions and rep-speed settings;
-- photo-first nutrition analysis, correction, logs, and entry editing;
-- meditation sounds and persisted sessions;
-- guided 4-7-8 breathing;
-- happiness levels and reasons;
-- menstruation flow, notes, and cycle estimates.
+The release manifest permits only:
 
-## Static assets
+- `android.permission.PACKAGE_USAGE_STATS`;
+- `android.permission.POST_NOTIFICATIONS`;
+- `android.permission.RECEIVE_BOOT_COMPLETED`;
+- `android.permission.WAKE_LOCK`;
+- `android.permission.health.READ_STEPS`.
 
-All frontend assets live under `mobile/`:
+CI compares the merged manifest to this exact set. Internet, camera, package installation, exact alarm, Health writes, and other Health reads fail validation.
 
-- Lily components and shared app components under `mobile/src/lib/components/`;
-- fitness files under `mobile/static/fitness/`;
-- meditation audio under `mobile/src/routes/meditation/sounds/`;
-- Health Connect privacy policy at `mobile/static/privacypolicy.html`.
+## Development and delivery
 
-The Cloudflare project no longer has a `static/` frontend asset directory.
-
-## Local development
+Root scripts target the one app:
 
 ```sh
 npm run dev
-npm run mobile:dev -- --host 0.0.0.0
-```
-
-`PUBLIC_API_BASE_URL` selects the Cloudflare API. Emulator development uses `10.0.2.2`; USB development can use `adb reverse`. Native plugin or manifest changes require another `mobile:sync` and Android rebuild.
-
-## Delivery
-
-The existing signed GitHub release workflow remains the frontend delivery mechanism. It now builds the complete mobile SvelteKit application before Capacitor synchronization. Cloudflare deployments update only the API.
-
-The Android release must continue to request only Internet, camera, package installation, notifications, Usage Access, and read-only Steps permission. Exact-alarm permission remains excluded. The custom reset-password deep link is declared on the exported main activity.
-
-## Validation
-
-```sh
 npm run check
 npm run lint
 npm run test
 npm run build
-npm run mobile:check
-npm run mobile:build
-cd android && ./gradlew test lint
 ```
 
-Physical-device validation must cover:
+Mobile and Capacitor aliases remain available for Android work. There is no deploy script or non-Android deployment target.
 
-- login, session persistence, expiration, sign-out, and password-reset deep links;
-- all tracker routes and persistent mutations;
-- Health Connect denied, partially granted, granted, and revoked states;
-- Usage Access denied and granted states;
-- repeated seven-day uploads and timezone changes;
-- offline recovery and resume synchronization;
-- app upgrades without session or tracker-data loss;
-- signed self-update download and installation.
+Feature work remains uncommitted until local approval and must not run `npm run build` before that approval. GitHub Actions performs app and Android builds, creates signed APK/AAB artifacts for version tags, and publishes the GitHub release. There is no in-app update checker.

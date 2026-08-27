@@ -1,15 +1,13 @@
-# Package Managers
+# Package managers
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
 bun.lock
 bun.lockb
-worker-configuration.d.ts
+
+# Generated and binary assets
 mobile/.svelte-kit/
 mobile/static/
-
-# Miscellaneous
-/static/
-/drizzle/
+dist-mobile/
 /android/**/build/
 /android/app/src/main/assets/

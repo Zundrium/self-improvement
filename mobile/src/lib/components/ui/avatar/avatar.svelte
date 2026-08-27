@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '@iconify/svelte';
+	import { User } from '@lucide/svelte';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 
@@ -46,7 +46,7 @@
 		/>
 	{:else}
 		<div class="flex size-full items-center justify-center text-(--text)/40">
-			<Icon icon="heroicons:user-solid" class="size-[55%]" aria-hidden="true" />
+			<User class="size-[55%]" aria-hidden="true" />
 		</div>
 	{/if}
 </div>

@@ -6,14 +6,14 @@ export function healthProviderFailure(cause: unknown) {
 	if (cause instanceof SyncFailure) return cause;
 	return healthPermissionRejected(cause)
 		? new SyncFailure('permission')
-		: new SyncFailure('server');
+		: new SyncFailure('native');
 }
 
 export function usageProviderFailure(cause: unknown) {
 	if (cause instanceof SyncFailure) return cause;
 	return errorMessage(cause) === USAGE_STATS_PERMISSION_REJECTION
 		? new SyncFailure('permission')
-		: new SyncFailure('server');
+		: new SyncFailure('native');
 }
 
 function healthPermissionRejected(cause: unknown) {

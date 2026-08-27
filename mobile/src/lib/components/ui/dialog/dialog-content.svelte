@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '@iconify/svelte';
+	import { X } from '@lucide/svelte';
 	import { Dialog as DialogPrimitive } from 'bits-ui';
 	import DialogOverlay from './dialog-overlay.svelte';
 	import DialogPortal from './dialog-portal.svelte';
@@ -44,7 +44,7 @@
 						data-slot="dialog-close"
 						class="absolute end-4 top-4 inline-flex size-8 items-center justify-center rounded-xl text-(--text)/40 hover:bg-(--text)/8 hover:text-(--text) focus-visible:outline-none"
 					>
-						<Icon icon="heroicons:x-mark-solid" class="size-4" aria-hidden="true" />
+						<X class="size-4" aria-hidden="true" />
 						<span class="sr-only">Close</span>
 					</DialogPrimitive.Close>
 				{/if}

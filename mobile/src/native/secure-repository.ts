@@ -1,59 +1,32 @@
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
-import type { AppCredentials, MobileSyncStatus } from '../domain/model';
+import type { MobileSyncStatus, SyncContext } from '../domain/model';
 import { createEmptyStatus, parseStoredStatus } from '../domain/status';
 import { isNativeAndroid } from './platform';
 
-const CREDENTIALS_KEY = 'self-improvement-session-v1';
-const STATUS_KEY = 'self-improvement-sync-status-v1';
+const STATUS_KEY = 'self-improvement-local-sync-status-v1';
+const LEGACY_KEYS = ['self-improvement-session-v1', 'self-improvement-sync-status-v1'];
+let cleanupPromise: Promise<void> | undefined;
 
 export interface MobileRepository {
-	loadCredentials(): Promise<AppCredentials | null>;
-	saveCredentials(credentials: AppCredentials): Promise<void>;
+	loadSyncContext(): Promise<SyncContext>;
 	loadStatus(): Promise<MobileSyncStatus>;
 	saveStatus(status: MobileSyncStatus): Promise<void>;
-	disconnect(): Promise<void>;
 }
 
 export class SecureMobileRepository implements MobileRepository {
-	async loadCredentials() {
-		const serialized = await getItem(CREDENTIALS_KEY);
-		return serialized ? parseCredentials(serialized) : null;
-	}
-
-	async saveCredentials(credentials: AppCredentials) {
-		await setItem(CREDENTIALS_KEY, JSON.stringify(credentials));
+	async loadSyncContext() {
+		return { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' };
 	}
 
 	async loadStatus() {
+		await clearLegacyState();
 		const serialized = await getItem(STATUS_KEY);
 		return serialized ? storedStatus(serialized) : createEmptyStatus();
 	}
 
 	async saveStatus(status: MobileSyncStatus) {
+		await clearLegacyState();
 		await setItem(STATUS_KEY, JSON.stringify(parseStoredStatus(status)));
-	}
-
-	async disconnect() {
-		await Promise.all([removeItem(CREDENTIALS_KEY), removeItem(STATUS_KEY)]);
-	}
-}
-
-function parseCredentials(serialized: string): AppCredentials | null {
-	try {
-		const value = JSON.parse(serialized) as Record<string, unknown>;
-		if (!validUrl(value.apiBaseUrl) || typeof value.token !== 'string' || !value.token) return null;
-		if (typeof value.timeZone !== 'string' || !value.timeZone) return null;
-		return { apiBaseUrl: value.apiBaseUrl as string, token: value.token, timeZone: value.timeZone };
-	} catch {
-		return null;
-	}
-}
-
-function validUrl(value: unknown) {
-	try {
-		return typeof value === 'string' && ['http:', 'https:'].includes(new URL(value).protocol);
-	} catch {
-		return false;
 	}
 }
 
@@ -75,7 +48,16 @@ async function setItem(key: string, value: string) {
 	else globalThis.localStorage?.setItem(key, value);
 }
 
+function clearLegacyState() {
+	cleanupPromise ??= Promise.all(LEGACY_KEYS.map(removeItem)).then(() => undefined);
+	return cleanupPromise;
+}
+
 async function removeItem(key: string) {
-	if (isNativeAndroid()) await SecureStorage.removeItem(key);
-	else globalThis.localStorage?.removeItem(key);
+	try {
+		if (isNativeAndroid()) await SecureStorage.removeItem(key);
+		else globalThis.localStorage?.removeItem(key);
+	} catch {
+		return;
+	}
 }

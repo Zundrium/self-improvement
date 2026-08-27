@@ -4,16 +4,13 @@ import { mergeActionFeedItems } from './action-feed';
 
 describe('action feed merging', () => {
 	it('suppresses lower tracker actions while native access is blocked', () => {
-		const serverItems = [
-			item('sleep-data', ['sleep'], 'warning'),
-			item('meditate', ['meditation'])
-		];
+		const localItems = [item('sleep-data', ['sleep'], 'warning'), item('meditate', ['meditation'])];
 		const nativeItems = [item('health-access', ['steps', 'sleep'], 'blocking')];
-		const result = mergeActionFeedItems(serverItems, nativeItems);
+		const result = mergeActionFeedItems(localItems, nativeItems);
 		expect(result.map(({ id }) => id)).toEqual(['health-access', 'meditate']);
 	});
 
-	it('orders native and server items by priority', () => {
+	it('orders native and local items by priority', () => {
 		const result = mergeActionFeedItems(
 			[item('meditate', ['meditation']), item('screen-warning', ['screen-time'], 'warning')],
 			[item('sync', ['sleep'], 'blocking')]

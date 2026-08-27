@@ -34,7 +34,6 @@
 		initial.meals.map((meal) => ({
 			id: meal.id,
 			name: meal.name,
-			imageDataUrl: meal.imageDataUrl,
 			ingredients: meal.ingredients.map((item) => ({
 				id: item.id,
 				name: item.name,
@@ -88,15 +87,7 @@
 
 <TrackerPage class="max-w-4xl">
 	<form id="save-entry" onsubmit={saveEntry}>
-		<EntryEditor
-			entryId={initial.id}
-			bind:date
-			bind:time
-			bind:name
-			bind:notes
-			bind:meals
-			error={formError}
-		/>
+		<EntryEditor bind:date bind:time bind:name bind:notes bind:meals error={formError} />
 	</form>
 </TrackerPage>
 
@@ -114,8 +105,8 @@
 			<AlertDialogContent>
 				<AlertDialogHeader
 					><AlertDialogTitle>Delete this meal?</AlertDialogTitle><AlertDialogDescription
-						>This removes the photo, nutrition estimate, and all detected ingredients. This cannot
-						be undone.</AlertDialogDescription
+						>This removes the meal and all of its manually entered nutrition data. This cannot be
+						undone.</AlertDialogDescription
 					></AlertDialogHeader
 				>
 				<AlertDialogFooter

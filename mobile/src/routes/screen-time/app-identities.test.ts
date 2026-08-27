@@ -22,7 +22,7 @@ describe('screen-time app identities', () => {
 		).toEqual([{ ...apps[0], name: 'Browser', icon: 'data:image/png;base64,icon' }]);
 	});
 
-	it('keeps uploaded details when no identity is resolved', () => {
+	it('keeps collected details when no identity is resolved', () => {
 		const apps = [{ package: 'com.example.unknown', name: 'Unknown', tracked: false }];
 
 		expect(addScreenTimeAppIdentities(apps, {})).toEqual([{ ...apps[0], icon: undefined }]);

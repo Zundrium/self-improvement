@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { healthProviderFailure, usageProviderFailure } from './native-failures';
 
 describe('native provider failure classification', () => {
-	it('treats transient Health Connect failures as retryable server failures', () => {
+	it('treats transient Health Connect failures as retryable native failures', () => {
 		expect(healthProviderFailure(new Error('Health Connect provider disconnected'))).toMatchObject({
-			category: 'server',
+			category: 'native',
 			retryable: true
 		});
 	});
@@ -25,7 +25,7 @@ describe('native provider failure classification', () => {
 
 	it('does not mistake other UsageStats access errors for permission rejection', () => {
 		expect(usageProviderFailure(new Error('Database access failed'))).toMatchObject({
-			category: 'server',
+			category: 'native',
 			retryable: true
 		});
 	});

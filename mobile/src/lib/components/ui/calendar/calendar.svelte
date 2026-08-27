@@ -1,6 +1,5 @@
 <script lang="ts">
-	import Icon from '@iconify/svelte';
-	import { Check } from '@lucide/svelte';
+	import { Check, ChevronLeft, ChevronRight } from '@lucide/svelte';
 	import { Calendar as CalendarPrimitive } from 'bits-ui';
 	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 
@@ -38,13 +37,13 @@
 			<CalendarPrimitive.PrevButton
 				class="inline-flex size-9 items-center justify-center rounded-2xl text-(--text)/72 outline-none hover:bg-(--text)/8 hover:text-(--text)"
 			>
-				<Icon icon="heroicons:chevron-left-solid" class="size-4" aria-hidden="true" />
+				<ChevronLeft class="size-4" aria-hidden="true" />
 			</CalendarPrimitive.PrevButton>
 			<CalendarPrimitive.Heading class="text-sm font-medium tracking-[-0.42px]" />
 			<CalendarPrimitive.NextButton
 				class="inline-flex size-9 items-center justify-center rounded-2xl text-(--text)/72 outline-none hover:bg-(--text)/8 hover:text-(--text)"
 			>
-				<Icon icon="heroicons:chevron-right-solid" class="size-4" aria-hidden="true" />
+				<ChevronRight class="size-4" aria-hidden="true" />
 			</CalendarPrimitive.NextButton>
 		</CalendarPrimitive.Header>
 		<div class="flex flex-col gap-4 sm:flex-row">

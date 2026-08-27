@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '@fontsource-variable/ibm-plex-sans';
 	import './layout.css';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
@@ -28,7 +28,8 @@
 	import { failedTrackerIds } from '$domain/status';
 	import { androidSyncCoordinator } from '$native/android-data';
 	import { ANDROID_SETUP_PATH } from '$native/android-setup';
-	import { getLaunchUrl, listenForAppUrls, listenForResume } from '$native/app';
+	import { listenForResume } from '$native/app';
+	import { runScheduledGoogleDriveBackup } from '$native/google-drive-backup';
 	import { isNativeAndroid } from '$native/platform';
 	import { rescheduleBedtimeReminderFromApi } from './sleep/reminders';
 	import type { LayoutProps } from './$types';
@@ -61,10 +62,8 @@
 	const selectedFeature = $derived(
 		getTrackerForPathname(page.url.pathname) ?? getShopFeatureForPathname(page.url.pathname)
 	);
-	const standalonePage = $derived(
-		page.url.pathname === '/nutrition/track' || page.url.pathname === ANDROID_SETUP_PATH
-	);
-	const appShellActive = $derived(Boolean(data.user) && !standalonePage);
+	const standalonePage = $derived(page.url.pathname === ANDROID_SETUP_PATH);
+	const appShellActive = $derived(!standalonePage);
 
 	$effect(() => {
 		const dates = dateNavigation?.markedDates ?? [];
@@ -73,7 +72,7 @@
 
 	$effect(() => {
 		const pathname = page.url.pathname;
-		if (!data.user || pathname === ANDROID_SETUP_PATH || !isNativeAndroid()) return;
+		if (pathname === ANDROID_SETUP_PATH || !isNativeAndroid()) return;
 		untrack(() => void showStoredSyncStatus());
 	});
 
@@ -81,24 +80,17 @@
 		dismissLoadingScreen();
 		audioVolumeState.hydrate();
 		if (!isNativeAndroid()) return;
-		if (data.user) {
-			void syncAndroidData();
-			void rescheduleBedtimeReminder();
-		}
+		void refreshNativeApp();
 		let removeResume = () => {};
-		let removeUrls = () => {};
-		void listenForResume(async () => {
-			if (!data.user) return;
-			await syncAndroidData();
-			await rescheduleBedtimeReminder();
-		}).then((remove) => (removeResume = remove));
-		void getLaunchUrl().then((url) => url && openAppUrl(url));
-		void listenForAppUrls(openAppUrl).then((remove) => (removeUrls = remove));
-		return () => {
-			removeResume();
-			removeUrls();
-		};
+		void listenForResume(refreshNativeApp).then((remove) => (removeResume = remove));
+		return () => removeResume();
 	});
+
+	async function refreshNativeApp() {
+		await syncAndroidData();
+		await rescheduleBedtimeReminder();
+		await runScheduledGoogleDriveBackup();
+	}
 
 	async function syncAndroidData() {
 		try {
@@ -179,11 +171,6 @@
 		if (date === today) return pathname;
 		return `${pathname}?date=${date}`;
 	}
-
-	function openAppUrl(url: URL) {
-		if (url.protocol !== 'selfimprovement:' || url.host !== 'reset-password') return;
-		void goto(resolve(`/reset-password${url.search}` as '/reset-password'));
-	}
 </script>
 
 <ModeWatcher
@@ -221,10 +208,10 @@
 			<div class="contents" use:pageEnter>{@render children()}</div>
 		</div>
 	{/key}
-	{#if data.user && appShellActive}
+	{#if appShellActive}
 		<BottomActionBarOutlet />
 		<AppNavbar
-			user={data.user}
+			profile={data.profile}
 			trackers={data.enabledTrackers}
 			daySummary={(page.data as DatedPageData).actionFeed?.daySummary}
 		/>

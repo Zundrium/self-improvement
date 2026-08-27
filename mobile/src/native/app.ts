@@ -9,7 +9,7 @@ export async function getAppVersion() {
 	try {
 		version = (await App.getInfo()).version;
 	} catch {
-		throw new SyncFailure('server');
+		throw new SyncFailure('native');
 	}
 	try {
 		return payloadAppVersion(version);
@@ -21,28 +21,5 @@ export async function getAppVersion() {
 export async function listenForResume(listener: () => void | Promise<void>) {
 	requireNativeAndroid();
 	const handle = await App.addListener('resume', () => void listener());
-	return () => void handle.remove();
-}
-
-export async function getLaunchUrl() {
-	requireNativeAndroid();
-	const launch = await App.getLaunchUrl();
-	if (!launch?.url) return null;
-	try {
-		return new URL(launch.url);
-	} catch {
-		return null;
-	}
-}
-
-export async function listenForAppUrls(listener: (url: URL) => void | Promise<void>) {
-	requireNativeAndroid();
-	const handle = await App.addListener('appUrlOpen', ({ url }) => {
-		try {
-			void listener(new URL(url));
-		} catch {
-			return;
-		}
-	});
 	return () => void handle.remove();
 }

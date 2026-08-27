@@ -135,7 +135,7 @@
 
 	function lastSync(tracker: (typeof TRACKER_IDS)[number]) {
 		const value = status.trackers[tracker].lastSuccessAt;
-		return value ? new Date(value).toLocaleString() : 'No successful upload yet';
+		return value ? new Date(value).toLocaleString() : 'No successful processing yet';
 	}
 
 	function failureMessage(tracker: (typeof TRACKER_IDS)[number]) {

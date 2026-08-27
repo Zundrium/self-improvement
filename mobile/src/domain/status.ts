@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { TRACKER_IDS, type MobileSyncStatus, type SyncReport, type TrackerId } from './model';
 
 const failureSchema = z.object({
-	category: z.enum(['session', 'permission', 'validation', 'auth', 'network', 'server']),
+	category: z.enum(['permission', 'validation', 'native']),
 	message: z.string().min(1).max(240),
 	retryable: z.boolean()
 });
