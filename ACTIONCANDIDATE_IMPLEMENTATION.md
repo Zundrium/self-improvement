@@ -8,7 +8,7 @@ The implementation has four parts:
 
 1. Build one factual snapshot from `LocalAppState`.
 2. Let tracker candidates resolve possible actions from that snapshot.
-3. Order the proposals, remove duplicates and conflicts, and keep at most three.
+3. Order the positive-scoring proposals and remove duplicates and conflicts.
 4. Render the resulting items on the central page.
 
 Tracker records remain the source of truth. The action system does not keep its own progress state.
@@ -22,7 +22,7 @@ ActionSnapshot
         ↓
 ActionCandidate[]
         ↓
-Resolve, order, deduplicate, limit
+Resolve, filter positive scores, order, deduplicate
         ↓
 ActionFeedItem[]
         ↓
@@ -74,7 +74,7 @@ type ActionResolution = {
 	score: number;
 	icon: ActionIcon;
 	title: string;
-	reason?: string;
+	reason: string;
 	action: { type: 'navigate'; href: string };
 };
 
@@ -94,7 +94,7 @@ type ActionFeedItem = {
 };
 ```
 
-`score` uses a `0–100` scale. Higher means more useful now. Priority remains the first ordering level: `blocking`, `warning`, then `activity`.
+`score` uses a `0–100` scale. Proposals with a score of zero are hidden; every positive-scoring proposal remains eligible. Higher means more useful now. Priority remains the first ordering level: `blocking`, `warning`, then `activity`.
 
 `goalId` groups alternatives that achieve the same result. `conflictKeys` prevent incompatible actions from appearing together.
 
@@ -111,6 +111,8 @@ type FitnessActionState = {
 	completed: boolean;
 	workoutId: number | null;
 	sets: number | null;
+	firstSetDurationSeconds: number | null;
+	additionalSetDurationSeconds: number | null;
 };
 
 type MeditationActionState = {
@@ -121,6 +123,7 @@ type MeditationActionState = {
 
 type NutritionActionState = {
 	date: string;
+	configured: boolean;
 	hasEntries: boolean;
 	calories: number;
 	calorieGoal: number | null;
@@ -161,14 +164,14 @@ Time-sensitive candidates return `null` when `snapshot.date !== environment.loca
 Selection is one deterministic pass:
 
 1. Evaluate candidates whose trackers are enabled.
-2. Sort by priority, score descending, then candidate ID.
-3. Walk the sorted proposals in order.
-4. Skip a proposal when its `goalId` was already selected.
-5. Skip a proposal when any conflict key was already selected.
-6. Stop after three items.
+2. Remove proposals with a score of zero.
+3. Sort by priority, score descending, then candidate ID.
+4. Walk the sorted proposals in order.
+5. Skip a proposal when its `goalId` was already selected.
+6. Skip a proposal when any conflict key was already selected.
 7. Remove internal selection fields from the returned feed items.
 
-Returning fewer than three items is valid.
+Every remaining positive-scoring item is returned.
 
 ## Example
 
@@ -184,7 +187,9 @@ const quickEveningWorkout: ActionCandidate = {
 		if (!fitness.scheduled || fitness.completed) return null;
 		if (fitness.workoutId === null || fitness.sets === null) return null;
 
-		const sets = Math.max(1, Math.ceil(fitness.sets / 2));
+		const sets = 1;
+		const durationSeconds = fitness.firstSetDurationSeconds;
+		if (durationSeconds === null) return null;
 		return {
 			id: `fitness.quick-evening-workout:${fitness.date}`,
 			goalId: `fitness.daily-workout:${fitness.date}`,
@@ -192,8 +197,8 @@ const quickEveningWorkout: ActionCandidate = {
 			priority: 'activity',
 			score: 80,
 			icon: 'tracker',
-			title: 'Do a shorter evening workout',
-			reason: "Today's workout is still open.",
+			title: 'Fit in a quick evening workout',
+			reason: `${Math.ceil(durationSeconds / 60)} minutes to feel stronger`,
 			action: {
 				type: 'navigate',
 				href: `/fitness?date=${fitness.date}&sets=${sets}`
@@ -203,7 +208,7 @@ const quickEveningWorkout: ActionCandidate = {
 };
 ```
 
-Morning and normal evening candidates use the same dated `goalId`, so only the best current variant appears.
+Morning and normal evening candidates use the same dated `goalId`, so only the best current variant appears. Normal workouts start at two sets while the quick evening variant starts at one; the fitness screen still lets the user adjust the amount.
 
 ## Native actions
 
@@ -214,7 +219,7 @@ Before rendering, `src/routes/action-feed.ts`:
 1. places native blocking actions before tracker actions;
 2. removes tracker actions blocked by a native action;
 3. orders the combined items by priority;
-4. limits the visible list to three.
+4. keeps every remaining item ordered by priority.
 
 This is a small final merge, not a second candidate engine.
 
@@ -227,7 +232,7 @@ This is a small final merge, not a second candidate engine.
 - Keep cross-tracker candidates under `src/lib/actions/`.
 - Add `reason` to `src/lib/api-types.ts` and render it in `src/routes/actionFeedItem.svelte`.
 - Keep native permission and sync actions in `src/native/action-feed.ts`.
-- Apply the final three-item limit in `src/routes/action-feed.ts`.
+- Keep the final native and tracker action merge ordered without imposing a display cap.
 
 No new Dexie state is required for the first implementation.
 
@@ -235,15 +240,15 @@ No new Dexie state is required for the first implementation.
 
 Candidate tests cover conditions, time boundaries, missing facts, and stable IDs.
 
-Selector tests cover disabled trackers, ordering, goal deduplication, conflicts, stable ties, and the three-item limit.
+Selector tests cover disabled trackers, positive-score filtering, ordering, goal deduplication, conflicts, and stable ties.
 
-Mobile tests cover native blockers, tracker-action suppression, ordering, and the final limit.
+Mobile tests cover native blockers, tracker-action suppression, ordering, and uncapped final results.
 
 ## Delivery
 
 1. Add the snapshot, candidate contracts, and selector while preserving current behavior.
 2. Convert the existing `actionItems` rules into tracker candidates.
-3. Add fitness time variants and reason text.
+3. Add duration-focused reason text for quick wellbeing actions, including fitness, meditation, breathing, and happiness.
 4. Add meditation, nutrition, and cross-tracker candidates only when needed.
 
 Feedback history, learned ranking, candidate preferences, and action lifecycle events are outside this implementation.

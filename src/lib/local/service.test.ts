@@ -1,13 +1,15 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import type {
+	ActionFeedData,
 	AppBootstrapData,
+	FitnessData,
 	GamificationData,
 	HappinessData,
 	NutritionEntryData
 } from '$lib/api-types';
 import { LocalAppService } from './service';
-import { LocalAppDatabase, LocalAppStore, createDefaultAppState } from './state';
+import { createDefaultAppState, LocalAppDatabase, LocalAppStore } from './state';
 
 const stores: LocalAppStore[] = [];
 
@@ -123,6 +125,88 @@ describe('local app service', () => {
 				})
 			})
 		).rejects.toThrow('Choose a valid date.');
+	});
+
+	it('shows nutrition setup until the nutrition profile is configured', async () => {
+		const now = new Date('2026-03-10T12:00:00.000Z');
+		const store = trackedStore();
+		const state = createDefaultAppState(now);
+		state.enabledTrackerIds = ['nutrition'];
+		await store.replaceState(state);
+		const service = new LocalAppService(store, () => now);
+
+		const feed = await service.request<ActionFeedData>('/api/app/action-feed');
+
+		expect(feed.items).toEqual([
+			expect.objectContaining({
+				id: 'nutrition.setup',
+				title: 'Set up your nutrition goals',
+				action: { type: 'navigate', href: '/nutrition/onboarding' }
+			})
+		]);
+		await store.update((current) => {
+			current.nutrition.profile = nutritionProfile();
+		});
+		const configuredFeed = await service.request<ActionFeedData>('/api/app/action-feed');
+		expect(configuredFeed.items).toEqual([]);
+	});
+
+	it('builds the action feed from local tracker candidates', async () => {
+		const now = new Date('2026-03-10T20:00:00.000Z');
+		const store = trackedStore();
+		const state = createDefaultAppState(now);
+		state.enabledTrackerIds = ['fitness'];
+		await store.replaceState(state);
+		const service = new LocalAppService(store, () => now);
+
+		const feed = await service.request<ActionFeedData>('/api/app/action-feed');
+
+		expect(feed.items).toEqual([
+			expect.objectContaining({
+				id: 'fitness.quick-evening-workout:2026-03-10',
+				reason: '3 minutes to feel stronger',
+				action: { type: 'navigate', href: '/fitness?date=2026-03-10&sets=1' }
+			})
+		]);
+	});
+
+	it('describes the short duration of wellbeing actions', async () => {
+		const now = new Date('2026-03-10T12:00:00.000Z');
+		const store = trackedStore();
+		const state = createDefaultAppState(now);
+		state.enabledTrackerIds = ['meditation', 'breathing', 'happiness'];
+		await store.replaceState(state);
+		const service = new LocalAppService(store, () => now);
+
+		const feed = await service.request<ActionFeedData>('/api/app/action-feed');
+
+		expect(feed.items).toEqual([
+			expect.objectContaining({
+				id: 'happiness.daily-check-in:2026-03-10',
+				title: 'How are you feeling today?',
+				reason: '15 seconds to check in with yourself'
+			}),
+			expect.objectContaining({
+				id: 'meditation.daily-session:2026-03-10',
+				title: "Let's meditate now",
+				reason: '5 minutes to feel rested'
+			}),
+			expect.objectContaining({
+				id: 'breathing.daily-exercise:2026-03-10',
+				title: "Let's breathe now",
+				reason: '2 minutes to feel at ease'
+			})
+		]);
+	});
+
+	it('opens a fitness action with the requested lower set count', async () => {
+		const now = new Date('2026-03-10T20:00:00.000Z');
+		const service = new LocalAppService(trackedStore(), () => now);
+
+		const fitness = await service.request<FitnessData>('/api/app/fitness?date=2026-03-10&sets=3');
+		const workout = fitness.program.workouts.find(({ day }) => day === 10);
+
+		expect(workout?.sets).toBe(3);
 	});
 
 	it('switches a custom nutrition goal back to the estimate', async () => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import { Check, LoaderCircle, Minus, Pause, Play, Plus, RotateCcw, Square } from '@lucide/svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
 	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
@@ -20,15 +20,22 @@
 	type TimerStatus = 'idle' | 'running' | 'paused' | 'completed';
 	type Props = {
 		audioManager?: AudioManager;
+		initialDurationSeconds?: number;
 		saveState: SaveState;
 		oncomplete: (completion: MeditationCompletion) => void;
 		onretry: () => void;
 	};
 
-	let { audioManager, saveState, oncomplete, onretry }: Props = $props();
+	let {
+		audioManager,
+		initialDurationSeconds = DEFAULT_DURATION_SECONDS,
+		saveState,
+		oncomplete,
+		onretry
+	}: Props = $props();
 	const colors = getTrackerColors('meditation');
-	let durationSeconds = $state(DEFAULT_DURATION_SECONDS);
-	let remainingSeconds = $state(DEFAULT_DURATION_SECONDS);
+	let durationSeconds = $state(untrack(() => initialDurationSeconds));
+	let remainingSeconds = $state(untrack(() => initialDurationSeconds));
 	let status = $state<TimerStatus>('idle');
 	let timerId: number | undefined;
 	let deadline = 0;

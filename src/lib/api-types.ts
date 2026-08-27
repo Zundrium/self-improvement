@@ -1,11 +1,12 @@
-import type { HappinessRating, HappinessReason } from '../routes/happiness/happiness';
-import { cycleSummary, type MenstruationFlow } from '../routes/period/period';
+import type { ActionFeedItem } from '$lib/actions/contracts';
+import type { AppTracker, AppTrackerId } from '$lib/trackers/registry';
 import type {
 	CompletedWorkoutDay,
 	ExercisePreference,
 	WorkoutProgram
 } from '../routes/fitness/fitness';
-import type { AppTracker, AppTrackerId } from '$lib/trackers/registry';
+import type { HappinessRating, HappinessReason } from '../routes/happiness/happiness';
+import type { cycleSummary, MenstruationFlow } from '../routes/period/period';
 
 export type LocalProfile = {
 	id: string;
@@ -89,23 +90,11 @@ export type DaySummaryData = {
 	periodFlow: MenstruationFlow | null;
 };
 
-export type ActionPriority = 'blocking' | 'warning' | 'activity';
-export type ActionFeedCommand =
-	| { type: 'navigate'; href: string }
-	| { type: 'request-health-access'; trackerIds: Array<'steps'> }
-	| { type: 'open-usage-access' }
-	| {
-			type: 'sync-android-data';
-			trackerIds: Array<'steps' | 'sleep' | 'screenTime'>;
-	  };
-export type ActionFeedItem = {
-	id: string;
-	trackerIds: AppTrackerId[];
-	priority: ActionPriority;
-	icon: 'tracker' | 'permission' | 'sync';
-	title: string;
-	action: ActionFeedCommand;
-};
+export type {
+	ActionFeedCommand,
+	ActionFeedItem,
+	ActionPriority
+} from '$lib/actions/contracts';
 export type ActionFeedData = {
 	date: string;
 	daySummary: DaySummaryData;

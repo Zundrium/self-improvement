@@ -89,6 +89,7 @@
 		<div class="space-y-1" data-motion-page-enter="custom" use:meditationEnter>
 			<MeditationTimer
 				{audioManager}
+				initialDurationSeconds={data.initialDurationSeconds}
 				{saveState}
 				oncomplete={(completion) => void saveCompletion(completion)}
 				onretry={retryCompletion}

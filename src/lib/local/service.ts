@@ -1,6 +1,8 @@
+import { actionCandidates } from '$lib/actions/candidates';
+import { buildActionEnvironment } from '$lib/actions/environment';
+import { selectActionFeedItems } from '$lib/actions/selector';
 import type {
 	ActionFeedData,
-	ActionFeedItem,
 	AppBootstrapData,
 	BreathingData,
 	DaySummaryData,
@@ -22,19 +24,20 @@ import type {
 	SleepSettingsData,
 	StepsData
 } from '$lib/api-types';
-import { appTrackers, isAppTrackerId, type AppTrackerId } from '$lib/trackers/registry';
 import { dateKeysEndingAt, isValidDateKey, localDateForInstant } from '$lib/trackers/dates';
+import { type AppTrackerId, appTrackers, isAppTrackerId } from '$lib/trackers/registry';
 import { breathingDurationSeconds } from '../../routes/breathing/breathing';
 import {
-	happinessRatings,
-	reasonOptionsForRating,
 	type HappinessRating,
-	type HappinessReason
+	type HappinessReason,
+	happinessRatings,
+	reasonOptionsForRating
 } from '../../routes/happiness/happiness';
 import { cycleSummary, flowOptions, type MenstruationFlow } from '../../routes/period/period';
 import { summarizeUsage } from '../../routes/screen-time/screen-time';
-import { buildGamification } from './gamification';
+import { buildActionSnapshot } from './action-snapshot';
 import { exercisePreferences, fitnessProgram, workoutDay } from './fitness-program';
+import { buildGamification } from './gamification';
 import {
 	createNutritionEntry,
 	estimatedTdee,
@@ -43,7 +46,7 @@ import {
 	replaceNutritionEntry,
 	sumEntries
 } from './nutrition';
-import { localAppStore, type LocalAppState, type LocalAppStore } from './state';
+import { type LocalAppState, type LocalAppStore, localAppStore } from './state';
 
 export class LocalServiceError extends Error {
 	constructor(
@@ -182,10 +185,12 @@ export class LocalAppService {
 	private async fitness(url: URL): Promise<FitnessData> {
 		const state = await this.store.read();
 		const today = this.today();
+		const date = selectedDate(url, today);
+		const program = fitnessProgram(numberKeyRecord(state.fitness.exerciseSpeeds));
 		return {
-			date: selectedDate(url, today),
+			date,
 			today,
-			program: fitnessProgram(numberKeyRecord(state.fitness.exerciseSpeeds)),
+			program: programWithRequestedSets(program, date, url.searchParams.get('sets')),
 			completedDays: state.fitness.completedDays
 		};
 	}
@@ -470,11 +475,14 @@ export class LocalAppService {
 
 	private async actionFeed(url: URL): Promise<ActionFeedData> {
 		const state = await this.store.read();
-		const summary = daySummaryData(state, selectedDate(url, this.today()), this.today());
+		const environment = buildActionEnvironment(this.clock(), localTimeZone());
+		const date = selectedDate(url, environment.localDate);
+		const summary = daySummaryData(state, date, environment.localDate);
+		const snapshot = buildActionSnapshot(state, date, environment.localDate);
 		return {
-			date: summary.date,
+			date,
 			daySummary: summary,
-			items: actionItems(state.enabledTrackerIds, summary)
+			items: selectActionFeedItems(actionCandidates, snapshot, environment)
 		};
 	}
 
@@ -613,6 +621,24 @@ function periodData(state: LocalAppState, date: string, today: string): PeriodDa
 	};
 }
 
+function programWithRequestedSets(
+	program: FitnessData['program'],
+	date: string,
+	requestedValue: string | null
+) {
+	const requestedSets = Number(requestedValue);
+	const workoutDay = Number(date.slice(-2));
+	const workout = program.workouts.find(({ day }) => day === workoutDay);
+	if (!workout || !Number.isInteger(requestedSets)) return program;
+	if (requestedSets < 1 || requestedSets > workout.sets) return program;
+	return {
+		...program,
+		workouts: program.workouts.map((item) =>
+			item.day === workoutDay ? { ...item, sets: requestedSets } : item
+		)
+	};
+}
+
 function daySummaryData(state: LocalAppState, date: string, today: string): DaySummaryData {
 	const stepDay = state.steps.days.find((day) => day.date === date);
 	const sleepDay = state.sleep.days.find((day) => day.localDate === date);
@@ -658,84 +684,6 @@ function daySummaryData(state: LocalAppState, date: string, today: string): DayS
 			state.happiness.entries.find((entry) => entry.localDate === date)?.rating ?? null,
 		periodFlow: state.period.entries.find((entry) => entry.localDate === date)?.flow ?? null
 	};
-}
-
-function actionItems(enabled: AppTrackerId[], summary: DaySummaryData): ActionFeedItem[] {
-	const items: ActionFeedItem[] = [];
-	if (enabled.includes('steps') && !summary.stepsHaveMeasurements)
-		items.push(action('steps', 'No step data yet', '/android-data-help/steps', 'warning'));
-	if (enabled.includes('sleep')) items.push(...sleepActions(summary));
-	if (enabled.includes('screen-time')) items.push(...screenTimeActions(summary));
-	if (
-		enabled.includes('fitness') &&
-		!summary.fitnessDone &&
-		summary.fitnessWorkoutTitle !== 'Rest day'
-	)
-		items.push(action('fitness', `Today's workout: ${summary.fitnessWorkoutTitle}`, '/fitness'));
-	if (enabled.includes('nutrition') && summary.nutritionFasting)
-		items.push(action('nutrition', 'Full-day fast marked', `/nutrition/log/${summary.date}`));
-	if (enabled.includes('meditation') && !summary.meditationDone)
-		items.push(action('meditation', 'Meditation is still open', '/meditation'));
-	if (enabled.includes('breathing') && !summary.breathingDone)
-		items.push(action('breathing', 'Breathing exercise is still open', '/breathing'));
-	if (enabled.includes('happiness') && summary.happinessRating === null)
-		items.push(action('happiness', 'How are you feeling today?', '/happiness'));
-	return items.toSorted(
-		(left, right) => priorityRank(left.priority) - priorityRank(right.priority)
-	);
-}
-
-function sleepActions(summary: DaySummaryData): ActionFeedItem[] {
-	if (summary.sleepSetupRequired)
-		return [action('sleep', 'Choose apps for bedtime tracking', '/screen-time', 'warning')];
-	if (summary.sleepStatus === 'pass') return [];
-	if (summary.sleepStatus === 'fail')
-		return [
-			action(
-				'sleep',
-				`${Math.ceil(summary.sleepLateUsageSeconds / 60)} min of selected-app activity after bedtime`,
-				'/sleep',
-				'warning'
-			)
-		];
-	return [action('sleep', `Bedtime at ${summary.sleepBedtime}`, '/sleep')];
-}
-
-function screenTimeActions(summary: DaySummaryData): ActionFeedItem[] {
-	if (!summary.screenTimeHasMeasurements)
-		return [
-			action('screen-time', 'No screen-time data yet', '/android-data-help/screen-time', 'warning')
-		];
-	if (!summary.screenTimeRecorded) return [];
-	const remaining = summary.screenTimeLimitMinutes - summary.screenTimeMinutes;
-	if (remaining > 60) return [];
-	const title =
-		remaining > 0
-			? `Only ${remaining}m of screen time left`
-			: remaining === 0
-				? 'Screen-time limit reached'
-				: `Screen-time limit exceeded by ${-remaining}m`;
-	return [action('screen-time', title, '/screen-time', 'warning')];
-}
-
-function action(
-	trackerId: AppTrackerId,
-	title: string,
-	href: string,
-	priority: 'warning' | 'activity' = 'activity'
-): ActionFeedItem {
-	return {
-		id: `${priority}:${trackerId}`,
-		trackerIds: [trackerId],
-		priority,
-		icon: 'tracker',
-		title,
-		action: { type: 'navigate', href }
-	};
-}
-
-function priorityRank(priority: ActionFeedItem['priority']) {
-	return priority === 'blocking' ? 0 : priority === 'warning' ? 1 : 2;
 }
 
 function validMeditation(body: Record<string, unknown>, now: Date) {

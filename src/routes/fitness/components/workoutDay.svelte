@@ -9,7 +9,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
 	import { getTrackerColors } from '$lib/trackers/registry';
-	import type { Workout } from '../fitness';
+	import { defaultWorkoutSets, type Workout } from '../fitness';
 	import WorkoutSession from './workoutSession.svelte';
 
 	interface Props {
@@ -35,7 +35,7 @@
 	let isSessionActive = $state(false);
 	let loadedDate = $state(untrack(() => date));
 	let loadedWorkoutId = $state(untrack(() => workout.id));
-	let configuredSets = $state(untrack(() => workout.sets));
+	let configuredSets = $state(untrack(() => defaultWorkoutSets(workout.sets)));
 	const focus = $derived(workout.title.replace(/^Total Body - Day \d+:\s*/, ''));
 	const hasRepExercises = $derived(workout.activities.some((activity) => activity.type === 'reps'));
 
@@ -46,7 +46,7 @@
 		loadedDate = nextDate;
 		loadedWorkoutId = nextWorkout.id;
 		isSessionActive = false;
-		configuredSets = nextWorkout.sets;
+		configuredSets = defaultWorkoutSets(nextWorkout.sets);
 	}
 
 	function startSession() {

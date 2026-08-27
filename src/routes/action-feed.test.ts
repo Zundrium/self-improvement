@@ -17,6 +17,14 @@ describe('action feed merging', () => {
 		);
 		expect(result.map(({ id }) => id)).toEqual(['sync', 'screen-warning', 'meditate']);
 	});
+
+	it('keeps every relevant native and tracker action', () => {
+		const result = mergeActionFeedItems(
+			[item('meditate', ['meditation']), item('breathe', ['breathing'])],
+			[item('health', ['steps'], 'blocking'), item('usage', ['sleep'], 'blocking')]
+		);
+		expect(result.map(({ id }) => id)).toEqual(['health', 'usage', 'meditate', 'breathe']);
+	});
 });
 
 function item(

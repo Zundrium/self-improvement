@@ -31,7 +31,12 @@
 			<Shield class="size-7" />
 		{/if}
 	</span>
-	<strong class="min-w-0 flex-1 text-left text-sm leading-5 font-medium">{item.title}</strong>
+	<span class="min-w-0 flex-1 text-left">
+		<strong class="block text-sm leading-5 font-medium">{item.title}</strong>
+		{#if item.reason}
+			<span class="mt-1 block text-xs leading-4 text-(--text)/60">{item.reason}</span>
+		{/if}
+	</span>
 	<span class="flex shrink-0 items-center text-(--text)/48">
 		{#if busy}
 			<LoaderCircle class="size-5" data-motion-spin />
