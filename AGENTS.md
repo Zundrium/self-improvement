@@ -9,5 +9,4 @@
 - Keep Android integrations under `src/native/` and native Java code under `android/app/src/main/java/com/zuncreative/selfimprovement/`.
 - Backups are versioned JSON exports/restores. Optional daily Google Drive backups use a user-selected SAF tree and retain no more than five exact app backup files.
 - Root scripts target the mobile app. Keep useful `mobile:*` and Capacitor aliases; do not add web deployment scripts.
-- Use `.pi/skills/feature-development/SKILL.md` for feature work. Keep changes uncommitted until local approval, then use the signed GitHub Android release flow after a successful push.
 - Run `npm run check`, `npm run lint`, and `npm run test` before handoff. Do not run `npm run build` before local approval.
