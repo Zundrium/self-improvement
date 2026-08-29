@@ -48,4 +48,28 @@ describe('native action feed', () => {
 		expect(actions[0]?.trackerIds).toEqual(['steps', 'sleep']);
 		expect(actions[0]?.action.type).toBe('sync-android-data');
 	});
+
+	it('offers an available app update as a warning action', () => {
+		const actions = buildNativeActionFeedItems({
+			enabledTrackerIds: [],
+			healthAvailable: true,
+			permissions: { steps: 'granted', sleep: 'granted', screenTime: 'granted' },
+			status: createEmptyStatus(),
+			update: {
+				available: true,
+				currentVersion: '0.22.0',
+				version: 'v0.23.0',
+				downloadUrl:
+					'https://github.com/Zundrium/self-improvement/releases/download/v0.23.0/self-improvement-v0.23.0.apk'
+			}
+		});
+		expect(actions).toEqual([
+			expect.objectContaining({
+				id: 'update:v0.23.0',
+				priority: 'warning',
+				icon: 'update',
+				action: expect.objectContaining({ type: 'install-android-update' })
+			})
+		]);
+	});
 });

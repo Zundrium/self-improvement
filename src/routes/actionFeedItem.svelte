@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { ChevronRight, LoaderCircle, RefreshCw, Shield } from '@lucide/svelte';
+	import { ChevronRight, Download, LoaderCircle, RefreshCw, Shield } from '@lucide/svelte';
 	import type { ActionFeedItem } from '$lib/api-types';
 	import { interactionScale } from '$lib/motion/gsap';
 	import { trackerIcons } from '$lib/trackers/icons';
@@ -27,6 +27,8 @@
 			<TrackerIcon class="size-7" />
 		{:else if item.icon === 'sync'}
 			<RefreshCw class="size-7" />
+		{:else if item.icon === 'update'}
+			<Download class="size-7" />
 		{:else}
 			<Shield class="size-7" />
 		{/if}

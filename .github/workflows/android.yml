@@ -63,9 +63,11 @@ jobs:
 
           android_namespace = 'http://schemas.android.com/apk/res/android'
           allowed_permissions = {
+              'android.permission.INTERNET',
               'android.permission.PACKAGE_USAGE_STATS',
               'android.permission.POST_NOTIFICATIONS',
               'android.permission.RECEIVE_BOOT_COMPLETED',
+              'android.permission.REQUEST_INSTALL_PACKAGES',
               'android.permission.WAKE_LOCK',
               'android.permission.health.READ_STEPS',
               'com.zuncreative.selfimprovement.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION',

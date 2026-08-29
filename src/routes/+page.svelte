@@ -6,6 +6,7 @@
 	import GameBar from '$lib/components/gameBar.svelte';
 	import { loadNativeActionFeedItems } from '$native/action-feed';
 	import { androidHealth, androidSyncCoordinator, androidUsage } from '$native/android-data';
+	import { installAndroidUpdate } from '$native/android-updater';
 	import { listenForResume } from '$native/app';
 	import { isNativeAndroid } from '$native/platform';
 	import ActionFeed from './actionFeed.svelte';
@@ -44,6 +45,7 @@
 
 	async function runNativeAction(action: Exclude<ActionFeedItem['action'], { type: 'navigate' }>) {
 		if (action.type === 'open-usage-access') return androidUsage.openSettings();
+		if (action.type === 'install-android-update') return installAndroidUpdate(action);
 		if (action.type === 'request-health-access') {
 			await androidHealth.requestReadPermissions();
 			await androidSyncCoordinator.sync(action.trackerIds);

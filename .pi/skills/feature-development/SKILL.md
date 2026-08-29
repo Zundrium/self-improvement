@@ -1,6 +1,6 @@
 ---
 name: feature-development
-description: Develop and release local-only Self Improvement Android features with local review, approval, memmit, and a signed GitHub release.
+description: Develop and release Self Improvement Android features with locally stored data, local review, approval, memmit, and a signed GitHub release.
 ---
 
 # Feature Development and Release
@@ -10,8 +10,8 @@ description: Develop and release local-only Self Improvement Android features wi
 - Work on the single root SvelteKit/Svelte 5 app and its Capacitor Android project under `android/`.
 - Keep application state in Dexie and native tracker processing on-device.
 - Preserve manual nutrition, JSON export/restore, optional daily Google Drive SAF backups, and the five-file backup maximum.
-- Do not add accounts, a backend, custom network requests, web deployment, analytics, ads, AI nutrition, or in-app update checks.
-- Keep Android permissions limited to notifications, Usage Access, read-only Steps, wake lock, and boot-completed support for reminders.
+- Do not add accounts, a backend, web deployment, analytics, ads, AI nutrition, or custom network requests beyond the public GitHub release updater.
+- Keep Android permissions limited to Internet and package installation for signed GitHub updates, notifications, Usage Access, read-only Steps, wake lock, and boot-completed support for reminders.
 
 ## Rules
 
@@ -30,7 +30,7 @@ description: Develop and release local-only Self Improvement Android features wi
 
 1. Read the request, repository instructions, and relevant code.
 2. Give available worker subagents separate tasks and forbid commits, pushes, tags, releases, and persistent processes.
-3. Integrate the work and inspect the complete diff, local-only behavior, backup safety, and merged-permission implications.
+3. Integrate the work and inspect the complete diff, local data behavior, backup safety, updater security, and merged-permission implications.
 4. Run targeted checks, then `npm run check`, `npm run lint`, and `npm run test`.
 5. When local acceptance needs a browser preview and persistent processes are allowed, start the app from the repository root:
 

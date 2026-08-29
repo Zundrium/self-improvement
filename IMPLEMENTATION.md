@@ -1,8 +1,8 @@
-# Local-Only Android Implementation
+# Local Data Android Implementation
 
 ## Goal
 
-Self Improvement is one SvelteKit/Svelte 5 application packaged for Android with Capacitor. All application behavior and persistent state are local. The project has no authentication, backend, custom network API, AI service, or hosted web target.
+Self Improvement is one SvelteKit/Svelte 5 application packaged for Android with Capacitor. All tracker behavior and persistent state are local. The project has no authentication, backend, custom data API, AI service, or hosted web target. Its only direct network request checks public GitHub releases for signed app updates.
 
 ## Runtime boundary
 
@@ -68,13 +68,15 @@ Enumeration makes retention independent of SharedPreferences metadata and handle
 
 The release manifest permits only:
 
+- `android.permission.INTERNET`;
 - `android.permission.PACKAGE_USAGE_STATS`;
 - `android.permission.POST_NOTIFICATIONS`;
 - `android.permission.RECEIVE_BOOT_COMPLETED`;
+- `android.permission.REQUEST_INSTALL_PACKAGES`;
 - `android.permission.WAKE_LOCK`;
 - `android.permission.health.READ_STEPS`.
 
-CI compares the merged manifest to this exact set. Internet, camera, package installation, exact alarm, Health writes, and other Health reads fail validation.
+CI compares the merged manifest to this exact set. Internet and package installation support the signed GitHub updater. Camera, exact alarm, Health writes, and other Health reads fail validation.
 
 ## Development and delivery
 
@@ -90,4 +92,6 @@ npm run build
 
 The `mobile:*` compatibility aliases and `cap:*` Capacitor aliases remain available for Android work. There is no deploy script or non-Android deployment target.
 
-Feature work remains uncommitted until local approval and must not run `npm run build` before that approval. GitHub Actions performs app and Android builds, creates signed APK/AAB artifacts for version tags, and publishes the GitHub release. There is no in-app update checker.
+Feature work remains uncommitted until local approval and must not run `npm run build` before that approval. GitHub Actions performs app and Android builds, creates signed APK/AAB artifacts for version tags, and publishes the GitHub release.
+
+The Android updater reads the repository's public latest-release endpoint. When the semantic version is newer and the release includes the expected GitHub APK asset, Today shows an update action candidate. Tapping it opens a native confirmation, downloads through Android's DownloadManager, requests per-app installation access when needed, and hands the APK to Android's package installer. Android enforces signing-key continuity before replacing the installed app.

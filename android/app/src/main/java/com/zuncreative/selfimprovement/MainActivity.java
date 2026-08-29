@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(AndroidAppIdentityPlugin.class);
         registerPlugin(AndroidBackupPlugin.class);
         registerPlugin(AndroidSettingsPlugin.class);
+        registerPlugin(AndroidUpdaterPlugin.class);
         registerPlugin(AndroidUsageEventsPlugin.class);
         super.onCreate(savedInstanceState);
     }

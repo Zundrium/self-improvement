@@ -1,6 +1,6 @@
 # Self Improvement
 
-A local-only Android self-improvement app for steps, sleep, screen time, fitness, nutrition, meditation, breathing, happiness, and period tracking.
+An Android self-improvement app with locally stored data for steps, sleep, screen time, fitness, nutrition, meditation, breathing, happiness, and period tracking.
 
 The repository root contains one SvelteKit/Svelte 5 application. Capacitor packages its static output as the Android app. There is no account system, hosted frontend, custom API, analytics, advertising, or remote application database.
 
@@ -23,7 +23,7 @@ android/
 
 - `src/routes/` contains the app screens and tracker UI.
 - `src/lib/local/` owns Dexie state, local mutations, native-data processing, gamification, and JSON backup validation.
-- `src/native/` owns Android lifecycle, Health Connect, Usage Access, notifications, file selection, and Google Drive backup integration.
+- `src/native/` owns Android lifecycle, Health Connect, Usage Access, notifications, signed app updates, file selection, and Google Drive backup integration.
 - `src/domain/` validates and transforms native tracker data before it is saved locally.
 - `static/` contains bundled fitness media and the privacy policy.
 - Root SvelteKit, Vite, TypeScript, and component configuration files configure the app.
@@ -42,7 +42,7 @@ Profile → Data supports:
 - one automatic backup per day when the app opens or resumes;
 - retention of the five newest exact `self-improvement-backup-*.json` files in that folder.
 
-Folder and file selection use the maintained `@capawesome/capacitor-file-picker` plugin. Google Drive access is handled by the installed Drive document provider. The app has no internet permission and cannot contact a custom server. Backup rotation ignores unrelated files.
+Folder and file selection use the maintained `@capawesome/capacitor-file-picker` plugin. Google Drive access is handled by the installed Drive document provider. Tracker and backup data is never sent to a custom server. Backup rotation ignores unrelated files.
 
 ## Local setup
 
@@ -68,7 +68,7 @@ npm run mobile:android
 
 Root scripts are canonical. The retained `mobile:*` aliases support existing Android workflows: `mobile:build` writes the static SPA to `dist-mobile/`, `mobile:sync` copies it and the configured Capacitor plugins into `android/`, and `mobile:android:open` opens Android Studio.
 
-The merged release manifest is limited to notification support, Usage Access, read-only Steps, wake lock, and boot-completed access for local reminders. Internet, camera, package installation, exact alarm, Health write, and unrelated Health read permissions are rejected in CI.
+The merged release manifest permits Internet and package installation for signed GitHub updates, notification support, Usage Access, read-only Steps, wake lock, and boot-completed access for local reminders. Camera, exact alarm, Health write, and unrelated Health read permissions are rejected in CI.
 
 ## Validation
 
@@ -83,7 +83,7 @@ Feature work must not run `npm run build` before local approval; the signed rele
 
 ## Android releases
 
-`.github/workflows/android.yml` validates the app, runs Android tests and lint, checks merged permissions, and builds signed APK and AAB artifacts for `v*` tags. It then creates the GitHub release. The app does not check for or install updates itself.
+`.github/workflows/android.yml` validates the app, runs Android tests and lint, checks merged permissions, and builds signed APK and AAB artifacts for `v*` tags. It then creates the public GitHub release. The Android app checks that release feed at launch and resume. A newer signed APK appears as an action candidate; tapping it opens a native confirmation before Android downloads and installs it.
 
 Required GitHub Actions secrets:
 

@@ -8,6 +8,7 @@ import {
 	type TrackerId
 } from '$domain/model';
 import { checkAndroidPermissions } from './android-data';
+import { loadAvailableAndroidUpdate, type AndroidUpdate } from './android-updater';
 import { isNativeAndroid } from './platform';
 
 type NativeActionState = {
@@ -15,19 +16,22 @@ type NativeActionState = {
 	healthAvailable: boolean;
 	permissions: Record<TrackerId, PermissionState>;
 	status: MobileSyncStatus;
+	update?: AndroidUpdate | null;
 };
 
 export async function loadNativeActionFeedItems(enabledTrackerIds: AppTrackerId[]) {
 	if (!isNativeAndroid()) return [];
-	const [access, status] = await Promise.all([
+	const [access, status, update] = await Promise.all([
 		checkAndroidPermissions(),
-		mobileRepository.loadStatus()
+		mobileRepository.loadStatus(),
+		loadAvailableAndroidUpdate()
 	]);
 	return buildNativeActionFeedItems({
 		enabledTrackerIds,
 		healthAvailable: access.healthAvailable,
 		permissions: access.permissions,
-		status
+		status,
+		update
 	});
 }
 
@@ -35,10 +39,28 @@ export function buildNativeActionFeedItems(state: NativeActionState) {
 	const enabled = enabledNativeTrackers(state.enabledTrackerIds);
 	const items: ActionFeedItem[] = [];
 	const blocked = new Set<TrackerId>();
+	addUpdateAction(items, state.update);
 	addHealthAccessAction(items, blocked, enabled, state);
 	addUsageAccessAction(items, blocked, enabled, state.permissions.sleep);
 	addSyncAction(items, blocked, enabled, state.status);
 	return items;
+}
+
+function addUpdateAction(items: ActionFeedItem[], update: AndroidUpdate | null | undefined) {
+	if (!update?.available) return;
+	items.push({
+		id: `update:${update.version}`,
+		trackerIds: [],
+		priority: 'warning',
+		icon: 'update',
+		title: `Update to ${update.version}`,
+		reason: 'A new signed version is ready to install.',
+		action: {
+			type: 'install-android-update',
+			version: update.version,
+			downloadUrl: update.downloadUrl
+		}
+	});
 }
 
 function addHealthAccessAction(
