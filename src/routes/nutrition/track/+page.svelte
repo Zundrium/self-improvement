@@ -460,7 +460,7 @@ onDestroy(() => {
 				autoplay
 				playsinline
 				muted
-				class="size-full object-cover {facingMode === 'user' ? '-scale-x-100' : ''}"
+				class="size-full object-contain {facingMode === 'user' ? '-scale-x-100' : ''}"
 			></video>
 			<div
 				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/75"
