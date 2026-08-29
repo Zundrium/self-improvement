@@ -276,7 +276,7 @@ describe('local app service', () => {
 		expect(aboveLimitGamification.score).toBe(20);
 	});
 
-	it('creates a manual nutrition entry without photo or AI fields', async () => {
+	it('creates a manual nutrition entry without a photo', async () => {
 		const now = new Date('2026-03-20T12:00:00.000Z');
 		const store = trackedStore();
 		const state = createDefaultAppState(now);
@@ -296,9 +296,33 @@ describe('local app service', () => {
 			})
 		});
 
-		expect(result.entry).toMatchObject({ name: 'Lunch', notes: 'At home' });
+		expect(result.entry).toMatchObject({ name: 'Lunch', notes: 'At home', thumbnail: '' });
+		expect(result.entry.meals[0].imageDataUrl).toBe('');
 		expect(result.entry.totals.calories).toBe(300);
-		expect(result.entry).not.toHaveProperty('thumbnail');
+	});
+
+	it('persists a photo-backed nutrition estimate', async () => {
+		const now = new Date('2026-03-20T12:00:00.000Z');
+		const store = trackedStore();
+		const state = createDefaultAppState(now);
+		state.nutrition.profile = nutritionProfile();
+		await store.replaceState(state);
+		const service = new LocalAppService(store, () => now);
+		const imageDataUrl = 'data:image/jpeg;base64,YQ==';
+
+		const result = await service.request<NutritionEntryData>('/api/app/nutrition/entries', {
+			method: 'POST',
+			body: JSON.stringify({
+				date: '2026-03-20',
+				time: '12:00',
+				timeZoneOffset: 0,
+				name: 'Lunch',
+				meals: [{ name: 'Lunch', imageDataUrl, ingredients: [{ name: 'Rice', calories: 300 }] }]
+			})
+		});
+
+		expect(result.entry.thumbnail).toBe(imageDataUrl);
+		expect(result.entry.meals[0].imageDataUrl).toBe(imageDataUrl);
 	});
 
 	it('rejects empty nutrition entries and future entry edits', async () => {

@@ -36,6 +36,7 @@ const ingredientSchema = z.object({
 const mealSchema = z.object({
 	id: z.string().min(1),
 	name: z.string(),
+	imageDataUrl: z.string().default(''),
 	ingredients: z.array(ingredientSchema),
 	totals: nutritionTotalsSchema
 });
@@ -45,6 +46,7 @@ const nutritionEntrySchema = z.object({
 	name: z.string(),
 	notes: z.string(),
 	createdAt: instant,
+	thumbnail: z.string().default(''),
 	meals: z.array(mealSchema),
 	totals: nutritionTotalsSchema
 });

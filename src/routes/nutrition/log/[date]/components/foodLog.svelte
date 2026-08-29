@@ -28,9 +28,13 @@
 					<span class="block">{entryTime.time}</span>
 					<span class="mt-0.5 block text-[0.65rem]">{entryTime.period}</span>
 				</span>
-				<span class="flex size-14 items-center justify-center sm:size-16">
-					<Salad class="size-5 text-(--text)/40" />
-				</span>
+				{#if entry.thumbnail}
+					<img src={entry.thumbnail} alt="" class="size-14 rounded-2xl object-cover sm:size-16" />
+				{:else}
+					<span class="flex size-14 items-center justify-center sm:size-16">
+						<Salad class="size-5 text-(--text)/40" />
+					</span>
+				{/if}
 				<strong class="line-clamp-2 min-w-0 leading-5 font-medium">{entry.name}</strong>
 				<span class="min-w-14 text-right">
 					<strong class="block text-sm leading-4 tabular-nums">{entry.totals.calories}</strong>

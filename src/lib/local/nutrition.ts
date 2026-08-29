@@ -5,7 +5,7 @@ import type {
 	NutritionProfile,
 	NutritionTotals
 } from '$lib/api-types';
-import { calculateTdee, type ActivityLevel } from '../../routes/nutrition/nutrition';
+import { type ActivityLevel, calculateTdee } from '../../routes/nutrition/nutrition';
 
 const EMPTY_TOTALS: NutritionTotals = { calories: 0, proteinG: 0, carbsG: 0, fatG: 0, count: 0 };
 const ACTIVITY_LEVELS = ['sedentary', 'light', 'moderate', 'active', 'very_active'] as const;
@@ -64,6 +64,7 @@ export function createNutritionEntry(input: {
 		name: cleanText(input.name, meals[0]?.name ?? 'Food entry', 120),
 		notes: cleanText(input.notes, '', 500),
 		createdAt: input.createdAt ?? new Date().toISOString(),
+		thumbnail: '',
 		meals,
 		totals: EMPTY_TOTALS
 	});
@@ -102,6 +103,7 @@ function normalizeMeal(input: unknown): NutritionMeal {
 	return {
 		id: typeof meal.id === 'string' && meal.id ? meal.id : crypto.randomUUID(),
 		name: cleanText(meal.name, 'Meal', 120),
+		imageDataUrl: cleanImageDataUrl(meal.imageDataUrl),
 		ingredients,
 		totals: totalsFromIngredients(ingredients)
 	};
@@ -125,6 +127,7 @@ function normalizeIngredient(input: unknown): NutritionIngredient {
 function withEntryTotals(entry: NutritionEntry) {
 	return {
 		...entry,
+		thumbnail: entry.meals.find((meal) => meal.imageDataUrl)?.imageDataUrl ?? '',
 		totals: roundTotals(
 			entry.meals.reduce((total, meal) => addTotals(total, meal.totals), EMPTY_TOTALS)
 		)
@@ -235,6 +238,11 @@ function cleanNumber(value: unknown, fallback: number, maximum: number) {
 	return Number.isFinite(number)
 		? Math.max(0, Math.min(maximum, Math.round(number * 10) / 10))
 		: fallback;
+}
+
+function cleanImageDataUrl(value: unknown) {
+	if (typeof value !== 'string' || value.length > 768 * 1024) return '';
+	return /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value) ? value : '';
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

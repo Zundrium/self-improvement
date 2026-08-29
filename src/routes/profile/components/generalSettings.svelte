@@ -11,6 +11,7 @@
 	import { Spinner } from '$lib/components/ui/spinner';
 	import { toast } from '$lib/components/ui/toast';
 	import type { LocalProfile } from '$lib/api-types';
+	import OpenRouterSettings from './openRouterSettings.svelte';
 
 	let { profile }: { profile: LocalProfile } = $props();
 	let name = $state(untrack(() => profile.name));
@@ -70,4 +71,6 @@
 			</form>
 		</CardContent>
 	</Card>
+
+	<OpenRouterSettings />
 </div>

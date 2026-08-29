@@ -1,128 +1,195 @@
 <script lang="ts">
-	import { ChevronLeft, Droplet, Drumstick, Plus, Trash2, Wheat } from '@lucide/svelte';
+import {
+	ChevronLeft,
+	Droplet,
+	Drumstick,
+	Image,
+	MessageCircle,
+	Plus,
+	Send,
+	Trash2,
+	Wheat
+} from '@lucide/svelte';
+import MetricStat from '$lib/components/metricStat.svelte';
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger
+} from '$lib/components/ui/accordion';
+import { Alert, AlertDescription } from '$lib/components/ui/alert';
+import { Badge } from '$lib/components/ui/badge';
+import { Button } from '$lib/components/ui/button';
+import { Card } from '$lib/components/ui/card';
+import { Field, FieldLabel } from '$lib/components/ui/field';
+import { Input } from '$lib/components/ui/input';
+import { Spinner } from '$lib/components/ui/spinner';
+import { Textarea } from '$lib/components/ui/textarea';
+import { refineMealEstimate } from '../ai/meal-analysis';
 
-	import {
-		Accordion,
-		AccordionContent,
-		AccordionItem,
-		AccordionTrigger
-	} from '$lib/components/ui/accordion';
-	import MetricStat from '$lib/components/metricStat.svelte';
-	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import { Field, FieldLabel } from '$lib/components/ui/field';
-	import { Input } from '$lib/components/ui/input';
-	import { Textarea } from '$lib/components/ui/textarea';
+export type EditableIngredient = {
+	id: string;
+	name: string;
+	quantity: number;
+	unit: string;
+	calories: number;
+	proteinG: number;
+	carbsG: number;
+	fatG: number;
+	notes: string;
+};
 
-	export type EditableIngredient = {
-		id: string;
-		name: string;
-		quantity: number;
-		unit: string;
-		calories: number;
-		proteinG: number;
-		carbsG: number;
-		fatG: number;
-		notes: string;
-	};
+export type EditableMeal = {
+	id: string;
+	name: string;
+	imageDataUrl: string;
+	ingredients: EditableIngredient[];
+};
 
-	export type EditableMeal = {
-		id: string;
-		name: string;
-		ingredients: EditableIngredient[];
-	};
+type RevisionMessage = { role: 'user' | 'assistant'; text: string };
 
-	type Props = {
-		date?: string;
-		time?: string;
-		name?: string;
-		notes?: string;
-		meals?: EditableMeal[];
-		error?: string;
-	};
+type Props = {
+	date?: string;
+	time?: string;
+	name?: string;
+	notes?: string;
+	meals?: EditableMeal[];
+	error?: string;
+};
 
-	let {
-		date = $bindable(''),
-		time = $bindable(''),
-		name = $bindable(''),
-		notes = $bindable(''),
-		meals = $bindable<EditableMeal[]>([]),
-		error = ''
-	}: Props = $props();
+let {
+	date = $bindable(''),
+	time = $bindable(''),
+	name = $bindable(''),
+	notes = $bindable(''),
+	meals = $bindable<EditableMeal[]>([]),
+	error = ''
+}: Props = $props();
 
-	const mealsJson = $derived(JSON.stringify(meals));
-	const totals = $derived(totalMeals(meals));
+let revisionDrafts = $state<Record<string, string>>({});
+let revisionMessages = $state<Record<string, RevisionMessage[]>>({});
+let revisionErrors = $state<Record<string, string>>({});
+let refining = $state<Record<string, boolean>>({});
 
-	function addMeal() {
-		meals = [
-			...meals,
-			{
-				id: crypto.randomUUID(),
-				name: 'Meal',
-				ingredients: [newIngredient()]
-			}
-		];
-	}
+const mealsJson = $derived(JSON.stringify(meals));
+const totals = $derived(totalMeals(meals));
 
-	function removeMeal(mealId: string) {
-		meals = meals.filter((meal) => meal.id !== mealId);
-	}
+async function refineMeal(mealId: string) {
+	const correction = (revisionDrafts[mealId] ?? '').trim();
+	const currentMeal = meals.find((meal) => meal.id === mealId);
+	if (!currentMeal || correction.length < 2 || refining[mealId]) return;
 
-	function addIngredient(mealId: string) {
-		meals = meals.map((meal) =>
-			meal.id === mealId ? { ...meal, ingredients: [...meal.ingredients, newIngredient()] } : meal
+	refining = { ...refining, [mealId]: true };
+	revisionErrors = { ...revisionErrors, [mealId]: '' };
+	try {
+		const revision = await refineMealEstimate(
+			{ imageDataUrl: currentMeal.imageDataUrl, description: '' },
+			{ mealName: currentMeal.name, ingredients: currentMeal.ingredients },
+			correction
 		);
-	}
-
-	function removeIngredient(mealId: string, ingredientId: string) {
+		const previousName = currentMeal.name;
 		meals = meals.map((meal) =>
 			meal.id === mealId
-				? { ...meal, ingredients: meal.ingredients.filter((item) => item.id !== ingredientId) }
+				? {
+						...meal,
+						name: revision.mealName,
+						ingredients: revision.ingredients.map((item) => ({
+							id: crypto.randomUUID(),
+							...item
+						}))
+					}
 				: meal
 		);
-	}
-
-	function newIngredient(): EditableIngredient {
-		return {
-			id: crypto.randomUUID(),
-			name: '',
-			quantity: 1,
-			unit: 'serving',
-			calories: 0,
-			proteinG: 0,
-			carbsG: 0,
-			fatG: 0,
-			notes: ''
+		if (meals.length === 1 && name === previousName) name = revision.mealName;
+		revisionMessages = {
+			...revisionMessages,
+			[mealId]: [
+				...(revisionMessages[mealId] ?? []),
+				{ role: 'user', text: correction },
+				{ role: 'assistant', text: revision.reply }
+			]
 		};
+		revisionDrafts = { ...revisionDrafts, [mealId]: '' };
+	} catch (cause) {
+		revisionErrors = {
+			...revisionErrors,
+			[mealId]: cause instanceof Error ? cause.message : 'Could not update the estimate.'
+		};
+	} finally {
+		refining = { ...refining, [mealId]: false };
 	}
+}
 
-	function totalIngredients(items: EditableIngredient[]) {
-		return items.reduce(
-			(total, item) => ({
-				calories: total.calories + (Number(item.calories) || 0),
-				proteinG: total.proteinG + (Number(item.proteinG) || 0),
-				carbsG: total.carbsG + (Number(item.carbsG) || 0),
-				fatG: total.fatG + (Number(item.fatG) || 0)
-			}),
-			{ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }
-		);
-	}
+function addMeal() {
+	meals = [
+		...meals,
+		{
+			id: crypto.randomUUID(),
+			name: 'Meal',
+			imageDataUrl: '',
+			ingredients: [newIngredient()]
+		}
+	];
+}
 
-	function totalMeals(items: EditableMeal[]) {
-		return items.reduce(
-			(total, meal) => {
-				const value = totalIngredients(meal.ingredients);
-				return {
-					calories: total.calories + value.calories,
-					proteinG: total.proteinG + value.proteinG,
-					carbsG: total.carbsG + value.carbsG,
-					fatG: total.fatG + value.fatG
-				};
-			},
-			{ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }
-		);
-	}
+function removeMeal(mealId: string) {
+	meals = meals.filter((meal) => meal.id !== mealId);
+}
+
+function addIngredient(mealId: string) {
+	meals = meals.map((meal) =>
+		meal.id === mealId ? { ...meal, ingredients: [...meal.ingredients, newIngredient()] } : meal
+	);
+}
+
+function removeIngredient(mealId: string, ingredientId: string) {
+	meals = meals.map((meal) =>
+		meal.id === mealId
+			? { ...meal, ingredients: meal.ingredients.filter((item) => item.id !== ingredientId) }
+			: meal
+	);
+}
+
+function newIngredient(): EditableIngredient {
+	return {
+		id: crypto.randomUUID(),
+		name: '',
+		quantity: 1,
+		unit: 'serving',
+		calories: 0,
+		proteinG: 0,
+		carbsG: 0,
+		fatG: 0,
+		notes: ''
+	};
+}
+
+function totalIngredients(items: EditableIngredient[]) {
+	return items.reduce(
+		(total, item) => ({
+			calories: total.calories + (Number(item.calories) || 0),
+			proteinG: total.proteinG + (Number(item.proteinG) || 0),
+			carbsG: total.carbsG + (Number(item.carbsG) || 0),
+			fatG: total.fatG + (Number(item.fatG) || 0)
+		}),
+		{ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }
+	);
+}
+
+function totalMeals(items: EditableMeal[]) {
+	return items.reduce(
+		(total, meal) => {
+			const value = totalIngredients(meal.ingredients);
+			return {
+				calories: total.calories + value.calories,
+				proteinG: total.proteinG + value.proteinG,
+				carbsG: total.carbsG + value.carbsG,
+				fatG: total.fatG + value.fatG
+			};
+		},
+		{ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }
+	);
+}
 </script>
 
 <input type="hidden" name="meals" value={mealsJson} />
@@ -200,6 +267,18 @@
 			{@const mealTotals = totalIngredients(meal.ingredients)}
 			<div class="space-y-5 py-3 sm:py-4">
 				<div class="flex gap-4">
+					{#if meal.imageDataUrl}
+						<img
+							src={meal.imageDataUrl}
+							alt=""
+							class="size-20 shrink-0 rounded-3xl object-cover sm:size-24"
+						/>
+					{:else}
+						<span
+							class="flex size-20 shrink-0 items-center justify-center rounded-3xl bg-(--text)/5 sm:size-24"
+							><Image class="size-6 text-(--text)/32" /></span
+						>
+					{/if}
 					<div class="min-w-0 flex-1 space-y-3">
 						<div class="flex gap-2">
 							<Input
@@ -223,6 +302,68 @@
 						</div>
 					</div>
 				</div>
+				{#if meal.imageDataUrl}
+					<Card class="gap-4">
+						<div class="flex gap-3">
+							<span
+								class="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--text) text-(--bg)"
+								><MessageCircle class="size-4" /></span
+							>
+							<div>
+								<h3 class="font-medium">Correct this estimate with AI</h3>
+								<p class="mt-0.5 text-sm leading-5 text-(--text)/52">
+									Tell us what was wrong or missing. Each message updates the current ingredients,
+									so you can keep refining the meal.
+								</p>
+							</div>
+						</div>
+
+						{#if (revisionMessages[meal.id] ?? []).length > 0}
+							<div class="space-y-2" aria-live="polite">
+								{#each revisionMessages[meal.id] ?? [] as message, messageIndex (messageIndex)}
+									<div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
+										<p
+											class="max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm leading-5 {message.role ===
+											'user'
+												? 'bg-(--text) text-(--bg)'
+												: 'bg-(--text)/5 text-(--text)/72'}"
+										>
+											{message.text}
+										</p>
+									</div>
+								{/each}
+							</div>
+						{/if}
+
+						<Field>
+							<FieldLabel for="meal-correction-{meal.id}">What should change?</FieldLabel>
+							<Textarea
+								id="meal-correction-{meal.id}"
+								bind:value={revisionDrafts[meal.id]}
+								maxlength={500}
+								rows={3}
+								placeholder="e.g. It was 200 g Greek yoghurt with 10% fat, not plain yoghurt"
+								disabled={refining[meal.id]}
+							/>
+						</Field>
+						{#if revisionErrors[meal.id]}
+							<Alert variant="destructive"
+								><AlertDescription>{revisionErrors[meal.id]}</AlertDescription></Alert
+							>
+						{/if}
+						<div class="flex justify-end">
+							<Button
+								type="button"
+								onclick={() => refineMeal(meal.id)}
+								disabled={(revisionDrafts[meal.id] ?? '').trim().length < 2 || refining[meal.id]}
+							>
+								{#if refining[meal.id]}<Spinner class="mr-2 size-4" /> Updating…{:else}Apply
+									correction <Send class="ml-2 size-4" />{/if}
+							</Button>
+						</div>
+					</Card>
+				{/if}
+
 				<div class="flex items-center justify-between pt-2">
 					<h3 class="text-sm font-medium">Ingredients</h3>
 					<Button type="button" variant="ghost" size="sm" onclick={() => addIngredient(meal.id)}

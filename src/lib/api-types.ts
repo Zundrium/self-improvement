@@ -240,6 +240,7 @@ export type NutritionIngredient = {
 export type NutritionMeal = {
 	id: string;
 	name: string;
+	imageDataUrl: string;
 	ingredients: NutritionIngredient[];
 	totals: NutritionTotals;
 };
@@ -249,6 +250,7 @@ export type NutritionEntry = {
 	name: string;
 	notes: string;
 	createdAt: string;
+	thumbnail: string;
 	meals: NutritionMeal[];
 	totals: NutritionTotals;
 };
