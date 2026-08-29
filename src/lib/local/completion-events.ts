@@ -4,7 +4,13 @@ import { completionDates } from './gamification';
 import type { LocalAppState } from './state';
 
 export const TRACKER_COMPLETED_EVENT = 'tracker:completed';
+export const TRACKER_CELEBRATION_ENDED_EVENT = 'tracker:celebration-ended';
 export type TrackerCompletionDetail = { trackerId: AppTrackerId };
+
+export function notifyTrackerCelebrationEnded() {
+	if (typeof window === 'undefined') return;
+	window.dispatchEvent(new Event(TRACKER_CELEBRATION_ENDED_EVENT));
+}
 
 export function notifyNewTrackerCompletions(
 	before: LocalAppState,

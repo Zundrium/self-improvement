@@ -3,27 +3,54 @@ import { onMount, untrack } from 'svelte';
 import { apiRequest, GAMIFICATION_CHANGED_EVENT } from '$lib/api';
 import type { GamificationData } from '$lib/api-types';
 import { toast } from '$lib/components/ui/toast';
+import {
+	TRACKER_CELEBRATION_ENDED_EVENT,
+	TRACKER_COMPLETED_EVENT
+} from '$lib/local/completion-events';
 
 let { gamification }: { gamification: GamificationData } = $props();
 let previousGamification: GamificationData | undefined;
+let celebrationActive = false;
+let pendingGamification: GamificationData[] = [];
 
 $effect(() => {
 	const nextGamification = gamification;
-	untrack(() => announceAndRemember(nextGamification));
+	untrack(() => announceOrQueue(nextGamification));
 });
 
 onMount(() => {
-	const refreshGamification = async () => {
-		try {
-			const refreshed = await apiRequest<GamificationData>('/api/app/gamification');
-			announceAndRemember(refreshed);
-		} catch {
-			return;
-		}
+	const startCelebration = () => (celebrationActive = true);
+	const finishCelebration = () => {
+		celebrationActive = false;
+		flushPendingGamification();
 	};
+	window.addEventListener(TRACKER_COMPLETED_EVENT, startCelebration);
+	window.addEventListener(TRACKER_CELEBRATION_ENDED_EVENT, finishCelebration);
 	window.addEventListener(GAMIFICATION_CHANGED_EVENT, refreshGamification);
-	return () => window.removeEventListener(GAMIFICATION_CHANGED_EVENT, refreshGamification);
+	return () => {
+		window.removeEventListener(TRACKER_COMPLETED_EVENT, startCelebration);
+		window.removeEventListener(TRACKER_CELEBRATION_ENDED_EVENT, finishCelebration);
+		window.removeEventListener(GAMIFICATION_CHANGED_EVENT, refreshGamification);
+	};
 });
+
+async function refreshGamification() {
+	try {
+		announceOrQueue(await apiRequest<GamificationData>('/api/app/gamification'));
+	} catch {
+		return;
+	}
+}
+
+function announceOrQueue(next: GamificationData) {
+	if (celebrationActive) return void pendingGamification.push(next);
+	announceAndRemember(next);
+}
+
+function flushPendingGamification() {
+	for (const next of pendingGamification) announceAndRemember(next);
+	pendingGamification = [];
+}
 
 function announceAndRemember(next: GamificationData) {
 	if (previousGamification) announceChanges(previousGamification, next);
