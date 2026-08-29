@@ -423,9 +423,9 @@ onDestroy(() => {
 	onchange={choosePhoto}
 />
 
-<main class="min-h-[100svh] bg-(--bg)">
+<main class="flex h-full min-h-0 flex-col overflow-hidden bg-(--bg)">
 	{#if phase === 'checking'}
-		<section class="flex min-h-[100svh] items-center justify-center" aria-label="Loading nutrition tracker">
+		<section class="flex min-h-0 flex-1 items-center justify-center" aria-label="Loading nutrition tracker">
 			<Spinner class="size-8" />
 		</section>
 	{:else if phase === 'setup'}
@@ -439,7 +439,7 @@ onDestroy(() => {
 				>
 			{/snippet}
 		</WorkflowHeader>
-		<section class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center py-8">
+		<section class="app-gutter mx-auto flex min-h-0 w-full max-w-lg flex-1 items-center py-8">
 			<div class="w-full space-y-5 text-center">
 				<span class="mx-auto flex size-14 items-center justify-center rounded-full bg-(--text)/5">
 					<Camera class="size-6" />
@@ -454,85 +454,76 @@ onDestroy(() => {
 			</div>
 		</section>
 	{:else if phase === 'photo'}
-		<WorkflowHeader title="Add one meal" subtitle="Photo or description → quick review">
-			{#snippet leading()}
+		<section class="fixed inset-0 z-[60] overflow-hidden bg-black text-white">
+			<video
+				bind:this={video}
+				autoplay
+				playsinline
+				muted
+				class="size-full object-cover {facingMode === 'user' ? '-scale-x-100' : ''}"
+			></video>
+			<div
+				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/75"
+			></div>
+
+			<div
+				class="app-gutter absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 pt-[max(1rem,env(safe-area-inset-top))]"
+			>
 				<Button
 					href="/nutrition/log/{data.date}"
 					variant="ghost"
 					size="icon"
+					class="bg-black/35 text-white hover:bg-black/55 hover:text-white"
 					aria-label="Back to food log"><X class="size-5" /></Button
 				>
-			{/snippet}
-			{#snippet trailing()}<Badge>1 of 2</Badge>{/snippet}
-		</WorkflowHeader>
-
-		<section class="app-gutter mx-auto flex max-w-5xl flex-col items-center py-6 sm:py-10">
-			<div class="mb-5 max-w-lg text-center">
-				<h1 class="text-3xl font-medium tracking-[-0.055em] sm:text-4xl">Take one clear photo</h1>
-				<p class="mt-2 text-sm leading-6 text-(--text)/56">
-					Keep the whole meal in frame. We will estimate it, then ask you to confirm or correct it.
-				</p>
-				<Button variant="ghost" size="lg" class="mt-3" onclick={openDescription}>
-					<FileText class="mr-2 size-4" /> Describe meal instead
-				</Button>
+				<div class="min-w-0 text-center">
+					<p class="truncate text-sm font-medium">Photograph your meal</p>
+					<p class="truncate text-xs text-white/64">Keep the whole meal in frame</p>
+				</div>
+				<Badge class="bg-black/35 text-white">1 of 2</Badge>
 			</div>
 
-			<div
-				class="relative aspect-[4/5] max-h-[66svh] w-full max-w-xl overflow-hidden rounded-3xl bg-black sm:aspect-[4/3]"
-			>
-				<video
-					bind:this={video}
-					autoplay
-					playsinline
-					muted
-					class="size-full object-cover {facingMode === 'user' ? '-scale-x-100' : ''}"
-				></video>
-				<div
-					class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/60"
-				></div>
-
-				<div class="absolute inset-x-0 top-0 flex justify-center p-4">
-					<Badge class="bg-black/50 text-white"
-						><Camera class="size-3.5" /> One meal · one photo</Badge
-					>
-				</div>
-
-				{#if cameraState !== 'ready'}
-					<div
-						class="absolute inset-0 flex items-center justify-center bg-black px-6 text-center text-white"
-					>
-						<div class="max-w-xs space-y-4">
-							{#if cameraState === 'error'}
-								<span
-									class="mx-auto flex size-14 items-center justify-center rounded-full bg-white/10"
-									><Camera class="size-6" /></span
+			{#if cameraState !== 'ready'}
+				<div class="absolute inset-0 flex items-center justify-center bg-black px-6 text-center">
+					<div class="max-w-xs space-y-4">
+						{#if cameraState === 'error'}
+							<span class="mx-auto flex size-14 items-center justify-center rounded-full bg-white/10"
+								><Camera class="size-6" /></span
+							>
+							<div>
+								<p class="font-medium">Camera unavailable</p>
+								<p class="mt-1 text-sm text-white/60">{cameraError}</p>
+							</div>
+							<div class="flex justify-center gap-2">
+								<Button class="bg-white text-black hover:bg-white/90" onclick={startCamera}
+									><RefreshCw class="mr-1.5 size-4" /> Retry</Button
 								>
-								<div>
-									<p class="font-medium">Camera unavailable</p>
-									<p class="mt-1 text-sm text-white/60">{cameraError}</p>
-								</div>
-								<div class="flex justify-center gap-2">
-									<Button class="bg-white text-black hover:bg-white/90" onclick={startCamera}
-										><RefreshCw class="mr-1.5 size-4" /> Retry</Button
-									>
-									<Button
-										class="bg-white/12 text-white hover:bg-white/20"
-										onclick={() => fileInput?.click()}
-										><ImagePlus class="mr-1.5 size-4" /> Choose photo</Button
-									>
-								</div>
-							{:else}
-								<Spinner class="mx-auto size-10 text-white" />
-								<p class="text-sm text-white/60">Opening camera…</p>
-							{/if}
-						</div>
+								<Button
+									class="bg-white/12 text-white hover:bg-white/20"
+									onclick={() => fileInput?.click()}
+									><ImagePlus class="mr-1.5 size-4" /> Choose photo</Button
+								>
+							</div>
+						{:else}
+							<Spinner class="mx-auto size-10 text-white" />
+							<p class="text-sm text-white/60">Opening camera…</p>
+						{/if}
 					</div>
-				{/if}
+				</div>
+			{/if}
 
-				{#if cameraState === 'ready'}
-					<div
-						class="absolute inset-x-0 bottom-0 grid grid-cols-[3.5rem_5rem_3.5rem] items-center justify-center gap-6 p-5 sm:p-6"
+			{#if cameraState === 'ready'}
+				<div
+					class="app-gutter absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+				>
+					<Button
+						variant="ghost"
+						class="bg-black/35 text-white hover:bg-black/55 hover:text-white"
+						onclick={openDescription}
 					>
+						<FileText class="mr-2 size-4" /> Describe meal instead
+					</Button>
+					<div class="grid grid-cols-[3.5rem_5rem_3.5rem] items-center justify-center gap-6">
 						<Button
 							variant="ghost"
 							size="icon"
@@ -557,16 +548,16 @@ onDestroy(() => {
 							aria-label="Switch camera"><SwitchCamera class="size-5" /></Button
 						>
 					</div>
-				{/if}
+				</div>
+			{/if}
 
-				{#if processingPhoto}
-					<div
-						class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70 text-white"
-					>
-						<Spinner class="size-12" /><span class="text-sm">Preparing photo…</span>
-					</div>
-				{/if}
-			</div>
+			{#if processingPhoto}
+				<div
+					class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/70 text-white"
+				>
+					<Spinner class="size-12" /><span class="text-sm">Preparing photo…</span>
+				</div>
+			{/if}
 		</section>
 	{:else if phase === 'description'}
 		<WorkflowHeader title="Add one meal" subtitle="Description → quick review">
@@ -579,8 +570,9 @@ onDestroy(() => {
 		</WorkflowHeader>
 
 		<section
-			class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-xl items-center py-8 sm:py-12"
+			class="app-gutter mx-auto min-h-0 w-full max-w-xl flex-1 overflow-y-auto py-8 sm:py-12"
 		>
+			<div class="flex min-h-full items-center">
 			<div class="w-full space-y-6">
 				<div>
 					<Badge><FileText class="size-3.5" /> No photo needed</Badge>
@@ -623,6 +615,7 @@ onDestroy(() => {
 					</Button>
 				</form>
 			</div>
+			</div>
 		</section>
 	{:else if phase === 'analyzing' || phase === 'refining'}
 		<WorkflowHeader title={phase === 'analyzing' ? 'Analyzing meal' : 'Updating estimate'}>
@@ -634,23 +627,23 @@ onDestroy(() => {
 		</WorkflowHeader>
 
 		<section
-			class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center py-6 text-center"
+			class="app-gutter mx-auto flex min-h-0 w-full max-w-lg flex-1 items-center overflow-hidden py-6 text-center"
 			aria-live="polite"
 		>
-			<div class="w-full space-y-6">
+			<div class="flex min-h-0 w-full flex-1 flex-col gap-4">
 				{#if selectedImage}
 					<img
 						src={selectedImage}
 						alt=""
-						class="h-40 w-full rounded-3xl object-cover opacity-80 sm:h-48"
+						class="min-h-20 w-full flex-1 rounded-3xl object-cover opacity-80"
 					/>
 				{:else}
-					<div class="rounded-3xl bg-(--text)/4 px-5 py-6 text-left">
-						<p class="line-clamp-4 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
+					<div class="max-h-28 overflow-hidden rounded-3xl bg-(--text)/4 px-5 py-4 text-left">
+						<p class="line-clamp-3 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
 					</div>
 				{/if}
-				<div class="relative mx-auto flex size-20 items-center justify-center">
-					<Spinner class="size-20 text-(--text)" />
+				<div class="relative mx-auto flex size-16 shrink-0 items-center justify-center">
+					<Spinner class="size-16 text-(--text)" />
 					{#if selectedImage}<Camera class="absolute size-6" />{:else}<FileText
 							class="absolute size-6"
 						/>{/if}
@@ -658,17 +651,17 @@ onDestroy(() => {
 				<div>
 					<Badge>{phase === 'analyzing' ? 'Building your estimate' : 'Using your correction'}</Badge
 					>
-					<h1 class="mt-3 text-3xl font-medium tracking-[-0.055em]">
+					<h1 class="mt-2 text-2xl font-medium tracking-[-0.055em] sm:text-3xl">
 						{loadingLabels[loadingStep]}
 					</h1>
 					<p class="mt-2 text-sm text-(--text)/52">
 						Keep this screen open. This usually takes a few seconds.
 					</p>
 				</div>
-				<div class="grid w-full gap-2 text-left">
+				<div class="grid w-full shrink-0 gap-1 text-left">
 					{#each loadingLabels as label, index (label)}
 						<div
-							class="flex items-center gap-3 py-2 text-sm {index <= loadingStep
+							class="flex items-center gap-3 py-1 text-sm {index <= loadingStep
 								? 'text-(--text)'
 								: 'text-(--text)/32'}"
 						>
@@ -699,7 +692,7 @@ onDestroy(() => {
 			{/snippet}
 		</WorkflowHeader>
 
-		<section class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-lg items-center py-6">
+		<section class="app-gutter mx-auto flex min-h-0 w-full max-w-lg flex-1 items-center overflow-hidden py-6">
 			<div class="w-full space-y-4">
 				{#if selectedImage}
 					<img src={selectedImage} alt="Your meal" class="h-56 w-full rounded-3xl object-cover" />
@@ -735,19 +728,26 @@ onDestroy(() => {
 		</WorkflowHeader>
 
 		<section
-			class="app-gutter mx-auto flex min-h-[calc(100svh-4rem)] max-w-xl items-center py-3 sm:py-6"
+			class="app-gutter mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col {phase ===
+			'correction'
+				? 'overflow-y-auto'
+				: 'overflow-hidden'} py-3 sm:py-6"
 		>
-			<div class="w-full space-y-4">
+			<div class="flex min-h-0 w-full flex-1 flex-col gap-4">
 				{#if selectedImage}
 					<img
 						src={selectedImage}
 						alt={estimate.mealName}
 						class="w-full rounded-3xl object-cover {phase === 'correction'
-							? 'h-[20svh] max-h-44 min-h-32'
-							: 'h-[26svh] max-h-56 min-h-40'}"
+							? 'h-[20svh] max-h-44 min-h-32 shrink-0'
+							: 'min-h-0 flex-1'}"
 					/>
 				{:else}
-					<div class="rounded-3xl bg-(--text)/4 px-5 py-4">
+					<div
+						class="rounded-3xl bg-(--text)/4 px-5 py-4 {phase === 'correction'
+							? 'shrink-0'
+							: 'flex min-h-0 flex-1 flex-col justify-center'}"
+					>
 						<div class="flex items-center gap-2 text-xs font-medium text-(--text)/48">
 							<FileText class="size-3.5" /> Your description
 						</div>
@@ -760,7 +760,7 @@ onDestroy(() => {
 						</p>
 					</div>
 				{/if}
-				<div class="space-y-4 px-1">
+				<div class="shrink-0 space-y-4 px-1">
 					<div class="flex items-center justify-between gap-3">
 						<Badge>AI estimate</Badge>
 						<span class="flex items-center gap-1.5 text-xs text-(--text)/48"
