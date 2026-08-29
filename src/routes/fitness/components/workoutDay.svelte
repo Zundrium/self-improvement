@@ -126,7 +126,7 @@
 				{#each workout.activities as activity, index (activity.id)}
 					<div class="flex items-center gap-3 py-2">
 						<span class="w-5 text-center text-xs text-(--text)/40">{index + 1}</span>
-						<div class="size-14 shrink-0 overflow-hidden rounded-2xl bg-white">
+						<div class="size-14 shrink-0 overflow-hidden rounded-2xl bg-(--text)/3">
 							<img src={activity.imageUrl} alt="" class="size-full object-contain" />
 						</div>
 						<div class="min-w-0 flex-1">

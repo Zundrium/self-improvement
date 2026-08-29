@@ -86,7 +86,7 @@
 		{#each filteredExercises as exercise (exercise.id)}
 			<section class="space-y-4" aria-label={exercise.name}>
 				<div class="flex gap-4">
-					<div class="size-24 shrink-0 overflow-hidden rounded-3xl bg-white">
+					<div class="size-24 shrink-0 overflow-hidden rounded-3xl bg-(--text)/3">
 						<img
 							src={exercise.imageUrl}
 							alt={exercise.name}

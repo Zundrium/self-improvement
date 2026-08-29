@@ -158,7 +158,7 @@ function withDifficulty(
 function stretchImageUrl(id: StretchActivityId, difficulty: StretchDifficulty) {
 	const filename =
 		id === 'chest' || id === 'wall-angels' ? `${id}.webp` : `${id}-${difficulty}.webp`;
-	return `/stretch/activities/${filename}?v=2`;
+	return `/stretch/activities/${filename}?v=5`;
 }
 
 function difficultyLabel(difficulty: StretchDifficulty) {

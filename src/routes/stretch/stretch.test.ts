@@ -44,19 +44,19 @@ describe('stretch routine', () => {
 		});
 
 		expect(steps.find(({ id }) => id === 'pancake')).toMatchObject({
-			imageUrl: '/stretch/activities/pancake-easy.webp?v=2',
+			imageUrl: '/stretch/activities/pancake-easy.webp?v=5',
 			selectedImageVariantId: 'easy'
 		});
 		expect(steps.find(({ id }) => id === 'lunge-left')).toMatchObject({
-			imageUrl: '/stretch/activities/lunge-left-medium.webp?v=2',
+			imageUrl: '/stretch/activities/lunge-left-medium.webp?v=5',
 			selectedImageVariantId: 'medium'
 		});
 		expect(steps.find(({ id }) => id === 'chest')).toMatchObject({
-			imageUrl: '/stretch/activities/chest.webp?v=2',
+			imageUrl: '/stretch/activities/chest.webp?v=5',
 			selectedImageVariantId: 'medium'
 		});
 		expect(steps.find(({ id }) => id === 'lat')).toMatchObject({
-			imageUrl: '/stretch/activities/lat-medium.webp?v=2',
+			imageUrl: '/stretch/activities/lat-medium.webp?v=5',
 			selectedImageVariantId: 'medium'
 		});
 	});
