@@ -76,7 +76,7 @@ export function stretchSteps(holdSeconds: number): StretchStep[] {
 			name: 'Wall angels',
 			position: `${WALL_ANGEL_REPS} slow reps`,
 			cue: 'Keep your ribs and back against the wall while your elbows and wrists move toward it.',
-			imageUrl: '/stretch/activities/wall-angels.svg',
+			imageUrl: '/stretch/activities/wall-angels.webp',
 			durationSeconds: null,
 			sets: 1
 		}
@@ -113,7 +113,7 @@ function stretch(
 		name,
 		position,
 		cue,
-		imageUrl: `/stretch/activities/${id}.svg`,
+		imageUrl: `/stretch/activities/${id}.webp`,
 		durationSeconds,
 		sets: STRETCH_SETS_PER_DAY
 	};
