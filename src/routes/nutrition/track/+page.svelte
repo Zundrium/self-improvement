@@ -73,7 +73,6 @@ let phase = $state<Phase>('checking');
 let cameraState = $state<CameraState>('opening');
 let cameraError = $state('');
 let facingMode = $state<'environment' | 'user'>('environment');
-let rotateCameraPreview = $state(false);
 let video = $state<HTMLVideoElement | null>(null);
 let fileInput = $state<HTMLInputElement | null>(null);
 let descriptionInput = $state<HTMLTextAreaElement | null>(null);
@@ -127,8 +126,8 @@ async function startCamera() {
 			video: {
 				facingMode: { ideal: facingMode },
 				width: { ideal: 1080 },
-				height: { ideal: 1920 },
-				aspectRatio: { ideal: 9 / 16 }
+				height: { ideal: 720 },
+				frameRate: { ideal: 30 }
 			},
 			audio: false
 		});
@@ -141,7 +140,6 @@ async function startCamera() {
 		if (!video) throw new Error('The camera preview is unavailable.');
 		video.srcObject = stream;
 		await video.play();
-		rotateCameraPreview = video.videoWidth > video.videoHeight && innerHeight > innerWidth;
 		cameraState = 'ready';
 	} catch (cause) {
 		stopCamera();
@@ -384,7 +382,6 @@ function encodeImage(source: CanvasImageSource | null, sourceWidth: number, sour
 function stopCamera() {
 	stream?.getTracks().forEach((track) => track.stop());
 	stream = null;
-	rotateCameraPreview = false;
 	if (video) video.srcObject = null;
 }
 
@@ -464,9 +461,7 @@ onDestroy(() => {
 				autoplay
 				playsinline
 				muted
-				class="object-contain {rotateCameraPreview
-					? `absolute left-1/2 top-1/2 h-[100vw] w-[100dvh] max-w-none -translate-x-1/2 -translate-y-1/2 ${facingMode === 'user' ? '-rotate-90 -scale-x-100' : 'rotate-90'}`
-					: `size-full ${facingMode === 'user' ? '-scale-x-100' : ''}`}"
+				class="size-full object-contain {facingMode === 'user' ? '-scale-x-100' : ''}"
 			></video>
 			<div
 				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/75"
