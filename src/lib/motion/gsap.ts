@@ -240,6 +240,7 @@ export function watchMotionState(node: HTMLElement, kind: SurfaceMotion) {
 	return () => {
 		observer.disconnect();
 		gsap.killTweensOf(node);
+		hideInitialSurface(node, kind);
 	};
 }
 

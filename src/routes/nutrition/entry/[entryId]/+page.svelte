@@ -31,6 +31,7 @@
 	let name = $state(initial.name);
 	let notes = $state(initial.notes);
 	let formError = $state('');
+	let deleteDialogOpen = $state(false);
 	let meals = $state<EditableMeal[]>(
 		initial.meals.map((meal) => ({
 			id: meal.id,
@@ -69,6 +70,11 @@
 		}
 	}
 
+	function confirmDelete() {
+		deleteDialogOpen = false;
+		void deleteEntry();
+	}
+
 	async function deleteEntry() {
 		try {
 			const result = await apiRequest<{ date: string }>(`/api/app/nutrition/entry/${initial.id}`, {
@@ -100,7 +106,7 @@
 		<Button form="save-entry" type="submit" size="lg" class="flex-1"
 			><Save class="mr-2 size-4" /> Save meal</Button
 		>
-		<AlertDialog>
+		<AlertDialog bind:open={deleteDialogOpen}>
 			<AlertDialogTrigger>
 				{#snippet child({ props })}<Button variant="destructive" size="lg" {...props}
 						><Trash2 class="mr-2 size-4" /> Delete</Button
@@ -116,7 +122,7 @@
 				<AlertDialogFooter
 					><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction
 						class="bg-red-600 text-white hover:bg-red-700"
-						onclick={deleteEntry}>Delete meal</AlertDialogAction
+						onclick={confirmDelete}>Delete meal</AlertDialogAction
 					></AlertDialogFooter
 				>
 			</AlertDialogContent>
