@@ -4,9 +4,9 @@ import { apiRequest } from '$lib/api';
 import type { StretchSession } from '$lib/api-types';
 import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
 import TrackerPage from '$lib/components/trackerPage.svelte';
+import type { PageProps } from './$types';
 import StretchRoutine from './components/stretchRoutine.svelte';
 import type { SaveState, StretchCompletion } from './stretch';
-import type { PageProps } from './$types';
 
 let { data }: PageProps = $props();
 const dateSelectorState = useDateSelectorState();
@@ -15,7 +15,7 @@ let savedSession = $state<StretchSession>();
 let pendingCompletion = $state<StretchCompletion>();
 let saveState = $state<SaveState>('idle');
 const completed = $derived(data.sessions.length > 0 || Boolean(savedSession));
-const interactive = $derived(data.date === data.today && data.scheduled);
+const interactive = $derived(data.date === data.today);
 
 $effect(() => resetDate(data.date));
 

@@ -11,12 +11,12 @@ import { Button } from '$lib/components/ui/button';
 import { getTrackerColors } from '$lib/trackers/registry';
 import {
 	formatStretchDuration,
-	STRETCH_REST_SECONDS,
-	stretchDurationSeconds,
-	stretchSteps,
 	type SaveState,
+	STRETCH_REST_SECONDS,
 	type StretchCompletion,
-	type StretchStep
+	type StretchStep,
+	stretchDurationSeconds,
+	stretchSteps
 } from '../stretch';
 
 type Props = {
@@ -115,8 +115,10 @@ function completeRoutine() {
 		>
 			{#if completedBefore}
 				<RotateCcw class="mr-2 size-4" /> Stretch again
-			{:else}
+			{:else if scheduled}
 				<Play class="mr-2 size-4 fill-current" /> Start routine
+			{:else}
+				<Play class="mr-2 size-4 fill-current" /> Stretch anyway
 			{/if}
 		</Button>
 	{/if}

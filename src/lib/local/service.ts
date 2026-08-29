@@ -932,8 +932,9 @@ function validStretch(
 	now: Date
 ) {
 	const localDate = String(body.localDate ?? '');
-	if (!validPastDate(localDate, today) || !isStretchScheduled(localDate))
-		throw badRequest('Stretch sessions are scheduled Monday through Friday.');
+	const scheduledOrToday = localDate === today || isStretchScheduled(localDate);
+	if (!validPastDate(localDate, today) || !scheduledOrToday)
+		throw badRequest('Stretch sessions can only be recorded today or on scheduled weekdays.');
 	return {
 		id: crypto.randomUUID(),
 		localDate,

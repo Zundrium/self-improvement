@@ -198,6 +198,23 @@ describe('local app service', () => {
 		});
 	});
 
+	it('records an optional stretch session on the current weekend day', async () => {
+		const now = new Date('2026-03-21T12:00:00.000Z');
+		const store = trackedStore();
+		await store.replaceState(createDefaultAppState(now));
+		const service = new LocalAppService(store, () => now);
+
+		const session = await service.request<StretchData['sessions'][number]>('/api/app/stretch', {
+			method: 'POST',
+			body: JSON.stringify({ localDate: '2026-03-21' })
+		});
+		const data = await service.request<StretchData>('/api/app/stretch');
+
+		expect(session).toMatchObject({ localDate: '2026-03-21', holdSeconds: 30 });
+		expect(data).toMatchObject({ scheduled: false });
+		expect(data.markedDates).toEqual(['2026-03-21']);
+	});
+
 	it('keeps stretch weekends as rest days without breaking the weekday streak', async () => {
 		const now = new Date('2026-03-23T12:00:00.000Z');
 		const store = trackedStore();
