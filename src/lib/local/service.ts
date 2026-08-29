@@ -52,6 +52,11 @@ import {
 	sumEntries
 } from './nutrition';
 import { type LocalAppState, type LocalAppStore, localAppStore } from './state';
+import {
+	STRETCH_ACTIVITY_IDS,
+	STRETCH_DIFFICULTIES,
+	type StretchDifficulties
+} from './tracker-settings';
 
 export class LocalServiceError extends Error {
 	constructor(
@@ -598,7 +603,10 @@ function settingsForTracker<T extends SettingsTrackerId>(
 		fitness: { defaultSets: state.fitness.defaultSets },
 		meditation: { defaultDurationSeconds: state.meditation.defaultDurationSeconds },
 		breathing: { rounds: state.breathing.rounds, includeHold: state.breathing.includeHold },
-		stretch: { holdSeconds: state.stretch.holdSeconds },
+		stretch: {
+			holdSeconds: state.stretch.holdSeconds,
+			difficulties: state.stretch.difficulties
+		},
 		happiness: { defaultRating: state.happiness.defaultRating },
 		period: {
 			defaultFlow: state.period.defaultFlow,
@@ -638,8 +646,13 @@ function updateTrackerSettings(
 			state.breathing.includeHold
 		);
 	}
-	if (trackerId === 'stretch')
+	if (trackerId === 'stretch') {
 		state.stretch.holdSeconds = integerSetting(body.holdSeconds, state.stretch.holdSeconds, 5, 600);
+		state.stretch.difficulties = stretchDifficultiesSetting(
+			body.difficulties,
+			state.stretch.difficulties
+		);
+	}
 	if (trackerId === 'happiness')
 		state.happiness.defaultRating = happinessRatingSetting(
 			body.defaultRating,
@@ -1161,6 +1174,22 @@ function integerSetting(value: unknown, current: number, minimum: number, maximu
 	if (!Number.isInteger(setting) || setting < minimum || setting > maximum)
 		throw badRequest(`Choose a whole number between ${minimum} and ${maximum}.`);
 	return setting;
+}
+
+function stretchDifficultiesSetting(value: unknown, current: StretchDifficulties) {
+	if (value === undefined) return current;
+	if (!value || typeof value !== 'object' || Array.isArray(value))
+		throw badRequest('Choose valid stretch levels.');
+	const updates = value as Record<string, unknown>;
+	const difficulties = { ...current };
+	for (const activityId of STRETCH_ACTIVITY_IDS) {
+		const difficulty = updates[activityId];
+		if (difficulty === undefined) continue;
+		if (!STRETCH_DIFFICULTIES.includes(difficulty as StretchDifficulties[typeof activityId]))
+			throw badRequest('Choose easy, medium, or hard for each stretch.');
+		difficulties[activityId] = difficulty as StretchDifficulties[typeof activityId];
+	}
+	return difficulties;
 }
 
 function happinessRatingSetting(value: unknown, current: HappinessRating) {

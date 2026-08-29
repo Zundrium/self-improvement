@@ -7,6 +7,7 @@ import {
 	validateBackupEnvelope
 } from './backup';
 import { createDefaultAppState } from './state';
+import { DEFAULT_STRETCH_DIFFICULTIES } from './tracker-settings';
 
 const createdAt = '2026-03-21T12:34:56.789Z';
 
@@ -63,7 +64,11 @@ describe('backup envelope', () => {
 		expect(restored.state.fitness.defaultSets).toBe(2);
 		expect(restored.state.meditation.defaultDurationSeconds).toBe(300);
 		expect(restored.state.breathing).toMatchObject({ rounds: 6, includeHold: true });
-		expect(restored.state.stretch).toEqual({ holdSeconds: 30, sessions: [] });
+		expect(restored.state.stretch).toEqual({
+			holdSeconds: 30,
+			difficulties: DEFAULT_STRETCH_DIFFICULTIES,
+			sessions: []
+		});
 		expect(restored.state.enabledTrackerIds).toContain('stretch');
 		expect(restored.state.happiness.defaultRating).toBe(3);
 		expect(restored.state.period).toMatchObject({

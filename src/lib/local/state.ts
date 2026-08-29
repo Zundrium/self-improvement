@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { localDateForInstant } from '$lib/trackers/dates';
 import type { AppTrackerId } from '$lib/trackers/registry';
 import { appTrackers } from '$lib/trackers/registry';
-import { TRACKER_DEFAULTS } from './tracker-settings';
+import { STRETCH_ACTIVITY_IDS, STRETCH_DIFFICULTIES, TRACKER_DEFAULTS } from './tracker-settings';
 
 export const LOCAL_STATE_VERSION = 1 as const;
 const STATE_ID = 'current';
@@ -191,6 +191,9 @@ const stateSchema = z.strictObject({
 	stretch: z
 		.object({
 			holdSeconds: z.number().int().min(5).max(600).default(TRACKER_DEFAULTS.stretch.holdSeconds),
+			difficulties: z
+				.record(z.enum(STRETCH_ACTIVITY_IDS), z.enum(STRETCH_DIFFICULTIES))
+				.default(TRACKER_DEFAULTS.stretch.difficulties),
 			sessions: z.array(
 				z.object({
 					id: z.string().min(1),
@@ -200,7 +203,11 @@ const stateSchema = z.strictObject({
 				})
 			)
 		})
-		.default({ holdSeconds: TRACKER_DEFAULTS.stretch.holdSeconds, sessions: [] }),
+		.default({
+			holdSeconds: TRACKER_DEFAULTS.stretch.holdSeconds,
+			difficulties: TRACKER_DEFAULTS.stretch.difficulties,
+			sessions: []
+		}),
 	happiness: z.object({
 		defaultRating: z
 			.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)])
@@ -368,7 +375,11 @@ export function createDefaultAppState(now = new Date()): LocalAppState {
 			includeHold: TRACKER_DEFAULTS.breathing.includeHold,
 			exercises: []
 		},
-		stretch: { holdSeconds: TRACKER_DEFAULTS.stretch.holdSeconds, sessions: [] },
+		stretch: {
+			holdSeconds: TRACKER_DEFAULTS.stretch.holdSeconds,
+			difficulties: structuredClone(TRACKER_DEFAULTS.stretch.difficulties),
+			sessions: []
+		},
 		happiness: {
 			defaultRating: TRACKER_DEFAULTS.happiness.defaultRating,
 			entries: []

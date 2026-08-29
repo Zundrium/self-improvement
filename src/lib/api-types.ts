@@ -1,4 +1,5 @@
 import type { ActionFeedItem } from '$lib/actions/contracts';
+import type { StretchDifficulties } from '$lib/local/tracker-settings';
 import type { AppTracker, AppTrackerId } from '$lib/trackers/registry';
 import type {
 	CompletedWorkoutDay,
@@ -108,7 +109,10 @@ export type ScreenTimeSettingsData = { dailyLimitMinutes: number };
 export type FitnessSettingsData = { defaultSets: number };
 export type MeditationSettingsData = { defaultDurationSeconds: number };
 export type BreathingSettingsData = { rounds: number; includeHold: boolean };
-export type StretchSettingsData = { holdSeconds: number };
+export type StretchSettingsData = {
+	holdSeconds: number;
+	difficulties: StretchDifficulties;
+};
 export type HappinessSettingsData = { defaultRating: HappinessRating };
 export type PeriodSettingsData = {
 	defaultFlow: MenstruationFlow;

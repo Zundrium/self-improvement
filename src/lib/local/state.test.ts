@@ -1,11 +1,12 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+	createDefaultAppState,
 	LOCAL_STATE_VERSION,
 	LocalAppDatabase,
-	LocalAppStore,
-	createDefaultAppState
+	LocalAppStore
 } from './state';
+import { DEFAULT_STRETCH_DIFFICULTIES } from './tracker-settings';
 
 const stores: LocalAppStore[] = [];
 
@@ -40,7 +41,11 @@ describe('local app state', () => {
 		expect(state.fitness.defaultSets).toBe(2);
 		expect(state.meditation.defaultDurationSeconds).toBe(300);
 		expect(state.breathing).toMatchObject({ rounds: 6, includeHold: true });
-		expect(state.stretch).toEqual({ holdSeconds: 30, sessions: [] });
+		expect(state.stretch).toEqual({
+			holdSeconds: 30,
+			difficulties: DEFAULT_STRETCH_DIFFICULTIES,
+			sessions: []
+		});
 		expect(state.happiness.defaultRating).toBe(3);
 		expect(state.period).toMatchObject({ defaultFlow: 'medium', fallbackCycleDays: 28 });
 		expect(state.nutrition.entries).toEqual([]);

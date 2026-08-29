@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_STRETCH_DIFFICULTIES } from '$lib/local/tracker-settings';
 import {
 	formatStretchDuration,
 	isStretchScheduled,
@@ -27,6 +28,28 @@ describe('stretch routine', () => {
 			position: `${WALL_ANGEL_REPS} slow reps`,
 			durationSeconds: null,
 			sets: 1
+		});
+		expect(steps.every(({ imageVariants }) => imageVariants.length === 3)).toBe(true);
+	});
+
+	it('uses saved image levels for each stretch', () => {
+		const steps = stretchSteps(30, {
+			...DEFAULT_STRETCH_DIFFICULTIES,
+			pancake: 'easy',
+			chest: 'hard'
+		});
+
+		expect(steps.find(({ id }) => id === 'pancake')).toMatchObject({
+			imageUrl: '/stretch/activities/pancake-easy.png',
+			selectedImageVariantId: 'easy'
+		});
+		expect(steps.find(({ id }) => id === 'chest')).toMatchObject({
+			imageUrl: '/stretch/activities/chest-hard.png',
+			selectedImageVariantId: 'hard'
+		});
+		expect(steps.find(({ id }) => id === 'lat')).toMatchObject({
+			imageUrl: '/stretch/activities/lat.webp',
+			selectedImageVariantId: 'medium'
 		});
 	});
 

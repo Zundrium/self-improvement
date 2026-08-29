@@ -1,9 +1,11 @@
 <script lang="ts">
 import { untrack } from 'svelte';
 import { apiRequest } from '$lib/api';
-import type { StretchSession } from '$lib/api-types';
+import type { StretchSession, StretchSettingsData } from '$lib/api-types';
 import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
 import TrackerPage from '$lib/components/trackerPage.svelte';
+import { toast } from '$lib/components/ui/toast';
+import type { StretchActivityId, StretchDifficulty } from '$lib/local/tracker-settings';
 import type { PageProps } from './$types';
 import StretchRoutine from './components/stretchRoutine.svelte';
 import type { SaveState, StretchCompletion } from './stretch';
@@ -13,6 +15,7 @@ const dateSelectorState = useDateSelectorState();
 let loadedDate = $state(untrack(() => data.date));
 let savedSession = $state<StretchSession>();
 let pendingCompletion = $state<StretchCompletion>();
+let difficulties = $state(untrack(() => structuredClone(data.settings.difficulties)));
 let saveState = $state<SaveState>('idle');
 const completed = $derived(data.sessions.length > 0 || Boolean(savedSession));
 const interactive = $derived(data.date === data.today);
@@ -49,6 +52,19 @@ function postCompletion(completion: StretchCompletion) {
 function retryCompletion() {
 	if (pendingCompletion) void saveCompletion(pendingCompletion);
 }
+
+async function saveDifficulty(activityId: StretchActivityId, difficulty: StretchDifficulty) {
+	difficulties = { ...difficulties, [activityId]: difficulty };
+	try {
+		await apiRequest<StretchSettingsData>('/api/app/stretch/settings', {
+			method: 'PATCH',
+			body: JSON.stringify({ difficulties: { [activityId]: difficulty } })
+		});
+	} catch (cause) {
+		const message = cause instanceof Error ? cause.message : 'Could not save the stretch level.';
+		toast.error(message);
+	}
+}
 </script>
 
 <svelte:head>
@@ -66,11 +82,13 @@ function retryCompletion() {
 	<StretchRoutine
 		localDate={data.date}
 		holdSeconds={data.settings.holdSeconds}
+		{difficulties}
 		scheduled={data.scheduled}
 		{interactive}
 		completedBefore={completed}
 		{saveState}
 		oncomplete={(completion) => void saveCompletion(completion)}
 		onretry={retryCompletion}
+		ondifficultychange={(activityId, difficulty) => void saveDifficulty(activityId, difficulty)}
 	/>
 </TrackerPage>

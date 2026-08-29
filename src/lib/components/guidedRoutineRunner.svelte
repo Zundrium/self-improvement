@@ -1,6 +1,6 @@
 <script lang="ts">
-import { onDestroy, onMount, untrack } from 'svelte';
 import { Clock3, Gauge, Pause, Play, SkipForward, X } from '@lucide/svelte';
+import { onDestroy, onMount, untrack } from 'svelte';
 import type { AudioManager } from '$lib/audio/audio-manager';
 import { Badge } from '$lib/components/ui/badge';
 import { Button } from '$lib/components/ui/button';
@@ -9,12 +9,12 @@ import { Slider } from '$lib/components/ui/slider';
 import {
 	activityDurationMs,
 	activityRepeatCount,
-	initialRoutinePosition,
-	nextRoutinePosition,
-	repDurationMs,
 	type CadencedRepGuidedRoutineActivity,
 	type GuidedRoutineActivity,
-	type GuidedRoutinePosition
+	type GuidedRoutinePosition,
+	initialRoutinePosition,
+	nextRoutinePosition,
+	repDurationMs
 } from './guidedRoutine';
 
 interface Props {
@@ -29,6 +29,7 @@ interface Props {
 	oncancel: () => void;
 	oncadencechange?: (activity: CadencedRepGuidedRoutineActivity, cadencePercent: number) => void;
 	oncadencecommit?: (activity: CadencedRepGuidedRoutineActivity, cadencePercent: number) => void;
+	onimagevariantcommit?: (activity: GuidedRoutineActivity, variantId: string) => void;
 }
 
 export interface GuidedRoutineSounds {
@@ -60,7 +61,8 @@ let {
 	oncomplete,
 	oncancel,
 	oncadencechange,
-	oncadencecommit
+	oncadencecommit,
+	onimagevariantcommit
 }: Props = $props();
 let phase = $state<Phase>('intro');
 let position = $state<GuidedRoutinePosition>(initialRoutinePosition());
@@ -73,6 +75,17 @@ let activityCadences = $state(
 			activities.flatMap((activity) =>
 				activity.type === 'cadenced-reps'
 					? [[cadenceKey(activity), activity.cadencePercent] as const]
+					: []
+			)
+		)
+	)
+);
+let activityImageVariants = $state(
+	untrack(() =>
+		Object.fromEntries(
+			activities.flatMap((activity) =>
+				activity.selectedImageVariantId
+					? [[String(activity.id), activity.selectedImageVariantId] as const]
 					: []
 			)
 		)
@@ -91,6 +104,12 @@ const followingActivity = $derived(
 	followingPosition ? activities[followingPosition.activityIndex] : undefined
 );
 const displayActivity = $derived(phase === 'rest' ? followingActivity : currentActivity);
+const selectedImageVariant = $derived(
+	displayActivity?.imageVariants?.find(
+		({ id }) => id === activityImageVariants[String(displayActivity.id)]
+	)
+);
+const displayImageUrl = $derived(selectedImageVariant?.imageUrl ?? displayActivity?.imageUrl);
 const cadenceTarget = $derived(
 	(phase === 'rest' ? followingActivity : currentActivity)?.type === 'cadenced-reps'
 		? ((phase === 'rest' ? followingActivity : currentActivity) as CadencedRepGuidedRoutineActivity)
@@ -278,6 +297,11 @@ function commitCadence(value: number) {
 	oncadencecommit?.(cadenceTarget, Math.max(50, Math.min(150, Math.round(value / 5) * 5)));
 }
 
+function selectImageVariant(activity: GuidedRoutineActivity, variantId: string) {
+	activityImageVariants = { ...activityImageVariants, [String(activity.id)]: variantId };
+	onimagevariantcommit?.(activity, variantId);
+}
+
 function completeManualActivity() {
 	if (currentActivity?.type === 'manual-reps') advance();
 }
@@ -398,8 +422,21 @@ function handleVisibilityChange() {
 		</div>
 
 		<div class="min-h-0 flex-1 overflow-hidden">
-			<img src={displayActivity.imageUrl} alt={displayActivity.name} class="size-full object-contain" />
+			<img src={displayImageUrl} alt={displayActivity.name} class="size-full object-contain" />
 		</div>
+
+		{#if displayActivity.imageVariants?.length}
+			<div class="grid shrink-0 grid-cols-3 gap-2" aria-label={`${displayActivity.name} level`}>
+				{#each displayActivity.imageVariants as variant (variant.id)}
+					<Button
+						variant={selectedImageVariant?.id === variant.id ? 'default' : 'ghost'}
+						size="sm"
+						onclick={() => selectImageVariant(displayActivity, variant.id)}
+						aria-pressed={selectedImageVariant?.id === variant.id}>{variant.label}</Button
+					>
+				{/each}
+			</div>
+		{/if}
 
 		{#if phase === 'activity' && currentActivity.instruction}
 			<p class="shrink-0 text-sm leading-6 text-(--text)/64">{currentActivity.instruction}</p>

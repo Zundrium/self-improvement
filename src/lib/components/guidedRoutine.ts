@@ -1,9 +1,17 @@
 export type GuidedRoutineActivityId = string | number;
 
+export type GuidedRoutineImageVariant = {
+	id: string;
+	label: string;
+	imageUrl: string;
+};
+
 interface GuidedRoutineActivityBase {
 	id: GuidedRoutineActivityId;
 	name: string;
 	imageUrl: string;
+	imageVariants?: GuidedRoutineImageVariant[];
+	selectedImageVariantId?: string;
 	detail?: string;
 	instruction?: string;
 	voiceUrl?: string;

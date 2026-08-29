@@ -8,6 +8,13 @@ import GuidedRoutineRunner, {
 	type GuidedRoutineSounds
 } from '$lib/components/guidedRoutineRunner.svelte';
 import { Button } from '$lib/components/ui/button';
+import {
+	STRETCH_ACTIVITY_IDS,
+	STRETCH_DIFFICULTIES,
+	type StretchActivityId,
+	type StretchDifficulties,
+	type StretchDifficulty
+} from '$lib/local/tracker-settings';
 import { getTrackerColors } from '$lib/trackers/registry';
 import {
 	formatStretchDuration,
@@ -22,26 +29,31 @@ import {
 type Props = {
 	localDate: string;
 	holdSeconds: number;
+	difficulties: StretchDifficulties;
 	scheduled: boolean;
 	interactive: boolean;
 	completedBefore: boolean;
 	saveState: SaveState;
 	oncomplete: (completion: StretchCompletion) => void;
 	onretry: () => void;
+	ondifficultychange: (activityId: StretchActivityId, difficulty: StretchDifficulty) => void;
 };
 
 let {
 	localDate,
 	holdSeconds,
+	difficulties,
 	scheduled,
 	interactive,
 	completedBefore,
 	saveState,
 	oncomplete,
-	onretry
+	onretry,
+	ondifficultychange
 }: Props = $props();
 const colors = getTrackerColors('stretch');
-const steps = $derived(stretchSteps(holdSeconds));
+let selectedDifficulties = $state(untrack(() => structuredClone(difficulties)));
+const steps = $derived(stretchSteps(holdSeconds, selectedDifficulties));
 const activities = $derived(steps.map(toGuidedActivity));
 const durationSeconds = $derived(stretchDurationSeconds(holdSeconds));
 let loadedKey = $state(untrack(() => `${localDate}:${holdSeconds}`));
@@ -57,17 +69,22 @@ const sounds: GuidedRoutineSounds = {
 	number: (value) => `/fitness/audio/voice/heart/${value}.m4a`
 };
 
-$effect(() => resetForInput(localDate, holdSeconds));
+$effect(() => resetForInput(localDate, holdSeconds, difficulties));
 
 onMount(() => {
 	audioManager = new AudioManager();
 	return () => audioManager?.destroy();
 });
 
-function resetForInput(nextDate: string, nextHoldSeconds: number) {
+function resetForInput(
+	nextDate: string,
+	nextHoldSeconds: number,
+	nextDifficulties: StretchDifficulties
+) {
 	const nextKey = `${nextDate}:${nextHoldSeconds}`;
 	if (nextKey === loadedKey) return;
 	loadedKey = nextKey;
+	selectedDifficulties = structuredClone(nextDifficulties);
 	isSessionActive = false;
 }
 
@@ -76,6 +93,8 @@ function toGuidedActivity(step: StretchStep): GuidedRoutineActivity {
 		id: step.id,
 		name: step.name,
 		imageUrl: step.imageUrl,
+		imageVariants: step.imageVariants,
+		selectedImageVariantId: step.selectedImageVariantId,
 		detail: step.position,
 		instruction: step.cue,
 		repeats: step.sets
@@ -83,6 +102,19 @@ function toGuidedActivity(step: StretchStep): GuidedRoutineActivity {
 	return step.durationSeconds === null
 		? { ...shared, type: 'manual-reps', reps: 10 }
 		: { ...shared, type: 'timed', durationSeconds: step.durationSeconds };
+}
+
+function selectDifficulty(activity: GuidedRoutineActivity, variantId: string) {
+	if (
+		typeof activity.id !== 'string' ||
+		!STRETCH_ACTIVITY_IDS.includes(activity.id as StretchActivityId) ||
+		!STRETCH_DIFFICULTIES.includes(variantId as StretchDifficulty)
+	)
+		return;
+	const activityId = activity.id as StretchActivityId;
+	const difficulty = variantId as StretchDifficulty;
+	selectedDifficulties = { ...selectedDifficulties, [activityId]: difficulty };
+	ondifficultychange(activityId, difficulty);
 }
 
 function completeRoutine() {
@@ -135,6 +167,7 @@ function completeRoutine() {
 		activityLabel="Stretch"
 		oncomplete={completeRoutine}
 		oncancel={() => (isSessionActive = false)}
+		onimagevariantcommit={selectDifficulty}
 	/>
 {:else}
 	<section aria-label="Stretch routine" class="space-y-8">

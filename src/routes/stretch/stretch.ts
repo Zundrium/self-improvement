@@ -1,14 +1,30 @@
+import {
+	DEFAULT_STRETCH_DIFFICULTIES,
+	STRETCH_DIFFICULTIES,
+	type StretchActivityId,
+	type StretchDifficulties,
+	type StretchDifficulty
+} from '$lib/local/tracker-settings';
+
 export const STRETCH_VIDEO_URL = 'https://www.youtube.com/watch?v=QaKuVOhikaY';
 export const STRETCH_SETS_PER_DAY = 2;
 export const STRETCH_REST_SECONDS = 10;
 export const WALL_ANGEL_REPS = 10;
 
+export type StretchImageVariant = {
+	id: StretchDifficulty;
+	label: string;
+	imageUrl: string;
+};
+
 export type StretchStep = {
-	id: string;
+	id: StretchActivityId;
 	name: string;
 	position: string;
 	cue: string;
 	imageUrl: string;
+	imageVariants: StretchImageVariant[];
+	selectedImageVariantId: StretchDifficulty;
 	durationSeconds: number | null;
 	sets: number;
 };
@@ -20,7 +36,10 @@ export type StretchCompletion = {
 
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
-export function stretchSteps(holdSeconds: number): StretchStep[] {
+export function stretchSteps(
+	holdSeconds: number,
+	difficulties: StretchDifficulties = DEFAULT_STRETCH_DIFFICULTIES
+): StretchStep[] {
 	return [
 		stretch(
 			'pancake',
@@ -71,16 +90,15 @@ export function stretchSteps(holdSeconds: number): StretchStep[] {
 			'Reach long through your arms and sit your hips back until you feel your lats lengthen.',
 			holdSeconds
 		),
-		{
-			id: 'wall-angels',
-			name: 'Wall angels',
-			position: `${WALL_ANGEL_REPS} slow reps`,
-			cue: 'Keep your ribs and back against the wall while your elbows and wrists move toward it.',
-			imageUrl: '/stretch/activities/wall-angels.webp',
-			durationSeconds: null,
-			sets: 1
-		}
-	];
+		stretch(
+			'wall-angels',
+			'Wall angels',
+			`${WALL_ANGEL_REPS} slow reps`,
+			'Keep your ribs and back against the wall while your elbows and wrists move toward it.',
+			null,
+			1
+		)
+	].map((step) => withDifficulty(step, difficulties[step.id]));
 }
 
 export function stretchDurationSeconds(holdSeconds: number) {
@@ -102,19 +120,37 @@ export function formatStretchDuration(totalSeconds: number) {
 }
 
 function stretch(
-	id: string,
+	id: StretchActivityId,
 	name: string,
 	position: string,
 	cue: string,
-	durationSeconds: number
+	durationSeconds: number | null,
+	sets = STRETCH_SETS_PER_DAY
+): Omit<StretchStep, 'imageUrl' | 'imageVariants' | 'selectedImageVariantId'> {
+	return { id, name, position, cue, durationSeconds, sets };
+}
+
+function withDifficulty(
+	step: Omit<StretchStep, 'imageUrl' | 'imageVariants' | 'selectedImageVariantId'>,
+	difficulty: StretchDifficulty
 ): StretchStep {
 	return {
-		id,
-		name,
-		position,
-		cue,
-		imageUrl: `/stretch/activities/${id}.webp`,
-		durationSeconds,
-		sets: STRETCH_SETS_PER_DAY
+		...step,
+		imageUrl: stretchImageUrl(step.id, difficulty),
+		imageVariants: STRETCH_DIFFICULTIES.map((id) => ({
+			id,
+			label: difficultyLabel(id),
+			imageUrl: stretchImageUrl(step.id, id)
+		})),
+		selectedImageVariantId: difficulty
 	};
+}
+
+function stretchImageUrl(id: StretchActivityId, difficulty: StretchDifficulty) {
+	if (difficulty === 'medium') return `/stretch/activities/${id}.webp`;
+	return `/stretch/activities/${id}-${difficulty}.png`;
+}
+
+function difficultyLabel(difficulty: StretchDifficulty) {
+	return difficulty[0].toUpperCase() + difficulty.slice(1);
 }

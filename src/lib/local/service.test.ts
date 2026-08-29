@@ -17,6 +17,7 @@ import type {
 } from '$lib/api-types';
 import { LocalAppService } from './service';
 import { createDefaultAppState, LocalAppDatabase, LocalAppStore } from './state';
+import { DEFAULT_STRETCH_DIFFICULTIES } from './tracker-settings';
 
 const stores: LocalAppStore[] = [];
 
@@ -85,7 +86,7 @@ describe('local app service', () => {
 		).toEqual({ rounds: 6, includeHold: true });
 		expect(
 			await service.request<TrackerSettingsDataMap['stretch']>('/api/app/stretch/settings')
-		).toEqual({ holdSeconds: 30 });
+		).toEqual({ holdSeconds: 30, difficulties: DEFAULT_STRETCH_DIFFICULTIES });
 		expect(
 			await service.request<TrackerSettingsDataMap['happiness']>('/api/app/happiness/settings')
 		).toEqual({ defaultRating: 3 });
@@ -98,7 +99,10 @@ describe('local app service', () => {
 		await service.request('/api/app/fitness/settings', patch({ defaultSets: 4 }));
 		await service.request('/api/app/meditation/settings', patch({ defaultDurationSeconds: 600 }));
 		await service.request('/api/app/breathing/settings', patch({ rounds: 2, includeHold: false }));
-		await service.request('/api/app/stretch/settings', patch({ holdSeconds: 45 }));
+		await service.request(
+			'/api/app/stretch/settings',
+			patch({ holdSeconds: 45, difficulties: { pancake: 'hard' } })
+		);
 		await service.request('/api/app/happiness/settings', patch({ defaultRating: 4 }));
 		await service.request(
 			'/api/app/period/settings',
@@ -111,7 +115,10 @@ describe('local app service', () => {
 		expect(state.fitness.defaultSets).toBe(4);
 		expect(state.meditation.defaultDurationSeconds).toBe(600);
 		expect(state.breathing).toMatchObject({ rounds: 2, includeHold: false });
-		expect(state.stretch.holdSeconds).toBe(45);
+		expect(state.stretch).toMatchObject({
+			holdSeconds: 45,
+			difficulties: { ...DEFAULT_STRETCH_DIFFICULTIES, pancake: 'hard' }
+		});
 		expect(state.happiness.defaultRating).toBe(4);
 		expect(state.period).toMatchObject({ defaultFlow: 'heavy', fallbackCycleDays: 35 });
 	});
@@ -183,7 +190,7 @@ describe('local app service', () => {
 		const gamification = await service.request<GamificationData>('/api/app/gamification');
 
 		expect(empty).toMatchObject({
-			settings: { holdSeconds: 30 },
+			settings: { holdSeconds: 30, difficulties: DEFAULT_STRETCH_DIFFICULTIES },
 			scheduled: true,
 			sessions: []
 		});
