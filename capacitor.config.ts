@@ -5,7 +5,12 @@ const config: CapacitorConfig = {
 	appName: 'Self Improvement',
 	webDir: 'dist-mobile',
 	loggingBehavior: 'none',
-	server: { androidScheme: 'https' }
+	server: { androidScheme: 'https' },
+	plugins: {
+		SystemBars: {
+			insetsHandling: 'css'
+		}
+	}
 };
 
 export default config;

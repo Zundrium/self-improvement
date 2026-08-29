@@ -467,7 +467,7 @@ onDestroy(() => {
 			></div>
 
 			<div
-				class="app-gutter absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 pt-[max(1rem,env(safe-area-inset-top))]"
+				class="app-gutter absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 pt-[max(1rem,var(--app-safe-area-inset-top))]"
 			>
 				<Button
 					href="/nutrition/log/{data.date}"
@@ -514,7 +514,7 @@ onDestroy(() => {
 
 			{#if cameraState === 'ready'}
 				<div
-					class="app-gutter absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+					class="app-gutter absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-5 pb-[max(1.5rem,var(--app-safe-area-inset-bottom))]"
 				>
 					<Button
 						variant="ghost"

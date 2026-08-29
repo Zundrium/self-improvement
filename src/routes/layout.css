@@ -31,8 +31,15 @@
 		--app-header-padding-block: 1rem;
 		--app-bar-padding-block: 0.75rem;
 		--app-overlay-padding: 1rem;
-		--app-inset-inline-start: max(var(--app-gutter), env(safe-area-inset-left, 0px));
-		--app-inset-inline-end: max(var(--app-gutter), env(safe-area-inset-right, 0px));
+		--app-safe-area-inset-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+		--app-safe-area-inset-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+		--app-safe-area-inset-bottom: var(
+			--safe-area-inset-bottom,
+			env(safe-area-inset-bottom, 0px)
+		);
+		--app-safe-area-inset-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+		--app-inset-inline-start: max(var(--app-gutter), var(--app-safe-area-inset-left));
+		--app-inset-inline-end: max(var(--app-gutter), var(--app-safe-area-inset-right));
 		--app-overlay-width: calc(100vw - var(--app-inset-inline-start) - var(--app-inset-inline-end));
 
 		/* Chart series palette — the one sanctioned color surface in the
@@ -108,7 +115,7 @@
  * ------------------------------------------------------------------------- */
 @layer utilities {
 	.safe-area-padding-top {
-		padding-top: env(safe-area-inset-top);
+		padding-top: var(--app-safe-area-inset-top);
 	}
 
 	.app-gutter {

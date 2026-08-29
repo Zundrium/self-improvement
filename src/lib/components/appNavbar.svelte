@@ -107,16 +107,12 @@
 
 <svelte:window onpointerdown={closeDrawerOutside} onkeydown={closeDrawerOnEscape} />
 
-<nav
-	bind:this={navigationElement}
-	class="relative z-50 shrink-0 bg-white pb-[env(safe-area-inset-bottom)] dark:bg-black"
-	aria-label="Main navigation"
->
+<nav bind:this={navigationElement} class="relative z-50 shrink-0" aria-label="Main navigation">
 	{#if appLauncherOpen}
 		<div
 			bind:this={drawerElement}
 			id="app-drawer"
-			class="absolute inset-x-0 bottom-full z-40 max-h-[calc(100svh-4rem)] overflow-y-auto bg-(--bg-elevated)"
+			class="no-scrollbar absolute inset-x-0 bottom-full z-40 max-h-[calc(100svh-4rem-var(--app-safe-area-inset-top)-var(--app-safe-area-inset-bottom))] overflow-y-auto bg-(--bg-elevated)"
 			use:drawerEnter={dismissDrawer}
 		>
 			<div
@@ -143,7 +139,9 @@
 			{/if}
 		</div>
 	{/if}
-	<div class="app-gutter relative z-50 bg-white dark:bg-black">
+	<div
+		class="app-gutter relative z-50 bg-white pb-[var(--app-safe-area-inset-bottom)] dark:bg-black"
+	>
 		<div class="mx-auto grid h-16 w-full max-w-(--app-compact-max-width) grid-cols-3 items-stretch">
 			<a
 				href={resolve('/')}
