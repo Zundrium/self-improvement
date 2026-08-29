@@ -1,9 +1,14 @@
 <script lang="ts">
-import { Clock3, Gauge, Pause, Play, SkipForward, X } from '@lucide/svelte';
+import { Info, Pause, Play, SkipForward, X } from '@lucide/svelte';
 import { onDestroy, onMount, untrack } from 'svelte';
 import type { AudioManager } from '$lib/audio/audio-manager';
-import { Badge } from '$lib/components/ui/badge';
+import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 import { Button } from '$lib/components/ui/button';
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger
+} from '$lib/components/ui/popover';
 import { Progress } from '$lib/components/ui/progress';
 import { Slider } from '$lib/components/ui/slider';
 import {
@@ -104,6 +109,14 @@ const followingActivity = $derived(
 	followingPosition ? activities[followingPosition.activityIndex] : undefined
 );
 const displayActivity = $derived(phase === 'rest' ? followingActivity : currentActivity);
+const displayPosition = $derived(
+	phase === 'rest' && followingPosition ? followingPosition : position
+);
+const displaySide = $derived(
+	displayActivity?.detail === 'Left side' || displayActivity?.detail === 'Right side'
+		? displayActivity.detail
+		: undefined
+);
 const selectedImageVariant = $derived(
 	displayActivity?.imageVariants?.find(
 		({ id }) => id === activityImageVariants[String(displayActivity.id)]
@@ -124,7 +137,21 @@ const remainingReps = $derived(
 		? Math.max(0, Math.ceil(timeLeftMs / repDurationMs(cadenceFor(currentActivity))))
 		: 0
 );
+const displayRep = $derived(
+	displayActivity?.type === 'cadenced-reps'
+		? phase === 'activity'
+			? Math.min(displayActivity.reps, Math.max(1, displayActivity.reps - remainingReps + 1))
+			: 1
+		: 0
+);
 const isManualReps = $derived(phase === 'activity' && currentActivity?.type === 'manual-reps');
+const displayActivitySetCount = $derived(
+	displayActivity ? activityRepeatCount(displayActivity) : 1
+);
+const displaySetIndex = $derived(
+	displayActivitySetCount > 1 ? displayPosition.activityRepeatIndex : displayPosition.setIndex
+);
+const displaySetCount = $derived(displayActivitySetCount > 1 ? displayActivitySetCount : setCount);
 
 onMount(() => {
 	const voiceUrls = activities.flatMap((activity) =>
@@ -364,87 +391,125 @@ function handleVisibilityChange() {
 	{/if}
 {/snippet}
 
-{#if currentActivity && displayActivity}
-	<section class="flex min-h-0 flex-1 flex-col gap-3" aria-label={`Active ${activityLabel.toLowerCase()}`}>
-		<div class="flex shrink-0 items-center justify-between gap-3">
-			<div class="flex min-w-0 items-center gap-2 overflow-hidden">
-				<Badge class={phase === 'activity' ? 'bg-(--text) text-(--bg)' : ''}
-					>{phase === 'intro' ? 'Get ready' : phase === 'rest' ? 'Rest' : activityLabel}</Badge
-				>
-				<span class="text-xs whitespace-nowrap text-(--text)/48 tabular-nums">
-					{activityLabel} {position.activityIndex + 1} / {activities.length}
-				</span>
-				{#if setCount > 1}
-					<span class="text-xs whitespace-nowrap text-(--text)/48 tabular-nums">
-						Set {position.setIndex + 1} / {setCount}
-					</span>
-				{/if}
-				{#if activityRepeatCount(currentActivity) > 1}
-					<span class="text-xs whitespace-nowrap text-(--text)/48 tabular-nums">
-						Repeat {position.activityRepeatIndex + 1} / {activityRepeatCount(currentActivity)}
-					</span>
-				{/if}
-			</div>
-			<Button variant="ghost" size="icon" onclick={close} aria-label={`Close ${activityLabel.toLowerCase()}`}
-				><X class="size-5" /></Button
+{#snippet activityTitle(activity: GuidedRoutineActivity)}
+	<div class="relative flex items-center justify-center">
+		<h2 class="min-w-0 px-10 text-center text-2xl font-medium tracking-[-0.04em]">{activity.name}</h2>
+		{#if activity.instruction}
+			<Popover>
+				<PopoverTrigger>
+					{#snippet child({ props })}
+						<Button
+							variant="ghost"
+							size="icon"
+							class="absolute right-0 size-8"
+							aria-label={`How to do ${activity.name}`}
+							{...props}
+						>
+							<Info class="size-4" />
+						</Button>
+					{/snippet}
+				</PopoverTrigger>
+				<PopoverContent align="end" class="w-[min(20rem,calc(100vw-2rem))] text-center">
+					<p class="text-sm font-medium">How to do {activity.name}</p>
+					<p class="mt-2 text-sm leading-6 text-(--text)/64">{activity.instruction}</p>
+				</PopoverContent>
+			</Popover>
+		{/if}
+	</div>
+{/snippet}
+
+{#snippet sessionControls(activity: GuidedRoutineActivity)}
+	{#if isManualReps && activity.type === 'manual-reps'}
+		<div class="grid grid-cols-[auto_1fr_auto] gap-3">
+			<Button
+				variant="ghost"
+				size="icon"
+				class="size-11 !bg-(--text)/5 !text-(--text)/72"
+				onclick={close}
+				aria-label={`Close ${activityLabel.toLowerCase()}`}><X class="size-5" /></Button
+			>
+			<Button
+				size="lg"
+				class="!bg-(--text) !text-white"
+				onclick={completeManualActivity}>Finish {activity.reps} reps</Button
+			>
+			<Button
+				variant="ghost"
+				size="icon"
+				class="size-11 !bg-(--text)/5 !text-(--text)/72"
+				onclick={skip}
+				aria-label="Skip current step"><SkipForward class="size-4" /></Button
 			>
 		</div>
+	{:else}
+		<div class="grid grid-cols-[auto_1fr_auto] gap-3">
+			<Button
+				variant="ghost"
+				size="icon"
+				class="size-11 !bg-(--text)/5 !text-(--text)/72"
+				onclick={close}
+				aria-label={`Close ${activityLabel.toLowerCase()}`}><X class="size-5" /></Button
+			>
+			<Button size="lg" class="!bg-(--text) !text-white" onclick={togglePause}
+				>{#if isPaused}<Play class="mr-2 size-4 fill-current" /> Resume{:else}<Pause
+						class="mr-2 size-4 fill-current"
+					/> Pause{/if}</Button
+			>
+			<Button
+				variant="ghost"
+				size="icon"
+				class="size-11 !bg-(--text)/5 !text-(--text)/72"
+				onclick={skip}
+				aria-label="Skip current step"><SkipForward class="size-4" /></Button
+			>
+		</div>
+	{/if}
+{/snippet}
 
-		<div class="shrink-0">
-			{#if phase === 'rest' || phase === 'intro'}
+{#if currentActivity && displayActivity}
+	<section
+		class="flex min-h-0 flex-1 flex-col justify-center-safe gap-4"
+		aria-label={`Active ${activityLabel.toLowerCase()}`}
+	>
+		<div class="shrink-0 text-center">
+			{#if phase === 'intro'}
+				{@render activityTitle(currentActivity)}
+			{:else if phase === 'rest'}
 				<p class="text-xs font-medium text-(--text)/40">UP NEXT</p>
-				<h2 class="mt-0.5 text-2xl font-medium tracking-[-0.04em]">
-					{phase === 'intro' ? currentActivity.name : displayActivity.name}
-				</h2>
-				{#if displayActivity.detail}
+				<div class="mt-0.5">{@render activityTitle(displayActivity)}</div>
+				{#if displayActivity.detail && !displaySide}
 					<p class="mt-1 text-sm text-(--text)/56">{displayActivity.detail}</p>
 				{/if}
 			{:else}
-				<h2 class="text-2xl font-medium tracking-[-0.04em]">{currentActivity.name}</h2>
-				{#if currentActivity.detail}
-					<p class="mt-1 text-sm text-(--text)/56">{currentActivity.detail}</p>
-				{/if}
-				{#if currentActivity.type === 'cadenced-reps'}
-					<p class="mt-1 flex items-center gap-2 text-sm text-(--text)/56">
-						<Gauge class="size-4" />
-						{cadenceFor(currentActivity)}% cadence · {currentActivity.reps} reps
-					</p>
-				{:else if currentActivity.type === 'timed'}
-					<p class="mt-1 flex items-center gap-2 text-sm text-(--text)/56">
-						<Clock3 class="size-4" /> {currentActivity.durationSeconds} second interval
-					</p>
-				{:else}
-					<p class="mt-1 flex items-center gap-2 text-sm text-(--text)/56">
-						<Gauge class="size-4" /> {currentActivity.reps} manual reps
-					</p>
-				{/if}
+				{@render activityTitle(currentActivity)}
 			{/if}
 		</div>
 
-		<div class="min-h-0 flex-1 overflow-hidden">
+		<div class="min-h-40 flex-1 overflow-hidden">
 			<img src={displayImageUrl} alt={displayActivity.name} class="size-full object-contain" />
 		</div>
 
-		{#if displayActivity.imageVariants?.length}
-			<div class="grid shrink-0 grid-cols-3 gap-2" aria-label={`${displayActivity.name} level`}>
-				{#each displayActivity.imageVariants as variant (variant.id)}
-					<Button
-						variant={selectedImageVariant?.id === variant.id ? 'default' : 'ghost'}
-						size="sm"
-						onclick={() => selectImageVariant(displayActivity, variant.id)}
-						aria-pressed={selectedImageVariant?.id === variant.id}>{variant.label}</Button
-					>
-				{/each}
+		<div
+			class={`grid shrink-0 gap-2 text-center text-sm font-medium tabular-nums ${displayActivity.type === 'cadenced-reps' || displaySide ? 'grid-cols-3' : 'grid-cols-2'}`}
+		>
+			<div class="rounded-2xl px-3 py-2 text-blue-700 dark:text-blue-300">
+				{activityLabel} {displayPosition.activityIndex + 1} / {activities.length}
 			</div>
-		{/if}
+			<div class="rounded-2xl px-3 py-2 text-violet-700 dark:text-violet-300">
+				Set {displaySetIndex + 1} / {displaySetCount}
+			</div>
+			{#if displayActivity.type === 'cadenced-reps'}
+				<div class="rounded-2xl px-3 py-2 text-emerald-700 dark:text-emerald-300">
+					Rep {displayRep} / {displayActivity.reps}
+				</div>
+			{:else if displaySide}
+				<div class="rounded-2xl px-3 py-2 text-emerald-700 dark:text-emerald-300">
+					{displaySide}
+				</div>
+			{/if}
+		</div>
 
-		{#if phase === 'activity' && currentActivity.instruction}
-			<p class="shrink-0 text-sm leading-6 text-(--text)/64">{currentActivity.instruction}</p>
-		{/if}
-
-		<div class="shrink-0 space-y-3">
-			{@render cadenceControl()}
-
+		<div class="shrink-0 space-y-4">
 			<div class="text-center">
 				{#if isManualReps && currentActivity.type === 'manual-reps'}
 					<div class="text-5xl font-medium tracking-[-0.08em] tabular-nums sm:text-7xl">
@@ -455,36 +520,25 @@ function handleVisibilityChange() {
 					<div class="text-5xl font-medium tracking-[-0.08em] tabular-nums sm:text-7xl">
 						{formatTime(timeLeftMs)}
 					</div>
-					{#if phase === 'activity' && currentActivity.type === 'cadenced-reps'}
-						<p class="mt-1 text-sm text-(--text)/56">{remainingReps} reps remaining</p>
-					{/if}
 				{/if}
-				{#if isPaused}<p class="mt-1 text-sm font-medium">Paused</p>{/if}
 			</div>
-			<Progress value={isManualReps ? 0 : progress} />
-			{#if isManualReps && currentActivity.type === 'manual-reps'}
-				<div class="grid grid-cols-[1fr_auto] gap-3">
-					<Button size="lg" onclick={completeManualActivity}>Finish {currentActivity.reps} reps</Button>
-					<Button variant="ghost" size="icon" class="size-11" onclick={skip} aria-label="Skip current step"
-						><SkipForward class="size-4" /></Button
-					>
-				</div>
-			{:else}
-				<div class="grid grid-cols-[1fr_auto] gap-3">
-					<Button size="lg" onclick={togglePause}
-						>{#if isPaused}<Play class="mr-2 size-4 fill-current" /> Resume{:else}<Pause
-								class="mr-2 size-4 fill-current"
-							/> Pause{/if}</Button
-					>
-					<Button
-						variant="ghost"
-						size="icon"
-						class="size-11"
-						onclick={skip}
-						aria-label="Skip current step"><SkipForward class="size-4" /></Button
-					>
+			<Progress class="h-3" value={isManualReps ? 0 : progress} />
+			{@render cadenceControl()}
+			{#if displayActivity.imageVariants?.length}
+				<div class="grid shrink-0 grid-cols-3 gap-2" aria-label={`${displayActivity.name} level`}>
+					{#each displayActivity.imageVariants as variant (variant.id)}
+						<Button
+							variant={selectedImageVariant?.id === variant.id ? 'default' : 'ghost'}
+							size="sm"
+							onclick={() => selectImageVariant(displayActivity, variant.id)}
+							aria-pressed={selectedImageVariant?.id === variant.id}>{variant.label}</Button
+						>
+					{/each}
 				</div>
 			{/if}
+			<div class="hidden sm:block">{@render sessionControls(currentActivity)}</div>
 		</div>
 	</section>
+
+	<BottomActionBar>{@render sessionControls(currentActivity)}</BottomActionBar>
 {/if}

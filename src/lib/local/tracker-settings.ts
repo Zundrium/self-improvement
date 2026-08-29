@@ -14,6 +14,17 @@ export type StretchActivityId = (typeof STRETCH_ACTIVITY_IDS)[number];
 export type StretchDifficulty = (typeof STRETCH_DIFFICULTIES)[number];
 export type StretchDifficulties = Record<StretchActivityId, StretchDifficulty>;
 
+export const STRETCH_DIFFICULTIES_BY_ACTIVITY = {
+	pancake: STRETCH_DIFFICULTIES,
+	'figure-four-left': STRETCH_DIFFICULTIES,
+	'figure-four-right': STRETCH_DIFFICULTIES,
+	'lunge-left': ['easy', 'medium'],
+	'lunge-right': ['easy', 'medium'],
+	chest: ['medium'],
+	lat: STRETCH_DIFFICULTIES,
+	'wall-angels': ['medium']
+} as const satisfies Record<StretchActivityId, readonly StretchDifficulty[]>;
+
 export const DEFAULT_STRETCH_DIFFICULTIES: StretchDifficulties = {
 	pancake: 'medium',
 	'figure-four-left': 'medium',

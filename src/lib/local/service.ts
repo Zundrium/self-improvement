@@ -54,8 +54,9 @@ import {
 import { type LocalAppState, type LocalAppStore, localAppStore } from './state';
 import {
 	STRETCH_ACTIVITY_IDS,
-	STRETCH_DIFFICULTIES,
-	type StretchDifficulties
+	STRETCH_DIFFICULTIES_BY_ACTIVITY,
+	type StretchDifficulties,
+	type StretchDifficulty
 } from './tracker-settings';
 
 export class LocalServiceError extends Error {
@@ -1185,8 +1186,12 @@ function stretchDifficultiesSetting(value: unknown, current: StretchDifficulties
 	for (const activityId of STRETCH_ACTIVITY_IDS) {
 		const difficulty = updates[activityId];
 		if (difficulty === undefined) continue;
-		if (!STRETCH_DIFFICULTIES.includes(difficulty as StretchDifficulties[typeof activityId]))
-			throw badRequest('Choose easy, medium, or hard for each stretch.');
+		if (
+			!(STRETCH_DIFFICULTIES_BY_ACTIVITY[activityId] as readonly StretchDifficulty[]).includes(
+				difficulty as StretchDifficulty
+			)
+		)
+			throw badRequest('Choose an available level for each stretch.');
 		difficulties[activityId] = difficulty as StretchDifficulties[typeof activityId];
 	}
 	return difficulties;

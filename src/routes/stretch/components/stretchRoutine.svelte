@@ -10,19 +10,17 @@ import GuidedRoutineRunner, {
 import { Button } from '$lib/components/ui/button';
 import {
 	STRETCH_ACTIVITY_IDS,
-	STRETCH_DIFFICULTIES,
+	STRETCH_DIFFICULTIES_BY_ACTIVITY,
 	type StretchActivityId,
 	type StretchDifficulties,
 	type StretchDifficulty
 } from '$lib/local/tracker-settings';
 import { getTrackerColors } from '$lib/trackers/registry';
 import {
-	formatStretchDuration,
 	type SaveState,
 	STRETCH_REST_SECONDS,
 	type StretchCompletion,
 	type StretchStep,
-	stretchDurationSeconds,
 	stretchSteps
 } from '../stretch';
 
@@ -52,10 +50,9 @@ let {
 	ondifficultychange
 }: Props = $props();
 const colors = getTrackerColors('stretch');
-let selectedDifficulties = $state(untrack(() => structuredClone(difficulties)));
+let selectedDifficulties = $state(untrack(() => ({ ...difficulties })));
 const steps = $derived(stretchSteps(holdSeconds, selectedDifficulties));
 const activities = $derived(steps.map(toGuidedActivity));
-const durationSeconds = $derived(stretchDurationSeconds(holdSeconds));
 let loadedKey = $state(untrack(() => `${localDate}:${holdSeconds}`));
 let isSessionActive = $state(false);
 let audioManager = $state<AudioManager>();
@@ -84,7 +81,7 @@ function resetForInput(
 	const nextKey = `${nextDate}:${nextHoldSeconds}`;
 	if (nextKey === loadedKey) return;
 	loadedKey = nextKey;
-	selectedDifficulties = structuredClone(nextDifficulties);
+	selectedDifficulties = { ...nextDifficulties };
 	isSessionActive = false;
 }
 
@@ -107,12 +104,17 @@ function toGuidedActivity(step: StretchStep): GuidedRoutineActivity {
 function selectDifficulty(activity: GuidedRoutineActivity, variantId: string) {
 	if (
 		typeof activity.id !== 'string' ||
-		!STRETCH_ACTIVITY_IDS.includes(activity.id as StretchActivityId) ||
-		!STRETCH_DIFFICULTIES.includes(variantId as StretchDifficulty)
+		!STRETCH_ACTIVITY_IDS.includes(activity.id as StretchActivityId)
 	)
 		return;
 	const activityId = activity.id as StretchActivityId;
 	const difficulty = variantId as StretchDifficulty;
+	if (
+		!(STRETCH_DIFFICULTIES_BY_ACTIVITY[activityId] as readonly StretchDifficulty[]).includes(
+			difficulty
+		)
+	)
+		return;
 	selectedDifficulties = { ...selectedDifficulties, [activityId]: difficulty };
 	ondifficultychange(activityId, difficulty);
 }
@@ -170,26 +172,11 @@ function completeRoutine() {
 		onimagevariantcommit={selectDifficulty}
 	/>
 {:else}
-	<section aria-label="Stretch routine" class="space-y-8">
-		<header>
-			<h2 class="text-2xl font-medium tracking-[-0.04em]" style={`color: ${colors.primary}`}>
-				Five-stretch routine
-			</h2>
-			<p class="mt-1 text-sm leading-6 text-(--text)/56">
-				Two {holdSeconds}-second sets per position, Monday–Friday. {formatStretchDuration(
-					durationSeconds
-				)} of holds, then 10 slow wall angels.
-			</p>
-		</header>
-
+	<section aria-label="Stretch routine" class="flex min-h-0 flex-1 flex-col gap-8">
 		{#if !scheduled}
-			<div
-				class="flex min-h-72 flex-col items-center justify-center rounded-3xl bg-(--text)/4 px-6 py-10 text-center"
-			>
-				<span class="flex size-14 items-center justify-center rounded-full bg-(--text)/5">
-					<CalendarOff class="size-6" style={`color: ${colors.primary}`} />
-				</span>
-				<h3 class="mt-5 text-2xl font-medium tracking-[-0.04em]">Weekend recovery</h3>
+			<div class="flex min-h-72 flex-1 flex-col items-center justify-center px-6 py-10 text-center">
+				<CalendarOff class="size-12" style={`color: ${colors.primary}`} />
+				<h2 class="mt-5 text-2xl font-medium tracking-[-0.04em]">Weekend recovery</h2>
 				<p class="mt-2 max-w-sm text-sm leading-6 text-(--text)/56">
 					The weekday routine resumes Monday.
 				</p>
@@ -228,19 +215,21 @@ function completeRoutine() {
 			</ol>
 		{/if}
 
-		<div class="min-h-5 text-center text-sm text-(--text)/56" aria-live="polite">
-			{#if saveState === 'saving'}
-				<span class="inline-flex items-center gap-2">
-					<LoaderCircle class="size-4" data-motion-spin /> Saving routine
-				</span>
-			{:else if saveState === 'saved'}
-				<span class="inline-flex items-center gap-2">
-					<Check class="size-4" /> Routine saved
-				</span>
-			{:else if saveState === 'error'}
-				Routine could not be saved.
-			{/if}
-		</div>
+		{#if saveState !== 'idle'}
+			<div class="min-h-5 text-center text-sm text-(--text)/56" aria-live="polite">
+				{#if saveState === 'saving'}
+					<span class="inline-flex items-center gap-2">
+						<LoaderCircle class="size-4" data-motion-spin /> Saving routine
+					</span>
+				{:else if saveState === 'saved'}
+					<span class="inline-flex items-center gap-2">
+						<Check class="size-4" /> Routine saved
+					</span>
+				{:else}
+					Routine could not be saved.
+				{/if}
+			</div>
+		{/if}
 
 		{#if interactive}
 			<div class="hidden sm:block">{@render actions()}</div>

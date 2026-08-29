@@ -29,26 +29,34 @@ describe('stretch routine', () => {
 			durationSeconds: null,
 			sets: 1
 		});
-		expect(steps.every(({ imageVariants }) => imageVariants.length === 3)).toBe(true);
+		expect(steps.find(({ id }) => id === 'pancake')?.imageVariants).toHaveLength(3);
+		expect(steps.find(({ id }) => id === 'lunge-left')?.imageVariants).toHaveLength(2);
+		expect(steps.find(({ id }) => id === 'chest')?.imageVariants).toHaveLength(0);
+		expect(steps.find(({ id }) => id === 'wall-angels')?.imageVariants).toHaveLength(0);
 	});
 
 	it('uses saved image levels for each stretch', () => {
 		const steps = stretchSteps(30, {
 			...DEFAULT_STRETCH_DIFFICULTIES,
 			pancake: 'easy',
+			'lunge-left': 'hard',
 			chest: 'hard'
 		});
 
 		expect(steps.find(({ id }) => id === 'pancake')).toMatchObject({
-			imageUrl: '/stretch/activities/pancake-easy.png',
+			imageUrl: '/stretch/activities/pancake-easy.webp?v=2',
 			selectedImageVariantId: 'easy'
 		});
+		expect(steps.find(({ id }) => id === 'lunge-left')).toMatchObject({
+			imageUrl: '/stretch/activities/lunge-left-medium.webp?v=2',
+			selectedImageVariantId: 'medium'
+		});
 		expect(steps.find(({ id }) => id === 'chest')).toMatchObject({
-			imageUrl: '/stretch/activities/chest-hard.png',
-			selectedImageVariantId: 'hard'
+			imageUrl: '/stretch/activities/chest.webp?v=2',
+			selectedImageVariantId: 'medium'
 		});
 		expect(steps.find(({ id }) => id === 'lat')).toMatchObject({
-			imageUrl: '/stretch/activities/lat.webp',
+			imageUrl: '/stretch/activities/lat-medium.webp?v=2',
 			selectedImageVariantId: 'medium'
 		});
 	});

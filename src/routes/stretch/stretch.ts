@@ -1,6 +1,6 @@
 import {
 	DEFAULT_STRETCH_DIFFICULTIES,
-	STRETCH_DIFFICULTIES,
+	STRETCH_DIFFICULTIES_BY_ACTIVITY,
 	type StretchActivityId,
 	type StretchDifficulties,
 	type StretchDifficulty
@@ -134,21 +134,31 @@ function withDifficulty(
 	step: Omit<StretchStep, 'imageUrl' | 'imageVariants' | 'selectedImageVariantId'>,
 	difficulty: StretchDifficulty
 ): StretchStep {
+	const availableDifficulties = STRETCH_DIFFICULTIES_BY_ACTIVITY[step.id];
+	const selectedDifficulty = (availableDifficulties as readonly StretchDifficulty[]).includes(
+		difficulty
+	)
+		? difficulty
+		: 'medium';
 	return {
 		...step,
-		imageUrl: stretchImageUrl(step.id, difficulty),
-		imageVariants: STRETCH_DIFFICULTIES.map((id) => ({
-			id,
-			label: difficultyLabel(id),
-			imageUrl: stretchImageUrl(step.id, id)
-		})),
-		selectedImageVariantId: difficulty
+		imageUrl: stretchImageUrl(step.id, selectedDifficulty),
+		imageVariants:
+			availableDifficulties.length === 1
+				? []
+				: availableDifficulties.map((id) => ({
+						id,
+						label: difficultyLabel(id),
+						imageUrl: stretchImageUrl(step.id, id)
+					})),
+		selectedImageVariantId: selectedDifficulty
 	};
 }
 
 function stretchImageUrl(id: StretchActivityId, difficulty: StretchDifficulty) {
-	if (difficulty === 'medium') return `/stretch/activities/${id}.webp`;
-	return `/stretch/activities/${id}-${difficulty}.png`;
+	const filename =
+		id === 'chest' || id === 'wall-angels' ? `${id}.webp` : `${id}-${difficulty}.webp`;
+	return `/stretch/activities/${filename}?v=2`;
 }
 
 function difficultyLabel(difficulty: StretchDifficulty) {

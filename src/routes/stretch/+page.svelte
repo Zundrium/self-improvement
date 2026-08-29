@@ -15,7 +15,7 @@ const dateSelectorState = useDateSelectorState();
 let loadedDate = $state(untrack(() => data.date));
 let savedSession = $state<StretchSession>();
 let pendingCompletion = $state<StretchCompletion>();
-let difficulties = $state(untrack(() => structuredClone(data.settings.difficulties)));
+let difficulties = $state(untrack(() => ({ ...data.settings.difficulties })));
 let saveState = $state<SaveState>('idle');
 const completed = $derived(data.sessions.length > 0 || Boolean(savedSession));
 const interactive = $derived(data.date === data.today);
