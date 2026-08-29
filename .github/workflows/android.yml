@@ -63,6 +63,7 @@ jobs:
 
           android_namespace = 'http://schemas.android.com/apk/res/android'
           allowed_permissions = {
+              'android.permission.CAMERA',
               'android.permission.INTERNET',
               'android.permission.PACKAGE_USAGE_STATS',
               'android.permission.POST_NOTIFICATIONS',

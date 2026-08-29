@@ -2,7 +2,7 @@
 
 An Android self-improvement app with locally stored data for steps, sleep, screen time, fitness, nutrition, meditation, breathing, happiness, and period tracking.
 
-The repository root contains one SvelteKit/Svelte 5 application. Capacitor packages its static output as the Android app. There is no account system, hosted frontend, custom API, analytics, advertising, or remote application database.
+The repository root contains one SvelteKit/Svelte 5 application. Capacitor packages its static output as the Android app. There is no account system, hosted frontend, custom API, analytics, advertising, or remote application database. Optional nutrition analysis calls OpenRouter directly with a user-supplied key stored on the device.
 
 ## Architecture
 
@@ -10,11 +10,12 @@ The repository root contains one SvelteKit/Svelte 5 application. Capacitor packa
 src/ and static/
   SvelteKit SPA + Svelte 5 + Lily UI
   Dexie local state
-  manual tracker entry and local gamification
+  tracker entry and local gamification
+  optional OpenRouter nutrition analysis
             |
             v
 android/
-  Capacitor shell
+  Capacitor shell and optional camera access
   read-only Health Connect steps
   Android Usage Access
   local notifications
@@ -32,7 +33,7 @@ android/
 
 ## Data and backups
 
-Tracker data and settings are stored in the app's on-device IndexedDB database through Dexie. Steps are read from Health Connect. Screen-time and bedtime-adherence data are read from Android Usage Access. Nutrition is entered manually; the app does not use a camera, photo analysis, or AI.
+Tracker data and settings are stored in the app's on-device IndexedDB database through Dexie. Steps are read from Health Connect. Screen-time and bedtime-adherence data are read from Android Usage Access. Nutrition supports manual entry plus optional photo or description analysis through OpenRouter. The OpenRouter API key is stored in a separate local Dexie database and excluded from application backups.
 
 Profile → Data supports:
 
@@ -68,7 +69,7 @@ npm run mobile:android
 
 Root scripts are canonical. The retained `mobile:*` aliases support existing Android workflows: `mobile:build` writes the static SPA to `dist-mobile/`, `mobile:sync` copies it and the configured Capacitor plugins into `android/`, and `mobile:android:open` opens Android Studio.
 
-The merged release manifest permits Internet and package installation for signed GitHub updates, notification support, Usage Access, read-only Steps, wake lock, and boot-completed access for local reminders. Camera, exact alarm, Health write, and unrelated Health read permissions are rejected in CI.
+The merged release manifest permits Internet for OpenRouter and signed GitHub updates, optional camera access for nutrition photos, package installation for updates, notification support, Usage Access, read-only Steps, wake lock, and boot-completed access for local reminders. Exact alarm, Health write, and unrelated Health read permissions are rejected in CI.
 
 ## Validation
 
