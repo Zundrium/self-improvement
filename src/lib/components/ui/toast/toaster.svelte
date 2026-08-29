@@ -1,73 +1,140 @@
 <script lang="ts">
-import { CircleAlert, CircleCheck, X } from '@lucide/svelte';
-import { gsap } from 'gsap';
-import { Button } from '$lib/components/ui/button';
-import { type Toast, toast, toastStore } from './toast';
+	import { CircleAlert, CircleCheck, Info, X } from '@lucide/svelte';
+	import { gsap } from 'gsap';
+	import { Button } from '$lib/components/ui/button';
+	import { type Toast, type ToastId, toast, toastStore } from './toast';
 
-type Props = {
-	position?: 'bottom-center' | 'top-center';
-	offset?: { bottom?: string; top?: string };
-};
-
-let { position = 'bottom-center', offset }: Props = $props();
-const placement = $derived(position === 'top-center' ? 'top-4' : 'bottom-4');
-const offsetStyle = $derived(
-	position === 'top-center'
-		? `top: ${offset?.top ?? '1rem'}`
-		: `bottom: ${offset?.bottom ?? '1rem'}`
-);
-
-function toastMotion(node: HTMLElement, closing: boolean) {
-	let tween = enterToast(node);
-	if (closing) tween = exitToast(node);
-	return {
-		update(next: boolean) {
-			if (next && !closing) tween = exitToast(node);
-			closing = next;
-		},
-		destroy: () => tween?.kill()
+	type Props = {
+		position?: 'bottom-center' | 'top-center';
+		offset?: { bottom?: string; top?: string };
 	};
-}
 
-function enterToast(node: HTMLElement) {
-	if (prefersReducedMotion()) return;
-	return gsap.fromTo(
-		node,
-		{ autoAlpha: 0, y: position === 'top-center' ? -12 : 12, scale: 0.98 },
-		{
-			autoAlpha: 1,
-			y: 0,
-			scale: 1,
-			duration: 0.28,
-			ease: 'power2.out',
-			clearProps: 'opacity,visibility,transform'
-		}
+	let { position = 'bottom-center', offset }: Props = $props();
+	const placement = $derived(position === 'top-center' ? 'top-4' : 'bottom-4');
+	const offsetStyle = $derived(
+		position === 'top-center'
+			? `top: ${offset?.top ?? '1rem'}`
+			: `bottom: ${offset?.bottom ?? '1rem'}`
 	);
-}
 
-function exitToast(node: HTMLElement) {
-	if (prefersReducedMotion()) return;
-	return gsap.to(node, {
-		autoAlpha: 0,
-		y: position === 'top-center' ? -8 : 8,
-		scale: 0.98,
-		duration: 0.18,
-		ease: 'power2.in'
-	});
-}
+	function toastMotion(node: HTMLElement, closing: boolean) {
+		let tween = enterToast(node);
+		if (closing) tween = exitToast(node);
+		return {
+			update(next: boolean) {
+				if (next && !closing) tween = exitToast(node);
+				closing = next;
+			},
+			destroy: () => tween?.kill()
+		};
+	}
 
-function runAction(item: Toast) {
-	item.action?.onClick();
-	toast.dismiss(item.id);
-}
+	function enterToast(node: HTMLElement) {
+		if (prefersReducedMotion()) return;
+		return gsap.fromTo(
+			node,
+			{ autoAlpha: 0, y: position === 'top-center' ? -12 : 12, scale: 0.98 },
+			{
+				autoAlpha: 1,
+				y: 0,
+				scale: 1,
+				duration: 0.28,
+				ease: 'power2.out',
+				clearProps: 'opacity,visibility,transform'
+			}
+		);
+	}
 
-function prefersReducedMotion() {
-	return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
+	function exitToast(node: HTMLElement) {
+		if (prefersReducedMotion()) return;
+		return gsap.to(node, {
+			autoAlpha: 0,
+			y: position === 'top-center' ? -8 : 8,
+			scale: 0.98,
+			duration: 0.18,
+			ease: 'power2.in'
+		});
+	}
+
+	function swipeDismiss(node: HTMLElement, id: ToastId) {
+		let startX = 0;
+		let distance = 0;
+		let dragging = false;
+		const pointerDown = (event: PointerEvent) => {
+			if (event.button !== 0 || (event.target as HTMLElement).closest('button, a')) return;
+			dragging = true;
+			startX = event.clientX;
+			node.setPointerCapture(event.pointerId);
+		};
+		const pointerMove = (event: PointerEvent) => {
+			if (!dragging) return;
+			distance = event.clientX - startX;
+			gsap.set(node, {
+				x: distance,
+				opacity: 1 - Math.min(Math.abs(distance) / node.offsetWidth, 0.65)
+			});
+		};
+		const pointerEnd = (event: PointerEvent) => {
+			if (!dragging) return;
+			dragging = false;
+			if (node.hasPointerCapture(event.pointerId)) node.releasePointerCapture(event.pointerId);
+			settleSwipe(node, id, distance);
+			distance = 0;
+		};
+		node.addEventListener('pointerdown', pointerDown);
+		node.addEventListener('pointermove', pointerMove);
+		node.addEventListener('pointerup', pointerEnd);
+		node.addEventListener('pointercancel', pointerEnd);
+		return {
+			destroy() {
+				node.removeEventListener('pointerdown', pointerDown);
+				node.removeEventListener('pointermove', pointerMove);
+				node.removeEventListener('pointerup', pointerEnd);
+				node.removeEventListener('pointercancel', pointerEnd);
+				gsap.killTweensOf(node);
+			}
+		};
+	}
+
+	function settleSwipe(node: HTMLElement, id: ToastId, distance: number) {
+		if (Math.abs(distance) >= node.offsetWidth * 0.3) return dismissWithSwipe(node, id, distance);
+		gsap.to(node, {
+			x: 0,
+			opacity: 1,
+			duration: prefersReducedMotion() ? 0 : 0.22,
+			ease: 'power2.out',
+			clearProps: 'opacity,transform'
+		});
+	}
+
+	function dismissWithSwipe(node: HTMLElement, id: ToastId, distance: number) {
+		gsap.to(node, {
+			x: Math.sign(distance) * (window.innerWidth + node.offsetWidth),
+			autoAlpha: 0,
+			duration: prefersReducedMotion() ? 0 : 0.18,
+			ease: 'power2.in',
+			onComplete: () => toast.dismiss(id)
+		});
+	}
+
+	function toastColor(type: Toast['type']) {
+		if (type === 'error') return 'bg-red-500';
+		if (type === 'success') return 'bg-emerald-500';
+		return 'bg-blue-500';
+	}
+
+	function runAction(item: Toast) {
+		item.action?.onClick();
+		toast.dismiss(item.id);
+	}
+
+	function prefersReducedMotion() {
+		return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
 </script>
 
 <div
-	class={`pointer-events-none fixed ${placement} z-[60] flex w-(--app-overlay-width) max-w-sm flex-col gap-2`}
+	class={`pointer-events-none fixed left-1/2 ${placement} z-[60] flex w-(--app-overlay-width) max-w-sm -translate-x-1/2 flex-col gap-2`}
 	class:flex-col-reverse={position === 'bottom-center'}
 	style={offsetStyle}
 	aria-live="polite"
@@ -76,26 +143,26 @@ function prefersReducedMotion() {
 	{#each $toastStore as item (item.id)}
 		<article
 			use:toastMotion={item.closing}
-			class="pointer-events-auto flex items-start gap-3 rounded-3xl bg-(--bg-elevated) px-4 py-3.5 text-(--text) ring-1 ring-(--text)/8"
+			use:swipeDismiss={item.id}
+			class={`pointer-events-auto flex touch-pan-y items-center gap-4 rounded-3xl px-5 py-4 text-white ${toastColor(item.type)}`}
 			role={item.type === 'error' ? 'alert' : 'status'}
 		>
 			{#if item.type === 'error'}
-				<CircleAlert class="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
+				<CircleAlert class="size-10 shrink-0" aria-hidden="true" />
+			{:else if item.type === 'success'}
+				<CircleCheck class="size-10 shrink-0" aria-hidden="true" />
 			{:else}
-				<CircleCheck
-					class="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400"
-					aria-hidden="true"
-				/>
+				<Info class="size-10 shrink-0" aria-hidden="true" />
 			{/if}
 			<div class="min-w-0 flex-1">
 				<p class="text-sm font-medium leading-5">{item.message}</p>
 				{#if item.description}
-					<p class="mt-0.5 text-sm leading-5 text-(--text)/56">{item.description}</p>
+					<p class="mt-0.5 text-sm leading-5 text-white/80">{item.description}</p>
 				{/if}
 				{#if item.action}
 					<Button
 						size="sm"
-						class="mt-2 h-7 bg-(--text)/6 px-3 text-xs hover:bg-(--text)/10"
+						class="mt-2 h-7 bg-white/20 px-3 text-xs text-white hover:bg-white/30"
 						onclick={() => runAction(item)}>{item.action.label}</Button
 					>
 				{/if}
@@ -103,10 +170,10 @@ function prefersReducedMotion() {
 			<Button
 				variant="ghost"
 				size="icon"
-				class="-mr-1 -mt-1 size-8 text-(--text)/48 hover:text-(--text)"
+				class="size-8 self-center bg-transparent text-white/80 hover:bg-transparent hover:text-white"
 				aria-label={`Dismiss ${item.message}`}
 				onclick={() => toast.dismiss(item.id)}
-			><X class="size-4" aria-hidden="true" /></Button>
+			><X class="size-5" aria-hidden="true" /></Button>
 		</article>
 	{/each}
 </div>
