@@ -1,46 +1,95 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { untrack } from 'svelte';
-	import { apiRequest } from '$lib/api';
+	import { onMount, untrack } from 'svelte';
+	import { apiRequest, recordAchievementEvents } from '$lib/api';
 	import ThemeToggle from '$lib/components/themeToggle.svelte';
+	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
-	import { Spinner } from '$lib/components/ui/spinner';
 	import { toast } from '$lib/components/ui/toast';
 	import type { LocalProfile } from '$lib/api-types';
+	import { localSecretStore } from '$lib/local/secrets';
 	import OpenRouterSettings from './openRouterSettings.svelte';
 
 	let { profile }: { profile: LocalProfile } = $props();
 	let name = $state(untrack(() => profile.name));
+	let savedName = $state(untrack(() => profile.name));
+	let apiKey = $state('');
+	let configured = $state(false);
+	let loadingKey = $state(true);
 	let message = $state('');
 	let failed = $state(false);
 	let busy = $state(false);
+	const dirty = $derived(name.trim() !== savedName || Boolean(apiKey.trim()));
 
-	async function updateProfile(event: SubmitEvent) {
-		event.preventDefault();
-		busy = true;
+	onMount(() => void loadOpenRouterStatus());
+
+	async function loadOpenRouterStatus() {
 		try {
-			await apiRequest('/api/app/profile', {
-				method: 'PATCH',
-				body: JSON.stringify({ name: name.trim() })
-			});
+			configured = Boolean(await localSecretStore.openRouterApiKey());
+			if (configured) await recordAchievementEvents('setup-openrouter-configured');
+		} catch {
+			toast.error('Could not read the local OpenRouter settings.');
+		} finally {
+			loadingKey = false;
+		}
+	}
+
+	async function saveChanges(event: SubmitEvent) {
+		event.preventDefault();
+		if (busy || !dirty) return;
+		busy = true;
+		message = '';
+		try {
+			const trimmedName = name.trim();
+			const trimmedApiKey = apiKey.trim();
+			await Promise.all([
+				trimmedName === savedName
+					? Promise.resolve()
+					: apiRequest('/api/app/profile', {
+							method: 'PATCH',
+							body: JSON.stringify({ name: trimmedName })
+						}),
+				trimmedApiKey ? localSecretStore.saveOpenRouterApiKey(trimmedApiKey) : Promise.resolve()
+			]);
+			if (trimmedApiKey) {
+				await recordAchievementEvents('setup-openrouter-configured');
+				configured = true;
+				apiKey = '';
+			}
+			savedName = trimmedName;
 			failed = false;
-			message = 'Profile updated.';
+			message = 'Changes saved.';
 			toast.success(message);
 			await invalidateAll();
 		} catch (cause) {
 			failed = true;
-			message = cause instanceof Error ? cause.message : 'Could not update your profile.';
+			message = cause instanceof Error ? cause.message : 'Could not save your changes.';
+		} finally {
+			busy = false;
+		}
+	}
+
+	async function clearApiKey() {
+		if (busy) return;
+		busy = true;
+		try {
+			await localSecretStore.clearOpenRouterApiKey();
+			apiKey = '';
+			configured = false;
+			toast.success('OpenRouter API key removed.');
+		} catch {
+			toast.error('Could not remove the OpenRouter API key.');
 		} finally {
 			busy = false;
 		}
 	}
 </script>
 
-<div class="space-y-4">
+<form id="general-settings" class="space-y-4" onsubmit={saveChanges}>
 	<Card>
 		<CardHeader><CardTitle>Appearance</CardTitle></CardHeader>
 		<CardContent class="flex items-center justify-between gap-4">
@@ -54,23 +103,37 @@
 
 	<Card>
 		<CardHeader><CardTitle>Local profile</CardTitle></CardHeader>
-		<CardContent>
-			<form class="space-y-5" onsubmit={updateProfile}>
-				{#if message}
-					<Alert variant={failed ? 'destructive' : 'default'}>
-						<AlertDescription>{message}</AlertDescription>
-					</Alert>
-				{/if}
-				<Field>
-					<FieldLabel for="name">Name</FieldLabel>
-					<Input id="name" bind:value={name} minlength={2} required />
-				</Field>
-				<Button type="submit" disabled={busy}>
-					{#if busy}<Spinner class="size-4" />{/if} Save profile
-				</Button>
-			</form>
+		<CardContent class="space-y-5">
+			{#if message}
+				<Alert variant={failed ? 'destructive' : 'default'}>
+					<AlertDescription>{message}</AlertDescription>
+				</Alert>
+			{/if}
+			<Field>
+				<FieldLabel for="name">Name</FieldLabel>
+				<Input id="name" bind:value={name} minlength={2} required />
+			</Field>
 		</CardContent>
 	</Card>
 
-	<OpenRouterSettings />
-</div>
+	<OpenRouterSettings
+		bind:apiKey
+		{configured}
+		loading={loadingKey}
+		{busy}
+		onclear={clearApiKey}
+	/>
+</form>
+
+<BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
+	<Button
+		form="general-settings"
+		type="submit"
+		size="lg"
+		variant={dirty ? 'default' : 'ghost'}
+		class="w-full"
+		disabled={!dirty || busy || loadingKey}
+	>
+		{busy ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
+	</Button>
+</BottomActionBar>
