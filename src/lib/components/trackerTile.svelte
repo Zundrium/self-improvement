@@ -47,7 +47,7 @@
 	<span class="relative shrink-0">
 		<span
 			class="flex size-14 items-center justify-center rounded-2xl text-white"
-			style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary}); box-shadow: 0 0.5rem 2.5rem color-mix(in srgb, ${colors.primary} 38%, transparent)`}
+			style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`}
 		>
 			{#if pending}
 				<LoaderCircle class="size-8" data-motion-spin />
