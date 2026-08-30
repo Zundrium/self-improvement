@@ -4,6 +4,7 @@
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { HappinessSettingsData } from '$lib/api-types';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import TrackerPage from '$lib/components/trackerPage.svelte';
 	import TrackerSection from '$lib/components/trackerSection.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -44,7 +45,7 @@
 		description="Choose the happiness level selected for a new entry."
 		{colors}
 	>
-		<form class="space-y-6" onsubmit={saveSettings}>
+		<form id="happiness-settings" class="space-y-6" onsubmit={saveSettings}>
 			<Field>
 				<FieldLabel>Default happiness level</FieldLabel>
 				<div class="grid grid-cols-5 gap-2">
@@ -66,7 +67,8 @@
 				</div>
 				<FieldDescription class="text-center">{happinessLabel(defaultRating)}</FieldDescription>
 			</Field>
-			<Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
 		</form>
 	</TrackerSection>
 </TrackerPage>
+
+<SettingsSaveBar form="happiness-settings" {saving} />

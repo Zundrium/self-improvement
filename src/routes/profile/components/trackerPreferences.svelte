@@ -2,9 +2,8 @@
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
-	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { toast } from '$lib/components/ui/toast';
@@ -88,15 +87,9 @@
 	</Card>
 </form>
 
-<BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
-	<Button
-		form="tracker-preferences"
-		type="submit"
-		size="lg"
-		variant={dirty ? 'default' : 'ghost'}
-		class="w-full"
-		disabled={!dirty || saving}
-	>
-		{saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
-	</Button>
-</BottomActionBar>
+<SettingsSaveBar
+	form="tracker-preferences"
+	{saving}
+	{dirty}
+	contentClass="max-w-4xl"
+/>

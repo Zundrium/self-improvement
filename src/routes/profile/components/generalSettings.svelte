@@ -3,9 +3,8 @@
 	import { onMount, untrack } from 'svelte';
 	import { apiRequest, recordAchievementEvents } from '$lib/api';
 	import ThemeToggle from '$lib/components/themeToggle.svelte';
-	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
@@ -125,15 +124,10 @@
 	/>
 </form>
 
-<BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
-	<Button
-		form="general-settings"
-		type="submit"
-		size="lg"
-		variant={dirty ? 'default' : 'ghost'}
-		class="w-full"
-		disabled={!dirty || busy || loadingKey}
-	>
-		{busy ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
-	</Button>
-</BottomActionBar>
+<SettingsSaveBar
+	form="general-settings"
+	saving={busy}
+	{dirty}
+	disabled={loadingKey}
+	contentClass="max-w-4xl"
+/>

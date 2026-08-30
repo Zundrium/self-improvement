@@ -5,7 +5,7 @@
 	import { apiRequest } from '$lib/api';
 	import type { ScreenTimeSettingsData } from '$lib/api-types';
 	import TrackerSection from '$lib/components/trackerSection.svelte';
-	import { Button } from '$lib/components/ui/button';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { getTrackerColors } from '$lib/trackers/registry';
@@ -39,7 +39,7 @@
 	description="Set the amount of tracked screen time you want to stay within."
 	{colors}
 >
-	<form class="space-y-6" onsubmit={saveSettings}>
+	<form id="screen-time-settings" class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="daily-limit">Minutes per day</FieldLabel>
 			<Input
@@ -52,6 +52,7 @@
 			/>
 			<FieldDescription>Choose a limit from 1 minute to 24 hours.</FieldDescription>
 		</Field>
-		<Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
 	</form>
 </TrackerSection>
+
+<SettingsSaveBar form="screen-time-settings" {saving} />

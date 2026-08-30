@@ -5,7 +5,7 @@ import { toast } from '$lib/components/ui/toast';
 import { apiRequest } from '$lib/api';
 import type { StretchSettingsData } from '$lib/api-types';
 import TrackerSection from '$lib/components/trackerSection.svelte';
-import { Button } from '$lib/components/ui/button';
+import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 import { Input } from '$lib/components/ui/input';
 import { getTrackerColors } from '$lib/trackers/registry';
@@ -50,7 +50,7 @@ function showError(cause: unknown) {
 	description="Choose the hold length for each of the two daily sets. The source video recommends 30 seconds."
 	{colors}
 >
-	<form class="space-y-6" onsubmit={saveSettings}>
+	<form id="stretch-settings" class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="stretch-hold-seconds">Hold duration (seconds)</FieldLabel>
 			<Input
@@ -64,6 +64,7 @@ function showError(cause: unknown) {
 			/>
 			<FieldDescription>Timed holds take {duration}, followed by wall angels.</FieldDescription>
 		</Field>
-		<Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
 	</form>
 </TrackerSection>
+
+<SettingsSaveBar form="stretch-settings" {saving} />

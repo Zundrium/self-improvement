@@ -4,7 +4,7 @@
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { SleepSettingsData } from '$lib/api-types';
-	import { Button } from '$lib/components/ui/button';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
@@ -57,7 +57,7 @@
 	}
 </script>
 
-<form class="space-y-6" onsubmit={saveSettings}>
+<form id="sleep-settings" class="space-y-6" onsubmit={saveSettings}>
 	<Field>
 		<FieldLabel for="bedtime">Bedtime</FieldLabel>
 		<Input id="bedtime" name="bedtime" type="time" bind:value={bedtime} required />
@@ -76,5 +76,6 @@
 		</label>
 	</div>
 
-	<Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
 </form>
+
+<SettingsSaveBar form="sleep-settings" {saving} />

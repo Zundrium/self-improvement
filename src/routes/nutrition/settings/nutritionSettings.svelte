@@ -4,6 +4,7 @@
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { NutritionProfile } from '$lib/api-types';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Field, FieldDescription, FieldGroup, FieldLabel } from '$lib/components/ui/field';
@@ -49,7 +50,7 @@
 </script>
 
 {#if profile}
-	<form class="space-y-5" onsubmit={saveNutrition}>
+	<form id="nutrition-settings" class="space-y-5" onsubmit={saveNutrition}>
 				<p class="text-sm text-(--text)/64">
 					Your estimated maintenance is {estimatedTdee} kcal per day.
 				</p>
@@ -183,10 +184,8 @@
 						<FieldDescription>This reminder never blocks meal logging.</FieldDescription>
 					</div>
 				</FieldGroup>
-				<Button type="submit" disabled={saving}>
-					{saving ? 'Saving…' : 'Save settings'}
-				</Button>
 	</form>
+	<SettingsSaveBar form="nutrition-settings" {saving} contentClass="max-w-3xl" />
 {:else}
 	<div class="space-y-4">
 				<p class="text-sm leading-6 text-(--text)/64">

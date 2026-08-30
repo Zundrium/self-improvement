@@ -5,7 +5,7 @@
 	import { apiRequest } from '$lib/api';
 	import type { MeditationSettingsData } from '$lib/api-types';
 	import TrackerSection from '$lib/components/trackerSection.svelte';
-	import { Button } from '$lib/components/ui/button';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { getTrackerColors } from '$lib/trackers/registry';
@@ -39,7 +39,7 @@
 	description="Choose the duration a new meditation session starts with."
 	{colors}
 >
-	<form class="space-y-6" onsubmit={saveSettings}>
+	<form id="meditation-settings" class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="default-duration">Default duration (minutes)</FieldLabel>
 			<Input
@@ -52,6 +52,7 @@
 			/>
 			<FieldDescription>Set a duration from 1 minute to 2 hours.</FieldDescription>
 		</Field>
-		<Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
 	</form>
 </TrackerSection>
+
+<SettingsSaveBar form="meditation-settings" {saving} />

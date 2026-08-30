@@ -4,9 +4,9 @@
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { PeriodSettingsData } from '$lib/api-types';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import TrackerPage from '$lib/components/trackerPage.svelte';
 	import TrackerSection from '$lib/components/trackerSection.svelte';
-	import { Button } from '$lib/components/ui/button';
 	import { Field, FieldDescription, FieldGroup, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
@@ -47,7 +47,7 @@
 		description="Set the starting values used when you log a period."
 		{colors}
 	>
-		<form class="space-y-6" onsubmit={saveSettings}>
+		<form id="period-settings" class="space-y-6" onsubmit={saveSettings}>
 			<FieldGroup>
 				<Field>
 					<FieldLabel>Default flow</FieldLabel>
@@ -73,7 +73,8 @@
 					<FieldDescription>Used until your saved history can calculate an average.</FieldDescription>
 				</Field>
 			</FieldGroup>
-			<Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
 		</form>
 	</TrackerSection>
 </TrackerPage>
+
+<SettingsSaveBar form="period-settings" {saving} />

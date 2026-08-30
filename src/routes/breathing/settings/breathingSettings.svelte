@@ -5,7 +5,7 @@
 	import { apiRequest } from '$lib/api';
 	import type { BreathingSettingsData } from '$lib/api-types';
 	import TrackerSection from '$lib/components/trackerSection.svelte';
-	import { Button } from '$lib/components/ui/button';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
@@ -43,7 +43,7 @@
 	description="Choose how each guided breathing exercise is paced."
 	{colors}
 >
-	<form class="space-y-6" onsubmit={saveSettings}>
+	<form id="breathing-settings" class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="breathing-rounds">Rounds</FieldLabel>
 			<Input id="breathing-rounds" type="number" min={1} max={20} bind:value={rounds} required />
@@ -56,6 +56,7 @@
 			</label>
 			<FieldDescription>Use the 4–7–8 pattern instead of 4–8 breathing.</FieldDescription>
 		</Field>
-		<Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
 	</form>
 </TrackerSection>
+
+<SettingsSaveBar form="breathing-settings" {saving} />

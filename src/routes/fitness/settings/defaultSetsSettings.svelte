@@ -5,7 +5,7 @@
 	import { apiRequest } from '$lib/api';
 	import type { FitnessSettingsData } from '$lib/api-types';
 	import TrackerSection from '$lib/components/trackerSection.svelte';
-	import { Button } from '$lib/components/ui/button';
+	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { getTrackerColors } from '$lib/trackers/registry';
@@ -39,7 +39,7 @@
 	description="Choose how many sets a new workout starts with."
 	{colors}
 >
-	<form class="space-y-6" onsubmit={saveSettings}>
+	<form id="fitness-settings" class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="default-sets">Default sets</FieldLabel>
 			<Input
@@ -54,6 +54,7 @@
 				Used up to the sets available for a workout; you can still adjust before starting.
 			</FieldDescription>
 		</Field>
-		<Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>
 	</form>
 </TrackerSection>
+
+<SettingsSaveBar form="fitness-settings" {saving} contentClass="max-w-6xl" />
