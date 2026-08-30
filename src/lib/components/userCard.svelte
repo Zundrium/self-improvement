@@ -58,7 +58,7 @@ async function refreshGamification() {
 		>
 			<Pressable
 				href="/achievements"
-				class="h-28 min-w-0 flex-col gap-2 rounded-none bg-(--bg-elevated) px-1 text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
+				class="h-28 min-w-0 flex-col items-center justify-center gap-2 rounded-none bg-(--bg-elevated) px-1 text-center text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
 				aria-label={`${gamification.achievementCount} achievements completed`}
 				onclick={onSelect}
 			>
@@ -72,7 +72,7 @@ async function refreshGamification() {
 
 			<Pressable
 				href="/streaks"
-				class="h-28 min-w-0 flex-col gap-2 rounded-none bg-(--bg-elevated) px-1 text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
+				class="h-28 min-w-0 flex-col items-center justify-center gap-2 rounded-none bg-(--bg-elevated) px-1 text-center text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
 				aria-label={`${gamification.dayStreak.current} day streak`}
 				onclick={onSelect}
 			>
@@ -86,7 +86,7 @@ async function refreshGamification() {
 
 			<Pressable
 				href="/shop"
-				class="h-28 min-w-0 flex-col gap-2 rounded-none bg-(--bg-elevated) px-1 text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
+				class="h-28 min-w-0 flex-col items-center justify-center gap-2 rounded-none bg-(--bg-elevated) px-1 text-center text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
 				aria-label={`${gamification.glimmers} Glimmers. Open shop.`}
 				onclick={onSelect}
 			>
