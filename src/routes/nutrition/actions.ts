@@ -1,4 +1,5 @@
 import type { ActionCandidate } from '$lib/actions/contracts';
+import { isEatingWindowOpen } from './nutrition';
 
 export const nutritionActionCandidates: ActionCandidate[] = [
 	{
@@ -15,6 +16,25 @@ export const nutritionActionCandidates: ActionCandidate[] = [
 				title: 'Set up your nutrition goals',
 				reason: 'Set your daily goals',
 				action: { type: 'navigate', href: '/nutrition/onboarding' }
+			};
+		}
+	},
+	{
+		id: 'nutrition.eating-window-open',
+		trackerIds: ['nutrition'],
+		resolve(snapshot, environment) {
+			const nutrition = snapshot.trackers.nutrition;
+			if (nutrition.date !== environment.localDate || nutrition.fasting) return null;
+			if (!nutrition.eatingWindow) return null;
+			if (!isEatingWindowOpen(nutrition.eatingWindow, environment.localMinuteOfDay)) return null;
+			return {
+				id: `nutrition.eating-window-open:${nutrition.date}`,
+				priority: 'activity',
+				score: 60,
+				icon: 'tracker',
+				title: 'Add a meal',
+				reason: 'Your eating window is open',
+				action: { type: 'navigate', href: `/nutrition/track?date=${nutrition.date}` }
 			};
 		}
 	},

@@ -1,4 +1,5 @@
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+export type EatingWindowSchedule = { start: string; end: string };
 
 const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
 	sedentary: 1.2,
@@ -26,4 +27,13 @@ export function calculateTdee(
 	activity: ActivityLevel
 ) {
 	return Math.round(calculateBmr(weightKg, heightCm, age, gender) * ACTIVITY_MULTIPLIERS[activity]);
+}
+
+export function isEatingWindowOpen(schedule: EatingWindowSchedule, currentMinute: number) {
+	return currentMinute >= minutesFromTime(schedule.start) && currentMinute < minutesFromTime(schedule.end);
+}
+
+function minutesFromTime(time: string) {
+	const [hour, minute] = time.split(':').map(Number);
+	return hour * 60 + minute;
 }
