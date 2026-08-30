@@ -60,8 +60,9 @@
 	const dateNavigation = $derived(
 		createDateNavigation(page.url.pathname, page.data as DatedPageData)
 	);
+	const selectedTracker = $derived(getTrackerForPathname(page.url.pathname));
 	const selectedFeature = $derived(
-		getTrackerForPathname(page.url.pathname) ?? getShopFeatureForPathname(page.url.pathname)
+		selectedTracker ?? getShopFeatureForPathname(page.url.pathname)
 	);
 	const standalonePage = $derived(page.url.pathname === ANDROID_SETUP_PATH);
 	const appShellActive = $derived(!standalonePage);
@@ -196,7 +197,10 @@
 />
 
 <div
-	class={appShellActive ? 'safe-area-padding-top flex h-svh flex-col overflow-hidden' : undefined}
+	class={appShellActive
+		? `safe-area-padding-top flex h-svh flex-col overflow-hidden ${selectedTracker ? 'tracker-fade' : ''}`
+		: undefined}
+	style:--tracker-fade-color={selectedTracker?.colors.primary}
 	use:motionRoot
 >
 	{#if dateNavigation || selectedFeature}
