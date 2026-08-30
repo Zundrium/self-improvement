@@ -1,28 +1,44 @@
 <script lang="ts">
-	import NativeDataHelpAlert from '$lib/components/nativeDataHelpAlert.svelte';
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import BedtimeHistory from './components/bedtimeHistory.svelte';
-	import BedtimeStatus from './components/bedtimeStatus.svelte';
-	import LateActivity from './components/lateActivity.svelte';
-	import type { PageProps } from './$types';
+import { Moon } from '@lucide/svelte';
+import { onMount } from 'svelte';
+import TrackerPage from '$lib/components/trackerPage.svelte';
+import { getTrackerColors } from '$lib/trackers/registry';
+import { formatBedtime, formatTimeUntilBedtime } from './sleep';
+import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
+let { data }: PageProps = $props();
+const colors = getTrackerColors('sleep');
+let now = $state(new Date());
+const timeUntilBedtime = $derived(formatTimeUntilBedtime(data.bedtime, now));
+
+onMount(() => {
+	const interval = window.setInterval(() => (now = new Date()), 30_000);
+	return () => window.clearInterval(interval);
+});
 </script>
 
 <svelte:head>
 	<title>Sleep · Self Improvement</title>
-	<meta name="description" content="Protect bedtime by limiting selected-app activity." />
+	<meta name="description" content="Keep your bedtime in view." />
 </svelte:head>
 
-<TrackerPage class="max-w-3xl" contentClass="space-y-8">
-	<BedtimeStatus
-		summary={data.summary}
-		setupRequired={data.setupRequired}
-		isToday={data.date === data.today}
-	/>
-	{#if !data.hasData && !data.setupRequired}
-		<NativeDataHelpAlert tracker="sleep" isSynced={data.isSynced} />
-	{/if}
-	<LateActivity summary={data.summary} setupRequired={data.setupRequired} />
-	<BedtimeHistory days={data.days} today={data.today} setupRequired={data.setupRequired} />
+<TrackerPage
+	class="flex max-w-(--app-compact-max-width) flex-col"
+	contentClass="flex flex-1 items-center justify-center"
+>
+	<section class="pb-8 text-center" aria-label="Bedtime" data-motion-item>
+		<Moon
+			class="mx-auto mb-6 size-56 sm:size-64"
+			color={colors.primary}
+			strokeWidth={1.5}
+			aria-hidden="true"
+		/>
+		<p class="text-4xl leading-tight font-medium tracking-[-0.055em] tabular-nums sm:text-5xl">
+			{timeUntilBedtime}
+		</p>
+		<p class="mt-3 text-sm text-(--text)/48">until bedtime</p>
+		<time class="mt-1 block text-sm font-medium tabular-nums" datetime={data.bedtime}>
+			{formatBedtime(data.bedtime)}
+		</time>
+	</section>
 </TrackerPage>
