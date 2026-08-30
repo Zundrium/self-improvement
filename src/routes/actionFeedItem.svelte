@@ -52,7 +52,8 @@
 	{#if item.action.type === 'navigate'}
 		<a
 			href={resolve(item.action.href as '/')}
-			class="flex min-h-20 touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5"
+			class="action-card relative flex min-h-20 touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5"
+			style={`--action-primary: ${trackerColors?.primary ?? 'var(--text)'}`}
 			use:interactionScale={{ hover: 1.01, pressed: 0.96 }}
 		>
 			{@render actionContent()}
@@ -60,7 +61,8 @@
 	{:else}
 		<button
 			type="button"
-			class="flex min-h-20 w-full cursor-pointer touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5 disabled:pointer-events-none disabled:opacity-60"
+			class="action-card relative flex min-h-20 w-full cursor-pointer touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5 disabled:pointer-events-none disabled:opacity-60"
+			style={`--action-primary: ${trackerColors?.primary ?? 'var(--text)'}`}
 			disabled={busy}
 			aria-busy={busy}
 			use:interactionScale={{ disabled: busy, hover: 1.01, pressed: 0.96 }}
@@ -70,3 +72,22 @@
 		</button>
 	{/if}
 </div>
+
+<style>
+	.action-card::before {
+		position: absolute;
+		top: 50%;
+		left: -3rem;
+		width: 12rem;
+		aspect-ratio: 1;
+		translate: 0 -50%;
+		border-radius: 9999px;
+		background: radial-gradient(
+			circle,
+			color-mix(in srgb, var(--action-primary) 10%, transparent),
+			transparent 70%
+		);
+		content: '';
+		pointer-events: none;
+	}
+</style>
