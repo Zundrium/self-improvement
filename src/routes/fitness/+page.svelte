@@ -137,7 +137,6 @@
 			workout={selectedWorkoutWithSpeeds}
 			{audioManager}
 			completed={completedDateKeys.has(data.date)}
-			saving={savingDateKeys.has(data.date)}
 			ontoggle={() => toggleComplete(selectedWorkoutWithSpeeds.id)}
 			onspeedchange={handleSpeedChange}
 		/>

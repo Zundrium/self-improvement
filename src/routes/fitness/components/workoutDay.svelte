@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Check, Clock3, Gauge, Minus, Play, Plus } from '@lucide/svelte';
+	import { Clock3, Gauge, Minus, Play, Plus } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
 
@@ -7,7 +7,6 @@
 	import TrackerSection from '$lib/components/trackerSection.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { Card } from '$lib/components/ui/card';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import type { Workout } from '../fitness';
 	import WorkoutSession from './workoutSession.svelte';
@@ -17,7 +16,6 @@
 		workout: Workout;
 		audioManager?: AudioManager;
 		completed: boolean;
-		saving?: boolean;
 		ontoggle: () => void | Promise<void>;
 		onspeedchange: (exerciseId: number, speedPercent: number) => void;
 	}
@@ -27,7 +25,6 @@
 		workout,
 		audioManager,
 		completed,
-		saving = false,
 		ontoggle,
 		onspeedchange
 	}: Props = $props();
@@ -64,16 +61,29 @@
 </script>
 
 {#snippet actions()}
-	<Button
-		size="lg"
-		class="w-full bg-black px-2 text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-		disabled={saving}
-		aria-pressed={completed}
-		onclick={ontoggle}
-	>
-		<Check class="mr-1 size-4" />
-		{completed ? 'Completed' : 'Mark complete'}
-	</Button>
+	<div class="flex h-11 items-center justify-between" aria-label="Workout sets">
+		<Button
+			variant="ghost"
+			size="icon"
+			class="size-9"
+			onclick={() => adjustSets(-1)}
+			aria-label="Decrease sets"
+		>
+			<Minus class="size-4" />
+		</Button>
+		<strong class="text-base font-medium tabular-nums">
+			{configuredSets} {configuredSets === 1 ? 'set' : 'sets'}
+		</strong>
+		<Button
+			variant="ghost"
+			size="icon"
+			class="size-9"
+			onclick={() => adjustSets(1)}
+			aria-label="Increase sets"
+		>
+			<Plus class="size-4" />
+		</Button>
+	</div>
 	<Button
 		size="lg"
 		class="w-full px-2 text-white"
@@ -96,30 +106,32 @@
 	/>
 {:else}
 	<section class="mx-auto max-w-3xl" aria-labelledby="workout-title">
-		<Card class="gap-4">
-			<Badge>Day {workout.day}</Badge>
+		<div class="space-y-4">
 			<div>
 				<h2
 					id="workout-title"
 					class="text-3xl font-medium tracking-[-0.04em] sm:text-4xl"
 					style={`color: ${colors.primary}`}
 				>
-					{focus}
+					<Badge class="mr-2 align-middle text-white" style={`background: ${colors.primary}`}>
+						Day {workout.day}
+					</Badge>
+					<span class="align-middle">{focus}</span>
 				</h2>
 				<p class="mt-2 max-w-2xl text-sm leading-6 text-(--text)/56">{workout.description}</p>
 			</div>
-			<div class="flex flex-wrap gap-x-4 gap-y-2 text-sm text-(--text)/56">
-				<span class="flex items-center gap-2">
-					<Clock3 class="size-4" />
-					{workout.restBetweenExercises}s rests
-				</span>
+			<div class="flex flex-wrap gap-2">
+				<Badge>
+					<Clock3 class="size-3.5" />
+					{workout.restBetweenExercises === 0
+						? 'No rests'
+						: `${workout.restBetweenExercises}s rests`}
+				</Badge>
 				{#if hasRepExercises}
-					<span class="flex items-center gap-2">
-						<Gauge class="size-4" /> Rep cadence applied
-					</span>
+					<Badge><Gauge class="size-3.5" /> Guided reps</Badge>
 				{/if}
 			</div>
-		</Card>
+		</div>
 
 		<TrackerSection title="Exercises" {colors} class="mt-8">
 			<div class="space-y-1">
@@ -143,28 +155,6 @@
 						{/if}
 					</div>
 				{/each}
-			</div>
-		</TrackerSection>
-
-		<TrackerSection
-			title="Sets"
-			description="Choose how many times to complete the exercise list."
-			{colors}
-			class="mt-8"
-		>
-			<div class="flex items-center justify-center gap-6 py-2">
-				<Button
-					variant="ghost"
-					size="icon"
-					onclick={() => adjustSets(-1)}
-					aria-label="Decrease sets"><Minus class="size-4" /></Button
-				>
-				<strong class="min-w-12 text-center text-4xl font-medium tabular-nums">
-					{configuredSets}
-				</strong>
-				<Button variant="ghost" size="icon" onclick={() => adjustSets(1)} aria-label="Increase sets"
-					><Plus class="size-4" /></Button
-				>
 			</div>
 		</TrackerSection>
 
