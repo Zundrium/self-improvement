@@ -15,14 +15,24 @@ describe('toast', () => {
 		expect(get(toastStore)).toMatchObject([{ id: 'settings', message: 'Failed', type: 'error' }]);
 	});
 
-	it('dismisses a toast after its duration', () => {
+	it('dismisses a toast after ten seconds by default', () => {
+		vi.useFakeTimers();
+		toast.success('Saved');
+
+		vi.advanceTimersByTime(9_999);
+		expect(get(toastStore)[0]?.closing).toBe(false);
+		vi.advanceTimersByTime(1);
+		expect(get(toastStore)[0]?.closing).toBe(true);
+		vi.runAllTimers();
+
+		expect(get(toastStore)).toEqual([]);
+	});
+
+	it('supports a custom duration', () => {
 		vi.useFakeTimers();
 		toast.success('Saved', { duration: 100 });
 
 		vi.advanceTimersByTime(100);
 		expect(get(toastStore)[0]?.closing).toBe(true);
-		vi.runAllTimers();
-
-		expect(get(toastStore)).toEqual([]);
 	});
 });

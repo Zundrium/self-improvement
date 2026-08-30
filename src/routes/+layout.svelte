@@ -237,6 +237,6 @@
 <TrackerCompleteOverlay />
 <GamificationToast gamification={data.gamification} />
 <Toaster
-	position="bottom-center"
-	offset={appShellActive ? { bottom: 'calc(5rem + env(safe-area-inset-bottom))' } : undefined}
+	position="top-center"
+	offset={{ top: 'calc(1rem + var(--app-safe-area-inset-top))' }}
 />

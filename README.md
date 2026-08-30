@@ -9,7 +9,7 @@ The repository root contains one SvelteKit/Svelte 5 application. Capacitor packa
 ```text
 src/ and static/
   SvelteKit SPA + Svelte 5 + Lily UI
-  Dexie local state
+  native SQLite state with browser Dexie fallback
   tracker entry and local gamification
   optional OpenRouter nutrition analysis
             |
@@ -23,7 +23,7 @@ android/
 ```
 
 - `src/routes/` contains the app screens and tracker UI.
-- `src/lib/local/` owns Dexie state, local mutations, native-data processing, gamification, and JSON backup validation.
+- `src/lib/local/` owns native SQLite state, the browser Dexie fallback, local mutations, native-data processing, gamification, and JSON backup validation.
 - `src/native/` owns Android lifecycle, Health Connect, Usage Access, notifications, signed app updates, file selection, and Google Drive backup integration.
 - `src/domain/` validates and transforms native tracker data before it is saved locally.
 - `static/` contains bundled fitness media and the privacy policy.
@@ -33,7 +33,7 @@ android/
 
 ## Data and backups
 
-Tracker data and settings are stored in the app's on-device IndexedDB database through Dexie. Steps are read from Health Connect. Screen-time and bedtime-adherence data are read from Android Usage Access. Nutrition supports manual entry plus optional photo or description analysis through OpenRouter. The OpenRouter API key is stored in a separate local Dexie database and excluded from application backups.
+Tracker data and settings are stored in an on-device SQLite database on Android. Browser development retains a Dexie-backed IndexedDB fallback. Steps are read from Health Connect. Screen-time and bedtime-adherence data are read from Android Usage Access. Nutrition supports manual entry plus optional photo or description analysis through OpenRouter. The OpenRouter API key is stored separately and excluded from application backups.
 
 Profile → Data supports:
 

@@ -9,7 +9,7 @@
 		offset?: { bottom?: string; top?: string };
 	};
 
-	let { position = 'bottom-center', offset }: Props = $props();
+	let { position = 'top-center', offset }: Props = $props();
 	const placement = $derived(position === 'top-center' ? 'top-4' : 'bottom-4');
 	const offsetStyle = $derived(
 		position === 'top-center'

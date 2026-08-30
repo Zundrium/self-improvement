@@ -16,7 +16,7 @@ export type Toast = ToastOptions & {
 	closing: boolean;
 };
 
-const defaultDuration = 5_000;
+const defaultDuration = 10_000;
 const exitDuration = 180;
 const timers = new Map<ToastId, ReturnType<typeof setTimeout>>();
 export const toastStore = writable<Toast[]>([]);
