@@ -5,14 +5,12 @@
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { ScreenTimeSettingsData } from '$lib/api-types';
-	import TrackerSection from '$lib/components/trackerSection.svelte';
 	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
-	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
-	import { getTrackerColors } from '$lib/trackers/registry';
 
 	let { settings }: { settings: ScreenTimeSettingsData } = $props();
-	const colors = getTrackerColors('screen-time');
 	let dailyLimitMinutes = $state(untrack(() => settings.dailyLimitMinutes));
 	let saving = $state(false);
 
@@ -35,25 +33,24 @@
 	}
 </script>
 
-<TrackerSection
-	title="Daily limit"
-	description="Set the amount of tracked screen time you want to stay within."
-	{colors}
->
-	<Form id="screen-time-settings" onsubmit={saveSettings}>
-		<Field class="max-w-xs">
-			<FieldLabel for="daily-limit">Minutes per day</FieldLabel>
-			<Input
-				id="daily-limit"
-				type="number"
-				min={1}
-				max={1440}
-				bind:value={dailyLimitMinutes}
-				required
-			/>
-			<FieldDescription>Choose a limit from 1 minute to 24 hours.</FieldDescription>
-		</Field>
-	</Form>
-</TrackerSection>
+<Card>
+	<CardHeader><CardTitle>Daily limit</CardTitle></CardHeader>
+	<CardContent>
+		<Form id="screen-time-settings" class="space-y-0" onsubmit={saveSettings}>
+			<Field class="flex-row items-center justify-between gap-4">
+				<FieldLabel for="daily-limit">Minutes per day</FieldLabel>
+				<Input
+					id="daily-limit"
+					class="w-24 text-right tabular-nums"
+					type="number"
+					min={1}
+					max={1440}
+					bind:value={dailyLimitMinutes}
+					required
+				/>
+			</Field>
+		</Form>
+	</CardContent>
+</Card>
 
 <SettingsSaveBar form="screen-time-settings" {saving} backHref="/screen-time" />

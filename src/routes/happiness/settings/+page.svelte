@@ -7,11 +7,11 @@
 	import type { HappinessSettingsData } from '$lib/api-types';
 	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import TrackerSection from '$lib/components/trackerSection.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { getTrackerColors } from '$lib/trackers/registry';
-	import { happinessLabel, happinessRatings, type HappinessRating } from '../happiness';
+	import { happinessRatings, type HappinessRating } from '../happiness';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -40,37 +40,35 @@
 
 <svelte:head><title>Happiness settings · Self Improvement</title></svelte:head>
 
-<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-8">
-	<TrackerSection
-		title="Daily check-in"
-		description="Choose the happiness level selected for a new entry."
-		{colors}
-	>
-		<Form id="happiness-settings" onsubmit={saveSettings}>
-			<Field>
-				<FieldLabel>Default happiness level</FieldLabel>
-				<div class="grid grid-cols-5 gap-2">
-					{#each happinessRatings as rating (rating)}
-						{@const selected = defaultRating === rating}
-						<Button
-							type="button"
-							variant="ghost"
-							size="large"
-							class="tabular-nums {selected ? 'text-white' : ''}"
-							style={selected
-								? `background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
-								: `background: color-mix(in srgb, ${colors.primary} 12%, transparent); color: ${colors.primary}`}
-							aria-pressed={selected}
-							onclick={() => (defaultRating = rating)}
-						>
-							{rating}
-						</Button>
-					{/each}
-				</div>
-				<FieldDescription class="text-center">{happinessLabel(defaultRating)}</FieldDescription>
-			</Field>
-		</Form>
-	</TrackerSection>
+<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-5">
+	<Card>
+		<CardHeader><CardTitle>Daily check-in</CardTitle></CardHeader>
+		<CardContent>
+			<Form id="happiness-settings" class="space-y-0" onsubmit={saveSettings}>
+				<Field class="gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<FieldLabel>Default happiness level</FieldLabel>
+					<div class="grid grid-cols-5 gap-2">
+						{#each happinessRatings as rating (rating)}
+							{@const selected = defaultRating === rating}
+							<Button
+								type="button"
+								variant="ghost"
+								size="large"
+								class="tabular-nums {selected ? 'text-white' : ''}"
+								style={selected
+									? `background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
+									: `background: color-mix(in srgb, ${colors.primary} 12%, transparent); color: ${colors.primary}`}
+								aria-pressed={selected}
+								onclick={() => (defaultRating = rating)}
+							>
+								{rating}
+							</Button>
+						{/each}
+					</div>
+				</Field>
+			</Form>
+		</CardContent>
+	</Card>
 </TrackerPage>
 
 <SettingsSaveBar form="happiness-settings" {saving} backHref="/happiness" />

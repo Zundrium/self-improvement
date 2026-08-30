@@ -5,14 +5,12 @@
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { StepsSettingsData } from '$lib/api-types';
-	import TrackerSection from '$lib/components/trackerSection.svelte';
 	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
-	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
-	import { getTrackerColors } from '$lib/trackers/registry';
 
 	let { settings }: { settings: StepsSettingsData } = $props();
-	const colors = getTrackerColors('steps');
 	let dailyGoal = $state(untrack(() => settings.dailyGoal));
 	let saving = $state(false);
 
@@ -35,18 +33,24 @@
 	}
 </script>
 
-<TrackerSection
-	title="Daily goal"
-	description="Set the number of steps you want to reach each day."
-	{colors}
->
-	<Form id="steps-settings" onsubmit={saveSettings}>
-		<Field class="max-w-xs">
-			<FieldLabel for="daily-goal">Steps per day</FieldLabel>
-			<Input id="daily-goal" type="number" min={1000} max={100000} bind:value={dailyGoal} required />
-			<FieldDescription>Choose a goal between 1,000 and 100,000 steps.</FieldDescription>
-		</Field>
-	</Form>
-</TrackerSection>
+<Card>
+	<CardHeader><CardTitle>Daily goal</CardTitle></CardHeader>
+	<CardContent>
+		<Form id="steps-settings" class="space-y-0" onsubmit={saveSettings}>
+			<Field class="flex-row items-center justify-between gap-4">
+				<FieldLabel for="daily-goal">Steps per day</FieldLabel>
+				<Input
+					id="daily-goal"
+					class="w-28 text-right tabular-nums"
+					type="number"
+					min={1000}
+					max={100000}
+					bind:value={dailyGoal}
+					required
+				/>
+			</Field>
+		</Form>
+	</CardContent>
+</Card>
 
 <SettingsSaveBar form="steps-settings" {saving} backHref="/steps" />

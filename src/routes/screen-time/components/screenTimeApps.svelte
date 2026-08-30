@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { apiRequest } from '$lib/api';
-	import TrackerSection from '$lib/components/trackerSection.svelte';
-	import { getTrackerColors } from '$lib/trackers/registry';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { toast } from '$lib/components/ui/toast';
 	import { androidSyncCoordinator } from '$native/android-data';
 	import { isNativeAndroid } from '$native/platform';
@@ -15,7 +14,6 @@
 
 	let { apps, knownApps }: Props = $props();
 	let pendingPackage = $state<string>();
-	const colors = getTrackerColors('screen-time');
 	const trackedApps = $derived(knownApps.filter((app) => app.tracked));
 	const untrackedApps = $derived(knownApps.filter((app) => !app.tracked));
 	const usageByPackage = $derived(new Map(apps.map((app) => [app.package, app.minutes])));
@@ -42,45 +40,43 @@
 	}
 </script>
 
-<TrackerSection
-	title="Tracked apps"
-	description="Only these apps count toward screen time"
-	{colors}
->
-	{#if trackedApps.length}
-		<div class="space-y-2">
-			{#each trackedApps as app (app.package)}
-				<ScreenTimeAppItem
-					{app}
-					tracked
-					minutes={usageByPackage.get(app.package) ?? 0}
-					pending={pendingPackage === app.package}
-					onchange={setTracked}
-				/>
-			{/each}
-		</div>
-	{:else}
-		<p class="text-sm leading-6 text-(--text)/56">Add apps below to begin measuring screen time.</p>
-	{/if}
-</TrackerSection>
+<Card>
+	<CardHeader><CardTitle>Tracked apps</CardTitle></CardHeader>
+	<CardContent>
+		{#if trackedApps.length}
+			<div class="space-y-2">
+				{#each trackedApps as app (app.package)}
+					<ScreenTimeAppItem
+						{app}
+						tracked
+						minutes={usageByPackage.get(app.package) ?? 0}
+						pending={pendingPackage === app.package}
+						onchange={setTracked}
+					/>
+				{/each}
+			</div>
+		{:else}
+			<p class="text-sm leading-6 text-(--text)/56">Add apps below to begin measuring screen time.</p>
+		{/if}
+	</CardContent>
+</Card>
 
-<TrackerSection
-	title="Untracked apps"
-	description="Apps found in your recent Android usage"
-	{colors}
->
-	{#if untrackedApps.length}
-		<div class="space-y-2">
-			{#each untrackedApps as app (app.package)}
-				<ScreenTimeAppItem
-					{app}
-					tracked={false}
-					pending={pendingPackage === app.package}
-					onchange={setTracked}
-				/>
-			{/each}
-		</div>
-	{:else}
-		<p class="text-sm leading-6 text-(--text)/56">No untracked apps were found.</p>
-	{/if}
-</TrackerSection>
+<Card>
+	<CardHeader><CardTitle>Untracked apps</CardTitle></CardHeader>
+	<CardContent>
+		{#if untrackedApps.length}
+			<div class="space-y-2">
+				{#each untrackedApps as app (app.package)}
+					<ScreenTimeAppItem
+						{app}
+						tracked={false}
+						pending={pendingPackage === app.package}
+						onchange={setTracked}
+					/>
+				{/each}
+			</div>
+		{:else}
+			<p class="text-sm leading-6 text-(--text)/56">No untracked apps were found.</p>
+		{/if}
+	</CardContent>
+</Card>

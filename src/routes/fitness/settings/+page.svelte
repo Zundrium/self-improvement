@@ -9,7 +9,7 @@
 
 <svelte:head><title>Fitness settings · Self Improvement</title></svelte:head>
 
-<TrackerPage class="max-w-6xl" contentClass="space-y-8">
+<TrackerPage contentClass="space-y-5">
 	<DefaultSetsSettings settings={data.settings} />
 	<ExerciseSpeedSettings exercises={data.exercises} />
 </TrackerPage>

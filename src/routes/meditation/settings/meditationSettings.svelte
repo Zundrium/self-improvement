@@ -5,14 +5,12 @@
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { MeditationSettingsData } from '$lib/api-types';
-	import TrackerSection from '$lib/components/trackerSection.svelte';
 	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
-	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
-	import { getTrackerColors } from '$lib/trackers/registry';
 
 	let { settings }: { settings: MeditationSettingsData } = $props();
-	const colors = getTrackerColors('meditation');
 	let defaultDurationMinutes = $state(untrack(() => settings.defaultDurationSeconds / 60));
 	let saving = $state(false);
 
@@ -35,25 +33,24 @@
 	}
 </script>
 
-<TrackerSection
-	title="Session default"
-	description="Choose the duration a new meditation session starts with."
-	{colors}
->
-	<Form id="meditation-settings" onsubmit={saveSettings}>
-		<Field class="max-w-xs">
-			<FieldLabel for="default-duration">Default duration (minutes)</FieldLabel>
-			<Input
-				id="default-duration"
-				type="number"
-				min={1}
-				max={120}
-				bind:value={defaultDurationMinutes}
-				required
-			/>
-			<FieldDescription>Set a duration from 1 minute to 2 hours.</FieldDescription>
-		</Field>
-	</Form>
-</TrackerSection>
+<Card>
+	<CardHeader><CardTitle>Session default</CardTitle></CardHeader>
+	<CardContent>
+		<Form id="meditation-settings" class="space-y-0" onsubmit={saveSettings}>
+			<Field class="flex-row items-center justify-between gap-4">
+				<FieldLabel for="default-duration">Duration in minutes</FieldLabel>
+				<Input
+					id="default-duration"
+					class="w-24 text-right tabular-nums"
+					type="number"
+					min={1}
+					max={120}
+					bind:value={defaultDurationMinutes}
+					required
+				/>
+			</Field>
+		</Form>
+	</CardContent>
+</Card>
 
 <SettingsSaveBar form="meditation-settings" {saving} backHref="/meditation" />

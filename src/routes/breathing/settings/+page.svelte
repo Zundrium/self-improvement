@@ -8,6 +8,6 @@
 
 <svelte:head><title>Breathing settings · Self Improvement</title></svelte:head>
 
-<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-8">
+<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-5">
 	<BreathingSettings settings={data} />
 </TrackerPage>

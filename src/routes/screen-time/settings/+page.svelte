@@ -9,7 +9,7 @@
 
 <svelte:head><title>Screen time settings · Self Improvement</title></svelte:head>
 
-<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-8">
+<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-5">
 	<ScreenTimeSettings settings={data.settings} />
 	<ScreenTimeApps apps={data.apps} knownApps={data.knownApps} />
 </TrackerPage>

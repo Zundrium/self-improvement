@@ -5,14 +5,12 @@
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
 	import type { FitnessSettingsData } from '$lib/api-types';
-	import TrackerSection from '$lib/components/trackerSection.svelte';
 	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
-	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
-	import { getTrackerColors } from '$lib/trackers/registry';
 
 	let { settings }: { settings: FitnessSettingsData } = $props();
-	const colors = getTrackerColors('fitness');
 	let defaultSets = $state(untrack(() => settings.defaultSets));
 	let saving = $state(false);
 
@@ -35,32 +33,26 @@
 	}
 </script>
 
-<TrackerSection
-	title="Workout defaults"
-	description="Choose how many sets a new workout starts with."
-	{colors}
->
-	<Form id="fitness-settings" onsubmit={saveSettings}>
-		<Field class="max-w-xs">
-			<FieldLabel for="default-sets">Default sets</FieldLabel>
-			<Input
-				id="default-sets"
-				type="number"
-				min={1}
-				max={10}
-				bind:value={defaultSets}
-				required
-			/>
-			<FieldDescription>
-				Used up to the sets available for a workout; you can still adjust before starting.
-			</FieldDescription>
-		</Field>
-	</Form>
-</TrackerSection>
+<Card>
+	<CardHeader>
+		<CardTitle>Workout defaults</CardTitle>
+	</CardHeader>
+	<CardContent>
+		<Form id="fitness-settings" class="space-y-0" onsubmit={saveSettings}>
+			<Field class="flex-row items-center justify-between gap-4">
+				<FieldLabel for="default-sets">Default set amount</FieldLabel>
+				<Input
+					id="default-sets"
+					class="w-20 text-center tabular-nums"
+					type="number"
+					min={1}
+					max={10}
+					bind:value={defaultSets}
+					required
+				/>
+			</Field>
+		</Form>
+	</CardContent>
+</Card>
 
-<SettingsSaveBar
-	form="fitness-settings"
-	{saving}
-	backHref="/fitness"
-	contentClass="max-w-6xl"
-/>
+<SettingsSaveBar form="fitness-settings" {saving} backHref="/fitness" contentClass="max-w-5xl" />

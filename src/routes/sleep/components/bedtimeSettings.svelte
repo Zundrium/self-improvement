@@ -7,7 +7,7 @@
 	import type { SleepSettingsData } from '$lib/api-types';
 	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { androidSyncCoordinator } from '$native/android-data';
 	import { isNativeAndroid } from '$native/platform';
@@ -58,25 +58,22 @@
 	}
 </script>
 
-<Form id="sleep-settings" onsubmit={saveSettings}>
-	<Field>
+<Form id="sleep-settings" class="space-y-5" onsubmit={saveSettings}>
+	<Field class="flex-row items-center justify-between gap-4">
 		<FieldLabel for="bedtime">Bedtime</FieldLabel>
-		<Input id="bedtime" name="bedtime" type="time" bind:value={bedtime} required />
-		<FieldDescription>
-			Selected-app activity is checked for four hours after this time.
-		</FieldDescription>
+		<Input
+			id="bedtime"
+			name="bedtime"
+			class="w-32 tabular-nums"
+			type="time"
+			bind:value={bedtime}
+			required
+		/>
 	</Field>
-
-	<div class="flex items-start gap-3 rounded-3xl bg-(--text)/5 p-4">
+	<Field class="flex-row items-center justify-between gap-4">
+		<FieldLabel for="bedtime-reminders">Bedtime reminder</FieldLabel>
 		<Checkbox id="bedtime-reminders" bind:checked={remindersEnabled} />
-		<label class="min-w-0 flex-1 cursor-pointer" for="bedtime-reminders">
-			<span class="block text-sm font-medium">Bedtime reminder</span>
-			<span class="mt-0.5 block text-xs leading-5 text-(--text)/48">
-				Notify me 15 minutes before bedtime.
-			</span>
-		</label>
-	</div>
-
+	</Field>
 </Form>
 
 <SettingsSaveBar form="sleep-settings" {saving} backHref="/sleep" />

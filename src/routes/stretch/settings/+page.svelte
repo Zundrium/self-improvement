@@ -8,6 +8,6 @@ let { data }: PageProps = $props();
 
 <svelte:head><title>Stretch settings · Self Improvement</title></svelte:head>
 
-<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-8">
+<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-5">
 	<StretchSettings settings={data} />
 </TrackerPage>

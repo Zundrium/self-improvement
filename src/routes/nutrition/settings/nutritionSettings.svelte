@@ -7,8 +7,9 @@
 	import type { NutritionProfile } from '$lib/api-types';
 	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { Field, FieldDescription, FieldGroup, FieldLabel } from '$lib/components/ui/field';
+	import { Field, FieldLabel } from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
 	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
 
@@ -52,139 +53,143 @@
 
 {#if profile}
 	<Form id="nutrition-settings" class="space-y-5" onsubmit={saveNutrition}>
-				<p class="text-sm text-(--text)/64">
-					Your estimated maintenance is {estimatedTdee} kcal per day.
-				</p>
-				<FieldGroup>
-					<div class="grid gap-4 sm:grid-cols-3">
-						<Field>
-							<FieldLabel for="weightKg">Weight (kg)</FieldLabel>
-							<Input
-								id="weightKg"
-								name="weightKg"
-								type="number"
-								step="0.1"
-								min="20"
-								max="300"
-								value={profile.weightKg}
-								required
-							/>
-						</Field>
-						<Field>
-							<FieldLabel for="heightCm">Height (cm)</FieldLabel>
-							<Input
-								id="heightCm"
-								name="heightCm"
-								type="number"
-								step="0.1"
-								min="100"
-								max="250"
-								value={profile.heightCm}
-								required
-							/>
-						</Field>
-						<Field>
-							<FieldLabel for="age">Age</FieldLabel>
-							<Input
-								id="age"
-								name="age"
-								type="number"
-								min="10"
-								max="120"
-								value={profile.age}
-								required
-							/>
-						</Field>
-					</div>
-					<div class="grid gap-4 sm:grid-cols-2">
-						<Field>
-							<FieldLabel>Gender</FieldLabel>
-							<Select type="single" name="gender" bind:value={gender}>
-								<SelectTrigger class="w-full">{gender === 'male' ? 'Male' : 'Female'}</SelectTrigger
-								>
-								<SelectContent>
-									<SelectItem value="male">Male</SelectItem>
-									<SelectItem value="female">Female</SelectItem>
-								</SelectContent>
-							</Select>
-						</Field>
-						<Field>
-							<FieldLabel>Activity level</FieldLabel>
-							<Select type="single" name="activityLevel" bind:value={activityLevel}>
-								<SelectTrigger class="w-full">{activityLabel}</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="sedentary">Sedentary</SelectItem>
-									<SelectItem value="light">Light activity</SelectItem>
-									<SelectItem value="moderate">Moderate activity</SelectItem>
-									<SelectItem value="active">Active</SelectItem>
-									<SelectItem value="very_active">Very active</SelectItem>
-								</SelectContent>
-							</Select>
-						</Field>
-					</div>
-					<div class="grid gap-4 sm:grid-cols-2">
-						<Field>
-							<FieldLabel>Goal calculation</FieldLabel>
-							<Select type="single" name="goalMode" bind:value={goalMode}>
-								<SelectTrigger class="w-full">
-									{goalMode === 'custom' ? 'Manual goal' : 'Use estimate'}
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="estimated">Use TDEE estimate</SelectItem>
-									<SelectItem value="custom">Set a manual calorie goal</SelectItem>
-								</SelectContent>
-							</Select>
-						</Field>
-						<Field>
-							<FieldLabel for="customGoal">Manual daily goal (kcal)</FieldLabel>
-							<Input
-								id="customGoal"
-								name="customGoal"
-								type="number"
-								min="500"
-								max="10000"
-								value={profile.dailyCalorieGoal}
-								disabled={goalMode !== 'custom'}
-								required={goalMode === 'custom'}
-							/>
-							<FieldDescription>Overrides the estimated daily goal.</FieldDescription>
-						</Field>
-					</div>
-					<div class="space-y-4 pt-2">
-						<div class="flex items-start gap-3">
-							<Checkbox id="eatingWindowEnabled" bind:checked={eatingWindowEnabled} />
-							<label class="min-w-0 flex-1 cursor-pointer" for="eatingWindowEnabled">
-								<span class="block text-sm font-medium">Daily eating window</span>
-								<span class="mt-0.5 block text-sm leading-5 text-(--text)/56">
-									Show a daily action for when eating time starts and ends.
-								</span>
-							</label>
-						</div>
-						<div class="grid gap-4 sm:grid-cols-2">
-							<Field>
-								<FieldLabel for="eatingWindowStart">Starts</FieldLabel>
-								<Input
-									id="eatingWindowStart"
-									type="time"
-									bind:value={eatingWindowStart}
-									disabled={!eatingWindowEnabled}
-									required={eatingWindowEnabled}
-								/>
-							</Field>
-							<Field>
-								<FieldLabel for="eatingWindowEnd">Ends</FieldLabel>
-								<Input
-									id="eatingWindowEnd"
-									type="time"
-									bind:value={eatingWindowEnd}
-									disabled={!eatingWindowEnabled}
-									required={eatingWindowEnabled}
-								/>
-							</Field>
-						</div>
-						<FieldDescription>This reminder never blocks meal logging.</FieldDescription>
-					</div>
-				</FieldGroup>
+		<Card>
+			<CardHeader><CardTitle>Body profile</CardTitle></CardHeader>
+			<CardContent class="gap-5">
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel for="weightKg">Weight in kg</FieldLabel>
+					<Input
+						id="weightKg"
+						name="weightKg"
+						class="w-24 text-right tabular-nums"
+						type="number"
+						step="0.1"
+						min="20"
+						max="300"
+						value={profile.weightKg}
+						required
+					/>
+				</Field>
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel for="heightCm">Height in cm</FieldLabel>
+					<Input
+						id="heightCm"
+						name="heightCm"
+						class="w-24 text-right tabular-nums"
+						type="number"
+						step="0.1"
+						min="100"
+						max="250"
+						value={profile.heightCm}
+						required
+					/>
+				</Field>
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel for="age">Age</FieldLabel>
+					<Input
+						id="age"
+						name="age"
+						class="w-20 text-center tabular-nums"
+						type="number"
+						min="10"
+						max="120"
+						value={profile.age}
+						required
+					/>
+				</Field>
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel>Gender</FieldLabel>
+					<Select type="single" name="gender" bind:value={gender}>
+						<SelectTrigger>{gender === 'male' ? 'Male' : 'Female'}</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="male">Male</SelectItem>
+							<SelectItem value="female">Female</SelectItem>
+						</SelectContent>
+					</Select>
+				</Field>
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel>Activity level</FieldLabel>
+					<Select type="single" name="activityLevel" bind:value={activityLevel}>
+						<SelectTrigger>{activityLabel}</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="sedentary">Sedentary</SelectItem>
+							<SelectItem value="light">Light activity</SelectItem>
+							<SelectItem value="moderate">Moderate activity</SelectItem>
+							<SelectItem value="active">Active</SelectItem>
+							<SelectItem value="very_active">Very active</SelectItem>
+						</SelectContent>
+					</Select>
+				</Field>
+			</CardContent>
+		</Card>
+
+		<Card>
+			<CardHeader><CardTitle>Calorie goal</CardTitle></CardHeader>
+			<CardContent class="gap-5">
+				<div class="flex items-center justify-between gap-4 text-sm">
+					<span class="font-medium">Estimated maintenance</span>
+					<span class="tabular-nums">{estimatedTdee} kcal/day</span>
+				</div>
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel>Goal calculation</FieldLabel>
+					<Select type="single" name="goalMode" bind:value={goalMode}>
+						<SelectTrigger>
+							{goalMode === 'custom' ? 'Manual goal' : 'Use estimate'}
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="estimated">Use TDEE estimate</SelectItem>
+							<SelectItem value="custom">Set a manual calorie goal</SelectItem>
+						</SelectContent>
+					</Select>
+				</Field>
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel for="customGoal">Daily calories</FieldLabel>
+					<Input
+						id="customGoal"
+						name="customGoal"
+						class="w-28 text-right tabular-nums"
+						type="number"
+						min="500"
+						max="10000"
+						value={profile.dailyCalorieGoal}
+						disabled={goalMode !== 'custom'}
+						required={goalMode === 'custom'}
+					/>
+				</Field>
+			</CardContent>
+		</Card>
+
+		<Card>
+			<CardHeader><CardTitle>Eating window</CardTitle></CardHeader>
+			<CardContent class="gap-5">
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel for="eatingWindowEnabled">Enabled</FieldLabel>
+					<Checkbox id="eatingWindowEnabled" bind:checked={eatingWindowEnabled} />
+				</Field>
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel for="eatingWindowStart">Starts</FieldLabel>
+					<Input
+						id="eatingWindowStart"
+						class="w-32 tabular-nums"
+						type="time"
+						bind:value={eatingWindowStart}
+						disabled={!eatingWindowEnabled}
+						required={eatingWindowEnabled}
+					/>
+				</Field>
+				<Field class="flex-row items-center justify-between gap-4">
+					<FieldLabel for="eatingWindowEnd">Ends</FieldLabel>
+					<Input
+						id="eatingWindowEnd"
+						class="w-32 tabular-nums"
+						type="time"
+						bind:value={eatingWindowEnd}
+						disabled={!eatingWindowEnabled}
+						required={eatingWindowEnabled}
+					/>
+				</Field>
+			</CardContent>
+		</Card>
 	</Form>
 	<SettingsSaveBar
 		form="nutrition-settings"
@@ -193,10 +198,10 @@
 		contentClass="max-w-3xl"
 	/>
 {:else}
-	<div class="space-y-4">
-				<p class="text-sm leading-6 text-(--text)/64">
-					Set a daily calorie goal before tracking meals.
-				</p>
-				<Button size="medium" href="/nutrition/onboarding">Set up nutrition</Button>
-	</div>
+	<Card>
+		<CardHeader><CardTitle>Nutrition goals</CardTitle></CardHeader>
+		<CardContent>
+			<Button size="medium" href="/nutrition/onboarding">Set up nutrition</Button>
+		</CardContent>
+	</Card>
 {/if}
