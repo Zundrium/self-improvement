@@ -455,7 +455,7 @@ onDestroy(() => {
 			</div>
 		</section>
 	{:else if phase === 'photo'}
-		<section class="fixed inset-0 z-[60] overflow-hidden bg-black text-white">
+		<section class="fixed inset-0 z-[90] overflow-hidden bg-black text-white">
 			<video
 				bind:this={video}
 				autoplay
