@@ -46,7 +46,7 @@
 			</FieldDescription>
 		</Field>
 		{#if configured}
-			<Button type="button" variant="destructive" disabled={busy} onclick={onclear}>
+			<Button size="medium" type="button" variant="destructive" disabled={busy} onclick={onclear}>
 				<Trash2 class="size-4" /> Remove key
 			</Button>
 		{/if}

@@ -110,7 +110,7 @@
 			{#each filters as option (option.id)}
 				<Button
 					variant={filter === option.id ? 'default' : 'ghost'}
-					class="h-8 rounded-full px-3 text-xs"
+					size="small"
 					aria-pressed={filter === option.id}
 					onclick={() => (filter = option.id)}
 				>

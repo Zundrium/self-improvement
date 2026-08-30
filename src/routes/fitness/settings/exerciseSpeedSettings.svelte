@@ -124,7 +124,7 @@
 				{#if speeds[exercise.id] !== 100}
 					<Button
 						variant="ghost"
-						size="sm"
+						size="small"
 						class="w-fit"
 						disabled={savingId === exercise.id}
 						onclick={() => resetSpeed(exercise.id)}

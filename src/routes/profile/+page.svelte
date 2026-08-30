@@ -36,7 +36,7 @@
 		<CardContent class="items-center text-center">
 			<Avatar size="xl" alt={data.profile.name} />
 			<h1 class="text-xl font-semibold">{data.profile.name}</h1>
-			<Button href="/" variant="ghost">Home</Button>
+			<Button size="medium" href="/" variant="ghost">Home</Button>
 		</CardContent>
 	</Card>
 
@@ -46,36 +46,36 @@
 			role="tablist"
 			aria-label="Settings sections"
 		>
-			<Button
+			<Button size="medium"
 				variant={activeTab === 'general' ? 'default' : 'ghost'}
-				class="min-w-28 flex-1 gap-2 px-3"
+				class="min-w-28 flex-1 gap-2"
 				role="tab"
 				aria-selected={activeTab === 'general'}
 				onclick={() => (activeTab = 'general')}
 			>
 				<Settings2 class="size-4" /> General
 			</Button>
-			<Button
+			<Button size="medium"
 				variant={activeTab === 'trackers' ? 'default' : 'ghost'}
-				class="min-w-28 flex-1 gap-2 px-3"
+				class="min-w-28 flex-1 gap-2"
 				role="tab"
 				aria-selected={activeTab === 'trackers'}
 				onclick={() => (activeTab = 'trackers')}
 			>
 				<SlidersHorizontal class="size-4" /> Trackers
 			</Button>
-			<Button
+			<Button size="medium"
 				variant={activeTab === 'permissions' ? 'default' : 'ghost'}
-				class="min-w-28 flex-1 gap-2 px-3"
+				class="min-w-28 flex-1 gap-2"
 				role="tab"
 				aria-selected={activeTab === 'permissions'}
 				onclick={() => (activeTab = 'permissions')}
 			>
 				<ShieldCheck class="size-4" /> Permissions
 			</Button>
-			<Button
+			<Button size="medium"
 				variant={activeTab === 'data' ? 'default' : 'ghost'}
-				class="min-w-28 flex-1 gap-2 px-3"
+				class="min-w-28 flex-1 gap-2"
 				role="tab"
 				aria-selected={activeTab === 'data'}
 				onclick={() => (activeTab = 'data')}

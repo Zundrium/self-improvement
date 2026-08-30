@@ -159,7 +159,7 @@
 				<p class="text-sm leading-6 text-(--text)/64">
 					Open App settings, tap ⋮ in the top-right corner, then choose Allow restricted settings.
 				</p>
-				<Button type="button" variant="ghost" disabled={Boolean(busy)} onclick={openAppSettings}>
+				<Button size="medium" type="button" variant="ghost" disabled={Boolean(busy)} onclick={openAppSettings}>
 					{#if busy === 'settings'}<Spinner class="size-4" />{:else}<Settings class="size-4" />{/if}
 					Open App settings
 				</Button>
@@ -193,7 +193,7 @@
 				</div>
 
 				<div class="flex flex-wrap gap-2">
-					<Button
+					<Button size="medium"
 						type="button"
 						variant="ghost"
 						disabled={Boolean(busy) || !healthAvailable}
@@ -202,10 +202,10 @@
 						{#if busy === 'health'}<Spinner class="size-4" />{:else}<Activity class="size-4" />{/if}
 						Health access
 					</Button>
-					<Button type="button" variant="ghost" disabled={Boolean(busy)} onclick={openUsageAccess}>
+					<Button size="medium" type="button" variant="ghost" disabled={Boolean(busy)} onclick={openUsageAccess}>
 						<Smartphone class="size-4" /> Usage access
 					</Button>
-					<Button type="button" variant="ghost" disabled={Boolean(busy)} onclick={refreshAccess}>
+					<Button size="medium" type="button" variant="ghost" disabled={Boolean(busy)} onclick={refreshAccess}>
 						<RefreshCw class="size-4" data-motion-spin={busy === 'check' || undefined} /> Check again
 					</Button>
 				</div>
@@ -220,7 +220,7 @@
 				</Alert>
 			</CardContent>
 			<CardFooter>
-				<Button
+				<Button size="medium"
 					class="w-full"
 					type="button"
 					variant={allGranted ? 'default' : 'ghost'}

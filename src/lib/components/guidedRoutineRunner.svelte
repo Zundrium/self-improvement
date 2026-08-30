@@ -400,8 +400,8 @@ function handleVisibilityChange() {
 					{#snippet child({ props })}
 						<Button
 							variant="ghost"
-							size="icon"
-							class="absolute right-0 size-8"
+							size="small" format="icon"
+							class="absolute right-0"
 							aria-label={`How to do ${activity.name}`}
 							{...props}
 						>
@@ -509,7 +509,7 @@ function handleVisibilityChange() {
 					{#each displayActivity.imageVariants as variant (variant.id)}
 						<Button
 							variant={selectedImageVariant?.id === variant.id ? 'default' : 'ghost'}
-							size="sm"
+							size="small"
 							onclick={() => selectImageVariant(displayActivity, variant.id)}
 							aria-pressed={selectedImageVariant?.id === variant.id}>{variant.label}</Button
 						>

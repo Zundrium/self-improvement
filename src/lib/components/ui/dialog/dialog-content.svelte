@@ -47,8 +47,8 @@
 								{...props}
 								data-slot="dialog-close"
 								variant="ghost"
-								size="icon"
-								class="absolute end-4 top-4 size-8 rounded-xl text-(--text)/40"
+								size="small" format="icon"
+								class="absolute end-4 top-4 text-(--text)/40"
 							>
 								<X class="size-4" aria-hidden="true" />
 								<span class="sr-only">Close</span>

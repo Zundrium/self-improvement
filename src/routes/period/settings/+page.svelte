@@ -78,4 +78,4 @@
 	</TrackerSection>
 </TrackerPage>
 
-<SettingsSaveBar form="period-settings" {saving} />
+<SettingsSaveBar form="period-settings" {saving} backHref="/period" />

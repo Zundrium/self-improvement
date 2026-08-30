@@ -11,8 +11,7 @@
 <div class="inline-flex rounded-3xl bg-(--text)/5 p-1" aria-label="Color theme">
 	<Button
 		variant={selected('light') ? 'default' : 'ghost'}
-		size="icon"
-		class="size-9"
+		size="small" format="icon"
 		aria-label="Use light theme"
 		aria-pressed={selected('light')}
 		onclick={() => setMode('light')}
@@ -21,8 +20,7 @@
 	</Button>
 	<Button
 		variant={selected('system') ? 'default' : 'ghost'}
-		size="icon"
-		class="size-9"
+		size="small" format="icon"
 		aria-label="Follow system theme"
 		aria-pressed={selected('system')}
 		onclick={() => setMode('system')}
@@ -31,8 +29,7 @@
 	</Button>
 	<Button
 		variant={selected('dark') ? 'default' : 'ghost'}
-		size="icon"
-		class="size-9"
+		size="small" format="icon"
 		aria-label="Use dark theme"
 		aria-pressed={selected('dark')}
 		onclick={() => setMode('dark')}

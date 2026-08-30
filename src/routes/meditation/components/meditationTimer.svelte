@@ -163,7 +163,7 @@
 		<div class="flex w-full items-center justify-center gap-2 sm:gap-4" data-meditation-timer>
 			<Button
 				variant="ghost"
-				size="icon"
+				size="medium" format="icon"
 				aria-label="Decrease duration by one minute"
 				disabled={!canAdjust || durationSeconds === MINIMUM_DURATION_SECONDS}
 				onclick={() => adjustDuration(-60)}
@@ -177,7 +177,7 @@
 			</p>
 			<Button
 				variant="ghost"
-				size="icon"
+				size="medium" format="icon"
 				aria-label="Increase duration by one minute"
 				disabled={!canAdjust || durationSeconds === MAXIMUM_DURATION_SECONDS}
 				onclick={() => adjustDuration(60)}
@@ -202,7 +202,7 @@
 			{:else if saveState === 'error'}
 				<Button
 					variant="link"
-					size="none"
+					size="small"
 					class="link cursor-pointer"
 					type="button"
 					onclick={onretry}>Save again</Button

@@ -174,7 +174,7 @@ function reasonKey(reasons: string[]) {
 			<div class="space-y-3">
 				<Button
 					variant="ghost"
-					size="sm"
+					size="small"
 					type="button"
 					onclick={editFeeling}
 					aria-label="Back to feeling"
@@ -201,7 +201,7 @@ function reasonKey(reasons: string[]) {
 			>
 				{#each reasonOptions as option (option.value)}
 					{@const selected = selectedReasons.includes(option.value)}
-					<Button
+					<Button size="medium"
 						variant="ghost"
 						style={selected
 							? `background: color-mix(in srgb, ${colors.secondary} 18%, transparent); color: ${colors.primary}`

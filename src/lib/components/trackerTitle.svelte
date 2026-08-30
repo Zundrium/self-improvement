@@ -1,5 +1,7 @@
 <script lang="ts">
-import { ArrowLeft, Info, Settings } from '@lucide/svelte';
+import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
+import { Info, Settings } from '@lucide/svelte';
 import { Button } from '$lib/components/ui/button';
 import { cn } from '$lib/utils';
 import type { TrackerColors } from '$lib/trackers/registry';
@@ -19,29 +21,17 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 <div
 	class={cn(
 		'mx-auto grid w-full max-w-(--app-compact-max-width) items-center',
-		settingsActive
-			? 'grid-cols-[2.5rem_max-content_1fr] gap-3'
-			: 'grid-cols-[2.5rem_minmax(0,1fr)_2.5rem]',
+		'grid-cols-[3rem_minmax(0,1fr)_3rem]',
 		className
 	)}
 >
-	{#if settingsActive}
-		<Button
-			href={tracker.href}
-			variant="ghost"
-			size="icon"
-			class="rounded-full"
-			aria-label={`Back to ${tracker.label}`}
-		>
-			<ArrowLeft class="size-5" style={`color: ${tracker.colors.primary}`} />
-		</Button>
-	{:else if tracker.infoHref}
+	{#if !settingsActive && tracker.infoHref}
 		<Button
 			href={tracker.infoHref}
 			target="_blank"
 			rel="noreferrer"
 			variant="ghost"
-			size="icon"
+			size="medium" format="icon"
 			aria-label={`About ${tracker.label}`}
 			title={`Watch the ${tracker.label.toLowerCase()} source video on YouTube`}
 		>
@@ -50,20 +40,17 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 	{:else}
 		<span aria-hidden="true"></span>
 	{/if}
-	<h1
-		class={settingsActive
-			? 'text-xl font-medium tracking-[-0.035em]'
-			: 'text-center text-sm font-medium'}
-		style={`color: ${tracker.colors.primary}`}
-	>
+	<h1 class="text-center text-sm font-medium" style={`color: ${tracker.colors.primary}`}>
 		{tracker.label}{settingsActive ? ' settings' : ''}
 	</h1>
 	{#if tracker.settingsHref && !settingsActive}
 		<Button
-			href={tracker.settingsHref}
+			type="button"
 			variant="ghost"
-			size="icon"
+			size="medium" format="icon"
+			class="bg-transparent hover:bg-transparent"
 			aria-label={`${tracker.label} settings`}
+			onclick={() => void goto(resolve(tracker.settingsHref as '/'))}
 		>
 			<Settings class="size-4" style={`color: ${tracker.colors.primary}`} />
 		</Button>

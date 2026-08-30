@@ -10,13 +10,15 @@
 	import type { Action } from 'svelte/action';
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 
-	export type ButtonVariant = 'default' | 'ghost' | 'destructive' | 'link' | 'plain';
-	export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'none';
+	export type ButtonVariant = 'default' | 'ghost' | 'destructive' | 'link';
+	export type ButtonSize = 'small' | 'medium' | 'large';
+	export type ButtonFormat = 'text' | 'icon';
 
 	export type ButtonProps = WithElementRef<HTMLButtonAttributes> &
 		WithElementRef<HTMLAnchorAttributes> & {
 			variant?: ButtonVariant;
-			size?: ButtonSize;
+			size: ButtonSize;
+			format?: ButtonFormat;
 			motionColors?: GradientColors;
 			motionScale?: InteractionScaleOptions;
 		};
@@ -25,16 +27,24 @@
 		default: 'bg-(--text) text-(--bg) hover:bg-(--text)/90 font-medium',
 		ghost: 'bg-(--text)/5 text-(--text)/72 hover:bg-(--text)/8 hover:text-(--text)',
 		destructive: 'bg-red-500/10 text-red-600 hover:bg-red-500/20 font-medium dark:text-red-400',
-		link: 'bg-transparent font-medium text-(--text) hover:text-(--text)',
-		plain: 'bg-transparent text-inherit'
+		link: 'bg-transparent font-medium text-(--text) hover:text-(--text)'
 	};
 
 	const sizes: Record<ButtonSize, string> = {
-		default: 'h-10 rounded-3xl px-4 text-sm',
-		sm: 'h-9 rounded-3xl px-3.5 text-sm',
-		lg: 'h-11 rounded-3xl px-5 text-base',
-		icon: 'size-10 rounded-3xl shrink-0',
-		none: ''
+		small: 'h-11 text-sm',
+		medium: 'h-12 text-sm',
+		large: 'h-13 text-base'
+	};
+
+	const textPadding: Record<ButtonSize, string> = {
+		small: 'px-5',
+		medium: 'px-6',
+		large: 'px-7'
+	};
+
+	const formats: Record<ButtonFormat, string> = {
+		text: '',
+		icon: 'aspect-square shrink-0 px-0'
 	};
 
 	function resolveHref(href: string) {
@@ -65,7 +75,8 @@
 	let {
 		class: className,
 		variant = 'default',
-		size = 'default',
+		size,
+		format = 'text',
 		ref = $bindable(null),
 		href = undefined,
 		type = 'button',
@@ -82,9 +93,11 @@
 		bind:this={ref}
 		data-slot="button"
 		class={cn(
-			'inline-flex cursor-pointer touch-manipulation items-center justify-center whitespace-nowrap outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-(--text)/20 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+			'inline-flex cursor-pointer touch-manipulation items-center justify-center rounded-3xl whitespace-nowrap outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-(--text)/20 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 			variants[variant],
 			sizes[size],
+			formats[format],
+			format === 'text' && textPadding[size],
 			className
 		)}
 		href={disabled ? undefined : resolveHref(href)}
@@ -102,9 +115,11 @@
 		bind:this={ref}
 		data-slot="button"
 		class={cn(
-			'inline-flex cursor-pointer touch-manipulation items-center justify-center whitespace-nowrap outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-(--text)/20 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+			'inline-flex cursor-pointer touch-manipulation items-center justify-center rounded-3xl whitespace-nowrap outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-(--text)/20 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 			variants[variant],
 			sizes[size],
+			formats[format],
+			format === 'text' && textPadding[size],
 			className
 		)}
 		{type}

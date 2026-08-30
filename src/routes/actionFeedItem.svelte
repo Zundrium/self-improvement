@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { ChevronRight, Download, LoaderCircle, RefreshCw, Shield } from '@lucide/svelte';
 	import type { ActionFeedItem } from '$lib/api-types';
-	import { Button } from '$lib/components/ui/button';
-	import { interactionScale } from '$lib/motion/gsap';
+import { Pressable } from '$lib/components/ui/pressable';
 	import { trackerIcons } from '$lib/trackers/icons';
 	import { getTrackerColors } from '$lib/trackers/registry';
 
@@ -49,21 +47,19 @@
 	</span>
 {/snippet}
 
-<div>
+<div class="action-card-container">
 	{#if item.action.type === 'navigate'}
-		<a
-			href={resolve(item.action.href as '/')}
-			class="action-card relative flex min-h-20 touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5"
+		<Pressable
+			href={item.action.href}
+			class="action-card relative flex min-h-20 items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 hover:bg-(--text)/3 focus-visible:bg-(--text)/5"
 			style={`--action-primary: ${trackerColors?.primary ?? 'var(--text)'}`}
-			use:interactionScale={{ hover: 1.01, pressed: 0.96 }}
+			motionScale={{ hover: 1.01, pressed: 0.96 }}
 		>
 			{@render actionContent()}
-		</a>
+		</Pressable>
 	{:else}
-		<Button
+		<Pressable
 			type="button"
-			variant="plain"
-			size="none"
 			class="action-card relative flex min-h-20 w-full cursor-pointer touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5 disabled:pointer-events-none disabled:opacity-60"
 			style={`--action-primary: ${trackerColors?.primary ?? 'var(--text)'}`}
 			disabled={busy}
@@ -72,12 +68,12 @@
 			onclick={() => onexecute(item)}
 		>
 			{@render actionContent()}
-		</Button>
+		</Pressable>
 	{/if}
 </div>
 
 <style>
-	.action-card::before {
+	.action-card-container :global(.action-card)::before {
 		position: absolute;
 		top: 50%;
 		left: -3rem;

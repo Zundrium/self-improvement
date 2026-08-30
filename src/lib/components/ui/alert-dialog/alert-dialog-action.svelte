@@ -3,7 +3,7 @@
 	import type { AlertDialog as AlertDialogTypes } from 'bits-ui';
 
 	export type AlertDialogActionProps = Omit<AlertDialogTypes.ActionProps, 'child'> &
-		Pick<ButtonProps, 'variant' | 'size' | 'motionColors' | 'motionScale'>;
+	Pick<ButtonProps, 'variant' | 'size' | 'format' | 'motionColors' | 'motionScale'>;
 </script>
 
 <script lang="ts">
@@ -14,7 +14,8 @@
 		ref = $bindable(null),
 		class: className,
 		variant = 'default',
-		size = 'default',
+		size,
+		format = 'text',
 		motionColors,
 		motionScale,
 		children,
@@ -29,6 +30,7 @@
 			class={className}
 			{variant}
 			{size}
+			{format}
 			{motionColors}
 			{motionScale}
 		>

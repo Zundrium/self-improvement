@@ -43,8 +43,7 @@
 	</div>
 	<Button
 		variant="ghost"
-		size="icon"
-		class="size-9"
+		size="small" format="icon"
 		disabled={pending}
 		aria-label={action}
 		title={action}

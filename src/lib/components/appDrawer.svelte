@@ -167,7 +167,7 @@
 			<section class="space-y-4 py-8 text-center">
 				<h2 class="text-xl font-medium">No trackers selected</h2>
 				<p class="text-sm text-(--text)/56">Choose the trackers you want to use in your profile.</p>
-				<Button href="/profile" onclick={onSelect}>Choose trackers</Button>
+				<Button size="medium" href="/profile" onclick={onSelect}>Choose trackers</Button>
 			</section>
 		{/if}
 	</div>

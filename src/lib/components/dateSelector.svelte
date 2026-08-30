@@ -53,13 +53,13 @@
 </script>
 
 <section
-	class="mx-auto grid w-full max-w-(--app-compact-max-width) grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2"
+	class="mx-auto grid w-full max-w-(--app-compact-max-width) grid-cols-[3rem_minmax(0,1fr)_3rem] items-center gap-2"
 	aria-label="Select date"
 >
 	<Button
 		href={hrefForDate(previousDate) as Pathname}
 		variant="default"
-		size="icon"
+		size="medium" format="icon"
 		aria-label="Previous day"><ChevronLeft class="size-4" /></Button
 	>
 	<Popover bind:open={calendarOpen}>
@@ -67,7 +67,8 @@
 			{#snippet child({ props })}
 				<Button
 					variant="ghost"
-					class="date-picker-field w-full min-w-0 gap-2 px-3 text-white shadow-sm shadow-black/15 hover:bg-transparent hover:text-white sm:px-4"
+					size="medium"
+					class="date-picker-field w-full min-w-0 gap-2 text-white shadow-sm shadow-black/15 hover:bg-transparent hover:text-white"
 					motionColors={pickerColors}
 					{...props}
 				>
@@ -101,7 +102,7 @@
 		href={nextDate <= today ? (hrefForDate(nextDate) as Pathname) : undefined}
 		disabled={nextDate > today}
 		variant="default"
-		size="icon"
+		size="medium" format="icon"
 		aria-label="Next day"><ChevronRight class="size-4" /></Button
 	>
 </section>

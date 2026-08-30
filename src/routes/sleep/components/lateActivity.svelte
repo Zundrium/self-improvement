@@ -26,7 +26,7 @@
 				least one app is selected.
 			</AlertDescription>
 			<div class="col-start-2 mt-2">
-				<Button href="/screen-time" size="sm" variant="ghost">Choose tracked apps</Button>
+				<Button href="/screen-time" size="small" variant="ghost">Choose tracked apps</Button>
 			</div>
 		</Alert>
 	{:else if summary.violatingApps.length}

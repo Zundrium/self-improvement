@@ -56,4 +56,4 @@
 	</Form>
 </TrackerSection>
 
-<SettingsSaveBar form="meditation-settings" {saving} />
+<SettingsSaveBar form="meditation-settings" {saving} backHref="/meditation" />

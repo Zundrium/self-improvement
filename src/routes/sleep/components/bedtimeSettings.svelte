@@ -79,4 +79,4 @@
 
 </Form>
 
-<SettingsSaveBar form="sleep-settings" {saving} />
+<SettingsSaveBar form="sleep-settings" {saving} backHref="/sleep" />

@@ -60,4 +60,4 @@
 	</Form>
 </TrackerSection>
 
-<SettingsSaveBar form="breathing-settings" {saving} />
+<SettingsSaveBar form="breathing-settings" {saving} backHref="/breathing" />

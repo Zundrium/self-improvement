@@ -49,4 +49,4 @@
 	</Form>
 </TrackerSection>
 
-<SettingsSaveBar form="steps-settings" {saving} />
+<SettingsSaveBar form="steps-settings" {saving} backHref="/steps" />

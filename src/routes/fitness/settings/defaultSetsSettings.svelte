@@ -58,4 +58,9 @@
 	</Form>
 </TrackerSection>
 
-<SettingsSaveBar form="fitness-settings" {saving} contentClass="max-w-6xl" />
+<SettingsSaveBar
+	form="fitness-settings"
+	{saving}
+	backHref="/fitness"
+	contentClass="max-w-6xl"
+/>

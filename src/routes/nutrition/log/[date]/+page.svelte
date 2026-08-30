@@ -150,8 +150,8 @@
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Keep fasting</AlertDialogCancel>
-						<AlertDialogAction class="bg-red-600 text-white hover:bg-red-700" onclick={cancelFasting}>
+						<AlertDialogCancel size="medium">Keep fasting</AlertDialogCancel>
+						<AlertDialogAction size="medium" class="bg-red-600 text-white hover:bg-red-700" onclick={cancelFasting}>
 							Cancel fasting day
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -190,8 +190,8 @@
 			</Field>
 			{#if requestError}<p class="text-sm text-red-600 dark:text-red-400">{requestError}</p>{/if}
 			<DialogFooter>
-				<Button type="button" variant="ghost" onclick={() => (markOpen = false)}>Cancel</Button>
-				<Button
+				<Button size="medium" type="button" variant="ghost" onclick={() => (markOpen = false)}>Cancel</Button>
+				<Button size="medium"
 					type="submit"
 					disabled={busy ||
 						Number(days) < 1 ||

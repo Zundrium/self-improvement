@@ -68,4 +68,4 @@ function showError(cause: unknown) {
 	</Form>
 </TrackerSection>
 
-<SettingsSaveBar form="stretch-settings" {saving} />
+<SettingsSaveBar form="stretch-settings" {saving} backHref="/stretch" />

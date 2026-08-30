@@ -7,6 +7,7 @@ import GlimmerIcon from '$lib/components/glimmerIcon.svelte';
 import TrackerPage from '$lib/components/trackerPage.svelte';
 import TrackerSection from '$lib/components/trackerSection.svelte';
 import { Button } from '$lib/components/ui/button';
+import { Pressable } from '$lib/components/ui/pressable';
 import {
 	Dialog,
 	DialogContent,
@@ -76,8 +77,7 @@ async function redeemSelectedReward() {
 		<div class="grid grid-cols-2 gap-4">
 			{#each data.rewards as reward (reward.id)}
 				{@const affordable = glimmers >= reward.price}
-				<Button
-					variant="ghost"
+				<Pressable
 					class="h-auto min-w-0 flex-col justify-start gap-0 overflow-hidden rounded-3xl bg-(--bg-elevated) p-0 whitespace-normal text-(--text) hover:bg-(--bg-elevated) hover:text-(--text) disabled:opacity-100"
 					disabled={!affordable}
 					onclick={() => selectReward(reward)}
@@ -103,17 +103,16 @@ async function redeemSelectedReward() {
 							</strong>
 						</span>
 					</span>
-				</Button>
+				</Pressable>
 			{/each}
-			<Button
+			<Pressable
 				href="/shop/rewards/new"
-				variant="ghost"
 				class="aspect-square h-auto min-w-0 flex-col gap-3 rounded-3xl border-2 border-dotted border-(--text)/20 bg-transparent text-(--text)/48 hover:border-(--text)/32 hover:bg-transparent hover:text-(--text)"
 				aria-label="Add a new reward"
 			>
 				<Plus class="size-8" />
 				<span class="text-sm font-medium">Add reward</span>
-			</Button>
+			</Pressable>
 		</div>
 	</TrackerSection>
 
@@ -149,8 +148,8 @@ async function redeemSelectedReward() {
 		</DialogHeader>
 		{#if errorMessage}<p class="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>{/if}
 		<DialogFooter>
-			<Button variant="ghost" onclick={() => (confirmationOpen = false)}>Not yet</Button>
-			<Button
+			<Button size="medium" variant="ghost" onclick={() => (confirmationOpen = false)}>Not yet</Button>
+			<Button size="medium"
 				class="text-white hover:text-white hover:brightness-110"
 				style={`background: ${colors.primary}`}
 				disabled={redeeming}
@@ -171,7 +170,7 @@ async function redeemSelectedReward() {
 				<DialogTitle>Enjoy {claimedReward?.name}</DialogTitle>
 				<DialogDescription class="mt-2">You earned this one.</DialogDescription>
 			</div>
-			<Button
+			<Button size="medium"
 				class="text-white hover:text-white hover:brightness-110"
 				style={`background: ${colors.primary}`}
 				onclick={() => (celebrationOpen = false)}>Done</Button

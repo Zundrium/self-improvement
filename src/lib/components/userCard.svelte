@@ -7,6 +7,7 @@ import { staggerChildren } from '$lib/motion/gsap';
 import { getTrackerColors } from '$lib/trackers/registry';
 import { Avatar } from '$lib/components/ui/avatar';
 import { Button } from '$lib/components/ui/button';
+import { Pressable } from '$lib/components/ui/pressable';
 import AudioVolumeControl from './audioVolumeControl.svelte';
 import GameCoinIcon from './gameCoinIcon.svelte';
 import GlimmerIcon from './glimmerIcon.svelte';
@@ -55,9 +56,8 @@ async function refreshGamification() {
 			aria-label="Game progress"
 			data-user-card-item
 		>
-			<Button
+			<Pressable
 				href="/achievements"
-				variant="ghost"
 				class="h-28 min-w-0 flex-col gap-2 rounded-none bg-(--bg-elevated) px-1 text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
 				aria-label={`${gamification.achievementCount} achievements completed`}
 				onclick={onSelect}
@@ -68,11 +68,10 @@ async function refreshGamification() {
 				<strong class="max-w-full truncate text-lg font-medium tabular-nums">
 					{gamification.achievementCount}
 				</strong>
-			</Button>
+			</Pressable>
 
-			<Button
+			<Pressable
 				href="/streaks"
-				variant="ghost"
 				class="h-28 min-w-0 flex-col gap-2 rounded-none bg-(--bg-elevated) px-1 text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
 				aria-label={`${gamification.dayStreak.current} day streak`}
 				onclick={onSelect}
@@ -83,11 +82,10 @@ async function refreshGamification() {
 				<strong class="max-w-full truncate text-lg font-medium tabular-nums">
 					{gamification.dayStreak.current}
 				</strong>
-			</Button>
+			</Pressable>
 
-			<Button
+			<Pressable
 				href="/shop"
-				variant="ghost"
 				class="h-28 min-w-0 flex-col gap-2 rounded-none bg-(--bg-elevated) px-1 text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
 				aria-label={`${gamification.glimmers} Glimmers. Open shop.`}
 				onclick={onSelect}
@@ -96,7 +94,7 @@ async function refreshGamification() {
 				<strong class="max-w-full truncate text-lg font-medium tabular-nums">
 					{gamification.glimmers.toLocaleString()}
 				</strong>
-			</Button>
+			</Pressable>
 		</section>
 
 		<div data-user-card-item>
@@ -106,7 +104,8 @@ async function refreshGamification() {
 		<Button
 			href="/profile"
 			variant="ghost"
-			class="h-12 w-full gap-2 rounded-2xl bg-(--text)/4"
+			size="large"
+			class="w-full gap-2 bg-(--text)/4"
 			data-user-card-item
 			onclick={onSelect}
 		>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ChevronRight, Salad } from '@lucide/svelte';
 	import type { NutritionEntry } from '$lib/api-types';
-	import { Button } from '$lib/components/ui/button';
+import { Pressable } from '$lib/components/ui/pressable';
 	import { Card } from '$lib/components/ui/card';
 	import { Empty, EmptyTitle } from '$lib/components/ui/empty';
 
@@ -19,9 +19,8 @@
 	{#if entries.length > 0}
 		{#each entries as entry (entry.id)}
 			{@const entryTime = displayTime(entry.createdAt)}
-			<Button
+			<Pressable
 				href="/nutrition/entry/{entry.id}"
-				variant="ghost"
 				class="grid h-auto w-full grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_auto_1rem] items-center gap-2 bg-transparent px-0 py-3 text-left whitespace-normal hover:bg-transparent hover:text-(--text) sm:grid-cols-[3rem_4rem_minmax(0,1fr)_auto_1.25rem] sm:gap-4 sm:py-4"
 			>
 				<span class="text-center text-xs leading-tight text-(--text)/48 tabular-nums">
@@ -41,7 +40,7 @@
 					<span class="text-[0.65rem] leading-4 text-(--text)/48">kcal</span>
 				</span>
 				<ChevronRight class="size-4 text-(--text)/32" />
-			</Button>
+			</Pressable>
 		{/each}
 	{:else}
 		<Empty class="py-10">

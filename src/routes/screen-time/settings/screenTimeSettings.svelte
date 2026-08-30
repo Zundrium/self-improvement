@@ -56,4 +56,4 @@
 	</Form>
 </TrackerSection>
 
-<SettingsSaveBar form="screen-time-settings" {saving} />
+<SettingsSaveBar form="screen-time-settings" {saving} backHref="/screen-time" />

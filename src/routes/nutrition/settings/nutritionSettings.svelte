@@ -186,12 +186,17 @@
 					</div>
 				</FieldGroup>
 	</Form>
-	<SettingsSaveBar form="nutrition-settings" {saving} contentClass="max-w-3xl" />
+	<SettingsSaveBar
+		form="nutrition-settings"
+		{saving}
+		backHref="/nutrition/log/today"
+		contentClass="max-w-3xl"
+	/>
 {:else}
 	<div class="space-y-4">
 				<p class="text-sm leading-6 text-(--text)/64">
 					Set a daily calorie goal before tracking meals.
 				</p>
-				<Button href="/nutrition/onboarding">Set up nutrition</Button>
+				<Button size="medium" href="/nutrition/onboarding">Set up nutrition</Button>
 	</div>
 {/if}

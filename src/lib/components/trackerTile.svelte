@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Check, LoaderCircle } from '@lucide/svelte';
-	import { Button } from '$lib/components/ui/button';
+import { Pressable } from '$lib/components/ui/pressable';
 	import type { TrackerIconComponent } from '$lib/trackers/icons';
 	import type { TrackerColors } from '$lib/trackers/registry';
 
@@ -34,10 +34,9 @@
 	);
 </script>
 
-<Button
+<Pressable
 	{href}
-	variant="ghost"
-	class="h-32 min-w-0 flex-col gap-2 rounded-3xl bg-transparent px-2.5 py-3 text-center whitespace-normal hover:bg-transparent"
+	class="h-32 min-w-0 flex-col items-center justify-center gap-2 rounded-3xl bg-transparent px-2.5 py-3 text-center whitespace-normal hover:bg-transparent"
 	data-state={state}
 	aria-label={`${label}${description ? `: ${description}` : ''}${stateDescription}`}
 	aria-current={active ? 'page' : undefined}
@@ -79,4 +78,4 @@
 			</span>
 		{/if}
 	</span>
-</Button>
+</Pressable>

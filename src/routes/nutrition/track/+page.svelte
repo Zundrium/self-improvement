@@ -385,7 +385,7 @@ onDestroy(stopCamera);
 				<Button
 					href="/nutrition/log/{data.date}"
 					variant="ghost"
-					size="icon"
+					size="medium" format="icon"
 					aria-label="Back to food log"><X class="size-5" /></Button
 				>
 			{/snippet}
@@ -401,7 +401,7 @@ onDestroy(stopCamera);
 						Add your OpenRouter API key before analyzing a meal.
 					</p>
 				</div>
-				<Button href="/profile?tab=general" size="lg" class="w-full">Open profile settings</Button>
+				<Button href="/profile?tab=general" size="large" class="w-full">Open profile settings</Button>
 			</div>
 		</section>
 	{:else if phase === 'photo'}
@@ -439,10 +439,10 @@ onDestroy(stopCamera);
 								<p class="mt-1 text-sm text-white/60">{cameraError}</p>
 							</div>
 							<div class="flex justify-center gap-2">
-								<Button class="bg-white text-black hover:bg-white/90" onclick={startCamera}
+								<Button size="medium" class="bg-white text-black hover:bg-white/90" onclick={startCamera}
 									><RefreshCw class="mr-1.5 size-4" /> Retry</Button
 								>
-								<Button
+								<Button size="medium"
 									class="bg-white/12 text-white hover:bg-white/20"
 									onclick={() => fileInput?.click()}
 									><ImagePlus class="mr-1.5 size-4" /> Choose photo</Button
@@ -501,7 +501,7 @@ onDestroy(stopCamera);
 						</Field>
 						<Button
 							type="submit"
-							size="lg"
+							size="large"
 							class="w-full"
 							disabled={mealDescription.trim().length < 2}
 						>
@@ -559,11 +559,14 @@ onDestroy(stopCamera);
 				</div>
 			</div>
 			<div class="app-gutter relative z-10 flex size-full items-end py-4">
-				<div class="mx-auto w-full max-w-lg space-y-3 rounded-3xl bg-(--bg-elevated)/92 p-4 backdrop-blur-md">
+				<div class="mx-auto w-full max-w-lg space-y-3">
 					{#if !selectedImage}
 						<p class="line-clamp-4 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
 					{/if}
-					<Alert variant="destructive"><AlertDescription>{requestError}</AlertDescription></Alert>
+					<Alert variant="destructive" class="bg-red-600 text-white dark:bg-red-600 dark:text-white">
+						<X aria-hidden="true" />
+						<AlertDescription>{requestError}</AlertDescription>
+					</Alert>
 				</div>
 			</div>
 		</section>
@@ -642,15 +645,14 @@ onDestroy(stopCamera);
 								<Button
 									type="button"
 									variant="ghost"
-									size="lg"
-									class="px-5"
+									size="large"
 									onclick={() => {
 										requestError = '';
 										phase = 'review';
 									}}
 									aria-label="Back to estimate"><ArrowLeft class="size-5" /></Button
 								>
-								<Button type="submit" size="lg" disabled={correction.trim().length < 2}
+								<Button type="submit" size="large" disabled={correction.trim().length < 2}
 									>Update estimate <Send class="ml-2 size-4" /></Button
 								>
 							</div>
@@ -673,7 +675,6 @@ onDestroy(stopCamera);
 				<X class="size-5" />
 			</BottomActionButton>
 			<BottomActionButton
-				tone="secondary"
 				format="icon"
 				onclick={() => fileInput?.click()}
 				disabled={processingPhoto}
@@ -699,7 +700,6 @@ onDestroy(stopCamera);
 				<SwitchCamera class="size-5" />
 			</BottomActionButton>
 			<BottomActionButton
-				tone="secondary"
 				format="icon"
 				onclick={openDescription}
 				disabled={processingPhoto}
@@ -751,7 +751,7 @@ onDestroy(stopCamera);
 			>
 				<X class="size-5" />
 			</BottomActionButton>
-			<BottomActionButton tone="secondary" onclick={analyzeMeal}>
+			<BottomActionButton onclick={analyzeMeal}>
 				<RefreshCw class="mr-2 size-4" /> Try again
 			</BottomActionButton>
 			<BottomActionButton tone="primary" onclick={editMealSource}>
@@ -779,7 +779,7 @@ onDestroy(stopCamera);
 				onclick={openCorrection}
 				disabled={phase === 'saving'}
 			>
-				Correct it
+				<X class="mr-2 size-4" /> Correct it
 			</BottomActionButton>
 			<BottomActionButton
 				tone="primary"

@@ -239,7 +239,7 @@
 				Check each connection and fix only the ones that need attention.
 			</p>
 		</div>
-		<Button type="button" class="w-full sm:w-auto" disabled={busy || !nativeAndroid} onclick={syncNow}>
+		<Button size="medium" type="button" class="w-full sm:w-auto" disabled={busy || !nativeAndroid} onclick={syncNow}>
 			{#if busy}
 				<LoaderCircle class="size-4" data-motion-spin />
 			{:else}
@@ -313,22 +313,22 @@
 
 							<div class="flex flex-wrap gap-2">
 								{#if tracker === 'steps'}
-									<Button type="button" disabled={busy || !nativeAndroid || !healthAvailable} onclick={grantHealth}>
+									<Button size="medium" type="button" disabled={busy || !nativeAndroid || !healthAvailable} onclick={grantHealth}>
 										<ShieldCheck class="size-4" /> Health access
 									</Button>
-									<Button type="button" variant="ghost" disabled={busy || !nativeAndroid || !healthAvailable} onclick={openHealthSettings}>
+									<Button size="medium" type="button" variant="ghost" disabled={busy || !nativeAndroid || !healthAvailable} onclick={openHealthSettings}>
 										<Settings class="size-4" /> Health Connect
 									</Button>
 								{:else}
-									<Button type="button" disabled={busy || !nativeAndroid} onclick={openUsageSettings}>
+									<Button size="medium" type="button" disabled={busy || !nativeAndroid} onclick={openUsageSettings}>
 										<Smartphone class="size-4" /> Usage access
 									</Button>
-									<Button type="button" variant="ghost" disabled={busy || !nativeAndroid} onclick={openAppSettings}>
+									<Button size="medium" type="button" variant="ghost" disabled={busy || !nativeAndroid} onclick={openAppSettings}>
 										<Settings class="size-4" /> App settings
 									</Button>
 									{#if tracker === 'sleep'}
-										<Button href="/screen-time/settings" variant="ghost">Tracked apps</Button>
-										<Button href="/sleep/settings" variant="ghost">Bedtime</Button>
+										<Button size="medium" href="/screen-time/settings" variant="ghost">Tracked apps</Button>
+										<Button size="medium" href="/sleep/settings" variant="ghost">Bedtime</Button>
 									{/if}
 								{/if}
 							</div>

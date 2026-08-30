@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Bird, Bug, CloudRain, Flame, LoaderCircle, WavesHorizontal, Wind } from '@lucide/svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
-	import { Button } from '$lib/components/ui/button';
+import { Pressable } from '$lib/components/ui/pressable';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import { ambientSounds } from '../sounds';
 
@@ -44,9 +44,8 @@
 		{#each ambientSounds as sound (sound.id)}
 			{@const SoundIcon = soundIcons[sound.id]}
 			{@const active = activeSoundIds.includes(sound.id)}
-			<Button
-				variant="ghost"
-				class="h-auto flex-col gap-2 bg-transparent px-1 py-2 hover:bg-transparent"
+			<Pressable
+				class="h-auto flex-col items-center justify-center gap-2 bg-transparent px-1 py-2 hover:bg-transparent"
 				data-meditation-sound
 				aria-label={`${active ? 'Stop' : 'Play'} ${sound.label}`}
 				aria-pressed={active}
@@ -68,7 +67,7 @@
 					{/if}
 				</span>
 				<span class="text-xs font-medium">{sound.label}</span>
-			</Button>
+			</Pressable>
 		{/each}
 	</div>
 

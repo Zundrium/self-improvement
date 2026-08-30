@@ -5,7 +5,7 @@
 	export type BottomActionFormat = 'text' | 'icon';
 	export type BottomActionButtonProps = Omit<
 		ButtonProps,
-		'variant' | 'size' | 'motionColors'
+		'variant' | 'size' | 'format' | 'motionColors'
 	> & {
 		tone?: BottomActionTone;
 		format?: BottomActionFormat;
@@ -29,7 +29,8 @@
 
 <Button
 	variant={tone === 'destructive' ? 'destructive' : 'ghost'}
-	size={format === 'icon' ? 'icon' : 'lg'}
+	size="medium"
+	{format}
 	class={cn(
 		'bottom-action-button',
 		format === 'text' && expand ? 'min-w-0 flex-1' : 'shrink-0',
@@ -45,7 +46,6 @@
 
 <style>
 	:global(.bottom-action-button) {
-		height: var(--bottom-action-control-size);
 		border-radius: 9999px;
 		transition:
 			background-color 150ms ease,
@@ -53,17 +53,8 @@
 			filter 150ms ease;
 	}
 
-	:global(.bottom-action-button[data-action-format='text']) {
-		padding-inline: var(--bottom-action-padding-inline);
-	}
-
 	:global(.bottom-action-button[data-action-format='text'][data-action-expand='true']) {
 		width: 100%;
-	}
-
-	:global(.bottom-action-button[data-action-format='icon']) {
-		width: var(--bottom-action-control-size);
-		padding: 0;
 	}
 
 	:global(.bottom-action-button[data-action-tone='neutral']) {

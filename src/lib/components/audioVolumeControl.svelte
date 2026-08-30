@@ -7,8 +7,8 @@
 <div class="flex items-center gap-3 px-1 py-2">
 	<Button
 		variant="ghost"
-		size="icon"
-		class="size-8 shrink-0 bg-transparent hover:bg-transparent"
+		size="small" format="icon"
+		class="bg-transparent hover:bg-transparent"
 		aria-label={audioVolumeState.muted ? 'Unmute audio' : 'Mute audio'}
 		onclick={() => audioVolumeState.toggleMuted()}
 	>

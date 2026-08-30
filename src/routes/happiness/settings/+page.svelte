@@ -55,7 +55,8 @@
 						<Button
 							type="button"
 							variant="ghost"
-							class="h-12 px-0 text-base tabular-nums {selected ? 'text-white' : ''}"
+							size="large"
+							class="tabular-nums {selected ? 'text-white' : ''}"
 							style={selected
 								? `background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
 								: `background: color-mix(in srgb, ${colors.primary} 12%, transparent); color: ${colors.primary}`}
@@ -72,4 +73,4 @@
 	</TrackerSection>
 </TrackerPage>
 
-<SettingsSaveBar form="happiness-settings" {saving} />
+<SettingsSaveBar form="happiness-settings" {saving} backHref="/happiness" />

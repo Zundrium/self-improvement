@@ -29,7 +29,7 @@
 	<div class="col-start-2 mt-2">
 		<Button
 			href={permissionsSettingsHref(tracker === 'screen-time' ? 'screenTime' : tracker)}
-			size="sm"
+			size="small"
 			variant="ghost"
 		>
 			Review data access

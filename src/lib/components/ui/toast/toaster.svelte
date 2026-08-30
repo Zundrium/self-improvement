@@ -179,16 +179,17 @@
 				{/if}
 				{#if item.action}
 					<Button
-						size="sm"
-						class="mt-2 h-7 bg-white/20 px-3 text-xs text-white hover:bg-white/30"
+						size="small"
+						class="mt-2 bg-white/20 text-white hover:bg-white/30"
 						onclick={() => runAction(item)}>{item.action.label}</Button
 					>
 				{/if}
 			</div>
 			<Button
 				variant="ghost"
-				size="icon"
-				class="size-8 self-center bg-transparent text-white/80 hover:bg-transparent hover:text-white"
+				size="small"
+				format="icon"
+				class="self-center bg-transparent text-white/80 hover:bg-transparent hover:text-white"
 				aria-label={`Dismiss ${item.message}`}
 				onclick={() => toast.dismiss(item.id)}
 			><X class="size-5" aria-hidden="true" /></Button>

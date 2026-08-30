@@ -202,7 +202,7 @@ function totalMeals(items: EditableMeal[]) {
 			<Button
 				href="/nutrition/log/{date}"
 				variant="ghost"
-				size="icon"
+				size="medium" format="icon"
 				aria-label="Back to daily log"><ChevronLeft class="size-5" /></Button
 			>
 			<div class="text-center">
@@ -259,7 +259,7 @@ function totalMeals(items: EditableMeal[]) {
 	<section class="space-y-3">
 		<div class="flex items-center justify-between px-1">
 			<h2 class="text-lg font-medium">Meals</h2>
-			<Button type="button" variant="ghost" size="sm" onclick={addMeal}
+			<Button type="button" variant="ghost" size="small" onclick={addMeal}
 				><Plus class="mr-1.5 size-4" /> Add meal</Button
 			>
 		</div>
@@ -288,7 +288,7 @@ function totalMeals(items: EditableMeal[]) {
 							/><Button
 								type="button"
 								variant="destructive"
-								size="icon"
+								size="medium" format="icon"
 								onclick={() => removeMeal(meal.id)}
 								aria-label="Remove meal"><Trash2 class="size-4" /></Button
 							>
@@ -352,7 +352,7 @@ function totalMeals(items: EditableMeal[]) {
 							>
 						{/if}
 						<div class="flex justify-end">
-							<Button
+							<Button size="medium"
 								type="button"
 								onclick={() => refineMeal(meal.id)}
 								disabled={(revisionDrafts[meal.id] ?? '').trim().length < 2 || refining[meal.id]}
@@ -366,7 +366,7 @@ function totalMeals(items: EditableMeal[]) {
 
 				<div class="flex items-center justify-between pt-2">
 					<h3 class="text-sm font-medium">Ingredients</h3>
-					<Button type="button" variant="ghost" size="sm" onclick={() => addIngredient(meal.id)}
+					<Button type="button" variant="ghost" size="small" onclick={() => addIngredient(meal.id)}
 						><Plus class="mr-1 size-3.5" /> Ingredient</Button
 					>
 				</div>
@@ -408,7 +408,7 @@ function totalMeals(items: EditableMeal[]) {
 										<Button
 											type="button"
 											variant="destructive"
-											size="icon"
+											size="medium" format="icon"
 											class="self-end"
 											onclick={() => removeIngredient(meal.id, item.id)}
 											aria-label="Remove ingredient"><Trash2 class="size-4" /></Button
