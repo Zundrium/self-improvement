@@ -1,6 +1,5 @@
 <script lang="ts">
 import {
-	ChevronLeft,
 	Droplet,
 	Drumstick,
 	Image,
@@ -198,20 +197,11 @@ function totalMeals(items: EditableMeal[]) {
 	{#if error}<Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>{/if}
 
 	<div class="space-y-6 py-2">
-		<div class="grid grid-cols-[2.5rem_1fr_2.5rem] items-center">
-			<Button
-				href="/nutrition/log/{date}"
-				variant="ghost"
-				size="medium" format="icon"
-				aria-label="Back to daily log"><ChevronLeft class="size-5" /></Button
+		<div class="text-center">
+			<strong class="block text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl"
+				>{Math.round(totals.calories)}</strong
 			>
-			<div class="text-center">
-				<strong class="block text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl"
-					>{Math.round(totals.calories)}</strong
-				>
-				<span class="mt-1 block text-sm text-(--text)/48">kcal</span>
-			</div>
-			<span aria-hidden="true"></span>
+			<span class="mt-1 block text-sm text-(--text)/48">kcal</span>
 		</div>
 		<div class="mx-auto grid w-full max-w-lg grid-cols-3 items-center">
 			<MetricStat

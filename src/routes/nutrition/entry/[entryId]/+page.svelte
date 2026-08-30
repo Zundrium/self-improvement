@@ -2,7 +2,7 @@
 	import { Form } from '$lib/components/ui/form';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { Save, Trash2 } from '@lucide/svelte';
+	import { ChevronLeft, Save, Trash2 } from '@lucide/svelte';
 	import { onMount, untrack } from 'svelte';
 	import type { PageProps } from './$types';
 	import { apiRequest } from '$lib/api';
@@ -108,6 +108,9 @@
 
 <BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
 	<BottomActionGroup>
+		<BottomActionButton href="/nutrition/log/{date}" format="icon" aria-label="Back to daily log">
+			<ChevronLeft class="size-5" />
+		</BottomActionButton>
 		<BottomActionButton form="save-entry" type="submit" tone="primary">
 			<Save class="mr-2 size-4" /> Save meal
 		</BottomActionButton>
