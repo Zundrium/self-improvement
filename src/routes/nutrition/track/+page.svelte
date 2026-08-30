@@ -400,15 +400,6 @@ onDestroy(stopCamera);
 			</div>
 		</section>
 	{:else if phase === 'photo'}
-		<WorkflowHeader title="Take a photo of your meal">
-			{#snippet leading()}<Badge>1 / 3</Badge>{/snippet}
-			{#snippet trailing()}
-				<Button href="/nutrition/log/{data.date}" variant="ghost" size="icon" aria-label="Cancel"
-					><X class="size-5" /></Button
-				>
-			{/snippet}
-		</WorkflowHeader>
-
 		<section class="relative min-h-0 flex-1 overflow-hidden bg-black text-white">
 			<video
 				bind:this={video}
@@ -422,6 +413,14 @@ onDestroy(stopCamera);
 			<div
 				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/65"
 			></div>
+			<div class="app-gutter absolute inset-x-0 top-4 z-30">
+				<div
+					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 text-(--text) backdrop-blur-md"
+				>
+					<Badge class="bg-(--tracker-fade-color) text-white">1 / 3</Badge>
+					<p class="truncate text-sm font-medium">Take a photo of your meal</p>
+				</div>
+			</div>
 
 			{#if cameraState !== 'ready'}
 				<div class="absolute inset-0 flex items-center justify-center bg-black px-6 text-center">
@@ -452,43 +451,6 @@ onDestroy(stopCamera);
 				</div>
 			{/if}
 
-			{#if cameraState === 'ready'}
-				<div class="app-gutter absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-5 pb-6">
-					<Button
-						variant="ghost"
-						class="bg-black/40 text-white backdrop-blur-md hover:bg-black/60 hover:text-white"
-						onclick={openDescription}
-					>
-						<FileText class="mr-2 size-4" /> Describe meal instead
-					</Button>
-					<div class="grid grid-cols-[3.5rem_5rem_3.5rem] items-center justify-center gap-6">
-						<Button
-							variant="ghost"
-							size="icon"
-							class="size-14 bg-black/45 text-white backdrop-blur-md hover:bg-black/65 hover:text-white"
-							onclick={() => fileInput?.click()}
-							disabled={processingPhoto}
-							aria-label="Choose a photo"><ImagePlus class="size-5" /></Button
-						>
-						<Button
-							size="icon"
-							class="size-20 bg-white text-black ring-4 ring-white/30 hover:bg-white/90"
-							onclick={takePhoto}
-							disabled={processingPhoto}
-							aria-label="Take photo"><Camera class="size-7" /></Button
-						>
-						<Button
-							variant="ghost"
-							size="icon"
-							class="size-14 bg-black/45 text-white backdrop-blur-md hover:bg-black/65 hover:text-white"
-							onclick={switchCamera}
-							disabled={processingPhoto}
-							aria-label="Switch camera"><SwitchCamera class="size-5" /></Button
-						>
-					</div>
-				</div>
-			{/if}
-
 			{#if processingPhoto}
 				<div class="absolute inset-0 z-20 flex items-center justify-center bg-black/55 text-white">
 					<Spinner class="size-12" />
@@ -497,12 +459,7 @@ onDestroy(stopCamera);
 		</section>
 	{:else if phase === 'description'}
 		<WorkflowHeader title="Describe your meal">
-			{#snippet leading()}<Badge>1 / 3</Badge>{/snippet}
-			{#snippet trailing()}
-				<Button variant="ghost" size="icon" onclick={retakePhoto} aria-label="Use a photo">
-					<Camera class="size-5" />
-				</Button>
-			{/snippet}
+			{#snippet leading()}<Badge class="bg-(--tracker-fade-color) text-white">1 / 3</Badge>{/snippet}
 		</WorkflowHeader>
 
 		<section class="app-gutter mx-auto min-h-0 w-full max-w-xl flex-1 overflow-y-auto py-8 sm:py-12">
@@ -550,15 +507,6 @@ onDestroy(stopCamera);
 			</div>
 		</section>
 	{:else if phase === 'analyzing' || phase === 'refining'}
-		<WorkflowHeader title={phase === 'analyzing' ? 'Analyzing meal' : 'Updating estimate'}>
-			{#snippet leading()}<Badge>{phase === 'analyzing' ? '2 / 3' : '3 / 3'}</Badge>{/snippet}
-			{#snippet trailing()}
-				<Button href="/nutrition/log/{data.date}" variant="ghost" size="icon" aria-label="Cancel"
-					><X class="size-5" /></Button
-				>
-			{/snippet}
-		</WorkflowHeader>
-
 		<section
 			class="relative min-h-0 flex-1 overflow-hidden {selectedImage ? 'bg-black' : 'bg-(--bg-elevated)'}"
 			aria-live="polite"
@@ -578,55 +526,43 @@ onDestroy(stopCamera);
 			>
 				<Spinner class="size-12" />
 			</div>
+			<div class="app-gutter absolute inset-x-0 top-4 z-30">
+				<div
+					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 text-(--text) backdrop-blur-md"
+				>
+					<Badge class="bg-(--tracker-fade-color) text-white">
+						{phase === 'analyzing' ? '2 / 3' : '3 / 3'}
+					</Badge>
+					<p class="truncate text-sm font-medium">
+						{phase === 'analyzing' ? 'Analyzing meal' : 'Updating estimate'}
+					</p>
+				</div>
+			</div>
 		</section>
 	{:else if phase === 'analysis-error'}
-		<WorkflowHeader title="Could not analyze meal">
-			{#snippet leading()}<Badge>2 / 3</Badge>{/snippet}
-			{#snippet trailing()}
-				<Button href="/nutrition/log/{data.date}" variant="ghost" size="icon" aria-label="Cancel"
-					><X class="size-5" /></Button
-				>
-			{/snippet}
-		</WorkflowHeader>
-
 		<section class="relative min-h-0 flex-1 overflow-hidden {selectedImage ? 'bg-black' : ''}">
 			{#if selectedImage}
 				<img src={selectedImage} alt="Your meal" class="absolute inset-0 size-full object-cover" />
 				<div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
 			{/if}
+			<div class="app-gutter absolute inset-x-0 top-4 z-30">
+				<div
+					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 backdrop-blur-md"
+				>
+					<Badge class="bg-(--tracker-fade-color) text-white">2 / 3</Badge>
+					<p class="truncate text-sm font-medium">Could not analyze meal</p>
+				</div>
+			</div>
 			<div class="app-gutter relative z-10 flex size-full items-end py-4">
 				<div class="mx-auto w-full max-w-lg space-y-3 rounded-3xl bg-(--bg-elevated)/92 p-4 backdrop-blur-md">
 					{#if !selectedImage}
 						<p class="line-clamp-4 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
 					{/if}
 					<Alert variant="destructive"><AlertDescription>{requestError}</AlertDescription></Alert>
-					<div class="grid gap-2 sm:grid-cols-2">
-						<Button size="lg" onclick={analyzeMeal}>
-							<RefreshCw class="mr-2 size-4" /> Try again
-						</Button>
-						<Button size="lg" variant="ghost" onclick={editMealSource}>
-							{#if selectedImage}<Camera class="mr-2 size-4" /> Retake photo{:else}<FileText
-									class="mr-2 size-4"
-								/> Edit description{/if}
-						</Button>
-					</div>
 				</div>
 			</div>
 		</section>
 	{:else if estimate}
-		<WorkflowHeader title="Review estimate">
-			{#snippet leading()}<Badge>3 / 3</Badge>{/snippet}
-			{#snippet trailing()}
-				<Button
-					href="/nutrition/log/{data.date}"
-					variant="ghost"
-					size="icon"
-					disabled={phase === 'saving'}
-					aria-label="Cancel"><X class="size-5" /></Button
-				>
-			{/snippet}
-		</WorkflowHeader>
-
 		<section class="relative min-h-0 flex-1 overflow-y-auto {selectedImage ? 'bg-black' : ''}">
 			{#if selectedImage}
 				<img
@@ -640,6 +576,14 @@ onDestroy(stopCamera);
 					<p class="max-w-lg text-center text-sm leading-6 text-(--text)/64">{mealDescription}</p>
 				</div>
 			{/if}
+			<div class="app-gutter absolute inset-x-0 top-4 z-30">
+				<div
+					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 backdrop-blur-md"
+				>
+					<Badge class="bg-(--tracker-fade-color) text-white">3 / 3</Badge>
+					<p class="truncate text-sm font-medium">Review estimate</p>
+				</div>
+			</div>
 
 			<div class="app-gutter relative z-10 flex min-h-full items-end py-4">
 				<div class="mx-auto w-full max-w-xl space-y-4 rounded-3xl bg-(--bg-elevated)/92 p-4 backdrop-blur-md">
@@ -713,23 +657,155 @@ onDestroy(stopCamera);
 	{/if}
 </main>
 
-{#if estimate && (phase === 'review' || phase === 'saving')}
-	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
-		<div class="flex gap-2" aria-label="Confirm meal estimate">
+{#if phase === 'photo'}
+	<BottomActionBar contentClass="max-w-lg" mobileOnly={false}>
+		<div class="flex items-center justify-center gap-2" aria-label="Camera controls">
 			<Button
-				type="button"
+				href="/nutrition/log/{data.date}"
 				variant="ghost"
-				size="lg"
-				onclick={openCorrection}
-				disabled={phase === 'saving'}
-				aria-label="Correct this estimate"
+				size="icon"
+				class="bottom-action-secondary"
+				aria-label="Cancel"
 			>
-				<X class="mr-2 size-4" /> Correct it
+				<X class="size-5" />
 			</Button>
 			<Button
 				type="button"
-				size="lg"
-				class="flex-1"
+				variant="ghost"
+				size="icon"
+				class="bottom-action-secondary"
+				onclick={() => fileInput?.click()}
+				disabled={processingPhoto}
+				aria-label="Choose a photo"
+			>
+				<ImagePlus class="size-5" />
+			</Button>
+			<Button
+				type="button"
+				size="icon"
+				onclick={takePhoto}
+				disabled={cameraState !== 'ready' || processingPhoto}
+				aria-label="Take photo"
+			>
+				<Camera class="size-5" />
+			</Button>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				class="bottom-action-secondary"
+				onclick={switchCamera}
+				disabled={cameraState !== 'ready' || processingPhoto}
+				aria-label="Switch camera"
+			>
+				<SwitchCamera class="size-5" />
+			</Button>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				class="bottom-action-secondary"
+				onclick={openDescription}
+				disabled={processingPhoto}
+				aria-label="Describe meal"
+			>
+				<FileText class="size-5" />
+			</Button>
+		</div>
+	</BottomActionBar>
+{:else if phase === 'description'}
+	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
+		<div class="flex justify-between gap-2">
+			<Button
+				href="/nutrition/log/{data.date}"
+				variant="ghost"
+				size="icon"
+				class="bottom-action-secondary"
+				aria-label="Cancel"
+			>
+				<X class="size-5" />
+			</Button>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				class="bottom-action-secondary"
+				onclick={retakePhoto}
+				aria-label="Use camera"
+			>
+				<Camera class="size-5" />
+			</Button>
+		</div>
+	</BottomActionBar>
+{:else if phase === 'analyzing' || phase === 'refining' || phase === 'correction'}
+	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
+		<Button
+			href="/nutrition/log/{data.date}"
+			variant="ghost"
+			size="icon"
+			class="bottom-action-secondary"
+			aria-label="Cancel"
+		>
+			<X class="size-5" />
+		</Button>
+	</BottomActionBar>
+{:else if phase === 'analysis-error'}
+	<BottomActionBar contentClass="max-w-lg" mobileOnly={false}>
+		<div class="grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)] gap-2">
+			<Button
+				href="/nutrition/log/{data.date}"
+				variant="ghost"
+				size="icon"
+				class="bottom-action-secondary"
+				aria-label="Cancel"
+			>
+				<X class="size-5" />
+			</Button>
+			<Button
+				type="button"
+				variant="ghost"
+				class="px-2 text-sm bottom-action-secondary"
+				onclick={analyzeMeal}
+			>
+				<RefreshCw class="mr-2 size-4" /> Try again
+			</Button>
+			<Button type="button" class="px-2 text-sm" onclick={editMealSource}>
+				{#if selectedImage}
+					<Camera class="mr-2 size-4" /> Retake
+				{:else}
+					<FileText class="mr-2 size-4" /> Edit
+				{/if}
+			</Button>
+		</div>
+	</BottomActionBar>
+{:else if estimate && (phase === 'review' || phase === 'saving')}
+	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
+		<div
+			class="grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)] gap-2"
+			aria-label="Confirm meal estimate"
+		>
+			<Button
+				href="/nutrition/log/{data.date}"
+				variant="ghost"
+				size="icon"
+				class="bottom-action-secondary"
+				disabled={phase === 'saving'}
+				aria-label="Cancel"
+			>
+				<X class="size-5" />
+			</Button>
+			<Button
+				type="button"
+				variant="ghost"
+				class="px-2 text-sm bottom-action-secondary"
+				onclick={openCorrection}
+				disabled={phase === 'saving'}
+			>
+				Correct it
+			</Button>
+			<Button
+				type="button"
+				class="px-2 text-sm"
 				onclick={confirmMeal}
 				disabled={phase === 'saving'}
 			>
@@ -742,3 +818,14 @@ onDestroy(stopCamera);
 		</div>
 	</BottomActionBar>
 {/if}
+
+<style>
+	:global([data-bottom-action-bar] [data-slot='button'].bottom-action-secondary) {
+		background: color-mix(in srgb, var(--text) 8%, transparent) !important;
+		color: var(--text) !important;
+	}
+
+	:global([data-bottom-action-bar] [data-slot='button'].bottom-action-secondary:hover) {
+		background: color-mix(in srgb, var(--text) 12%, transparent) !important;
+	}
+</style>
