@@ -15,6 +15,7 @@
 	import GamificationToast from '$lib/components/gamificationToast.svelte';
 	import { provideDateSelectorState } from '$lib/components/dateSelectorState.svelte';
 	import TrackerCompleteOverlay from '$lib/components/trackerCompleteOverlay.svelte';
+	import TrackerShader from '$lib/components/trackerShader.svelte';
 	import TrackerTitle from '$lib/components/trackerTitle.svelte';
 	import { getShopColorsForPathname, getShopFeatureForPathname } from '$lib/gamification/registry';
 	import {
@@ -198,11 +199,13 @@
 
 <div
 	class={appShellActive
-		? `safe-area-padding-top flex h-svh flex-col overflow-hidden ${selectedTracker ? 'tracker-fade' : ''}`
+		? 'safe-area-padding-top relative isolate flex h-svh flex-col overflow-hidden'
 		: undefined}
-	style:--tracker-fade-color={selectedTracker?.colors.primary}
 	use:motionRoot
 >
+	{#if selectedTracker}
+		<TrackerShader colors={selectedTracker.colors} />
+	{/if}
 	{#if dateNavigation || selectedFeature}
 		<div class="app-gutter shrink-0 py-(--app-header-padding-block)">
 			{#if dateNavigation}

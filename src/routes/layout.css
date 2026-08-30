@@ -123,14 +123,6 @@
 		padding-inline-end: var(--app-inset-inline-end);
 	}
 
-	.tracker-fade {
-		background: linear-gradient(
-			to bottom,
-			color-mix(in srgb, var(--tracker-fade-color) 10%, var(--bg)),
-			var(--bg) 50%
-		);
-	}
-
 	.link {
 		background-image: linear-gradient(currentcolor, currentcolor);
 		background-position: 0 100%;
