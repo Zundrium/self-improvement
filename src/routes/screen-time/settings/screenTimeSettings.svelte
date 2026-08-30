@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -39,7 +40,7 @@
 	description="Set the amount of tracked screen time you want to stay within."
 	{colors}
 >
-	<form id="screen-time-settings" class="space-y-6" onsubmit={saveSettings}>
+	<Form id="screen-time-settings" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="daily-limit">Minutes per day</FieldLabel>
 			<Input
@@ -52,7 +53,7 @@
 			/>
 			<FieldDescription>Choose a limit from 1 minute to 24 hours.</FieldDescription>
 		</Field>
-	</form>
+	</Form>
 </TrackerSection>
 
 <SettingsSaveBar form="screen-time-settings" {saving} />

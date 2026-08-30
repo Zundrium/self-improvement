@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -39,7 +40,7 @@
 	description="Choose how many sets a new workout starts with."
 	{colors}
 >
-	<form id="fitness-settings" class="space-y-6" onsubmit={saveSettings}>
+	<Form id="fitness-settings" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="default-sets">Default sets</FieldLabel>
 			<Input
@@ -54,7 +55,7 @@
 				Used up to the sets available for a workout; you can still adjust before starting.
 			</FieldDescription>
 		</Field>
-	</form>
+	</Form>
 </TrackerSection>
 
 <SettingsSaveBar form="fitness-settings" {saving} contentClass="max-w-6xl" />

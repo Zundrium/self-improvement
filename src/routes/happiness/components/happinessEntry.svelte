@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 import { Annoyed, ChevronLeft, Frown, Laugh, Meh, Smile } from '@lucide/svelte';
 import { tick, untrack } from 'svelte';
 import { invalidateAll } from '$app/navigation';
@@ -132,7 +133,7 @@ function reasonKey(reasons: string[]) {
 }
 </script>
 
-<form id="happiness-entry" class="space-y-6" onsubmit={saveEntry}>
+<Form id="happiness-entry" onsubmit={saveEntry}>
 	{#if errorMessage}
 		<Alert variant="destructive"><AlertDescription>{errorMessage}</AlertDescription></Alert>
 	{/if}
@@ -214,7 +215,7 @@ function reasonKey(reasons: string[]) {
 			</div>
 		</section>
 	{/if}
-</form>
+</Form>
 
 <BottomActionBar contentClass="max-w-3xl" mobileOnly={false}>
 	<BottomActionGroup>

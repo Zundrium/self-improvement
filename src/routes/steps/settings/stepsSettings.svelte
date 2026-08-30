@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -39,13 +40,13 @@
 	description="Set the number of steps you want to reach each day."
 	{colors}
 >
-	<form id="steps-settings" class="space-y-6" onsubmit={saveSettings}>
+	<Form id="steps-settings" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="daily-goal">Steps per day</FieldLabel>
 			<Input id="daily-goal" type="number" min={1000} max={100000} bind:value={dailyGoal} required />
 			<FieldDescription>Choose a goal between 1,000 and 100,000 steps.</FieldDescription>
 		</Field>
-	</form>
+	</Form>
 </TrackerSection>
 
 <SettingsSaveBar form="steps-settings" {saving} />

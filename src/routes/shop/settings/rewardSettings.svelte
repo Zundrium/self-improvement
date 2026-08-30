@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 import { untrack } from 'svelte';
 import { Pencil, Plus, Trash2 } from '@lucide/svelte';
 import { apiRequest } from '$lib/api';
@@ -128,7 +129,7 @@ async function deleteSelectedReward() {
 
 <Dialog bind:open={editorOpen}>
 	<DialogContent>
-		<form class="space-y-5" onsubmit={saveReward}>
+		<Form class="space-y-5" onsubmit={saveReward}>
 			<DialogHeader>
 				<DialogTitle>Edit reward</DialogTitle>
 				<DialogDescription>Update its name or Glimmer price.</DialogDescription>
@@ -163,7 +164,7 @@ async function deleteSelectedReward() {
 					{#if busy}<Spinner class="mr-2 size-4" />{/if} Save reward
 				</Button>
 			</DialogFooter>
-		</form>
+		</Form>
 	</DialogContent>
 </Dialog>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Save, Trash2 } from '@lucide/svelte';
@@ -100,9 +101,9 @@
 <svelte:head><title>Edit meal · Self Improvement</title></svelte:head>
 
 <TrackerPage class="max-w-4xl">
-	<form id="save-entry" onsubmit={saveEntry}>
+	<Form id="save-entry" onsubmit={saveEntry}>
 		<EntryEditor bind:date bind:time bind:name bind:notes bind:meals error={formError} />
-	</form>
+	</Form>
 </TrackerPage>
 
 <BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { onMount, untrack } from 'svelte';
 	import { apiRequest, recordAchievementEvents } from '$lib/api';
@@ -88,7 +89,7 @@
 	}
 </script>
 
-<form id="general-settings" class="space-y-4" onsubmit={saveChanges}>
+<Form id="general-settings" class="space-y-4" onsubmit={saveChanges}>
 	<Card>
 		<CardHeader><CardTitle>Appearance</CardTitle></CardHeader>
 		<CardContent class="flex items-center justify-between gap-4">
@@ -122,7 +123,7 @@
 		{busy}
 		onclear={clearApiKey}
 	/>
-</form>
+</Form>
 
 <SettingsSaveBar
 	form="general-settings"

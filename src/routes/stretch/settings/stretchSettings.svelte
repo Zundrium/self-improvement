@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 import { invalidateAll } from '$app/navigation';
 import { untrack } from 'svelte';
 import { toast } from '$lib/components/ui/toast';
@@ -50,7 +51,7 @@ function showError(cause: unknown) {
 	description="Choose the hold length for each of the two daily sets. The source video recommends 30 seconds."
 	{colors}
 >
-	<form id="stretch-settings" class="space-y-6" onsubmit={saveSettings}>
+	<Form id="stretch-settings" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="stretch-hold-seconds">Hold duration (seconds)</FieldLabel>
 			<Input
@@ -64,7 +65,7 @@ function showError(cause: unknown) {
 			/>
 			<FieldDescription>Timed holds take {duration}, followed by wall angels.</FieldDescription>
 		</Field>
-	</form>
+	</Form>
 </TrackerSection>
 
 <SettingsSaveBar form="stretch-settings" {saving} />

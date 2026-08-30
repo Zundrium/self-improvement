@@ -4,6 +4,7 @@
 	import { ChevronDown, Grip, House, LoaderCircle, UserRound } from '@lucide/svelte';
 	import { apiRequest } from '$lib/api';
 	import type { DaySummaryData, GamificationData, LocalProfile } from '$lib/api-types';
+	import { Button } from '$lib/components/ui/button';
 	import { closeDrawer as animateDrawerClose, drawerEnter } from '$lib/motion/gsap';
 	import type { AppTracker } from '$lib/trackers/registry';
 	import AppDrawer from './appDrawer.svelte';
@@ -117,13 +118,15 @@
 			{:else if drawerDaySummary && !daySummaryLoading}
 				<AppDrawer {trackers} daySummary={drawerDaySummary} onSelect={closeDrawer} />
 			{:else if daySummaryFailed}
-				<button
+				<Button
 					type="button"
+					variant="plain"
+					size="none"
 					class="app-gutter flex min-h-48 w-full items-center justify-center text-sm text-(--text)/56"
 					onclick={() => void loadDaySummary()}
 				>
 					Tracker summary unavailable. Tap to retry.
-				</button>
+				</Button>
 			{:else}
 				<div class="flex min-h-48 items-center justify-center" aria-label="Loading tracker apps">
 					<LoaderCircle class="size-6 text-(--text)/40" data-motion-spin />
@@ -155,9 +158,11 @@
 				</span>
 			</a>
 
-			<button
+			<Button
 				type="button"
-				class="flex cursor-pointer touch-manipulation items-center justify-center rounded-2xl text-(--text)/40 outline-none hover:text-(--text) focus-visible:ring-2 focus-visible:ring-(--text)/20"
+				variant="plain"
+				size="none"
+				class="flex cursor-pointer touch-manipulation items-center justify-center rounded-2xl text-(--text)/40 outline-none hover:text-(--text)"
 				aria-label={activeDrawer === 'apps' ? 'Close app drawer' : 'Open app drawer'}
 				aria-controls="navigation-drawer"
 				aria-expanded={activeDrawer === 'apps'}
@@ -172,11 +177,13 @@
 						<Grip class="size-6" aria-hidden="true" />
 					{/if}
 				</span>
-			</button>
+			</Button>
 
-			<button
+			<Button
 				type="button"
-				class="flex cursor-pointer touch-manipulation items-center justify-center rounded-2xl text-(--text)/40 outline-none hover:text-(--text) focus-visible:ring-2 focus-visible:ring-(--text)/20"
+				variant="plain"
+				size="none"
+				class="flex cursor-pointer touch-manipulation items-center justify-center rounded-2xl text-(--text)/40 outline-none hover:text-(--text)"
 				aria-label={activeDrawer === 'user' ? 'Close user card' : 'Open user card'}
 				aria-controls="navigation-drawer"
 				aria-expanded={activeDrawer === 'user'}
@@ -192,7 +199,7 @@
 						<UserRound class="size-6" />
 					{/if}
 				</span>
-			</button>
+			</Button>
 		</div>
 	</div>
 </nav>

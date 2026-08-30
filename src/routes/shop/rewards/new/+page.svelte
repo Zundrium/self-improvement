@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { ArrowLeft } from '@lucide/svelte';
@@ -54,7 +55,7 @@ async function saveReward(event: SubmitEvent) {
 	</div>
 
 	<Card>
-		<form class="space-y-6" onsubmit={saveReward}>
+		<Form onsubmit={saveReward}>
 			<FieldGroup>
 				<Field>
 					<FieldLabel for="reward-name">Reward</FieldLabel>
@@ -91,6 +92,6 @@ async function saveReward(event: SubmitEvent) {
 					Add reward
 				</Button>
 			</div>
-		</form>
+		</Form>
 	</Card>
 </TrackerPage>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -57,7 +58,7 @@
 	}
 </script>
 
-<form id="sleep-settings" class="space-y-6" onsubmit={saveSettings}>
+<Form id="sleep-settings" onsubmit={saveSettings}>
 	<Field>
 		<FieldLabel for="bedtime">Bedtime</FieldLabel>
 		<Input id="bedtime" name="bedtime" type="time" bind:value={bedtime} required />
@@ -76,6 +77,6 @@
 		</label>
 	</div>
 
-</form>
+</Form>
 
 <SettingsSaveBar form="sleep-settings" {saving} />

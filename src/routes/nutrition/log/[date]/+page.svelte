@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { MoonStar, Plus } from '@lucide/svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -169,7 +170,7 @@
 
 <Dialog bind:open={markOpen}>
 	<DialogContent>
-		<form class="space-y-5" onsubmit={markFasting}>
+		<Form class="space-y-5" onsubmit={markFasting}>
 			<DialogHeader>
 				<DialogTitle>Mark a full-day fast</DialogTitle>
 				<DialogDescription>
@@ -200,6 +201,6 @@
 					{#if busy}<Spinner class="mr-2 size-4" />{/if} Mark fasting
 				</Button>
 			</DialogFooter>
-		</form>
+		</Form>
 	</DialogContent>
 </Dialog>

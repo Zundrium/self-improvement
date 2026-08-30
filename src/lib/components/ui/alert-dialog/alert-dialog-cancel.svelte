@@ -1,20 +1,38 @@
+<script lang="ts" module>
+	import type { ButtonProps } from '$lib/components/ui/button';
+	import type { AlertDialog as AlertDialogTypes } from 'bits-ui';
+
+	export type AlertDialogCancelProps = Omit<AlertDialogTypes.CancelProps, 'child'> &
+		Pick<ButtonProps, 'variant' | 'size' | 'motionColors' | 'motionScale'>;
+</script>
+
 <script lang="ts">
+	import { Button } from '$lib/components/ui/button';
 	import { AlertDialog as AlertDialogPrimitive } from 'bits-ui';
-	import { cn } from '$lib/utils.js';
 
 	let {
 		ref = $bindable(null),
 		class: className,
+		variant = 'ghost',
+		size = 'default',
+		motionColors,
+		motionScale,
+		children,
 		...restProps
-	}: AlertDialogPrimitive.CancelProps = $props();
+	}: AlertDialogCancelProps = $props();
 </script>
 
-<AlertDialogPrimitive.Cancel
-	bind:ref
-	data-slot="alert-dialog-cancel"
-	class={cn(
-		'inline-flex h-10 items-center justify-center rounded-3xl px-4 text-sm font-medium tracking-[-0.39px] text-(--text)/72 outline-none hover:bg-(--text)/8 hover:text-(--text)',
-		className
-	)}
-	{...restProps}
-/>
+<AlertDialogPrimitive.Cancel bind:ref {...restProps}>
+	{#snippet child({ props })}
+		<Button
+			{...props}
+			class={className}
+			{variant}
+			{size}
+			{motionColors}
+			{motionScale}
+		>
+			{@render children?.()}
+		</Button>
+	{/snippet}
+</AlertDialogPrimitive.Cancel>

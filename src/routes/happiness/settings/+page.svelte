@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -45,7 +46,7 @@
 		description="Choose the happiness level selected for a new entry."
 		{colors}
 	>
-		<form id="happiness-settings" class="space-y-6" onsubmit={saveSettings}>
+		<Form id="happiness-settings" onsubmit={saveSettings}>
 			<Field>
 				<FieldLabel>Default happiness level</FieldLabel>
 				<div class="grid grid-cols-5 gap-2">
@@ -67,7 +68,7 @@
 				</div>
 				<FieldDescription class="text-center">{happinessLabel(defaultRating)}</FieldDescription>
 			</Field>
-		</form>
+		</Form>
 	</TrackerSection>
 </TrackerPage>
 

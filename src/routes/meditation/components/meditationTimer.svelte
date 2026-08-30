@@ -200,10 +200,12 @@
 			{:else if saveState === 'saved'}
 				<span class="inline-flex items-center gap-2"><Check size={15} /> Session saved</span>
 			{:else if saveState === 'error'}
-				<button
-					class="link cursor-pointer font-medium text-(--text)"
+				<Button
+					variant="link"
+					size="none"
+					class="link cursor-pointer"
 					type="button"
-					onclick={onretry}>Save again</button
+					onclick={onretry}>Save again</Button
 				>
 			{/if}
 		</div>

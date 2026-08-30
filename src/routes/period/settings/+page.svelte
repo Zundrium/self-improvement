@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -47,7 +48,7 @@
 		description="Set the starting values used when you log a period."
 		{colors}
 	>
-		<form id="period-settings" class="space-y-6" onsubmit={saveSettings}>
+		<Form id="period-settings" onsubmit={saveSettings}>
 			<FieldGroup>
 				<Field>
 					<FieldLabel>Default flow</FieldLabel>
@@ -73,7 +74,7 @@
 					<FieldDescription>Used until your saved history can calculate an average.</FieldDescription>
 				</Field>
 			</FieldGroup>
-		</form>
+		</Form>
 	</TrackerSection>
 </TrackerPage>
 

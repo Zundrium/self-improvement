@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
@@ -75,7 +76,7 @@
 	}
 </script>
 
-<form id="period-entry" class="space-y-5" onsubmit={saveEntry}>
+<Form id="period-entry" class="space-y-5" onsubmit={saveEntry}>
 	{#if errorMessage}
 		<Alert variant="destructive"><AlertDescription>{errorMessage}</AlertDescription></Alert>
 	{/if}
@@ -102,7 +103,7 @@
 		/>
 		<FieldDescription>Optional and private to your account.</FieldDescription>
 	</Field>
-</form>
+</Form>
 
 <BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
 	<BottomActionGroup>

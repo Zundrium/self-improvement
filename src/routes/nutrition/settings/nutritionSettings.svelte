@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -50,7 +51,7 @@
 </script>
 
 {#if profile}
-	<form id="nutrition-settings" class="space-y-5" onsubmit={saveNutrition}>
+	<Form id="nutrition-settings" class="space-y-5" onsubmit={saveNutrition}>
 				<p class="text-sm text-(--text)/64">
 					Your estimated maintenance is {estimatedTdee} kcal per day.
 				</p>
@@ -184,7 +185,7 @@
 						<FieldDescription>This reminder never blocks meal logging.</FieldDescription>
 					</div>
 				</FieldGroup>
-	</form>
+	</Form>
 	<SettingsSaveBar form="nutrition-settings" {saving} contentClass="max-w-3xl" />
 {:else}
 	<div class="space-y-4">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -39,7 +40,7 @@
 	description="Choose the duration a new meditation session starts with."
 	{colors}
 >
-	<form id="meditation-settings" class="space-y-6" onsubmit={saveSettings}>
+	<Form id="meditation-settings" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="default-duration">Default duration (minutes)</FieldLabel>
 			<Input
@@ -52,7 +53,7 @@
 			/>
 			<FieldDescription>Set a duration from 1 minute to 2 hours.</FieldDescription>
 		</Field>
-	</form>
+	</Form>
 </TrackerSection>
 
 <SettingsSaveBar form="meditation-settings" {saving} />

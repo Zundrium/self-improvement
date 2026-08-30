@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { ChevronRight, Download, LoaderCircle, RefreshCw, Shield } from '@lucide/svelte';
 	import type { ActionFeedItem } from '$lib/api-types';
+	import { Button } from '$lib/components/ui/button';
 	import { interactionScale } from '$lib/motion/gsap';
 	import { trackerIcons } from '$lib/trackers/icons';
 	import { getTrackerColors } from '$lib/trackers/registry';
@@ -59,17 +60,19 @@
 			{@render actionContent()}
 		</a>
 	{:else}
-		<button
+		<Button
 			type="button"
+			variant="plain"
+			size="none"
 			class="action-card relative flex min-h-20 w-full cursor-pointer touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5 disabled:pointer-events-none disabled:opacity-60"
 			style={`--action-primary: ${trackerColors?.primary ?? 'var(--text)'}`}
 			disabled={busy}
 			aria-busy={busy}
-			use:interactionScale={{ disabled: busy, hover: 1.01, pressed: 0.96 }}
+			motionScale={{ disabled: busy, hover: 1.01, pressed: 0.96 }}
 			onclick={() => onexecute(item)}
 		>
 			{@render actionContent()}
-		</button>
+		</Button>
 	{/if}
 </div>
 

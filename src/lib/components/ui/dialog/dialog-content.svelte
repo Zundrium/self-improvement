@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { X } from '@lucide/svelte';
 	import { Dialog as DialogPrimitive } from 'bits-ui';
+	import { Button } from '$lib/components/ui/button';
 	import DialogOverlay from './dialog-overlay.svelte';
 	import DialogPortal from './dialog-portal.svelte';
 	import type { Snippet, ComponentProps } from 'svelte';
@@ -40,12 +41,19 @@
 			>
 				{@render children?.()}
 				{#if showCloseButton}
-					<DialogPrimitive.Close
-						data-slot="dialog-close"
-						class="absolute end-4 top-4 inline-flex size-8 items-center justify-center rounded-xl text-(--text)/40 hover:bg-(--text)/8 hover:text-(--text) focus-visible:outline-none"
-					>
-						<X class="size-4" aria-hidden="true" />
-						<span class="sr-only">Close</span>
+					<DialogPrimitive.Close>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								data-slot="dialog-close"
+								variant="ghost"
+								size="icon"
+								class="absolute end-4 top-4 size-8 rounded-xl text-(--text)/40"
+							>
+								<X class="size-4" aria-hidden="true" />
+								<span class="sr-only">Close</span>
+							</Button>
+						{/snippet}
 					</DialogPrimitive.Close>
 				{/if}
 			</div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
@@ -53,7 +54,7 @@
 	}
 </script>
 
-<form id="tracker-preferences" onsubmit={saveTrackers}>
+<Form id="tracker-preferences" onsubmit={saveTrackers}>
 	<Card>
 		<CardHeader><CardTitle>Active trackers</CardTitle></CardHeader>
 		<CardContent class="space-y-5">
@@ -85,7 +86,7 @@
 			</div>
 		</CardContent>
 	</Card>
-</form>
+</Form>
 
 <SettingsSaveBar
 	form="tracker-preferences"

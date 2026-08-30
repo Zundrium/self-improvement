@@ -29,3 +29,6 @@ export {
 	Action as AlertDialogAction,
 	Cancel as AlertDialogCancel
 };
+
+export type { AlertDialogActionProps } from './alert-dialog-action.svelte';
+export type { AlertDialogCancelProps } from './alert-dialog-cancel.svelte';

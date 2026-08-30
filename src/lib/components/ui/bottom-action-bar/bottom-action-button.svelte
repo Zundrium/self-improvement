@@ -31,7 +31,7 @@
 	variant={tone === 'destructive' ? 'destructive' : 'ghost'}
 	size={format === 'icon' ? 'icon' : 'lg'}
 	class={cn(
-		'bottom-action-button focus-visible:ring-2 focus-visible:ring-(--text)/20',
+		'bottom-action-button',
 		format === 'text' && expand ? 'min-w-0 flex-1' : 'shrink-0',
 		className
 	)}

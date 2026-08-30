@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
@@ -43,7 +44,7 @@
 	description="Choose how each guided breathing exercise is paced."
 	{colors}
 >
-	<form id="breathing-settings" class="space-y-6" onsubmit={saveSettings}>
+	<Form id="breathing-settings" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
 			<FieldLabel for="breathing-rounds">Rounds</FieldLabel>
 			<Input id="breathing-rounds" type="number" min={1} max={20} bind:value={rounds} required />
@@ -56,7 +57,7 @@
 			</label>
 			<FieldDescription>Use the 4–7–8 pattern instead of 4–8 breathing.</FieldDescription>
 		</Field>
-	</form>
+	</Form>
 </TrackerSection>
 
 <SettingsSaveBar form="breathing-settings" {saving} />

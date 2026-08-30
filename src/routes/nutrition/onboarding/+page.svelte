@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Activity, Ruler, Sparkles, Weight } from '@lucide/svelte';
@@ -59,7 +60,7 @@
 	</div>
 
 	<Card class="p-6 sm:p-8">
-		<form class="space-y-6" onsubmit={submit}>
+		<Form onsubmit={submit}>
 			{#if formError}<Alert variant="destructive"
 					><AlertDescription>{formError}</AlertDescription></Alert
 				>{/if}
@@ -132,6 +133,6 @@
 			</FieldGroup>
 			<input type="hidden" name="goalMode" value="estimated" />
 			<Button type="submit" size="lg" class="w-full">Calculate my goal</Button>
-		</form>
+		</Form>
 	</Card>
 </main>

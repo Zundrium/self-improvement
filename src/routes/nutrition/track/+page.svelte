@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Form } from '$lib/components/ui/form';
 import {
 	ArrowLeft,
 	Camera,
@@ -479,7 +480,7 @@ onDestroy(stopCamera);
 						</p>
 					</div>
 
-					<form class="space-y-5" onsubmit={submitDescription}>
+					<Form class="space-y-5" onsubmit={submitDescription}>
 						<Field>
 							<div class="flex items-end justify-between gap-3">
 								<FieldLabel for="meal-description">Meal description</FieldLabel>
@@ -506,7 +507,7 @@ onDestroy(stopCamera);
 						>
 							Estimate nutrition <Send class="ml-2 size-4" />
 						</Button>
-					</form>
+					</Form>
 				</div>
 			</div>
 		</section>
@@ -621,7 +622,7 @@ onDestroy(stopCamera);
 					{/if}
 
 					{#if phase === 'correction'}
-						<form class="space-y-3" onsubmit={submitCorrection}>
+						<Form class="space-y-3" onsubmit={submitCorrection}>
 							<Field>
 								<div class="flex items-end justify-between gap-3">
 									<FieldLabel for="meal-correction">What should we correct?</FieldLabel>
@@ -653,7 +654,7 @@ onDestroy(stopCamera);
 									>Update estimate <Send class="ml-2 size-4" /></Button
 								>
 							</div>
-						</form>
+						</Form>
 					{/if}
 				</div>
 			</div>
