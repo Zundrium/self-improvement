@@ -17,6 +17,10 @@ describe('native action feed', () => {
 			status
 		});
 		expect(actions.map(({ id }) => id)).toEqual(['permission:usage-access']);
+		expect(actions[0]?.action).toEqual({
+			type: 'navigate',
+			href: '/profile?tab=permissions&tracker=sleep'
+		});
 	});
 
 	it('uses one Usage Access blocker for sleep and screen time', () => {
@@ -29,7 +33,11 @@ describe('native action feed', () => {
 		expect(actions).toEqual([
 			expect.objectContaining({
 				id: 'permission:usage-access',
-				trackerIds: ['sleep', 'screen-time']
+				trackerIds: ['sleep', 'screen-time'],
+				action: {
+					type: 'navigate',
+					href: '/profile?tab=permissions'
+				}
 			})
 		]);
 	});

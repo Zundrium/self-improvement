@@ -5,8 +5,6 @@ export type ActionIcon = 'tracker' | 'permission' | 'sync' | 'update';
 export type NavigateAction = { type: 'navigate'; href: string };
 export type ActionFeedCommand =
 	| NavigateAction
-	| { type: 'request-health-access'; trackerIds: Array<'steps'> }
-	| { type: 'open-usage-access' }
 	| { type: 'install-android-update'; version: string; downloadUrl: string }
 	| {
 			type: 'sync-android-data';

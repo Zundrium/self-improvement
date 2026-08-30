@@ -1,4 +1,5 @@
 import type { ActionCandidate } from '$lib/actions/contracts';
+import { permissionsSettingsHref } from '$lib/permissions';
 
 export const stepActionCandidates: ActionCandidate[] = [
 	{
@@ -14,7 +15,7 @@ export const stepActionCandidates: ActionCandidate[] = [
 				icon: 'tracker',
 				title: 'No step data yet',
 				reason: "Sync today's movement",
-				action: { type: 'navigate', href: '/android-data-help/steps' }
+				action: { type: 'navigate', href: permissionsSettingsHref('steps') }
 			};
 		}
 	}

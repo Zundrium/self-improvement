@@ -1,5 +1,6 @@
 import { mobileRepository } from '$lib/api';
 import type { ActionFeedItem } from '$lib/api-types';
+import { permissionsSettingsHref } from '$lib/permissions';
 import type { AppTrackerId } from '$lib/trackers/registry';
 import {
 	TRACKER_IDS,
@@ -105,7 +106,7 @@ function healthPermissionAction(): ActionFeedItem {
 		priority: 'blocking',
 		icon: 'permission',
 		title: 'Allow Health Connect access',
-		action: { type: 'request-health-access', trackerIds: ['steps'] }
+		action: { type: 'navigate', href: permissionsSettingsHref('steps') }
 	};
 }
 
@@ -116,7 +117,7 @@ function healthUnavailableAction(): ActionFeedItem {
 		priority: 'blocking',
 		icon: 'permission',
 		title: 'Health Connect is unavailable',
-		action: { type: 'navigate', href: '/android-data-help' }
+		action: { type: 'navigate', href: permissionsSettingsHref('steps') }
 	};
 }
 
@@ -130,7 +131,10 @@ function usagePermissionAction(trackers: TrackerId[]): ActionFeedItem {
 			trackers.length > 1
 				? 'Allow bedtime and screen-time access'
 				: `Allow ${trackerNames(trackers)} access`,
-		action: { type: 'open-usage-access' }
+		action: {
+			type: 'navigate',
+			href: permissionsSettingsHref(trackers.length === 1 ? trackers[0] : undefined)
+		}
 	};
 }
 

@@ -3,7 +3,7 @@
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
 	import type { ActionFeedItem } from '$lib/api-types';
-	import { androidHealth, androidSyncCoordinator, androidUsage } from '$native/android-data';
+	import { androidSyncCoordinator } from '$native/android-data';
 	import { installAndroidUpdate } from '$native/android-updater';
 	import ActionFeed from './actionFeed.svelte';
 	import { mergeActionFeedItems } from './action-feed';
@@ -32,15 +32,8 @@
 	}
 
 	async function runNativeAction(action: Exclude<ActionFeedItem['action'], { type: 'navigate' }>) {
-		if (action.type === 'open-usage-access') return androidUsage.openSettings();
 		if (action.type === 'install-android-update') return installAndroidUpdate(action);
-		if (action.type === 'request-health-access') {
-			await androidHealth.requestReadPermissions();
-			await androidSyncCoordinator.sync(action.trackerIds);
-		}
-		if (action.type === 'sync-android-data') {
-			await androidSyncCoordinator.sync(action.trackerIds);
-		}
+		await androidSyncCoordinator.sync(action.trackerIds);
 		await invalidateAll();
 	}
 </script>

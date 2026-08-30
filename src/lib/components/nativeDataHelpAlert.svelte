@@ -2,6 +2,7 @@
 	import { CircleAlert } from '@lucide/svelte';
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
 	import { Button } from '$lib/components/ui/button';
+	import { permissionsSettingsHref } from '$lib/permissions';
 
 	type NativeTracker = 'steps' | 'sleep' | 'screen-time';
 	type Props = { tracker: NativeTracker; isSynced: boolean };
@@ -26,8 +27,12 @@
 		{/if}
 	</AlertDescription>
 	<div class="col-start-2 mt-2">
-		<Button href={`/android-data-help/${tracker}`} size="sm" variant="ghost"
-			>Open setup guide</Button
+		<Button
+			href={permissionsSettingsHref(tracker === 'screen-time' ? 'screenTime' : tracker)}
+			size="sm"
+			variant="ghost"
 		>
+			Review data access
+		</Button>
 	</div>
 </Alert>

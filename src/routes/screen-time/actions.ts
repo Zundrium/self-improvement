@@ -1,4 +1,5 @@
 import type { ActionCandidate } from '$lib/actions/contracts';
+import { permissionsSettingsHref } from '$lib/permissions';
 
 export const screenTimeActionCandidates: ActionCandidate[] = [
 	{
@@ -14,7 +15,7 @@ export const screenTimeActionCandidates: ActionCandidate[] = [
 				icon: 'tracker',
 				title: 'No screen-time data yet',
 				reason: "Sync today's screen time",
-				action: { type: 'navigate', href: '/android-data-help/screen-time' }
+				action: { type: 'navigate', href: permissionsSettingsHref('screenTime') }
 			};
 		}
 	},
