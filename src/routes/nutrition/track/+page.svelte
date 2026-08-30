@@ -1,14 +1,17 @@
 <script lang="ts">
 import {
 	ArrowLeft,
-	CalendarDays,
 	Camera,
 	Check,
+	Droplet,
+	Drumstick,
 	FileText,
+	Flame,
 	ImagePlus,
 	RefreshCw,
 	Send,
 	SwitchCamera,
+	Wheat,
 	X
 } from '@lucide/svelte';
 import { onDestroy, onMount, tick } from 'svelte';
@@ -16,6 +19,7 @@ import { SvelteSet } from 'svelte/reactivity';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { apiRequest } from '$lib/api';
+import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 import { Alert, AlertDescription } from '$lib/components/ui/alert';
 import { Badge } from '$lib/components/ui/badge';
 import { Button } from '$lib/components/ui/button';
@@ -53,22 +57,6 @@ type MealEstimate = AIResult;
 const MAX_IMAGE_LENGTH = 740 * 1024;
 const MAX_DESCRIPTION_LENGTH = MAX_MEAL_DESCRIPTION_LENGTH;
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-const PHOTO_ANALYSIS_STEPS = [
-	'Reading your photo',
-	'Identifying the food',
-	'Estimating portions and nutrition'
-];
-const DESCRIPTION_ANALYSIS_STEPS = [
-	'Reading your description',
-	'Identifying the ingredients',
-	'Estimating portions and nutrition'
-];
-const REFINEMENT_STEPS = [
-	'Applying your correction',
-	'Recalculating nutrition',
-	'Preparing the revised estimate'
-];
-
 let phase = $state<Phase>('checking');
 let cameraState = $state<CameraState>('opening');
 let cameraError = $state('');
@@ -83,13 +71,8 @@ let estimate = $state<MealEstimate | null>(null);
 let correction = $state('');
 let requestError = $state('');
 let processingPhoto = $state(false);
-let loadingStep = $state(0);
-let loadingKind = $state<'analysis' | 'refinement'>('analysis');
 let stream: MediaStream | null = null;
-let loadingTimer: ReturnType<typeof setInterval> | null = null;
 
-const analysisLabels = $derived(selectedImage ? PHOTO_ANALYSIS_STEPS : DESCRIPTION_ANALYSIS_STEPS);
-const loadingLabels = $derived(loadingKind === 'analysis' ? analysisLabels : REFINEMENT_STEPS);
 const totals = $derived.by(() => {
 	if (!estimate) return { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 };
 	return estimate.ingredients.reduce(
@@ -102,13 +85,6 @@ const totals = $derived.by(() => {
 		{ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }
 	);
 });
-const ingredientSummary = $derived(
-	estimate?.ingredients
-		.slice(0, 4)
-		.map((item) => `${item.quantity} ${item.unit} ${item.name}`)
-		.join(' · ') ?? ''
-);
-
 function api<T>(path: string, init?: RequestInit) {
 	return apiRequest<T>(path, init);
 }
@@ -126,7 +102,8 @@ async function startCamera() {
 			video: {
 				facingMode: { ideal: facingMode },
 				width: { ideal: 1080 },
-				height: { ideal: 720 },
+				height: { ideal: 1920 },
+				aspectRatio: { ideal: 9 / 16 },
 				frameRate: { ideal: 30 }
 			},
 			audio: false
@@ -223,7 +200,6 @@ async function analyzeMeal() {
 	if (!selectedImage && mealDescription.length < 2) return;
 	requestError = '';
 	phase = 'analyzing';
-	beginLoading('analysis');
 	try {
 		estimate = await requestMealAnalysis(mealSource());
 		phase = 'review';
@@ -231,13 +207,10 @@ async function analyzeMeal() {
 		requestError =
 			cause instanceof Error ? cause.message : 'Could not analyze this meal. Try again.';
 		phase = 'analysis-error';
-	} finally {
-		endLoading();
 	}
 }
 
 async function retakePhoto() {
-	endLoading();
 	selectedImage = '';
 	mealDescription = '';
 	resetEstimate();
@@ -275,7 +248,6 @@ async function submitCorrection(event: SubmitEvent) {
 	if (!estimate || cleanCorrection.length < 2 || phase !== 'correction') return;
 	requestError = '';
 	phase = 'refining';
-	beginLoading('refinement');
 	try {
 		estimate = await refineMealEstimate(mealSource(), estimate, cleanCorrection);
 		correction = '';
@@ -286,8 +258,6 @@ async function submitCorrection(event: SubmitEvent) {
 		phase = 'correction';
 		await tick();
 		correctionInput?.focus();
-	} finally {
-		endLoading();
 	}
 }
 
@@ -320,20 +290,6 @@ async function confirmMeal() {
 		requestError = cause instanceof Error ? cause.message : 'Could not add this meal. Try again.';
 		phase = 'review';
 	}
-}
-
-function beginLoading(kind: 'analysis' | 'refinement') {
-	endLoading();
-	loadingKind = kind;
-	loadingStep = 0;
-	loadingTimer = setInterval(() => {
-		loadingStep = Math.min(loadingStep + 1, 2);
-	}, 1800);
-}
-
-function endLoading() {
-	if (loadingTimer) clearInterval(loadingTimer);
-	loadingTimer = null;
 }
 
 async function compressFile(file: File) {
@@ -385,14 +341,6 @@ function stopCamera() {
 	if (video) video.srcObject = null;
 }
 
-function displayDate(value: string) {
-	return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
-		weekday: 'short',
-		month: 'short',
-		day: 'numeric'
-	});
-}
-
 function inputTime(value: Date) {
 	return `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
 }
@@ -408,10 +356,7 @@ async function initialize() {
 }
 
 onMount(() => void initialize());
-onDestroy(() => {
-	stopCamera();
-	endLoading();
-});
+onDestroy(stopCamera);
 </script>
 
 <svelte:head><title>Add a meal · Self Improvement</title></svelte:head>
@@ -455,34 +400,28 @@ onDestroy(() => {
 			</div>
 		</section>
 	{:else if phase === 'photo'}
-		<section class="fixed inset-0 z-[90] overflow-hidden bg-black text-white">
+		<WorkflowHeader title="Take a photo of your meal">
+			{#snippet leading()}<Badge>1 / 3</Badge>{/snippet}
+			{#snippet trailing()}
+				<Button href="/nutrition/log/{data.date}" variant="ghost" size="icon" aria-label="Cancel"
+					><X class="size-5" /></Button
+				>
+			{/snippet}
+		</WorkflowHeader>
+
+		<section class="relative min-h-0 flex-1 overflow-hidden bg-black text-white">
 			<video
 				bind:this={video}
 				autoplay
 				playsinline
 				muted
-				class="size-full object-contain {facingMode === 'user' ? '-scale-x-100' : ''}"
+				class="absolute inset-0 size-full object-cover {facingMode === 'user'
+					? '-scale-x-100'
+					: ''}"
 			></video>
 			<div
-				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/75"
+				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/65"
 			></div>
-
-			<div
-				class="app-gutter absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 pt-[max(1rem,var(--app-safe-area-inset-top))]"
-			>
-				<Button
-					href="/nutrition/log/{data.date}"
-					variant="ghost"
-					size="icon"
-					class="bg-black/35 text-white hover:bg-black/55 hover:text-white"
-					aria-label="Back to food log"><X class="size-5" /></Button
-				>
-				<div class="min-w-0 text-center">
-					<p class="truncate text-sm font-medium">Photograph your meal</p>
-					<p class="truncate text-xs text-white/64">Keep the whole meal in frame</p>
-				</div>
-				<Badge class="bg-black/35 text-white">1 of 2</Badge>
-			</div>
 
 			{#if cameraState !== 'ready'}
 				<div class="absolute inset-0 flex items-center justify-center bg-black px-6 text-center">
@@ -514,12 +453,10 @@ onDestroy(() => {
 			{/if}
 
 			{#if cameraState === 'ready'}
-				<div
-					class="app-gutter absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-5 pb-[max(1.5rem,var(--app-safe-area-inset-bottom))]"
-				>
+				<div class="app-gutter absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-5 pb-6">
 					<Button
 						variant="ghost"
-						class="bg-black/35 text-white hover:bg-black/55 hover:text-white"
+						class="bg-black/40 text-white backdrop-blur-md hover:bg-black/60 hover:text-white"
 						onclick={openDescription}
 					>
 						<FileText class="mr-2 size-4" /> Describe meal instead
@@ -528,7 +465,7 @@ onDestroy(() => {
 						<Button
 							variant="ghost"
 							size="icon"
-							class="size-14 bg-black/45 text-white hover:bg-black/65 hover:text-white"
+							class="size-14 bg-black/45 text-white backdrop-blur-md hover:bg-black/65 hover:text-white"
 							onclick={() => fileInput?.click()}
 							disabled={processingPhoto}
 							aria-label="Choose a photo"><ImagePlus class="size-5" /></Button
@@ -543,7 +480,7 @@ onDestroy(() => {
 						<Button
 							variant="ghost"
 							size="icon"
-							class="size-14 bg-black/45 text-white hover:bg-black/65 hover:text-white"
+							class="size-14 bg-black/45 text-white backdrop-blur-md hover:bg-black/65 hover:text-white"
 							onclick={switchCamera}
 							disabled={processingPhoto}
 							aria-label="Switch camera"><SwitchCamera class="size-5" /></Button
@@ -553,73 +490,68 @@ onDestroy(() => {
 			{/if}
 
 			{#if processingPhoto}
-				<div
-					class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/70 text-white"
-				>
-					<Spinner class="size-12" /><span class="text-sm">Preparing photo…</span>
+				<div class="absolute inset-0 z-20 flex items-center justify-center bg-black/55 text-white">
+					<Spinner class="size-12" />
 				</div>
 			{/if}
 		</section>
 	{:else if phase === 'description'}
-		<WorkflowHeader title="Add one meal" subtitle="Description → quick review">
-			{#snippet leading()}
+		<WorkflowHeader title="Describe your meal">
+			{#snippet leading()}<Badge>1 / 3</Badge>{/snippet}
+			{#snippet trailing()}
 				<Button variant="ghost" size="icon" onclick={retakePhoto} aria-label="Use a photo">
-					<ArrowLeft class="size-5" />
+					<Camera class="size-5" />
 				</Button>
 			{/snippet}
-			{#snippet trailing()}<Badge>1 of 2</Badge>{/snippet}
 		</WorkflowHeader>
 
-		<section
-			class="app-gutter mx-auto min-h-0 w-full max-w-xl flex-1 overflow-y-auto py-8 sm:py-12"
-		>
+		<section class="app-gutter mx-auto min-h-0 w-full max-w-xl flex-1 overflow-y-auto py-8 sm:py-12">
 			<div class="flex min-h-full items-center">
-			<div class="w-full space-y-6">
-				<div>
-					<Badge><FileText class="size-3.5" /> No photo needed</Badge>
-					<h1 class="mt-4 text-3xl font-medium tracking-[-0.055em] sm:text-4xl">
-						Describe what you ate
-					</h1>
-					<p class="mt-2 text-sm leading-6 text-(--text)/56">
-						Include portions, ingredients, drinks, sauces, and cooking fats when you know them.
-					</p>
-				</div>
+				<div class="w-full space-y-6">
+					<div>
+						<Badge><FileText class="size-3.5" /> No photo needed</Badge>
+						<h1 class="mt-4 text-3xl font-medium tracking-[-0.055em] sm:text-4xl">
+							Describe what you ate
+						</h1>
+						<p class="mt-2 text-sm leading-6 text-(--text)/56">
+							Include portions, ingredients, drinks, sauces, and cooking fats when you know them.
+						</p>
+					</div>
 
-				<form class="space-y-5" onsubmit={submitDescription}>
-					<Field>
-						<div class="flex items-end justify-between gap-3">
-							<FieldLabel for="meal-description">Meal description</FieldLabel>
-							<span class="text-xs text-(--text)/40 tabular-nums">
-								{mealDescription.length}/{MAX_DESCRIPTION_LENGTH}
-							</span>
-						</div>
-						<Textarea
-							bind:ref={descriptionInput}
-							id="meal-description"
-							bind:value={mealDescription}
-							maxlength={MAX_DESCRIPTION_LENGTH}
-							rows={8}
-							class="min-h-48 text-base leading-6"
-							placeholder="e.g. Two scrambled eggs cooked in butter, two slices of sourdough toast, and a small latte"
-						/>
-						<FieldDescription
-							>One meal per estimate. You can correct the result next.</FieldDescription
+					<form class="space-y-5" onsubmit={submitDescription}>
+						<Field>
+							<div class="flex items-end justify-between gap-3">
+								<FieldLabel for="meal-description">Meal description</FieldLabel>
+								<span class="text-xs text-(--text)/40 tabular-nums">
+									{mealDescription.length}/{MAX_DESCRIPTION_LENGTH}
+								</span>
+							</div>
+							<Textarea
+								bind:ref={descriptionInput}
+								id="meal-description"
+								bind:value={mealDescription}
+								maxlength={MAX_DESCRIPTION_LENGTH}
+								rows={8}
+								class="min-h-48 text-base leading-6"
+								placeholder="e.g. Two scrambled eggs cooked in butter, two slices of sourdough toast, and a small latte"
+							/>
+							<FieldDescription>One meal per estimate. You can correct the result next.</FieldDescription>
+						</Field>
+						<Button
+							type="submit"
+							size="lg"
+							class="w-full"
+							disabled={mealDescription.trim().length < 2}
 						>
-					</Field>
-					<Button
-						type="submit"
-						size="lg"
-						class="w-full"
-						disabled={mealDescription.trim().length < 2}
-					>
-						Estimate nutrition <Send class="ml-2 size-4" />
-					</Button>
-				</form>
-			</div>
+							Estimate nutrition <Send class="ml-2 size-4" />
+						</Button>
+					</form>
+				</div>
 			</div>
 		</section>
 	{:else if phase === 'analyzing' || phase === 'refining'}
 		<WorkflowHeader title={phase === 'analyzing' ? 'Analyzing meal' : 'Updating estimate'}>
+			{#snippet leading()}<Badge>{phase === 'analyzing' ? '2 / 3' : '3 / 3'}</Badge>{/snippet}
 			{#snippet trailing()}
 				<Button href="/nutrition/log/{data.date}" variant="ghost" size="icon" aria-label="Cancel"
 					><X class="size-5" /></Button
@@ -628,64 +560,28 @@ onDestroy(() => {
 		</WorkflowHeader>
 
 		<section
-			class="app-gutter mx-auto flex min-h-0 w-full max-w-lg flex-1 items-center overflow-hidden py-6 text-center"
+			class="relative min-h-0 flex-1 overflow-hidden {selectedImage ? 'bg-black' : 'bg-(--bg-elevated)'}"
 			aria-live="polite"
+			aria-label={phase === 'analyzing' ? 'Analyzing meal' : 'Updating estimate'}
 		>
-			<div class="flex min-h-0 w-full flex-1 flex-col gap-4">
-				{#if selectedImage}
-					<img
-						src={selectedImage}
-						alt=""
-						class="min-h-20 w-full flex-1 rounded-3xl object-cover opacity-80"
-					/>
-				{:else}
-					<div class="max-h-28 overflow-hidden rounded-3xl bg-(--text)/4 px-5 py-4 text-left">
-						<p class="line-clamp-3 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
-					</div>
-				{/if}
-				<div class="relative mx-auto flex size-16 shrink-0 items-center justify-center">
-					<Spinner class="size-16 text-(--text)" />
-					{#if selectedImage}<Camera class="absolute size-6" />{:else}<FileText
-							class="absolute size-6"
-						/>{/if}
+			{#if selectedImage}
+				<img src={selectedImage} alt="" class="absolute inset-0 size-full object-cover" />
+			{:else}
+				<div class="app-gutter flex size-full items-center justify-center">
+					<p class="max-w-lg text-center text-sm leading-6 text-(--text)/64">{mealDescription}</p>
 				</div>
-				<div>
-					<Badge>{phase === 'analyzing' ? 'Building your estimate' : 'Using your correction'}</Badge
-					>
-					<h1 class="mt-2 text-2xl font-medium tracking-[-0.055em] sm:text-3xl">
-						{loadingLabels[loadingStep]}
-					</h1>
-					<p class="mt-2 text-sm text-(--text)/52">
-						Keep this screen open. This usually takes a few seconds.
-					</p>
-				</div>
-				<div class="grid w-full shrink-0 gap-1 text-left">
-					{#each loadingLabels as label, index (label)}
-						<div
-							class="flex items-center gap-3 py-1 text-sm {index <= loadingStep
-								? 'text-(--text)'
-								: 'text-(--text)/32'}"
-						>
-							<span class="flex size-5 shrink-0 items-center justify-center">
-								{#if index < loadingStep}<Check
-										class="size-4"
-									/>{:else if index === loadingStep}<Spinner class="size-4" />{:else}<span
-										class="size-1.5 rounded-full bg-current"
-									></span>{/if}
-							</span>
-							{label}
-						</div>
-					{/each}
-				</div>
+			{/if}
+			<div
+				class="absolute inset-0 flex items-center justify-center {selectedImage
+					? 'bg-black/55 text-white'
+					: 'bg-(--bg)/70 text-(--text)'}"
+			>
+				<Spinner class="size-12" />
 			</div>
 		</section>
 	{:else if phase === 'analysis-error'}
 		<WorkflowHeader title="Could not analyze meal">
-			{#snippet leading()}
-				<Button variant="ghost" size="icon" onclick={editMealSource} aria-label="Edit meal input">
-					<ArrowLeft class="size-5" />
-				</Button>
-			{/snippet}
+			{#snippet leading()}<Badge>2 / 3</Badge>{/snippet}
 			{#snippet trailing()}
 				<Button href="/nutrition/log/{data.date}" variant="ghost" size="icon" aria-label="Cancel"
 					><X class="size-5" /></Button
@@ -693,30 +589,33 @@ onDestroy(() => {
 			{/snippet}
 		</WorkflowHeader>
 
-		<section class="app-gutter mx-auto flex min-h-0 w-full max-w-lg flex-1 items-center overflow-hidden py-6">
-			<div class="w-full space-y-4">
-				{#if selectedImage}
-					<img src={selectedImage} alt="Your meal" class="h-56 w-full rounded-3xl object-cover" />
-				{:else}
-					<div class="rounded-3xl bg-(--text)/4 px-5 py-6">
-						<p class="line-clamp-5 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
+		<section class="relative min-h-0 flex-1 overflow-hidden {selectedImage ? 'bg-black' : ''}">
+			{#if selectedImage}
+				<img src={selectedImage} alt="Your meal" class="absolute inset-0 size-full object-cover" />
+				<div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
+			{/if}
+			<div class="app-gutter relative z-10 flex size-full items-end py-4">
+				<div class="mx-auto w-full max-w-lg space-y-3 rounded-3xl bg-(--bg-elevated)/92 p-4 backdrop-blur-md">
+					{#if !selectedImage}
+						<p class="line-clamp-4 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
+					{/if}
+					<Alert variant="destructive"><AlertDescription>{requestError}</AlertDescription></Alert>
+					<div class="grid gap-2 sm:grid-cols-2">
+						<Button size="lg" onclick={analyzeMeal}>
+							<RefreshCw class="mr-2 size-4" /> Try again
+						</Button>
+						<Button size="lg" variant="ghost" onclick={editMealSource}>
+							{#if selectedImage}<Camera class="mr-2 size-4" /> Retake photo{:else}<FileText
+									class="mr-2 size-4"
+								/> Edit description{/if}
+						</Button>
 					</div>
-				{/if}
-				<Alert variant="destructive"><AlertDescription>{requestError}</AlertDescription></Alert>
-				<div class="grid gap-2 sm:grid-cols-2">
-					<Button size="lg" onclick={analyzeMeal}>
-						<RefreshCw class="mr-2 size-4" /> Try analysis again
-					</Button>
-					<Button size="lg" variant="ghost" onclick={editMealSource}>
-						{#if selectedImage}<Camera class="mr-2 size-4" /> Take another photo{:else}<FileText
-								class="mr-2 size-4"
-							/> Edit description{/if}
-					</Button>
 				</div>
 			</div>
 		</section>
 	{:else if estimate}
-		<WorkflowHeader title="Review estimate" subtitle="Is this correct?">
+		<WorkflowHeader title="Review estimate">
+			{#snippet leading()}<Badge>3 / 3</Badge>{/snippet}
 			{#snippet trailing()}
 				<Button
 					href="/nutrition/log/{data.date}"
@@ -728,72 +627,44 @@ onDestroy(() => {
 			{/snippet}
 		</WorkflowHeader>
 
-		<section
-			class="app-gutter mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col {phase ===
-			'correction'
-				? 'overflow-y-auto'
-				: 'overflow-hidden'} py-3 sm:py-6"
-		>
-			<div class="flex min-h-0 w-full flex-1 flex-col gap-4">
-				{#if selectedImage}
-					<img
-						src={selectedImage}
-						alt={estimate.mealName}
-						class="w-full rounded-3xl object-cover {phase === 'correction'
-							? 'h-[20svh] max-h-44 min-h-32 shrink-0'
-							: 'min-h-0 flex-1'}"
-					/>
-				{:else}
-					<div
-						class="rounded-3xl bg-(--text)/4 px-5 py-4 {phase === 'correction'
-							? 'shrink-0'
-							: 'flex min-h-0 flex-1 flex-col justify-center'}"
-					>
-						<div class="flex items-center gap-2 text-xs font-medium text-(--text)/48">
-							<FileText class="size-3.5" /> Your description
-						</div>
-						<p
-							class="mt-2 {phase === 'correction'
-								? 'line-clamp-2'
-								: 'line-clamp-4'} text-sm leading-6"
-						>
-							{mealDescription}
-						</p>
-					</div>
-				{/if}
-				<div class="shrink-0 space-y-4 px-1">
-					<div class="flex items-center justify-between gap-3">
-						<Badge>AI estimate</Badge>
-						<span class="flex items-center gap-1.5 text-xs text-(--text)/48"
-							><CalendarDays class="size-3.5" /> {displayDate(data.date)}</span
-						>
-					</div>
+		<section class="relative min-h-0 flex-1 overflow-y-auto {selectedImage ? 'bg-black' : ''}">
+			{#if selectedImage}
+				<img
+					src={selectedImage}
+					alt={estimate.mealName}
+					class="absolute inset-0 size-full object-cover"
+				/>
+				<div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-black/55"></div>
+			{:else}
+				<div class="app-gutter absolute inset-0 flex items-center justify-center bg-(--bg-elevated)">
+					<p class="max-w-lg text-center text-sm leading-6 text-(--text)/64">{mealDescription}</p>
+				</div>
+			{/if}
 
-					<div>
-						<h1 class="text-2xl font-medium tracking-[-0.05em] sm:text-3xl">{estimate.mealName}</h1>
-						<p class="mt-1 line-clamp-2 text-sm leading-5 text-(--text)/52">{ingredientSummary}</p>
-					</div>
+			<div class="app-gutter relative z-10 flex min-h-full items-end py-4">
+				<div class="mx-auto w-full max-w-xl space-y-4 rounded-3xl bg-(--bg-elevated)/92 p-4 backdrop-blur-md">
+					<h1 class="text-xl font-medium tracking-[-0.04em] sm:text-2xl">{estimate.mealName}</h1>
 
-					<div class="grid grid-cols-[1.2fr_repeat(3,1fr)] gap-2">
-						<div class="py-2.5 text-center">
-							<strong class="block text-lg tabular-nums">{Math.round(totals.calories)}</strong><span
-								class="text-[0.68rem] text-(--text)/44">kcal</span
-							>
+					<div class="grid grid-cols-4 gap-2" aria-label="Estimated nutrition">
+						<div class="flex min-w-0 flex-col items-center gap-1 text-center">
+							<Flame class="size-5 text-chart-4" aria-hidden="true" />
+							<strong class="text-sm tabular-nums">{Math.round(totals.calories)}</strong>
+							<span class="text-[0.68rem] text-(--text)/48">kcal</span>
 						</div>
-						<div class="py-2.5 text-center">
-							<strong class="block tabular-nums">{totals.proteinG.toFixed(1)}g</strong><span
-								class="text-[0.68rem] text-(--text)/44">protein</span
-							>
+						<div class="flex min-w-0 flex-col items-center gap-1 text-center">
+							<Drumstick class="size-5 text-chart-2" aria-hidden="true" />
+							<strong class="text-sm tabular-nums">{totals.proteinG.toFixed(1)}g</strong>
+							<span class="text-[0.68rem] text-(--text)/48">protein</span>
 						</div>
-						<div class="py-2.5 text-center">
-							<strong class="block tabular-nums">{totals.carbsG.toFixed(1)}g</strong><span
-								class="text-[0.68rem] text-(--text)/44">carbs</span
-							>
+						<div class="flex min-w-0 flex-col items-center gap-1 text-center">
+							<Wheat class="size-5 text-chart-1" aria-hidden="true" />
+							<strong class="text-sm tabular-nums">{totals.carbsG.toFixed(1)}g</strong>
+							<span class="text-[0.68rem] text-(--text)/48">carbs</span>
 						</div>
-						<div class="py-2.5 text-center">
-							<strong class="block tabular-nums">{totals.fatG.toFixed(1)}g</strong><span
-								class="text-[0.68rem] text-(--text)/44">fat</span
-							>
+						<div class="flex min-w-0 flex-col items-center gap-1 text-center">
+							<Droplet class="size-5 text-chart-3" aria-hidden="true" />
+							<strong class="text-sm tabular-nums">{totals.fatG.toFixed(1)}g</strong>
+							<span class="text-[0.68rem] text-(--text)/48">fat</span>
 						</div>
 					</div>
 
@@ -813,11 +684,10 @@ onDestroy(() => {
 									id="meal-correction"
 									bind:value={correction}
 									maxlength={500}
-									rows={5}
-									class="min-h-28 text-base leading-6"
+									rows={3}
+									class="min-h-20 text-base leading-6"
 									placeholder="e.g. It was two eggs, and the bread had butter"
 								/>
-								<FieldDescription>Tell us only what was wrong or missing.</FieldDescription>
 							</Field>
 							<div class="grid grid-cols-[auto_1fr] gap-2">
 								<Button
@@ -836,35 +706,39 @@ onDestroy(() => {
 								>
 							</div>
 						</form>
-					{:else}
-						<div class="grid grid-cols-2 gap-3" aria-label="Confirm meal estimate">
-							<Button
-								type="button"
-								variant="destructive"
-								size="lg"
-								class="h-16 flex-col gap-1 !bg-red-600 !text-white hover:!bg-red-700"
-								onclick={openCorrection}
-								disabled={phase === 'saving'}
-								aria-label="No, correct this estimate"
-							>
-								<X class="size-6" /><span class="text-xs">Correct it</span>
-							</Button>
-							<Button
-								type="button"
-								size="lg"
-								class="h-16 flex-col gap-1 !bg-emerald-600 !text-white hover:!bg-emerald-700"
-								onclick={confirmMeal}
-								disabled={phase === 'saving'}
-								aria-label="Yes, add this meal"
-							>
-								{#if phase === 'saving'}<Spinner class="size-6" /><span class="text-xs"
-										>Adding…</span
-									>{:else}<Check class="size-6" /><span class="text-xs">Add meal</span>{/if}
-							</Button>
-						</div>
 					{/if}
 				</div>
 			</div>
 		</section>
 	{/if}
 </main>
+
+{#if estimate && (phase === 'review' || phase === 'saving')}
+	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
+		<div class="flex gap-2" aria-label="Confirm meal estimate">
+			<Button
+				type="button"
+				variant="ghost"
+				size="lg"
+				onclick={openCorrection}
+				disabled={phase === 'saving'}
+				aria-label="Correct this estimate"
+			>
+				<X class="mr-2 size-4" /> Correct it
+			</Button>
+			<Button
+				type="button"
+				size="lg"
+				class="flex-1"
+				onclick={confirmMeal}
+				disabled={phase === 'saving'}
+			>
+				{#if phase === 'saving'}
+					<Spinner class="mr-2 size-4" /> Adding…
+				{:else}
+					<Check class="mr-2 size-4" /> Add meal
+				{/if}
+			</Button>
+		</div>
+	</BottomActionBar>
+{/if}
