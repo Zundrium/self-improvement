@@ -3,8 +3,12 @@
 	import { untrack } from 'svelte';
 	import { apiRequest } from '$lib/api';
 	import type { PeriodData } from '$lib/api-types';
-	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
+	import {
+		BottomActionBar,
+		BottomActionButton,
+		BottomActionGroup
+	} from '$lib/components/ui/bottom-action-bar';
 	import { Button } from '$lib/components/ui/button';
 	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
@@ -101,17 +105,14 @@
 </form>
 
 <BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
-	<Button
-		form="period-entry"
-		type="submit"
-		size="lg"
-		variant={dirty ? 'default' : 'ghost'}
-		class="w-full {dirty ? 'text-white' : ''}"
-		style={dirty
-			? `background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
-			: undefined}
-		disabled={!dirty || saving}
-	>
-		{saving ? 'Saving…' : dirty ? 'Save entry' : 'Saved'}
-	</Button>
+	<BottomActionGroup>
+		<BottomActionButton
+			form="period-entry"
+			type="submit"
+			tone={dirty ? 'primary' : 'neutral'}
+			disabled={!dirty || saving}
+		>
+			{saving ? 'Saving…' : dirty ? 'Save entry' : 'Saved'}
+		</BottomActionButton>
+	</BottomActionGroup>
 </BottomActionBar>

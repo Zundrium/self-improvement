@@ -201,6 +201,8 @@
 		? `safe-area-padding-top flex h-svh flex-col overflow-hidden ${selectedTracker ? 'tracker-fade' : ''}`
 		: undefined}
 	style:--tracker-fade-color={selectedTracker?.colors.primary}
+	style:--bottom-action-primary={selectedFeature?.colors.primary}
+	style:--bottom-action-secondary={selectedFeature?.colors.secondary}
 	use:motionRoot
 >
 	{#if dateNavigation || selectedFeature}

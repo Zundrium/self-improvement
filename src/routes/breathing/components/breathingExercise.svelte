@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { Check, Play, Square } from '@lucide/svelte';
 	import { onDestroy, untrack } from 'svelte';
-	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
+	import {
+		BottomActionBar,
+		BottomActionButton,
+		BottomActionGroup
+	} from '$lib/components/ui/bottom-action-bar';
 	import { Button } from '$lib/components/ui/button';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import {
@@ -122,28 +126,25 @@
 </script>
 
 {#snippet actions()}
-	{#if interactive && status !== 'completed'}
-		<div class="w-full" use:breathingDisabledFade={status === 'stopping'}>
-			<Button
-				size="lg"
-				variant={status === 'idle' ? 'default' : 'ghost'}
-				class="w-full text-white disabled:opacity-100"
-				style={status === 'idle'
-					? `background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
-					: undefined}
-				disabled={status === 'stopping'}
-				onclick={status === 'idle' ? startExercise : stopExercise}
-			>
-				{#if status === 'idle'}
-					<Play class="mr-2 size-4 fill-current" /> Start breathing
-				{:else}
-					<Square class="mr-2 size-4" /> Stop
-				{/if}
-			</Button>
-		</div>
-	{:else if saveState === 'error'}
-		<Button size="lg" class="w-full" onclick={onretry}>Save breathing</Button>
-	{/if}
+	<div class="w-full" use:breathingDisabledFade={status === 'stopping'}>
+		<BottomActionGroup>
+			{#if interactive && status !== 'completed'}
+				<BottomActionButton
+					tone={status === 'idle' ? 'primary' : 'neutral'}
+					disabled={status === 'stopping'}
+					onclick={status === 'idle' ? startExercise : stopExercise}
+				>
+					{#if status === 'idle'}
+						<Play class="mr-2 size-4 fill-current" /> Start breathing
+					{:else}
+						<Square class="mr-2 size-4" /> Stop
+					{/if}
+				</BottomActionButton>
+			{:else if saveState === 'error'}
+				<BottomActionButton tone="primary" onclick={onretry}>Save breathing</BottomActionButton>
+			{/if}
+		</BottomActionGroup>
+	</div>
 {/snippet}
 
 <section

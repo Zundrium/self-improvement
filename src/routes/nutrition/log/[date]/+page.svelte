@@ -3,8 +3,12 @@
 	import { MoonStar, Plus } from '@lucide/svelte';
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
-	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import TrackerPage from '$lib/components/trackerPage.svelte';
+	import {
+		BottomActionBar,
+		BottomActionButton,
+		BottomActionGroup
+	} from '$lib/components/ui/bottom-action-bar';
 	import {
 		AlertDialog,
 		AlertDialogAction,
@@ -125,42 +129,42 @@
 </TrackerPage>
 
 <BottomActionBar contentClass="max-w-5xl" mobileOnly={false}>
-	{#if data.fasting}
-		<AlertDialog>
-			<AlertDialogTrigger>
-				{#snippet child({ props })}
-					<Button variant="destructive" size="lg" class="w-full" disabled={busy} {...props}>
-						{#if busy}<Spinner class="mr-2 size-4" />{:else}<MoonStar class="mr-2 size-5" />{/if}
-						Cancel fasting day
-					</Button>
-				{/snippet}
-			</AlertDialogTrigger>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>Cancel this fasting day?</AlertDialogTitle>
-					<AlertDialogDescription>
-						You will be able to add meals to {fullDateLabel(data.date)} again. Other fasting days will
-						stay marked.
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel>Keep fasting</AlertDialogCancel>
-					<AlertDialogAction class="bg-red-600 text-white hover:bg-red-700" onclick={cancelFasting}>
-						Cancel fasting day
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
-	{:else}
-		<div class="flex gap-2">
-			<Button variant="ghost" size="lg" onclick={openMarkDialog}>
+	<BottomActionGroup>
+		{#if data.fasting}
+			<AlertDialog>
+				<AlertDialogTrigger>
+					{#snippet child({ props })}
+						<BottomActionButton tone="destructive" disabled={busy} {...props}>
+							{#if busy}<Spinner class="mr-2 size-4" />{:else}<MoonStar class="mr-2 size-5" />{/if}
+							Cancel fasting day
+						</BottomActionButton>
+					{/snippet}
+				</AlertDialogTrigger>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Cancel this fasting day?</AlertDialogTitle>
+						<AlertDialogDescription>
+							You will be able to add meals to {fullDateLabel(data.date)} again. Other fasting days will
+							stay marked.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Keep fasting</AlertDialogCancel>
+						<AlertDialogAction class="bg-red-600 text-white hover:bg-red-700" onclick={cancelFasting}>
+							Cancel fasting day
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		{:else}
+			<BottomActionButton expand={false} onclick={openMarkDialog}>
 				<MoonStar class="mr-2 size-4" /> Fast
-			</Button>
-			<Button href="/nutrition/track?date={data.date}" size="lg" class="flex-1">
+			</BottomActionButton>
+			<BottomActionButton tone="primary" href="/nutrition/track?date={data.date}">
 				<Plus class="mr-2 size-5" /> Add a meal
-			</Button>
-		</div>
-	{/if}
+			</BottomActionButton>
+		{/if}
+	</BottomActionGroup>
 </BottomActionBar>
 
 <Dialog bind:open={markOpen}>

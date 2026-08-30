@@ -6,8 +6,12 @@
 	import type { PageProps } from './$types';
 	import { apiRequest } from '$lib/api';
 
-	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import TrackerPage from '$lib/components/trackerPage.svelte';
+	import {
+		BottomActionBar,
+		BottomActionButton,
+		BottomActionGroup
+	} from '$lib/components/ui/bottom-action-bar';
 	import EntryEditor, { type EditableMeal } from '../../components/entryEditor.svelte';
 	import {
 		AlertDialog,
@@ -102,14 +106,16 @@
 </TrackerPage>
 
 <BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
-	<div class="flex gap-2">
-		<Button form="save-entry" type="submit" size="lg" class="flex-1"
-			><Save class="mr-2 size-4" /> Save meal</Button
-		>
+	<BottomActionGroup>
+		<BottomActionButton form="save-entry" type="submit" tone="primary">
+			<Save class="mr-2 size-4" /> Save meal
+		</BottomActionButton>
 		<AlertDialog bind:open={deleteDialogOpen}>
 			<AlertDialogTrigger>
-				{#snippet child({ props })}<Button variant="destructive" size="lg" {...props}
-						><Trash2 class="mr-2 size-4" /> Delete</Button
+				{#snippet child({ props })}<BottomActionButton
+						tone="destructive"
+						expand={false}
+						{...props}><Trash2 class="mr-2 size-4" /> Delete</BottomActionButton
 					>{/snippet}
 			</AlertDialogTrigger>
 			<AlertDialogContent>
@@ -127,5 +133,5 @@
 				>
 			</AlertDialogContent>
 		</AlertDialog>
-	</div>
+	</BottomActionGroup>
 </BottomActionBar>

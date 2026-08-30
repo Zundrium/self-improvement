@@ -19,7 +19,11 @@ import { SvelteSet } from 'svelte/reactivity';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { apiRequest } from '$lib/api';
-import BottomActionBar from '$lib/components/bottomActionBar.svelte';
+import {
+	BottomActionBar,
+	BottomActionButton,
+	BottomActionGroup
+} from '$lib/components/ui/bottom-action-bar';
 import { Alert, AlertDescription } from '$lib/components/ui/alert';
 import { Badge } from '$lib/components/ui/badge';
 import { Button } from '$lib/components/ui/button';
@@ -659,153 +663,125 @@ onDestroy(stopCamera);
 
 {#if phase === 'photo'}
 	<BottomActionBar contentClass="max-w-lg" mobileOnly={false}>
-		<div class="flex items-center justify-center gap-2" aria-label="Camera controls">
-			<Button
+		<BottomActionGroup justify="center" aria-label="Camera controls">
+			<BottomActionButton
 				href="/nutrition/log/{data.date}"
-				variant="ghost"
-				size="icon"
-				class="bottom-action-secondary"
+				format="icon"
 				aria-label="Cancel"
 			>
 				<X class="size-5" />
-			</Button>
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon"
-				class="bottom-action-secondary"
+			</BottomActionButton>
+			<BottomActionButton
+				tone="secondary"
+				format="icon"
 				onclick={() => fileInput?.click()}
 				disabled={processingPhoto}
 				aria-label="Choose a photo"
 			>
 				<ImagePlus class="size-5" />
-			</Button>
-			<Button
-				type="button"
-				size="icon"
+			</BottomActionButton>
+			<BottomActionButton
+				tone="primary"
+				format="icon"
 				onclick={takePhoto}
 				disabled={cameraState !== 'ready' || processingPhoto}
 				aria-label="Take photo"
 			>
 				<Camera class="size-5" />
-			</Button>
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon"
-				class="bottom-action-secondary"
+			</BottomActionButton>
+			<BottomActionButton
+				format="icon"
 				onclick={switchCamera}
 				disabled={cameraState !== 'ready' || processingPhoto}
 				aria-label="Switch camera"
 			>
 				<SwitchCamera class="size-5" />
-			</Button>
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon"
-				class="bottom-action-secondary"
+			</BottomActionButton>
+			<BottomActionButton
+				tone="secondary"
+				format="icon"
 				onclick={openDescription}
 				disabled={processingPhoto}
 				aria-label="Describe meal"
 			>
 				<FileText class="size-5" />
-			</Button>
-		</div>
+			</BottomActionButton>
+		</BottomActionGroup>
 	</BottomActionBar>
 {:else if phase === 'description'}
 	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
-		<div class="flex justify-between gap-2">
-			<Button
+		<BottomActionGroup justify="between">
+			<BottomActionButton
 				href="/nutrition/log/{data.date}"
-				variant="ghost"
-				size="icon"
-				class="bottom-action-secondary"
+				format="icon"
 				aria-label="Cancel"
 			>
 				<X class="size-5" />
-			</Button>
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon"
-				class="bottom-action-secondary"
+			</BottomActionButton>
+			<BottomActionButton
+				tone="secondary"
+				format="icon"
 				onclick={retakePhoto}
 				aria-label="Use camera"
 			>
 				<Camera class="size-5" />
-			</Button>
-		</div>
+			</BottomActionButton>
+		</BottomActionGroup>
 	</BottomActionBar>
 {:else if phase === 'analyzing' || phase === 'refining' || phase === 'correction'}
 	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
-		<Button
-			href="/nutrition/log/{data.date}"
-			variant="ghost"
-			size="icon"
-			class="bottom-action-secondary"
-			aria-label="Cancel"
-		>
-			<X class="size-5" />
-		</Button>
-	</BottomActionBar>
-{:else if phase === 'analysis-error'}
-	<BottomActionBar contentClass="max-w-lg" mobileOnly={false}>
-		<div class="grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)] gap-2">
-			<Button
+		<BottomActionGroup>
+			<BottomActionButton
 				href="/nutrition/log/{data.date}"
-				variant="ghost"
-				size="icon"
-				class="bottom-action-secondary"
+				format="icon"
 				aria-label="Cancel"
 			>
 				<X class="size-5" />
-			</Button>
-			<Button
-				type="button"
-				variant="ghost"
-				class="px-2 text-sm bottom-action-secondary"
-				onclick={analyzeMeal}
+			</BottomActionButton>
+		</BottomActionGroup>
+	</BottomActionBar>
+{:else if phase === 'analysis-error'}
+	<BottomActionBar contentClass="max-w-lg" mobileOnly={false}>
+		<BottomActionGroup>
+			<BottomActionButton
+				href="/nutrition/log/{data.date}"
+				format="icon"
+				aria-label="Cancel"
 			>
+				<X class="size-5" />
+			</BottomActionButton>
+			<BottomActionButton tone="secondary" onclick={analyzeMeal}>
 				<RefreshCw class="mr-2 size-4" /> Try again
-			</Button>
-			<Button type="button" class="px-2 text-sm" onclick={editMealSource}>
+			</BottomActionButton>
+			<BottomActionButton tone="primary" onclick={editMealSource}>
 				{#if selectedImage}
 					<Camera class="mr-2 size-4" /> Retake
 				{:else}
 					<FileText class="mr-2 size-4" /> Edit
 				{/if}
-			</Button>
-		</div>
+			</BottomActionButton>
+		</BottomActionGroup>
 	</BottomActionBar>
 {:else if estimate && (phase === 'review' || phase === 'saving')}
 	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
-		<div
-			class="grid grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)] gap-2"
-			aria-label="Confirm meal estimate"
-		>
-			<Button
+		<BottomActionGroup aria-label="Confirm meal estimate">
+			<BottomActionButton
 				href="/nutrition/log/{data.date}"
-				variant="ghost"
-				size="icon"
-				class="bottom-action-secondary"
+				format="icon"
 				disabled={phase === 'saving'}
 				aria-label="Cancel"
 			>
 				<X class="size-5" />
-			</Button>
-			<Button
-				type="button"
-				variant="ghost"
-				class="px-2 text-sm bottom-action-secondary"
+			</BottomActionButton>
+			<BottomActionButton
+				tone="secondary"
 				onclick={openCorrection}
 				disabled={phase === 'saving'}
 			>
 				Correct it
-			</Button>
-			<Button
-				type="button"
-				class="px-2 text-sm"
+			</BottomActionButton>
+			<BottomActionButton
+				tone="primary"
 				onclick={confirmMeal}
 				disabled={phase === 'saving'}
 			>
@@ -814,18 +790,7 @@ onDestroy(stopCamera);
 				{:else}
 					<Check class="mr-2 size-4" /> Add meal
 				{/if}
-			</Button>
-		</div>
+			</BottomActionButton>
+		</BottomActionGroup>
 	</BottomActionBar>
 {/if}
-
-<style>
-	:global([data-bottom-action-bar] [data-slot='button'].bottom-action-secondary) {
-		background: color-mix(in srgb, var(--text) 8%, transparent) !important;
-		color: var(--text) !important;
-	}
-
-	:global([data-bottom-action-bar] [data-slot='button'].bottom-action-secondary:hover) {
-		background: color-mix(in srgb, var(--text) 12%, transparent) !important;
-	}
-</style>

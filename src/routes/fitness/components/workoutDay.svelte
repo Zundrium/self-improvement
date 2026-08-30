@@ -3,10 +3,13 @@
 	import { untrack } from 'svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
 
-	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 	import TrackerSection from '$lib/components/trackerSection.svelte';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
+	import {
+		BottomActionBar,
+		BottomActionButton,
+		BottomActionGroup
+	} from '$lib/components/ui/bottom-action-bar';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import type { Workout } from '../fitness';
 	import WorkoutSession from './workoutSession.svelte';
@@ -61,38 +64,30 @@
 </script>
 
 {#snippet actions()}
-	<div class="flex h-11 items-center justify-between" aria-label="Workout sets">
-		<Button
-			variant="ghost"
-			size="icon"
-			class="size-9"
-			onclick={() => adjustSets(-1)}
-			aria-label="Decrease sets"
-		>
-			<Minus class="size-4" />
-		</Button>
-		<strong class="text-base font-medium tabular-nums">
-			{configuredSets} {configuredSets === 1 ? 'set' : 'sets'}
-		</strong>
-		<Button
-			variant="ghost"
-			size="icon"
-			class="size-9"
-			onclick={() => adjustSets(1)}
-			aria-label="Increase sets"
-		>
-			<Plus class="size-4" />
-		</Button>
-	</div>
-	<Button
-		size="lg"
-		class="w-full px-2 text-white"
-		style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`}
-		disabled={!audioManager}
-		onclick={startSession}
-	>
-		<Play class="mr-1 size-4 fill-current" /> Start workout
-	</Button>
+	<BottomActionGroup orientation="vertical">
+		<BottomActionGroup justify="between" aria-label="Workout sets">
+			<BottomActionButton
+				format="icon"
+				onclick={() => adjustSets(-1)}
+				aria-label="Decrease sets"
+			>
+				<Minus class="size-4" />
+			</BottomActionButton>
+			<strong class="text-base font-medium tabular-nums">
+				{configuredSets} {configuredSets === 1 ? 'set' : 'sets'}
+			</strong>
+			<BottomActionButton
+				format="icon"
+				onclick={() => adjustSets(1)}
+				aria-label="Increase sets"
+			>
+				<Plus class="size-4" />
+			</BottomActionButton>
+		</BottomActionGroup>
+		<BottomActionButton tone="primary" disabled={!audioManager} onclick={startSession}>
+			<Play class="mr-1 size-4 fill-current" /> Start workout
+		</BottomActionButton>
+	</BottomActionGroup>
 {/snippet}
 
 {#if isSessionActive && audioManager}

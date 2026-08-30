@@ -2,12 +2,15 @@
 import { CalendarOff, Check, LoaderCircle, Play, RotateCcw } from '@lucide/svelte';
 import { onMount, untrack } from 'svelte';
 import { AudioManager } from '$lib/audio/audio-manager';
-import BottomActionBar from '$lib/components/bottomActionBar.svelte';
+import {
+	BottomActionBar,
+	BottomActionButton,
+	BottomActionGroup
+} from '$lib/components/ui/bottom-action-bar';
 import type { GuidedRoutineActivity } from '$lib/components/guidedRoutine';
 import GuidedRoutineRunner, {
 	type GuidedRoutineSounds
 } from '$lib/components/guidedRoutineRunner.svelte';
-import { Button } from '$lib/components/ui/button';
 import {
 	STRETCH_ACTIVITY_IDS,
 	STRETCH_DIFFICULTIES_BY_ACTIVITY,
@@ -126,36 +129,32 @@ function completeRoutine() {
 </script>
 
 {#snippet actions()}
-	{#if saveState === 'error'}
-		<div class="grid grid-cols-[1fr_auto] gap-3">
-			<Button size="lg" class="w-full" onclick={onretry}>Save routine</Button>
-			<Button
-				size="icon"
-				variant="ghost"
-				class="size-11"
+	<BottomActionGroup>
+		{#if saveState === 'error'}
+			<BottomActionButton tone="primary" onclick={onretry}>Save routine</BottomActionButton>
+			<BottomActionButton
+				format="icon"
 				onclick={() => (isSessionActive = true)}
 				aria-label="Stretch again"
 			>
 				<RotateCcw class="size-4" />
-			</Button>
-		</div>
-	{:else}
-		<Button
-			size="lg"
-			class="w-full text-white"
-			style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`}
-			disabled={!audioManager || saveState === 'saving'}
-			onclick={() => (isSessionActive = true)}
-		>
-			{#if completedBefore}
-				<RotateCcw class="mr-2 size-4" /> Stretch again
-			{:else if scheduled}
-				<Play class="mr-2 size-4 fill-current" /> Start routine
-			{:else}
-				<Play class="mr-2 size-4 fill-current" /> Stretch anyway
-			{/if}
-		</Button>
-	{/if}
+			</BottomActionButton>
+		{:else}
+			<BottomActionButton
+				tone="primary"
+				disabled={!audioManager || saveState === 'saving'}
+				onclick={() => (isSessionActive = true)}
+			>
+				{#if completedBefore}
+					<RotateCcw class="mr-2 size-4" /> Stretch again
+				{:else if scheduled}
+					<Play class="mr-2 size-4 fill-current" /> Start routine
+				{:else}
+					<Play class="mr-2 size-4 fill-current" /> Stretch anyway
+				{/if}
+			</BottomActionButton>
+		{/if}
+	</BottomActionGroup>
 {/snippet}
 
 {#if isSessionActive && audioManager}

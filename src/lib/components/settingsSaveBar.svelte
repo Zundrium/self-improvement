@@ -1,6 +1,5 @@
 <script lang="ts">
-	import BottomActionBar from './bottomActionBar.svelte';
-	import { Button } from './ui/button';
+	import { BottomActionBar, BottomActionButton, BottomActionGroup } from './ui/bottom-action-bar';
 
 	type Props = {
 		form: string;
@@ -20,14 +19,14 @@
 </script>
 
 <BottomActionBar {contentClass} mobileOnly={false}>
-	<Button
-		{form}
-		type="submit"
-		size="lg"
-		variant={dirty ? 'default' : 'ghost'}
-		class="w-full"
-		disabled={!dirty || saving || disabled}
-	>
-		{saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
-	</Button>
+	<BottomActionGroup>
+		<BottomActionButton
+			{form}
+			type="submit"
+			tone={dirty ? 'primary' : 'neutral'}
+			disabled={!dirty || saving || disabled}
+		>
+			{saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
+		</BottomActionButton>
+	</BottomActionGroup>
 </BottomActionBar>

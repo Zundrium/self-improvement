@@ -2,7 +2,11 @@
 	import { onDestroy, untrack } from 'svelte';
 	import { Check, LoaderCircle, Minus, Pause, Play, Plus, RotateCcw, Square } from '@lucide/svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
-	import BottomActionBar from '$lib/components/bottomActionBar.svelte';
+	import {
+		BottomActionBar,
+		BottomActionButton,
+		BottomActionGroup
+	} from '$lib/components/ui/bottom-action-bar';
 	import { Button } from '$lib/components/ui/button';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import MeditationIcon from '$lib/trackers/meditationIcon.svelte';
@@ -131,10 +135,8 @@
 </script>
 
 {#snippet actions()}
-	<div
-		class="grid gap-3 {status === 'running' || status === 'paused' ? 'grid-cols-[1fr_auto]' : ''}"
-	>
-		<Button size="lg" class="w-full" aria-label={timerLabel} onclick={handlePrimaryAction}>
+	<BottomActionGroup>
+		<BottomActionButton tone="primary" aria-label={timerLabel} onclick={handlePrimaryAction}>
 			{#if status === 'running'}
 				<Pause class="mr-2 size-4" />
 			{:else if status === 'completed'}
@@ -143,19 +145,13 @@
 				<Play class="mr-2 size-4 fill-current" />
 			{/if}
 			{timerLabel}
-		</Button>
+		</BottomActionButton>
 		{#if status === 'running' || status === 'paused'}
-			<Button
-				variant="ghost"
-				size="icon"
-				class="size-11"
-				aria-label="Stop meditation"
-				onclick={stopTimer}
-			>
+			<BottomActionButton format="icon" aria-label="Stop meditation" onclick={stopTimer}>
 				<Square class="size-4" />
-			</Button>
+			</BottomActionButton>
 		{/if}
-	</div>
+	</BottomActionGroup>
 {/snippet}
 
 <section aria-label="Meditation timer">

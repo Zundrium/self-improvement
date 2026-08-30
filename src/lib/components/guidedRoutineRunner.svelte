@@ -2,13 +2,13 @@
 import { Info, Pause, Play, SkipForward, X } from '@lucide/svelte';
 import { onDestroy, onMount, untrack } from 'svelte';
 import type { AudioManager } from '$lib/audio/audio-manager';
-import BottomActionBar from '$lib/components/bottomActionBar.svelte';
-import { Button } from '$lib/components/ui/button';
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger
-} from '$lib/components/ui/popover';
+	BottomActionBar,
+	BottomActionButton,
+	BottomActionGroup
+} from '$lib/components/ui/bottom-action-bar';
+import { Button } from '$lib/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
 import { Progress } from '$lib/components/ui/progress';
 import { Slider } from '$lib/components/ui/slider';
 import {
@@ -419,51 +419,31 @@ function handleVisibilityChange() {
 {/snippet}
 
 {#snippet sessionControls(activity: GuidedRoutineActivity)}
-	{#if isManualReps && activity.type === 'manual-reps'}
-		<div class="grid grid-cols-[auto_1fr_auto] gap-3">
-			<Button
-				variant="ghost"
-				size="icon"
-				class="size-11 !bg-(--text)/5 !text-(--text)/72"
-				onclick={close}
-				aria-label={`Close ${activityLabel.toLowerCase()}`}><X class="size-5" /></Button
-			>
-			<Button
-				size="lg"
-				class="!bg-(--text) !text-white"
-				onclick={completeManualActivity}>Finish {activity.reps} reps</Button
-			>
-			<Button
-				variant="ghost"
-				size="icon"
-				class="size-11 !bg-(--text)/5 !text-(--text)/72"
-				onclick={skip}
-				aria-label="Skip current step"><SkipForward class="size-4" /></Button
-			>
-		</div>
-	{:else}
-		<div class="grid grid-cols-[auto_1fr_auto] gap-3">
-			<Button
-				variant="ghost"
-				size="icon"
-				class="size-11 !bg-(--text)/5 !text-(--text)/72"
-				onclick={close}
-				aria-label={`Close ${activityLabel.toLowerCase()}`}><X class="size-5" /></Button
-			>
-			<Button size="lg" class="!bg-(--text) !text-white" onclick={togglePause}
-				>{#if isPaused}<Play class="mr-2 size-4 fill-current" /> Resume{:else}<Pause
-						class="mr-2 size-4 fill-current"
-					/> Pause{/if}</Button
-			>
-			<Button
-				variant="ghost"
-				size="icon"
-				class="size-11 !bg-(--text)/5 !text-(--text)/72"
-				onclick={skip}
-				aria-label="Skip current step"><SkipForward class="size-4" /></Button
-			>
-		</div>
-	{/if}
+	<BottomActionGroup>
+		<BottomActionButton
+			format="icon"
+			onclick={close}
+			aria-label={`Close ${activityLabel.toLowerCase()}`}
+		>
+			<X class="size-5" />
+		</BottomActionButton>
+		{#if isManualReps && activity.type === 'manual-reps'}
+			<BottomActionButton tone="primary" onclick={completeManualActivity}>
+				Finish {activity.reps} reps
+			</BottomActionButton>
+		{:else}
+			<BottomActionButton tone="primary" onclick={togglePause}>
+				{#if isPaused}
+					<Play class="mr-2 size-4 fill-current" /> Resume
+				{:else}
+					<Pause class="mr-2 size-4 fill-current" /> Pause
+				{/if}
+			</BottomActionButton>
+		{/if}
+		<BottomActionButton format="icon" onclick={skip} aria-label="Skip current step">
+			<SkipForward class="size-4" />
+		</BottomActionButton>
+	</BottomActionGroup>
 {/snippet}
 
 {#if currentActivity && displayActivity}

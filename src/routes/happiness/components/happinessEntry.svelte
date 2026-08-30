@@ -4,8 +4,12 @@ import { tick, untrack } from 'svelte';
 import { invalidateAll } from '$app/navigation';
 import { apiRequest } from '$lib/api';
 import type { HappinessData } from '$lib/api-types';
-import BottomActionBar from '$lib/components/bottomActionBar.svelte';
 import { Alert, AlertDescription } from '$lib/components/ui/alert';
+import {
+	BottomActionBar,
+	BottomActionButton,
+	BottomActionGroup
+} from '$lib/components/ui/bottom-action-bar';
 import { Button } from '$lib/components/ui/button';
 import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 import { Slider } from '$lib/components/ui/slider';
@@ -213,25 +217,22 @@ function reasonKey(reasons: string[]) {
 </form>
 
 <BottomActionBar contentClass="max-w-3xl" mobileOnly={false}>
-	{#if step === 'feeling'}
-		<Button type="button" size="lg" class="w-full text-black/80" style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`} onclick={continueToReasons}>
-			Continue
-		</Button>
-	{:else}
-		<Button
-			form="happiness-entry"
-			type="submit"
-			size="lg"
-			variant={canSave ? 'default' : 'ghost'}
-			class="w-full {canSave ? 'text-black/80' : ''}"
-			style={canSave
-				? `background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
-				: undefined}
-			disabled={!canSave || saving}
-		>
-			{saving ? 'Saving…' : dirty ? 'Save entry' : 'Saved'}
-		</Button>
-	{/if}
+	<BottomActionGroup>
+		{#if step === 'feeling'}
+			<BottomActionButton type="button" tone="primary" onclick={continueToReasons}>
+				Continue
+			</BottomActionButton>
+		{:else}
+			<BottomActionButton
+				form="happiness-entry"
+				type="submit"
+				tone={canSave ? 'primary' : 'neutral'}
+				disabled={!canSave || saving}
+			>
+				{saving ? 'Saving…' : dirty ? 'Save entry' : 'Saved'}
+			</BottomActionButton>
+		{/if}
+	</BottomActionGroup>
 </BottomActionBar>
 
 <style>

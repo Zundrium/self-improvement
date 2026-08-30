@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { useBottomActionBarState } from './bottomActionBarState.svelte';
+	import { useBottomActionBarState } from '../../bottomActionBarState.svelte';
 
 	type Props = {
 		children: Snippet;
