@@ -49,16 +49,16 @@
 			</div>
 		</header>
 
-		<section class="grid grid-cols-3 gap-3 pt-2" aria-label="Game progress" data-user-card-item>
+		<section class="grid grid-cols-3 gap-0 pt-2" aria-label="Game progress" data-user-card-item>
 			<Button
 				href="/achievements"
 				variant="ghost"
-				class="h-26 min-w-0 flex-col gap-2 rounded-3xl px-1 text-white hover:text-white"
+				class="h-26 min-w-0 flex-col gap-2 rounded-l-3xl rounded-r-none px-1 text-white hover:text-white"
 				style={`background: ${gameGradient(achievementColors)}`}
 				aria-label={`${gamification.achievementCount} achievements completed`}
 				onclick={onSelect}
 			>
-				<Trophy class="size-6" />
+				<Trophy class="size-7" />
 				<strong class="max-w-full truncate text-lg font-medium tabular-nums">
 					{gamification.achievementCount}
 				</strong>
@@ -67,12 +67,12 @@
 			<Button
 				href="/streaks"
 				variant="ghost"
-				class="h-26 min-w-0 flex-col gap-2 rounded-3xl px-1 text-white hover:text-white"
+				class="h-26 min-w-0 flex-col gap-2 rounded-none px-1 text-white hover:text-white"
 				style={`background: ${gameGradient(streakColors)}`}
 				aria-label={`${gamification.dayStreak.current} day streak`}
 				onclick={onSelect}
 			>
-				<Flame class="size-6" />
+				<Flame class="size-7" />
 				<strong class="max-w-full truncate text-lg font-medium tabular-nums">
 					{gamification.dayStreak.current}
 				</strong>
@@ -81,12 +81,12 @@
 			<Button
 				href="/shop"
 				variant="ghost"
-				class="h-26 min-w-0 flex-col gap-2 rounded-3xl px-1 text-white hover:text-white"
+				class="h-26 min-w-0 flex-col gap-2 rounded-l-none rounded-r-3xl px-1 text-white hover:text-white"
 				style={`background: ${gameGradient(gamificationColors.glimmers)}`}
 				aria-label={`${gamification.glimmers} Glimmers. Open shop.`}
 				onclick={onSelect}
 			>
-				<Coins class="size-6" />
+				<Coins class="size-7" />
 				<strong class="max-w-full truncate text-lg font-medium tabular-nums">
 					{gamification.glimmers.toLocaleString()}
 				</strong>
