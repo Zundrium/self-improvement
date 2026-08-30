@@ -58,11 +58,6 @@ function announceAndRemember(next: GamificationData) {
 }
 
 function announceChanges(previous: GamificationData, next: GamificationData) {
-	if (next.earnedNow)
-		toast.success(`✨ +${next.earnedNow} Glimmers`, {
-			id: `glimmers-${next.score}`,
-			description: 'Your completed tracker paid off.'
-		});
 	for (const achievement of unlockedSince(previous, next)) {
 		toast.success(`Achievement unlocked: ${achievement.title}`, {
 			id: `achievement-${achievement.id}`,

@@ -97,7 +97,7 @@
 
 <svelte:window onpointerdown={closeDrawerOutside} onkeydown={closeDrawerOnEscape} />
 
-<nav bind:this={navigationElement} class="relative z-50 shrink-0" aria-label="Main navigation">
+<nav bind:this={navigationElement} class="relative z-[80] shrink-0" aria-label="Main navigation">
 	{#if activeDrawer}
 		<div
 			bind:this={drawerElement}
@@ -183,6 +183,7 @@
 				onclick={() => void toggleDrawer('user')}
 			>
 				<span
+					data-glimmer-target
 					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
 				>
 					{#if activeDrawer === 'user'}

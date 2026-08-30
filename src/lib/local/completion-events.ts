@@ -1,11 +1,11 @@
 import { localDateForInstant } from '$lib/trackers/dates';
 import { type AppTrackerId, appTrackers } from '$lib/trackers/registry';
-import { completionDates } from './gamification';
+import { completionDates, trackerPoints } from './gamification';
 import type { LocalAppState } from './state';
 
 export const TRACKER_COMPLETED_EVENT = 'tracker:completed';
 export const TRACKER_CELEBRATION_ENDED_EVENT = 'tracker:celebration-ended';
-export type TrackerCompletionDetail = { trackerId: AppTrackerId };
+export type TrackerCompletionDetail = { trackerId: AppTrackerId; glimmers: number };
 
 export function notifyTrackerCelebrationEnded() {
 	if (typeof window === 'undefined') return;
@@ -38,7 +38,9 @@ export function newlyCompletedTrackerIds(
 function dispatchTrackerCompletion(trackerId: AppTrackerId) {
 	if (typeof window === 'undefined') return;
 	window.dispatchEvent(
-		new CustomEvent<TrackerCompletionDetail>(TRACKER_COMPLETED_EVENT, { detail: { trackerId } })
+		new CustomEvent<TrackerCompletionDetail>(TRACKER_COMPLETED_EVENT, {
+			detail: { trackerId, glimmers: trackerPoints[trackerId] }
+		})
 	);
 }
 
