@@ -1030,19 +1030,10 @@ function validPeriod(
 
 function validReward(body: Record<string, unknown>): Reward {
 	const name = String(body.name ?? '').trim();
-	const emoji = String(body.emoji ?? '').trim();
 	const price = Number(body.price);
-	if (
-		!name ||
-		name.length > 80 ||
-		!emoji ||
-		emoji.length > 16 ||
-		!Number.isInteger(price) ||
-		price < 1 ||
-		price > 1_000_000
-	)
-		throw badRequest('Enter a name, emoji, and valid Glimmer price.');
-	return { id: crypto.randomUUID(), name, emoji, price };
+	if (!name || name.length > 80 || !Number.isInteger(price) || price < 1 || price > 1_000_000)
+		throw badRequest('Enter a name and valid Glimmer price.');
+	return { id: crypto.randomUUID(), name, emoji: '⭐', price };
 }
 
 function glimmers(state: LocalAppState, now: Date) {

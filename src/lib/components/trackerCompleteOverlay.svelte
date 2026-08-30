@@ -1,5 +1,4 @@
 <script lang="ts">
-import { Star } from '@lucide/svelte';
 import { gsap } from 'gsap';
 import { onMount } from 'svelte';
 import { Dialog, DialogContent, DialogTitle } from '$lib/components/ui/dialog';
@@ -9,6 +8,7 @@ import {
 	type TrackerCompletionDetail
 } from '$lib/local/completion-events';
 import { trackerPoints } from '$lib/local/gamification';
+import GlimmerIcon from '$lib/components/glimmerIcon.svelte';
 import { trackerIcons } from '$lib/trackers/icons';
 import { appTrackers, isAppTrackerId } from '$lib/trackers/registry';
 
@@ -358,13 +358,7 @@ function prefersReducedMotion() {
 
 			<div class="pointer-events-none absolute left-1/2 top-[64%]" aria-hidden="true">
 				{#each Array(GLIMMER_COUNT) as _}
-					<span
-						data-completion-glimmer
-						class="absolute -m-5 flex size-10 items-center justify-center rounded-full text-white"
-						style="background: linear-gradient(135deg, #d4a017, #f97316)"
-					>
-						<Star class="size-5 fill-current" />
-					</span>
+					<GlimmerIcon data-completion-glimmer class="absolute -m-5 size-10" />
 				{/each}
 			</div>
 			</DialogContent>

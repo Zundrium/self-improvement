@@ -1,39 +1,40 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
-	import { Coins, Flame, Settings, Trophy } from '@lucide/svelte';
-	import { apiRequest, GAMIFICATION_CHANGED_EVENT } from '$lib/api';
-	import type { GamificationData, LocalProfile } from '$lib/api-types';
-	import { gameGradient, gamificationColors } from '$lib/gamification/theme';
-	import { staggerChildren } from '$lib/motion/gsap';
-	import { getTrackerColors } from '$lib/trackers/registry';
-	import { Avatar } from '$lib/components/ui/avatar';
-	import { Button } from '$lib/components/ui/button';
-	import AudioVolumeControl from './audioVolumeControl.svelte';
+import { onMount, untrack } from 'svelte';
+import { Flame, Settings, Trophy } from '@lucide/svelte';
+import { apiRequest, GAMIFICATION_CHANGED_EVENT } from '$lib/api';
+import type { GamificationData, LocalProfile } from '$lib/api-types';
+import { staggerChildren } from '$lib/motion/gsap';
+import { getTrackerColors } from '$lib/trackers/registry';
+import { Avatar } from '$lib/components/ui/avatar';
+import { Button } from '$lib/components/ui/button';
+import AudioVolumeControl from './audioVolumeControl.svelte';
+import GameCoinIcon from './gameCoinIcon.svelte';
+import GlimmerIcon from './glimmerIcon.svelte';
 
-	type Props = {
-		profile: LocalProfile;
-		initialGamification: GamificationData;
-		onSelect?: () => void;
-	};
+type Props = {
+	profile: LocalProfile;
+	initialGamification: GamificationData;
+	onSelect?: () => void;
+};
 
-	let { profile, initialGamification, onSelect }: Props = $props();
-	let gamification = $state(untrack(() => initialGamification));
-	const achievementColors = getTrackerColors('achievements');
-	const streakColors = getTrackerColors('streaks');
+let { profile, initialGamification, onSelect }: Props = $props();
+let gamification = $state(untrack(() => initialGamification));
+const achievementColors = getTrackerColors('achievements');
+const streakColors = getTrackerColors('streaks');
 
-	onMount(() => {
-		void refreshGamification();
-		window.addEventListener(GAMIFICATION_CHANGED_EVENT, refreshGamification);
-		return () => window.removeEventListener(GAMIFICATION_CHANGED_EVENT, refreshGamification);
-	});
+onMount(() => {
+	void refreshGamification();
+	window.addEventListener(GAMIFICATION_CHANGED_EVENT, refreshGamification);
+	return () => window.removeEventListener(GAMIFICATION_CHANGED_EVENT, refreshGamification);
+});
 
-	async function refreshGamification() {
-		try {
-			gamification = await apiRequest<GamificationData>('/api/app/gamification');
-		} catch {
-			return;
-		}
+async function refreshGamification() {
+	try {
+		gamification = await apiRequest<GamificationData>('/api/app/gamification');
+	} catch {
+		return;
 	}
+}
 </script>
 
 <div class="app-gutter py-(--app-overlay-padding)">
@@ -49,16 +50,21 @@
 			</div>
 		</header>
 
-		<section class="grid grid-cols-3 gap-0 pt-2" aria-label="Game progress" data-user-card-item>
+		<section
+			class="grid grid-cols-3 overflow-hidden rounded-3xl"
+			aria-label="Game progress"
+			data-user-card-item
+		>
 			<Button
 				href="/achievements"
 				variant="ghost"
-				class="h-26 min-w-0 flex-col gap-2 rounded-l-3xl rounded-r-none px-1 text-white hover:text-white"
-				style={`background: ${gameGradient(achievementColors)}`}
+				class="h-28 min-w-0 flex-col gap-2 rounded-none bg-(--bg-elevated) px-1 text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
 				aria-label={`${gamification.achievementCount} achievements completed`}
 				onclick={onSelect}
 			>
-				<Trophy class="size-7" />
+				<GameCoinIcon colors={achievementColors} class="size-10" aria-hidden="true">
+					<Trophy class="size-5" />
+				</GameCoinIcon>
 				<strong class="max-w-full truncate text-lg font-medium tabular-nums">
 					{gamification.achievementCount}
 				</strong>
@@ -67,12 +73,13 @@
 			<Button
 				href="/streaks"
 				variant="ghost"
-				class="h-26 min-w-0 flex-col gap-2 rounded-none px-1 text-white hover:text-white"
-				style={`background: ${gameGradient(streakColors)}`}
+				class="h-28 min-w-0 flex-col gap-2 rounded-none bg-(--bg-elevated) px-1 text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
 				aria-label={`${gamification.dayStreak.current} day streak`}
 				onclick={onSelect}
 			>
-				<Flame class="size-7" />
+				<GameCoinIcon colors={streakColors} class="size-10" aria-hidden="true">
+					<Flame class="size-5" />
+				</GameCoinIcon>
 				<strong class="max-w-full truncate text-lg font-medium tabular-nums">
 					{gamification.dayStreak.current}
 				</strong>
@@ -81,12 +88,11 @@
 			<Button
 				href="/shop"
 				variant="ghost"
-				class="h-26 min-w-0 flex-col gap-2 rounded-l-none rounded-r-3xl px-1 text-white hover:text-white"
-				style={`background: ${gameGradient(gamificationColors.glimmers)}`}
+				class="h-28 min-w-0 flex-col gap-2 rounded-none bg-(--bg-elevated) px-1 text-(--text) hover:bg-(--text)/4 hover:text-(--text)"
 				aria-label={`${gamification.glimmers} Glimmers. Open shop.`}
 				onclick={onSelect}
 			>
-				<Coins class="size-7" />
+				<GlimmerIcon class="size-10" aria-hidden="true" />
 				<strong class="max-w-full truncate text-lg font-medium tabular-nums">
 					{gamification.glimmers.toLocaleString()}
 				</strong>
