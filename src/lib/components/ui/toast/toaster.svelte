@@ -1,7 +1,10 @@
 <script lang="ts">
-	import { CircleAlert, CircleCheck, Info, X } from '@lucide/svelte';
+	import { CircleAlert, CircleCheck, Flame, Info, Trophy, X } from '@lucide/svelte';
 	import { gsap } from 'gsap';
+	import GlimmerIcon from '$lib/components/glimmerIcon.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { gameGradient, gamificationColors } from '$lib/gamification/theme';
+	import { getTrackerColors } from '$lib/trackers/registry';
 	import { type Toast, type ToastId, toast, toastStore } from './toast';
 
 	type Props = {
@@ -120,7 +123,15 @@
 	function toastColor(type: Toast['type']) {
 		if (type === 'error') return 'bg-red-500';
 		if (type === 'success') return 'bg-emerald-500';
-		return 'bg-blue-500';
+		if (type === 'default') return 'bg-blue-500';
+		return '';
+	}
+
+	function toastStyle(type: Toast['type']) {
+		if (type === 'achievement') return `background: ${gameGradient(getTrackerColors('achievements'))}`;
+		if (type === 'streak') return `background: ${gameGradient(getTrackerColors('streaks'))}`;
+		if (type === 'glimmer') return `background: ${gameGradient(gamificationColors.glimmers)}`;
+		return undefined;
 	}
 
 	function runAction(item: Toast) {
@@ -145,12 +156,19 @@
 			use:toastMotion={item.closing}
 			use:swipeDismiss={item.id}
 			class={`pointer-events-auto flex touch-pan-y items-center gap-4 rounded-3xl px-5 py-4 text-white ${toastColor(item.type)}`}
+			style={toastStyle(item.type)}
 			role={item.type === 'error' ? 'alert' : 'status'}
 		>
 			{#if item.type === 'error'}
 				<CircleAlert class="size-10 shrink-0" aria-hidden="true" />
 			{:else if item.type === 'success'}
 				<CircleCheck class="size-10 shrink-0" aria-hidden="true" />
+			{:else if item.type === 'achievement'}
+				<Trophy class="size-10 shrink-0" aria-hidden="true" />
+			{:else if item.type === 'streak'}
+				<Flame class="size-10 shrink-0" aria-hidden="true" />
+			{:else if item.type === 'glimmer'}
+				<GlimmerIcon class="size-10" aria-hidden="true" />
 			{:else}
 				<Info class="size-10 shrink-0" aria-hidden="true" />
 			{/if}

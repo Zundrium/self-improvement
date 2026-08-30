@@ -59,17 +59,17 @@ function announceAndRemember(next: GamificationData) {
 
 function announceChanges(previous: GamificationData, next: GamificationData) {
 	for (const achievement of unlockedSince(previous, next)) {
-		toast.success(`Achievement unlocked: ${achievement.title}`, {
+		toast.achievement(`Achievement unlocked: ${achievement.title}`, {
 			id: `achievement-${achievement.id}`,
 			description: achievement.description
 		});
 	}
 	if (next.dayStreak.current > previous.dayStreak.current)
-		toast.success(streakMessage('Perfect days', next.dayStreak.current), {
+		toast.streak(streakMessage('Perfect days', next.dayStreak.current), {
 			id: `streak-perfect-${next.dayStreak.current}`
 		});
 	for (const streak of increasedStreaks(previous, next)) {
-		toast.success(streakMessage(streak.label, streak.current), {
+		toast.streak(streakMessage(streak.label, streak.current), {
 			id: `streak-${streak.trackerId}-${streak.current}`
 		});
 	}
