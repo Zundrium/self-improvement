@@ -45,6 +45,7 @@ export interface WorkoutProgram {
 export interface CompletedWorkoutDay {
 	workoutId: number;
 	dateKey: string;
+	completedAt?: string;
 }
 
 export interface ExercisePreference {

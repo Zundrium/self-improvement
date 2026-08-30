@@ -29,11 +29,23 @@ export type DayStreakSummary = {
 	best: number;
 	total: number;
 };
+export type AchievementCategory =
+	| 'tracker-milestone'
+	| 'score'
+	| 'streak'
+	| 'overall'
+	| 'tracker-special'
+	| 'combination'
+	| 'event';
 export type AchievementSummary = {
 	id: string;
 	title: string;
 	description: string;
+	icon: string;
+	category: AchievementCategory;
+	trackerId?: AppTrackerId;
 	unlocked: boolean;
+	unlockedAt: string | null;
 	progress: number;
 	target: number;
 };
@@ -198,6 +210,7 @@ export type StretchSession = {
 	localDate: string;
 	holdSeconds: number;
 	completedAt: string;
+	hardVariationCompleted?: boolean;
 };
 export type StretchData = DatedData & {
 	settings: StretchSettingsData;

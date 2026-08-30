@@ -1,4 +1,4 @@
-import { mobileRepository } from '$lib/api';
+import { mobileRepository, recordAchievementEvents } from '$lib/api';
 import type { PermissionState } from '$domain/model';
 import { SyncCoordinator } from '$domain/sync-coordinator';
 import { AndroidHealthAdapter } from './health';
@@ -20,12 +20,18 @@ export async function checkAndroidPermissions() {
 	const steps = available
 		? await androidHealth.checkPermission()
 		: ({ state: 'unavailable' } as const);
-	return {
-		healthAvailable: available,
-		permissions: {
-			steps: steps.state,
-			sleep: usage.state,
-			screenTime: usage.state
-		} satisfies Record<'steps' | 'sleep' | 'screenTime', PermissionState>
-	};
+	const permissions = {
+		steps: steps.state,
+		sleep: usage.state,
+		screenTime: usage.state
+	} satisfies Record<'steps' | 'sleep' | 'screenTime', PermissionState>;
+	const achievements = [
+		...(permissions.steps === 'granted' ? ['setup-steps-health-connect'] : []),
+		...(permissions.sleep === 'granted' ? ['setup-usage-access-granted'] : []),
+		...(permissions.steps === 'granted' && permissions.sleep === 'granted'
+			? ['setup-all-native-connections']
+			: [])
+	];
+	await recordAchievementEvents(...achievements);
+	return { healthAvailable: available, permissions };
 }

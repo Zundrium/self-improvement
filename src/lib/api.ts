@@ -15,6 +15,18 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 	}
 }
 
+export async function recordAchievementEvents(...achievementIds: string[]) {
+	if (!achievementIds.length) return;
+	try {
+		await apiRequest('/api/app/achievements/unlock', {
+			method: 'POST',
+			body: JSON.stringify({ achievementIds })
+		});
+	} catch {
+		return;
+	}
+}
+
 function notifyGamificationChanged() {
 	if (typeof window !== 'undefined') window.dispatchEvent(new Event(GAMIFICATION_CHANGED_EVENT));
 }

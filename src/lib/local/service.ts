@@ -40,6 +40,7 @@ import { cycleSummary, flowOptions, type MenstruationFlow } from '../../routes/p
 import { summarizeUsage } from '../../routes/screen-time/screen-time';
 import { isStretchScheduled } from '../../routes/stretch/stretch';
 import { buildActionSnapshot } from './action-snapshot';
+import { recordAchievementUnlock } from './achievement-engine';
 import { notifyNewTrackerCompletions } from './completion-events';
 import { exercisePreferences, fitnessProgram, workoutDay } from './fitness-program';
 import { buildGamification } from './gamification';
@@ -85,6 +86,7 @@ export class LocalAppService {
 		const path = url.pathname;
 		if (path === '/api/app/bootstrap' && method === 'GET') return this.bootstrap();
 		if (path === '/api/app/gamification' && method === 'GET') return this.gamification();
+		if (path === '/api/app/achievements/unlock') return this.unlockAchievements(method, body);
 		if (path === '/api/app/profile') return this.profile(method, body);
 		if (path === '/api/app/steps' && method === 'GET') return this.steps(url);
 		if (path === '/api/app/sleep') return this.sleep(url, method, body);
@@ -148,6 +150,24 @@ export class LocalAppService {
 				result = buildGamification(state, this.clock());
 			})
 			.then(() => result);
+	}
+
+	private async unlockAchievements(method: string, body: Record<string, unknown>) {
+		if (method !== 'POST') throw methodNotAllowed();
+		if (!Array.isArray(body.achievementIds)) throw badRequest('Expected achievement IDs.');
+		const achievementIds = unique(body.achievementIds.map(String));
+		const unlocked: string[] = [];
+		await this.store.update((state) => {
+			for (const achievementId of achievementIds) {
+				try {
+					if (recordAchievementUnlock(state, achievementId, this.clock()))
+						unlocked.push(achievementId);
+				} catch {
+					throw badRequest(`Unknown achievement: ${achievementId}`);
+				}
+			}
+		});
+		return { unlocked };
 	}
 
 	private async profile(method: string, body: Record<string, unknown>) {
@@ -250,7 +270,13 @@ export class LocalAppService {
 		if (Number(String(completedDate).slice(-2)) !== day)
 			throw badRequest('The completion date does not match the workout day.');
 		await this.updateWithCompletionNotification((state) =>
-			setFitnessCompletion(state, workoutId, String(completedDate), method !== 'DELETE')
+			setFitnessCompletion(
+				state,
+				workoutId,
+				String(completedDate),
+				method !== 'DELETE',
+				this.clock()
+			)
 		);
 		return { completed: method !== 'DELETE', completedDate };
 	}
@@ -305,7 +331,13 @@ export class LocalAppService {
 		if (method !== 'POST') throw methodNotAllowed();
 		let session: LocalAppState['stretch']['sessions'][number] | null = null;
 		await this.updateWithCompletionNotification((state) => {
-			const created = validStretch(body, state.stretch.holdSeconds, this.today(), this.clock());
+			const created = validStretch(
+				body,
+				state.stretch.holdSeconds,
+				state.stretch.difficulties,
+				this.today(),
+				this.clock()
+			);
 			state.stretch.sessions.push(created);
 			session = created;
 		});
@@ -942,6 +974,7 @@ function validBreathing(
 function validStretch(
 	body: Record<string, unknown>,
 	defaultHoldSeconds: number,
+	difficulties: StretchDifficulties,
 	today: string,
 	now: Date
 ) {
@@ -953,7 +986,8 @@ function validStretch(
 		id: crypto.randomUUID(),
 		localDate,
 		holdSeconds: integerSetting(body.holdSeconds, defaultHoldSeconds, 5, 600),
-		completedAt: now.toISOString()
+		completedAt: now.toISOString(),
+		hardVariationCompleted: Object.values(difficulties).includes('hard')
 	};
 }
 
@@ -1074,12 +1108,14 @@ function setFitnessCompletion(
 	state: LocalAppState,
 	workoutId: number,
 	dateKey: string,
-	completed: boolean
+	completed: boolean,
+	now: Date
 ) {
 	state.fitness.completedDays = state.fitness.completedDays.filter(
 		(day) => day.dateKey !== dateKey
 	);
-	if (completed) state.fitness.completedDays.push({ workoutId, dateKey });
+	if (completed)
+		state.fitness.completedDays.push({ workoutId, dateKey, completedAt: now.toISOString() });
 }
 
 function publicSleepSummary(day: LocalAppState['sleep']['days'][number]) {

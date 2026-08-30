@@ -1,5 +1,6 @@
 import { FilePicker, type PickedFile } from '@capawesome/capacitor-file-picker';
 import { registerPlugin } from '@capacitor/core';
+import { recordAchievementEvents } from '$lib/api';
 import {
 	backupFileName,
 	createBackupEnvelope,
@@ -41,7 +42,9 @@ export async function chooseGoogleDriveFolder() {
 	requireNativeAndroid();
 	try {
 		const { path } = await FilePicker.pickDirectory();
-		return await AndroidBackup.configure({ treeUri: path });
+		const status = await AndroidBackup.configure({ treeUri: path });
+		if (status.configured) await recordAchievementEvents('setup-drive-folder-configured');
+		return status;
 	} catch (cause) {
 		throw pickerError(cause);
 	}
@@ -110,10 +113,12 @@ async function runScheduledBackup() {
 
 async function writeGoogleDriveBackup() {
 	const envelope = await createBackupEnvelope();
-	return AndroidBackup.writeBackup({
+	const result = await AndroidBackup.writeBackup({
 		contents: JSON.stringify(envelope),
 		createdAt: envelope.createdAt
 	});
+	await recordAchievementEvents('event-first-backup');
+	return result;
 }
 
 async function exportNativeFile(envelope: BackupEnvelope, contents: string) {

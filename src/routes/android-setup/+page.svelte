@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { Activity, Check, RefreshCw, Settings, Smartphone } from '@lucide/svelte';
+	import { recordAchievementEvents } from '$lib/api';
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
@@ -78,6 +79,7 @@
 			async () => {
 				await androidSyncCoordinator.syncAll();
 				await androidSetupRepository.complete();
+				await recordAchievementEvents('setup-android-complete');
 				await goto(resolve('/'));
 			},
 			'Android setup could not be completed.'

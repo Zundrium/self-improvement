@@ -1,6 +1,7 @@
 <script lang="ts">
 import { KeyRound, Trash2 } from '@lucide/svelte';
 import { onMount } from 'svelte';
+import { recordAchievementEvents } from '$lib/api';
 import { Badge } from '$lib/components/ui/badge';
 import { Button } from '$lib/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -20,6 +21,7 @@ onMount(() => void loadStatus());
 async function loadStatus() {
 	try {
 		configured = Boolean(await localSecretStore.openRouterApiKey());
+		if (configured) await recordAchievementEvents('setup-openrouter-configured');
 	} catch {
 		toast.error('Could not read the local OpenRouter settings.');
 	} finally {
@@ -32,6 +34,7 @@ async function saveApiKey(event: SubmitEvent) {
 	busy = true;
 	try {
 		await localSecretStore.saveOpenRouterApiKey(apiKey);
+		await recordAchievementEvents('setup-openrouter-configured');
 		apiKey = '';
 		configured = true;
 		toast.success('OpenRouter API key saved.');

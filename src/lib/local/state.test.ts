@@ -4,7 +4,8 @@ import {
 	createDefaultAppState,
 	LOCAL_STATE_VERSION,
 	LocalAppDatabase,
-	LocalAppStore
+	LocalAppStore,
+	validateLocalAppState
 } from './state';
 import { DEFAULT_STRETCH_DIFFICULTIES } from './tracker-settings';
 
@@ -50,6 +51,37 @@ describe('local app state', () => {
 		expect(state.period).toMatchObject({ defaultFlow: 'medium', fallbackCycleDays: 28 });
 		expect(state.nutrition.entries).toEqual([]);
 		expect(state.gamification.awards).toEqual([]);
+		expect(state.gamification.achievementUnlocks).toEqual([]);
+	});
+
+	it('adds achievement unlock storage when parsing an older v1 state', () => {
+		const state = createDefaultAppState(new Date('2026-03-20T12:00:00.000Z'));
+		const { achievementUnlocks: _achievementUnlocks, ...legacyGamification } = state.gamification;
+
+		const migrated = validateLocalAppState({ ...state, gamification: legacyGamification });
+
+		expect(migrated.gamification.achievementUnlocks).toEqual([]);
+	});
+
+	it('accepts legacy completion records while preserving new achievement evidence', () => {
+		const legacy = createDefaultAppState(new Date('2026-03-20T12:00:00.000Z'));
+		legacy.fitness.completedDays.push({ workoutId: 20, dateKey: '2026-03-20' });
+		legacy.stretch.sessions.push({
+			id: 'legacy-stretch',
+			localDate: '2026-03-20',
+			holdSeconds: 30,
+			completedAt: '2026-03-20T12:00:00.000Z'
+		});
+
+		const migrated = validateLocalAppState(legacy);
+		expect(migrated.fitness.completedDays[0].completedAt).toBeUndefined();
+		expect(migrated.stretch.sessions[0].hardVariationCompleted).toBeUndefined();
+
+		legacy.fitness.completedDays[0].completedAt = '2026-03-20T12:00:00.000Z';
+		legacy.stretch.sessions[0].hardVariationCompleted = true;
+		const current = validateLocalAppState(legacy);
+		expect(current.fitness.completedDays[0].completedAt).toBe('2026-03-20T12:00:00.000Z');
+		expect(current.stretch.sessions[0].hardVariationCompleted).toBe(true);
 	});
 
 	it('serializes mutations and persists the document across store instances', async () => {

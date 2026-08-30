@@ -52,6 +52,28 @@ describe('local app service', () => {
 		expect(secondGamification.earnedNow).toBe(0);
 	});
 
+	it('records permanent event achievements through the local API', async () => {
+		const now = new Date('2026-03-20T12:00:00.000Z');
+		const store = trackedStore();
+		const service = new LocalAppService(store, () => now);
+
+		await service.request('/api/app/achievements/unlock', {
+			method: 'POST',
+			body: JSON.stringify({ achievementIds: ['setup-openrouter-configured'] })
+		});
+		const gamification = await service.request<GamificationData>('/api/app/gamification');
+
+		expect(
+			gamification.achievements.find(({ id }) => id === 'setup-openrouter-configured')
+		).toMatchObject({ unlocked: true, unlockedAt: now.toISOString() });
+		await expect(
+			service.request('/api/app/achievements/unlock', {
+				method: 'POST',
+				body: JSON.stringify({ achievementIds: ['missing-achievement'] })
+			})
+		).rejects.toMatchObject({ status: 400 });
+	});
+
 	it('updates tracker preferences without authentication state', async () => {
 		const store = trackedStore();
 		const service = new LocalAppService(store);

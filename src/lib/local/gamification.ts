@@ -1,7 +1,8 @@
 import type { GamificationData } from '$lib/api-types';
-import { appTrackers, type AppTrackerId } from '$lib/trackers/registry';
 import { localDateForInstant } from '$lib/trackers/dates';
+import { type AppTrackerId, appTrackers } from '$lib/trackers/registry';
 import { isStretchScheduled } from '../../routes/stretch/stretch';
+import { reconcileAchievementUnlocks } from './achievement-engine';
 import type { LocalAppState } from './state';
 
 export type CompletionDates = Record<AppTrackerId, string[]>;
@@ -24,12 +25,25 @@ export function buildGamification(state: LocalAppState, now = new Date()): Gamif
 	const today = localDateForInstant(now, localTimeZone());
 	const completions = completionDates(state, today);
 	const earnedNow = reconcileAwards(state, completions);
-	const activeIds = state.enabledTrackerIds;
-	const streaks = buildStreaks(completions, today, activeIds);
-	const perfectDays = completeDayDates(completions, activeIds);
+	const allStreaks = buildStreaks(
+		completions,
+		today,
+		appTrackers.map(({ id }) => id)
+	);
+	const streaks = allStreaks.filter(({ trackerId }) => state.enabledTrackerIds.includes(trackerId));
+	const perfectDays = completeDayDates(completions, state.enabledTrackerIds);
 	const dayStreak = buildDayStreak(perfectDays, today);
-	const achievements = buildAchievements(state.gamification.awards, activeIds, perfectDays);
 	const score = sumPoints(state.gamification.awards);
+	const achievements = reconcileAchievementUnlocks(
+		{
+			state,
+			completions,
+			score,
+			bestStreak: Math.max(0, ...allStreaks.map(({ best }) => best)),
+			perfectDays
+		},
+		now
+	);
 	return {
 		today,
 		glimmers: Math.max(0, score - spentGlimmers(state)),
@@ -200,102 +214,6 @@ function buildDayStreak(dates: string[], today: string) {
 	};
 }
 
-function buildAchievements(awards: Award[], activeIds: AppTrackerId[], perfectDays: string[]) {
-	const activeAwards = awards.filter(({ trackerId }) =>
-		activeIds.includes(trackerId as AppTrackerId)
-	);
-	const achievements = genericAchievements(awards, activeAwards, perfectDays);
-	if (activeIds.includes('fitness'))
-		achievements.push(
-			achievement(
-				'fitness-first',
-				'Full power',
-				'Complete your first workout.',
-				trackerCount(awards, 'fitness'),
-				1
-			)
-		);
-	if (activeIds.includes('breathing'))
-		achievements.push(
-			achievement(
-				'breathing-10',
-				'Breathing room',
-				'Complete ten breathing exercises.',
-				trackerCount(awards, 'breathing'),
-				10
-			)
-		);
-	if (activeIds.includes('meditation'))
-		achievements.push(
-			achievement(
-				'meditation-10',
-				'Inner calm',
-				'Complete ten meditations.',
-				trackerCount(awards, 'meditation'),
-				10
-			)
-		);
-	achievements.push(
-		achievement('century', 'The century', 'Complete one hundred trackers.', awards.length, 100)
-	);
-	return achievements;
-}
-
-function genericAchievements(awards: Award[], activeAwards: Award[], perfectDays: string[]) {
-	return [
-		achievement('first-glimmer', 'First glimmer', 'Complete your first tracker.', awards.length, 1),
-		achievement('glow-100', 'Starting to glow', 'Earn 100 total score.', sumPoints(awards), 100),
-		achievement(
-			'perfect-day',
-			'Perfect day',
-			'Complete every active tracker in one day.',
-			perfectDays.length,
-			1
-		),
-		achievement(
-			'streak-5',
-			'On fire',
-			'Reach a five-completion streak.',
-			bestAwardStreak(activeAwards),
-			5
-		),
-		achievement(
-			'all-rounder',
-			'All-rounder',
-			'Complete three active trackers in one day.',
-			mostTrackersInDay(activeAwards),
-			3
-		)
-	];
-}
-
-function achievement(
-	id: string,
-	title: string,
-	description: string,
-	progress: number,
-	target: number
-) {
-	return { id, title, description, unlocked: progress >= target, progress, target };
-}
-
-function bestAwardStreak(awards: Award[]) {
-	const grouped = new Map<string, string[]>();
-	for (const award of awards)
-		grouped.set(award.trackerId, [...(grouped.get(award.trackerId) ?? []), award.localDate]);
-	return Math.max(0, ...[...grouped.values()].map(bestStreak));
-}
-
-function mostTrackersInDay(awards: Award[]) {
-	const grouped = new Map<string, Set<string>>();
-	for (const award of awards) {
-		const ids = grouped.get(award.localDate) ?? new Set<string>();
-		ids.add(award.trackerId);
-		grouped.set(award.localDate, ids);
-	}
-	return Math.max(0, ...[...grouped.values()].map(({ size }) => size));
-}
-
 function emptyCompletionDates(): CompletionDates {
 	return Object.fromEntries(appTrackers.map(({ id }) => [id, []])) as unknown as CompletionDates;
 }
@@ -305,10 +223,6 @@ function trackedMinutes(state: LocalAppState, day: LocalAppState['screenTime']['
 	return day.apps
 		.filter((app) => tracked.has(app.package))
 		.reduce((total, app) => total + app.minutes, 0);
-}
-
-function trackerCount(awards: Award[], trackerId: AppTrackerId) {
-	return awards.filter((award) => award.trackerId === trackerId).length;
 }
 
 function spentGlimmers(state: LocalAppState) {

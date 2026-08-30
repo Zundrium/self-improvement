@@ -117,7 +117,16 @@ const stateSchema = z.strictObject({
 				localDate: date,
 				points: z.number().int().positive()
 			})
-		)
+		),
+		achievementUnlocks: z
+			.array(
+				z.object({
+					achievementId: z.string().min(1),
+					unlockedAt: instant
+				})
+			)
+			.default([])
+			.transform(uniqueAchievementUnlocks)
 	}),
 	rewards: z.array(rewardSchema),
 	redemptions: z.array(rewardSchema.extend({ redeemedAt: instant })),
@@ -152,7 +161,13 @@ const stateSchema = z.strictObject({
 	}),
 	fitness: z.object({
 		defaultSets: z.number().int().min(1).max(10).default(TRACKER_DEFAULTS.fitness.defaultSets),
-		completedDays: z.array(z.object({ workoutId: z.number().int().positive(), dateKey: date })),
+		completedDays: z.array(
+			z.object({
+				workoutId: z.number().int().positive(),
+				dateKey: date,
+				completedAt: instant.optional()
+			})
+		),
 		exerciseSpeeds: z.record(z.string(), z.number().int().min(25).max(200))
 	}),
 	nutrition: z.object({
@@ -199,7 +214,8 @@ const stateSchema = z.strictObject({
 					id: z.string().min(1),
 					localDate: date,
 					holdSeconds: z.number().int().min(5).max(600),
-					completedAt: instant
+					completedAt: instant,
+					hardVariationCompleted: z.boolean().optional()
 				})
 			)
 		})
@@ -349,7 +365,11 @@ export function createDefaultAppState(now = new Date()): LocalAppState {
 		updatedAt: createdAt,
 		user: { id: 'local-profile', name: 'You', createdAt },
 		enabledTrackerIds: defaultTrackerIds(),
-		gamification: { startedLocalDate: localDateForInstant(now, localTimeZone()), awards: [] },
+		gamification: {
+			startedLocalDate: localDateForInstant(now, localTimeZone()),
+			awards: [],
+			achievementUnlocks: []
+		},
 		rewards: [],
 		redemptions: [],
 		steps: { dailyGoal: TRACKER_DEFAULTS.steps.dailyGoal, lastReceivedAt: null, days: [] },
@@ -393,7 +413,7 @@ export function createDefaultAppState(now = new Date()): LocalAppState {
 }
 
 export function validateLocalAppState(input: unknown) {
-	return stateSchema.parse(withStretchMigration(input));
+	return stateSchema.parse(withAchievementMigration(withStretchMigration(input)));
 }
 
 export const localAppStore = new LocalAppStore();
@@ -420,6 +440,29 @@ function withStretchMigration(input: unknown) {
 		? [...new Set([...state.enabledTrackerIds, 'stretch'])]
 		: state.enabledTrackerIds;
 	return { ...state, enabledTrackerIds };
+}
+
+function withAchievementMigration(input: unknown) {
+	if (!input || typeof input !== 'object' || Array.isArray(input)) return input;
+	const state = input as Record<string, unknown>;
+	if (!state.gamification || typeof state.gamification !== 'object') return input;
+	const gamification = state.gamification as Record<string, unknown>;
+	return {
+		...state,
+		gamification: {
+			...gamification,
+			achievementUnlocks: gamification.achievementUnlocks ?? []
+		}
+	};
+}
+
+function uniqueAchievementUnlocks<T extends { achievementId: string }>(unlocks: T[]) {
+	const seen = new Set<string>();
+	return unlocks.filter(({ achievementId }) => {
+		if (seen.has(achievementId)) return false;
+		seen.add(achievementId);
+		return true;
+	});
 }
 
 function localTimeZone() {

@@ -2,6 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { Cloud, Download, FolderOpen, RefreshCw, Upload } from '@lucide/svelte';
+	import { recordAchievementEvents } from '$lib/api';
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
 	import {
 		AlertDialog,
@@ -46,6 +47,10 @@
 	async function loadStatus() {
 		try {
 			status = await getGoogleDriveBackupStatus();
+			await recordAchievementEvents(
+				...(status.configured ? ['setup-drive-folder-configured'] : []),
+				...(status.lastSuccessAt ? ['event-first-backup'] : [])
+			);
 		} catch {
 			message = 'Google Drive backup status could not be read.';
 			failed = true;
