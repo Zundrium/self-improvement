@@ -106,7 +106,7 @@ export const trackers = [
 		description: 'Unlocked achievements and personal progress.',
 		href: '/achievements',
 		settingsHref: null,
-		colors: { primary: '#8b5cf6', secondary: '#0d0d0d' },
+		colors: { primary: '#8b5cf6', secondary: '#ec4899' },
 		hasAppIcon: false
 	},
 	{
@@ -115,7 +115,7 @@ export const trackers = [
 		description: 'Current and best streaks for active trackers.',
 		href: '/streaks',
 		settingsHref: null,
-		colors: { primary: '#f97316', secondary: '#0d0d0d' },
+		colors: { primary: '#f97316', secondary: '#ef4444' },
 		hasAppIcon: false
 	}
 ] as const;

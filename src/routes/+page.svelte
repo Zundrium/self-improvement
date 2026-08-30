@@ -3,7 +3,6 @@
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
 	import type { ActionFeedItem } from '$lib/api-types';
-	import GameBar from '$lib/components/gameBar.svelte';
 	import { androidHealth, androidSyncCoordinator, androidUsage } from '$native/android-data';
 	import { installAndroidUpdate } from '$native/android-updater';
 	import ActionFeed from './actionFeed.svelte';
@@ -53,15 +52,6 @@
 
 <main class="app-gutter flex flex-1 items-start justify-center py-4 pb-6">
 	<div class="w-full max-w-(--app-compact-max-width)">
-		{#if data.gamification}
-			<GameBar
-				gamification={data.gamification}
-				date={data.actionFeed.date}
-				today={data.actionFeed.daySummary.today}
-			/>
-		{/if}
-		<div class="mt-3">
-			<ActionFeed {items} {busyActionId} onexecute={(item) => void executeAction(item)} />
-		</div>
+		<ActionFeed {items} {busyActionId} onexecute={(item) => void executeAction(item)} />
 	</div>
 </main>

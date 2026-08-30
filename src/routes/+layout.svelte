@@ -229,6 +229,7 @@
 		<AppNavbar
 			profile={data.profile}
 			trackers={data.enabledTrackers}
+			gamification={data.gamification}
 			daySummary={(page.data as DatedPageData).actionFeed?.daySummary}
 		/>
 	{/if}

@@ -1,31 +1,24 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
-	import { ChevronDown, Grip, House, LoaderCircle, Settings, UserRound } from '@lucide/svelte';
+	import { ChevronDown, Grip, House, LoaderCircle, UserRound } from '@lucide/svelte';
 	import { apiRequest } from '$lib/api';
-	import {
-		DropdownMenu,
-		DropdownMenuContent,
-		DropdownMenuItem,
-		DropdownMenuLabel,
-		DropdownMenuSeparator,
-		DropdownMenuTrigger
-	} from '$lib/components/ui/dropdown-menu';
-	import type { DaySummaryData } from '$lib/api-types';
+	import type { DaySummaryData, GamificationData, LocalProfile } from '$lib/api-types';
 	import { closeDrawer as animateDrawerClose, drawerEnter } from '$lib/motion/gsap';
 	import type { AppTracker } from '$lib/trackers/registry';
 	import AppDrawer from './appDrawer.svelte';
-	import AudioVolumeControl from './audioVolumeControl.svelte';
+	import UserCard from './userCard.svelte';
 
-	type Profile = { name: string };
+	type Drawer = 'apps' | 'user';
+	type Props = {
+		profile: LocalProfile;
+		trackers: AppTracker[];
+		gamification: GamificationData;
+		daySummary?: DaySummaryData;
+	};
 
-	let {
-		profile,
-		trackers,
-		daySummary
-	}: { profile: Profile; trackers: AppTracker[]; daySummary?: DaySummaryData } = $props();
-	let appLauncherOpen = $state(false);
+	let { profile, trackers, gamification, daySummary }: Props = $props();
+	let activeDrawer = $state<Drawer>();
 	let daySummaryLoading = $state(false);
 	let daySummaryFailed = $state(false);
 	let drawerDaySummary = $state<DaySummaryData>();
@@ -49,21 +42,22 @@
 		return Boolean(navigating.to && matchesPath(navigating.to.url.pathname, activePrefix));
 	}
 
-	function toggleDrawer() {
-		if (appLauncherOpen) return void closeDrawer();
-		appLauncherOpen = true;
-		void loadDaySummary();
+	async function toggleDrawer(drawer: Drawer) {
+		if (activeDrawer === drawer) return void closeDrawer();
+		if (activeDrawer) await closeDrawer();
+		activeDrawer = drawer;
+		if (drawer === 'apps') void loadDaySummary();
 	}
 
 	async function closeDrawer() {
-		if (!appLauncherOpen || drawerClosing) return;
+		if (!activeDrawer || drawerClosing) return;
 		drawerClosing = true;
 		await animateDrawerClose(drawerElement);
 		dismissDrawer();
 	}
 
 	function dismissDrawer() {
-		appLauncherOpen = false;
+		activeDrawer = undefined;
 		drawerClosing = false;
 	}
 
@@ -99,19 +93,15 @@
 	function daySummaryPath(date: string | null) {
 		return date ? `/api/app/day-summary?date=${encodeURIComponent(date)}` : '/api/app/day-summary';
 	}
-
-	function openProfile() {
-		void goto(resolve('/profile'));
-	}
 </script>
 
 <svelte:window onpointerdown={closeDrawerOutside} onkeydown={closeDrawerOnEscape} />
 
 <nav bind:this={navigationElement} class="relative z-50 shrink-0" aria-label="Main navigation">
-	{#if appLauncherOpen}
+	{#if activeDrawer}
 		<div
 			bind:this={drawerElement}
-			id="app-drawer"
+			id="navigation-drawer"
 			class="no-scrollbar absolute inset-x-0 bottom-full z-40 max-h-[calc(100svh-4rem-var(--app-safe-area-inset-top)-var(--app-safe-area-inset-bottom))] overflow-y-auto bg-(--bg-elevated)"
 			use:drawerEnter={dismissDrawer}
 		>
@@ -122,7 +112,9 @@
 			>
 				<span class="h-1 w-10 rounded-full bg-(--text)/16"></span>
 			</div>
-			{#if drawerDaySummary && !daySummaryLoading}
+			{#if activeDrawer === 'user'}
+				<UserCard {profile} initialGamification={gamification} onSelect={closeDrawer} />
+			{:else if drawerDaySummary && !daySummaryLoading}
 				<AppDrawer {trackers} daySummary={drawerDaySummary} onSelect={closeDrawer} />
 			{:else if daySummaryFailed}
 				<button
@@ -166,15 +158,15 @@
 			<button
 				type="button"
 				class="flex cursor-pointer touch-manipulation items-center justify-center rounded-2xl text-(--text)/40 outline-none hover:text-(--text) focus-visible:ring-2 focus-visible:ring-(--text)/20"
-				aria-label={appLauncherOpen ? 'Close app drawer' : 'Open app drawer'}
-				aria-controls="app-drawer"
-				aria-expanded={appLauncherOpen}
-				onclick={toggleDrawer}
+				aria-label={activeDrawer === 'apps' ? 'Close app drawer' : 'Open app drawer'}
+				aria-controls="navigation-drawer"
+				aria-expanded={activeDrawer === 'apps'}
+				onclick={() => void toggleDrawer('apps')}
 			>
 				<span
 					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
 				>
-					{#if appLauncherOpen}
+					{#if activeDrawer === 'apps'}
 						<ChevronDown class="size-6" />
 					{:else}
 						<Grip class="size-6" aria-hidden="true" />
@@ -182,31 +174,24 @@
 				</span>
 			</button>
 
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					class="flex cursor-pointer items-center justify-center rounded-2xl ring-(--text)/20 outline-none focus-visible:ring-2"
-					aria-label="Open user menu"
-					onclick={closeDrawer}
+			<button
+				type="button"
+				class="flex cursor-pointer touch-manipulation items-center justify-center rounded-2xl text-(--text)/40 outline-none hover:text-(--text) focus-visible:ring-2 focus-visible:ring-(--text)/20"
+				aria-label={activeDrawer === 'user' ? 'Close user card' : 'Open user card'}
+				aria-controls="navigation-drawer"
+				aria-expanded={activeDrawer === 'user'}
+				onclick={() => void toggleDrawer('user')}
+			>
+				<span
+					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
 				>
-					<span
-						class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
-					>
+					{#if activeDrawer === 'user'}
+						<ChevronDown class="size-6" />
+					{:else}
 						<UserRound class="size-6" />
-					</span>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent side="top" align="end" sideOffset={10} class="w-56">
-					<DropdownMenuLabel class="py-2">
-						<p class="truncate text-sm font-medium text-(--text)">{profile.name}</p>
-					</DropdownMenuLabel>
-					<DropdownMenuSeparator />
-					<DropdownMenuItem onSelect={openProfile}>
-						<Settings />
-						Settings
-					</DropdownMenuItem>
-					<DropdownMenuSeparator />
-					<AudioVolumeControl />
-				</DropdownMenuContent>
-			</DropdownMenu>
+					{/if}
+				</span>
+			</button>
 		</div>
 	</div>
 </nav>

@@ -1,5 +1,5 @@
 export const gamificationColors = {
-	glimmers: { primary: '#d4a017', secondary: '#0d0d0d' }
+	glimmers: { primary: '#d4a017', secondary: '#f97316' }
 } as const;
 
 export function gameGradient(colors: { primary: string; secondary: string }) {

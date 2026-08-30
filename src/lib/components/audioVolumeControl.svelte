@@ -4,20 +4,20 @@
 	import { Button } from '$lib/components/ui/button';
 </script>
 
-<div class="flex items-center gap-2 px-3 py-2">
+<div class="flex items-center gap-3 px-1 py-2">
 	<Button
 		variant="ghost"
 		size="icon"
-		class="size-8 shrink-0"
+		class="size-8 shrink-0 bg-transparent hover:bg-transparent"
 		aria-label={audioVolumeState.muted ? 'Unmute audio' : 'Mute audio'}
 		onclick={() => audioVolumeState.toggleMuted()}
 	>
-		{#if audioVolumeState.muted}<VolumeX class="size-4" />{:else}<Volume2 class="size-4" />{/if}
+		{#if audioVolumeState.muted}<VolumeX class="size-5" />{:else}<Volume2 class="size-5" />{/if}
 	</Button>
 	<label class="sr-only" for="app-volume">Audio volume</label>
 	<input
 		id="app-volume"
-		class="volume-slider h-6 min-w-0 flex-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+		class="volume-slider h-5 min-w-0 flex-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
 		style={`--volume-progress: ${audioVolumeState.volume * 100}%`}
 		type="range"
 		min="0"
@@ -27,6 +27,9 @@
 		disabled={audioVolumeState.muted}
 		oninput={(event) => audioVolumeState.setVolume(Number(event.currentTarget.value))}
 	/>
+	<span class="w-9 shrink-0 text-right text-xs text-(--text)/48 tabular-nums">
+		{audioVolumeState.muted ? '—' : `${Math.round(audioVolumeState.volume * 100)}%`}
+	</span>
 </div>
 
 <style>
