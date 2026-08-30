@@ -1,14 +1,11 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { onMount, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
 	import type { ActionFeedItem } from '$lib/api-types';
 	import GameBar from '$lib/components/gameBar.svelte';
-	import { loadNativeActionFeedItems } from '$native/action-feed';
 	import { androidHealth, androidSyncCoordinator, androidUsage } from '$native/android-data';
 	import { installAndroidUpdate } from '$native/android-updater';
-	import { listenForResume } from '$native/app';
-	import { isNativeAndroid } from '$native/platform';
 	import ActionFeed from './actionFeed.svelte';
 	import { mergeActionFeedItems } from './action-feed';
 	import type { PageProps } from './$types';
@@ -16,19 +13,11 @@
 	let { data }: PageProps = $props();
 	let nativeItems = $state(untrack(() => data.nativeItems));
 	let busyActionId = $state('');
-	const trackerIds = $derived(data.enabledTrackers.map(({ id }) => id));
 	const items = $derived(mergeActionFeedItems(data.actionFeed.items, nativeItems));
 
 	$effect(() => {
 		const updatedNativeItems = data.nativeItems;
 		untrack(() => (nativeItems = updatedNativeItems));
-	});
-
-	onMount(() => {
-		if (!isNativeAndroid()) return;
-		let removeResume = () => {};
-		void listenForResume(refreshNativeItems).then((remove) => (removeResume = remove));
-		return () => removeResume();
 	});
 
 	async function executeAction(item: ActionFeedItem) {
@@ -54,14 +43,6 @@
 			await androidSyncCoordinator.sync(action.trackerIds);
 		}
 		await invalidateAll();
-	}
-
-	async function refreshNativeItems() {
-		try {
-			nativeItems = await loadNativeActionFeedItems(trackerIds);
-		} catch {
-			return;
-		}
 	}
 </script>
 

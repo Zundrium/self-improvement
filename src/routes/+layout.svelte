@@ -78,17 +78,32 @@
 	});
 
 	onMount(() => {
-		dismissLoadingScreen();
 		audioVolumeState.hydrate();
-		if (!isNativeAndroid()) return;
-		void refreshNativeApp();
+		if (!isNativeAndroid()) {
+			dismissLoadingScreen();
+			return;
+		}
+		void initializeNativeApp();
 		let removeResume = () => {};
 		void listenForResume(refreshNativeApp).then((remove) => (removeResume = remove));
 		return () => removeResume();
 	});
 
+	async function initializeNativeApp() {
+		try {
+			await syncAndroidData();
+		} finally {
+			dismissLoadingScreen();
+		}
+		void refreshNativeMaintenance();
+	}
+
 	async function refreshNativeApp() {
 		await syncAndroidData();
+		await refreshNativeMaintenance();
+	}
+
+	async function refreshNativeMaintenance() {
 		await rescheduleBedtimeReminder();
 		await runScheduledGoogleDriveBackup();
 	}
