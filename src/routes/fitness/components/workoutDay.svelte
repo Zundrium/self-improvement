@@ -64,30 +64,28 @@
 </script>
 
 {#snippet actions()}
-	<BottomActionGroup orientation="vertical">
-		<BottomActionGroup justify="between" aria-label="Workout sets">
-			<BottomActionButton
-				format="icon"
-				onclick={() => adjustSets(-1)}
-				aria-label="Decrease sets"
-			>
-				<Minus class="size-4" />
-			</BottomActionButton>
-			<strong class="text-base font-medium tabular-nums">
-				{configuredSets} {configuredSets === 1 ? 'set' : 'sets'}
-			</strong>
-			<BottomActionButton
-				format="icon"
-				onclick={() => adjustSets(1)}
-				aria-label="Increase sets"
-			>
-				<Plus class="size-4" />
-			</BottomActionButton>
-		</BottomActionGroup>
-		<BottomActionButton tone="primary" disabled={!audioManager} onclick={startSession}>
-			<Play class="mr-1 size-4 fill-current" /> Start workout
+	<BottomActionGroup justify="between" aria-label="Workout sets">
+		<BottomActionButton
+			format="icon"
+			onclick={() => adjustSets(-1)}
+			aria-label="Decrease sets"
+		>
+			<Minus class="size-4" />
+		</BottomActionButton>
+		<strong class="text-base font-medium tabular-nums">
+			{configuredSets} {configuredSets === 1 ? 'set' : 'sets'}
+		</strong>
+		<BottomActionButton
+			format="icon"
+			onclick={() => adjustSets(1)}
+			aria-label="Increase sets"
+		>
+			<Plus class="size-4" />
 		</BottomActionButton>
 	</BottomActionGroup>
+	<BottomActionButton tone="primary" disabled={!audioManager} onclick={startSession}>
+		<Play class="mr-1 size-4 fill-current" /> Start workout
+	</BottomActionButton>
 {/snippet}
 
 {#if isSessionActive && audioManager}

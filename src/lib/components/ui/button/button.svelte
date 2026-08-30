@@ -37,6 +37,10 @@
 		none: ''
 	};
 
+	function resolveHref(href: string) {
+		return href.startsWith('/') ? resolve(href as '/') : href;
+	}
+
 	const optionalInteractionScale: Action<HTMLElement, InteractionScaleOptions | undefined> = (
 		node,
 		options
@@ -83,7 +87,7 @@
 			sizes[size],
 			className
 		)}
-		href={disabled ? undefined : resolve(href as '/')}
+		href={disabled ? undefined : resolveHref(href)}
 		aria-disabled={disabled}
 		role={disabled ? 'link' : undefined}
 		tabindex={disabled ? -1 : undefined}

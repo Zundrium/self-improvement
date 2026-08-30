@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { ChevronDown, Grip, House, LoaderCircle, UserRound } from '@lucide/svelte';
 	import { apiRequest } from '$lib/api';
@@ -138,9 +137,11 @@
 		class="app-gutter relative z-50 bg-white pb-[var(--app-safe-area-inset-bottom)] dark:bg-black"
 	>
 		<div class="mx-auto grid h-16 w-full max-w-(--app-compact-max-width) grid-cols-3 items-stretch">
-			<a
-				href={resolve('/')}
-				class="flex touch-manipulation items-center justify-center text-(--text)/40 hover:text-(--text)"
+			<Button
+				href="/"
+				variant="plain"
+				size="none"
+				class="flex touch-manipulation items-center justify-center rounded-2xl text-(--text)/40 hover:text-(--text)"
 				aria-label="Home"
 				aria-current={isActive('/') ? 'page' : undefined}
 				aria-busy={isPending('/')}
@@ -156,7 +157,7 @@
 						<House class="size-6" />
 					{/if}
 				</span>
-			</a>
+			</Button>
 
 			<Button
 				type="button"
