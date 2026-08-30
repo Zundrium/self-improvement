@@ -18,7 +18,10 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 
 <div
 	class={cn(
-		'mx-auto grid w-full max-w-(--app-compact-max-width) grid-cols-[2rem_minmax(0,1fr)_2rem] items-center',
+		'mx-auto grid w-full max-w-(--app-compact-max-width) items-center',
+		settingsActive
+			? 'grid-cols-[2.5rem_max-content_1fr] gap-3'
+			: 'grid-cols-[2rem_minmax(0,1fr)_2rem]',
 		className
 	)}
 >
@@ -27,10 +30,10 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 			href={tracker.href}
 			variant="ghost"
 			size="icon"
-			class="size-8 bg-transparent"
+			class="rounded-full"
 			aria-label={`Back to ${tracker.label}`}
 		>
-			<ArrowLeft class="size-4" style={`color: ${tracker.colors.primary}`} />
+			<ArrowLeft class="size-5" style={`color: ${tracker.colors.primary}`} />
 		</Button>
 	{:else if tracker.infoHref}
 		<a
@@ -46,8 +49,13 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 	{:else}
 		<span aria-hidden="true"></span>
 	{/if}
-	<h1 class="text-center text-sm font-medium" style={`color: ${tracker.colors.primary}`}>
-		{tracker.label}
+	<h1
+		class={settingsActive
+			? 'text-xl font-medium tracking-[-0.035em]'
+			: 'text-center text-sm font-medium'}
+		style={`color: ${tracker.colors.primary}`}
+	>
+		{tracker.label}{settingsActive ? ' settings' : ''}
 	</h1>
 	{#if tracker.settingsHref && !settingsActive}
 		<Button

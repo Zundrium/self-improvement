@@ -38,16 +38,11 @@
 
 <svelte:head><title>Happiness settings · Self Improvement</title></svelte:head>
 
-{#snippet actions()}
-	<Button href="/happiness" variant="ghost">Back</Button>
-{/snippet}
-
 <TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-8">
 	<TrackerSection
 		title="Daily check-in"
 		description="Choose the happiness level selected for a new entry."
 		{colors}
-		trailing={actions}
 	>
 		<form class="space-y-6" onsubmit={saveSettings}>
 			<Field>

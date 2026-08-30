@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import type { Snippet } from 'svelte';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
@@ -13,7 +12,7 @@
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import { breathingDurationSeconds, formatTimer } from '../breathing';
 
-	let { settings, trailing }: { settings: BreathingSettingsData; trailing?: Snippet } = $props();
+	let { settings }: { settings: BreathingSettingsData } = $props();
 	const colors = getTrackerColors('breathing');
 	let rounds = $state(untrack(() => settings.rounds));
 	let includeHold = $state(untrack(() => settings.includeHold));
@@ -43,7 +42,6 @@
 	title="Exercise defaults"
 	description="Choose how each guided breathing exercise is paced."
 	{colors}
-	{trailing}
 >
 	<form class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">

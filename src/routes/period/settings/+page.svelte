@@ -41,16 +41,11 @@
 
 <svelte:head><title>Period settings · Self Improvement</title></svelte:head>
 
-{#snippet actions()}
-	<Button href="/period" variant="ghost">Back</Button>
-{/snippet}
-
 <TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-8">
 	<TrackerSection
 		title="Cycle defaults"
 		description="Set the starting values used when you log a period."
 		{colors}
-		trailing={actions}
 	>
 		<form class="space-y-6" onsubmit={saveSettings}>
 			<FieldGroup>

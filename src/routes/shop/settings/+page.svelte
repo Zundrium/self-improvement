@@ -8,6 +8,6 @@
 
 <svelte:head><title>Shop settings · Self Improvement</title></svelte:head>
 
-<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-4">
+<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-8">
 	<RewardSettings initialRewards={data.rewards} />
 </TrackerPage>

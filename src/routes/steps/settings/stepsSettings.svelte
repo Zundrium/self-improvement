@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import type { Snippet } from 'svelte';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
@@ -11,7 +10,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { getTrackerColors } from '$lib/trackers/registry';
 
-	let { settings, trailing }: { settings: StepsSettingsData; trailing?: Snippet } = $props();
+	let { settings }: { settings: StepsSettingsData } = $props();
 	const colors = getTrackerColors('steps');
 	let dailyGoal = $state(untrack(() => settings.dailyGoal));
 	let saving = $state(false);
@@ -39,7 +38,6 @@
 	title="Daily goal"
 	description="Set the number of steps you want to reach each day."
 	{colors}
-	{trailing}
 >
 	<form class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">

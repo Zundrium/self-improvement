@@ -1,6 +1,5 @@
 <script lang="ts">
 import { invalidateAll } from '$app/navigation';
-import type { Snippet } from 'svelte';
 import { untrack } from 'svelte';
 import { toast } from '$lib/components/ui/toast';
 import { apiRequest } from '$lib/api';
@@ -12,7 +11,7 @@ import { Input } from '$lib/components/ui/input';
 import { getTrackerColors } from '$lib/trackers/registry';
 import { formatStretchDuration, stretchDurationSeconds } from '../stretch';
 
-let { settings, trailing }: { settings: StretchSettingsData; trailing?: Snippet } = $props();
+let { settings }: { settings: StretchSettingsData } = $props();
 const colors = getTrackerColors('stretch');
 let holdSeconds = $state(untrack(() => settings.holdSeconds));
 let saving = $state(false);
@@ -50,7 +49,6 @@ function showError(cause: unknown) {
 	title="Routine pace"
 	description="Choose the hold length for each of the two daily sets. The source video recommends 30 seconds."
 	{colors}
-	{trailing}
 >
 	<form class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">

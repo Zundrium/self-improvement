@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import type { Snippet } from 'svelte';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
@@ -11,7 +10,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { getTrackerColors } from '$lib/trackers/registry';
 
-	let { settings, trailing }: { settings: MeditationSettingsData; trailing?: Snippet } = $props();
+	let { settings }: { settings: MeditationSettingsData } = $props();
 	const colors = getTrackerColors('meditation');
 	let defaultDurationMinutes = $state(untrack(() => settings.defaultDurationSeconds / 60));
 	let saving = $state(false);
@@ -39,7 +38,6 @@
 	title="Session default"
 	description="Choose the duration a new meditation session starts with."
 	{colors}
-	{trailing}
 >
 	<form class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">

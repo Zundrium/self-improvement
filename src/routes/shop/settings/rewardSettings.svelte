@@ -1,11 +1,11 @@
 <script lang="ts">
 import { untrack } from 'svelte';
-import { Pencil, Plus, ShoppingBag, Trash2 } from '@lucide/svelte';
+import { Pencil, Plus, Trash2 } from '@lucide/svelte';
 import { apiRequest } from '$lib/api';
 import type { Reward } from '$lib/api-types';
 import GlimmerIcon from '$lib/components/glimmerIcon.svelte';
+import TrackerSection from '$lib/components/trackerSection.svelte';
 import { Button } from '$lib/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 import {
 	Dialog,
 	DialogContent,
@@ -18,7 +18,7 @@ import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
 import { Input } from '$lib/components/ui/input';
 import { Spinner } from '$lib/components/ui/spinner';
 import { toast } from '$lib/components/ui/toast';
-import { gameGradient, gamificationColors } from '$lib/gamification/theme';
+import { gamificationColors } from '$lib/gamification/theme';
 
 let { initialRewards }: { initialRewards: Reward[] } = $props();
 let rewards = $state(untrack(() => initialRewards));
@@ -81,66 +81,50 @@ async function deleteSelectedReward() {
 }
 </script>
 
-<Card id="rewards">
-	<CardHeader>
-		<div class="flex items-start justify-between gap-3">
-			<div>
-				<CardTitle>My Shop</CardTitle>
-				<p class="mt-1 text-sm leading-5 text-(--text)/56">
-					Create the rewards you want to earn with Glimmers.
-				</p>
-			</div>
-			<span
-				class="flex size-10 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm shadow-black/10"
-				style={`background: ${gameGradient(gamificationColors.glimmers)}`}
-			>
-				<ShoppingBag class="size-5" />
-			</span>
-		</div>
-	</CardHeader>
-	<CardContent class="space-y-4">
-		{#if rewards.length}
-			<div class="divide-y divide-(--text)/8">
-				{#each rewards as reward (reward.id)}
-					<div class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-						<GlimmerIcon class="size-7" aria-hidden="true" />
-						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm font-medium">{reward.name}</p>
-							<p class="flex items-center gap-1.5 text-xs text-(--text)/48">
-								<GlimmerIcon class="size-3.5" aria-hidden="true" />
-								{reward.price.toLocaleString()} Glimmers
-							</p>
-						</div>
-						<Button
-							size="icon"
-							variant="ghost"
-							class="size-9"
-							aria-label={`Edit ${reward.name}`}
-							onclick={() => editReward(reward)}
-						>
-							<Pencil class="size-4" />
-						</Button>
-						<Button
-							size="icon"
-							variant="ghost"
-							class="size-9"
-							aria-label={`Delete ${reward.name}`}
-							onclick={() => confirmDelete(reward)}
-						>
-							<Trash2 class="size-4" />
-						</Button>
+<TrackerSection
+	title="Rewards"
+	description="Create the rewards you want to earn with Glimmers."
+	colors={gamificationColors.glimmers}
+	contentClass="space-y-4"
+>
+	{#if rewards.length}
+		<div class="divide-y divide-(--text)/8">
+			{#each rewards as reward (reward.id)}
+				<div class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+					<GlimmerIcon class="size-7" aria-hidden="true" />
+					<div class="min-w-0 flex-1">
+						<p class="truncate text-sm font-medium">{reward.name}</p>
+						<p class="flex items-center gap-1.5 text-xs text-(--text)/48">
+							<GlimmerIcon class="size-3.5" aria-hidden="true" />
+							{reward.price.toLocaleString()} Glimmers
+						</p>
 					</div>
-				{/each}
-			</div>
-		{:else}
-			<p class="text-sm leading-6 text-(--text)/56">Your shop does not have any rewards yet.</p>
-		{/if}
-		<div class="flex flex-wrap gap-2">
-			<Button href="/shop/rewards/new"><Plus class="mr-2 size-4" /> Add reward</Button>
-			<Button href="/shop" variant="ghost">Open shop</Button>
+					<Button
+						size="icon"
+						variant="ghost"
+						class="size-9"
+						aria-label={`Edit ${reward.name}`}
+						onclick={() => editReward(reward)}
+					>
+						<Pencil class="size-4" />
+					</Button>
+					<Button
+						size="icon"
+						variant="ghost"
+						class="size-9"
+						aria-label={`Delete ${reward.name}`}
+						onclick={() => confirmDelete(reward)}
+					>
+						<Trash2 class="size-4" />
+					</Button>
+				</div>
+			{/each}
 		</div>
-	</CardContent>
-</Card>
+	{:else}
+		<p class="text-sm leading-6 text-(--text)/56">Your shop does not have any rewards yet.</p>
+	{/if}
+	<Button href="/shop/rewards/new"><Plus class="mr-2 size-4" /> Add reward</Button>
+</TrackerSection>
 
 <Dialog bind:open={editorOpen}>
 	<DialogContent>

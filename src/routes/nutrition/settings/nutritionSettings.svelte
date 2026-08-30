@@ -183,7 +183,9 @@
 						<FieldDescription>This reminder never blocks meal logging.</FieldDescription>
 					</div>
 				</FieldGroup>
-				<Button type="submit" disabled={saving}>Save nutrition settings</Button>
+				<Button type="submit" disabled={saving}>
+					{saving ? 'Saving…' : 'Save settings'}
+				</Button>
 	</form>
 {:else}
 	<div class="space-y-4">

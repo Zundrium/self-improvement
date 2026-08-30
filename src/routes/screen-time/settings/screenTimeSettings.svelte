@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import type { Snippet } from 'svelte';
 	import { untrack } from 'svelte';
 	import { toast } from '$lib/components/ui/toast';
 	import { apiRequest } from '$lib/api';
@@ -11,7 +10,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { getTrackerColors } from '$lib/trackers/registry';
 
-	let { settings, trailing }: { settings: ScreenTimeSettingsData; trailing?: Snippet } = $props();
+	let { settings }: { settings: ScreenTimeSettingsData } = $props();
 	const colors = getTrackerColors('screen-time');
 	let dailyLimitMinutes = $state(untrack(() => settings.dailyLimitMinutes));
 	let saving = $state(false);
@@ -39,7 +38,6 @@
 	title="Daily limit"
 	description="Set the amount of tracked screen time you want to stay within."
 	{colors}
-	{trailing}
 >
 	<form class="space-y-6" onsubmit={saveSettings}>
 		<Field class="max-w-xs">
