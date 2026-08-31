@@ -411,7 +411,7 @@ onDestroy(stopCamera);
 				autoplay
 				playsinline
 				muted
-				class="absolute inset-0 size-full object-cover {facingMode === 'user'
+				class="absolute inset-0 size-full object-contain {facingMode === 'user'
 					? '-scale-x-100'
 					: ''}"
 			></video>
