@@ -4,6 +4,7 @@ import {
 	initialRoutinePosition,
 	nextRoutinePosition,
 	repDurationMs,
+	shouldPlayRestCountdownTick,
 	type GuidedRoutineActivity
 } from './guidedRoutine';
 
@@ -53,8 +54,19 @@ describe('guided routine sequencing', () => {
 
 	it('calculates timed and cadence-based durations without assigning a timer to manual reps', () => {
 		expect(activityDurationMs(activities[0])).toBe(30_000);
+		expect(repDurationMs(100)).toBe(2000);
 		expect(repDurationMs(125)).toBe(1600);
+		expect(activityDurationMs(activities[1])).toBe(20_000);
 		expect(activityDurationMs(activities[1], 125)).toBe(16_000);
 		expect(activityDurationMs(activities[2])).toBeNull();
+	});
+
+	it('ticks only during the configured final rest countdown', () => {
+		expect(shouldPlayRestCountdownTick(10, 3)).toBe(false);
+		expect(shouldPlayRestCountdownTick(4, 3)).toBe(false);
+		expect(shouldPlayRestCountdownTick(3, 3)).toBe(true);
+		expect(shouldPlayRestCountdownTick(2, 3)).toBe(true);
+		expect(shouldPlayRestCountdownTick(1, 3)).toBe(true);
+		expect(shouldPlayRestCountdownTick(0, 3)).toBe(false);
 	});
 });

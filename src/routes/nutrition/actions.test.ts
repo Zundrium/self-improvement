@@ -4,7 +4,7 @@ import { selectActionFeedItems } from '$lib/actions/selector';
 import { nutritionActionCandidates } from './actions';
 
 describe('nutrition action candidates', () => {
-	it('offers meal logging while the eating window is open', () => {
+	it('offers meal logging with the time left in the open eating window', () => {
 		const [item] = selectActionFeedItems(
 			nutritionActionCandidates,
 			snapshot(),
@@ -14,18 +14,51 @@ describe('nutrition action candidates', () => {
 		expect(item).toMatchObject({
 			id: 'nutrition.eating-window-open:2026-04-10',
 			title: 'Add a meal',
-			reason: 'Your eating window is open',
+			reason: '8 hours left in your eating window',
 			action: { href: '/nutrition/track?date=2026-04-10' }
 		});
 	});
 
-	it('opens at the configured start and closes at the configured end', () => {
+	it('offers the time until eating from 05:00 and switches at the window start', () => {
+		expect(selectedIds(4 * 60 + 59)).not.toContain('nutrition.eating-window-upcoming:2026-04-10');
+		expect(selectedIds(5 * 60)).toContain('nutrition.eating-window-upcoming:2026-04-10');
+		expect(selectedIds(11 * 60 + 59)).toContain('nutrition.eating-window-upcoming:2026-04-10');
 		expect(selectedIds(11 * 60 + 59)).not.toContain('nutrition.eating-window-open:2026-04-10');
+		expect(selectedIds(12 * 60)).not.toContain('nutrition.eating-window-upcoming:2026-04-10');
 		expect(selectedIds(12 * 60)).toContain('nutrition.eating-window-open:2026-04-10');
 		expect(selectedIds(19 * 60 + 59)).toContain('nutrition.eating-window-open:2026-04-10');
 		expect(selectedIds(20 * 60)).not.toContain('nutrition.eating-window-open:2026-04-10');
 	});
 
+	it('keeps countdown action ids stable as minutes change', () => {
+		const upcomingId = (minute: number) =>
+			selectActionFeedItems(nutritionActionCandidates, snapshot(), environment(minute)).find(
+				({ id }) => id.startsWith('nutrition.eating-window-upcoming:')
+			)?.id;
+		const openId = (minute: number) =>
+			selectActionFeedItems(nutritionActionCandidates, snapshot(), environment(minute)).find(
+				({ id }) => id.startsWith('nutrition.eating-window-open:')
+			)?.id;
+
+		expect(upcomingId(5 * 60)).toBe(upcomingId(5 * 60 + 1));
+		expect(openId(12 * 60)).toBe(openId(12 * 60 + 1));
+	});
+
+	it('formats countdowns in whole hours and minutes', () => {
+		const before = selectActionFeedItems(
+			nutritionActionCandidates,
+			snapshot(),
+			environment(10 * 60 + 30)
+		)[0];
+		const active = selectActionFeedItems(
+			nutritionActionCandidates,
+			snapshot(),
+			environment(19 * 60 + 59)
+		)[0];
+
+		expect(before).toMatchObject({ title: 'Eating starts in 1 hour 30 minutes' });
+		expect(active).toMatchObject({ reason: '1 minute left in your eating window' });
+	});
 	it('does not offer meal logging for another date or a full-day fast', () => {
 		const historical = snapshot();
 		historical.date = '2026-04-09';
@@ -38,7 +71,7 @@ describe('nutrition action candidates', () => {
 				nutritionActionCandidates,
 				state,
 				environment(12 * 60)
-			).some(({ id }) => id.startsWith('nutrition.eating-window-open:'));
+			).some(({ id }) => id.startsWith('nutrition.eating-window-'));
 			expect(hasEatingWindowAction).toBe(false);
 		}
 	});

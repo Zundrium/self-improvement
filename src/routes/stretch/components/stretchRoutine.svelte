@@ -164,6 +164,9 @@ function completeRoutine() {
 		setCount={1}
 		restBetweenActivitiesSeconds={STRETCH_REST_SECONDS}
 		restBetweenSetsSeconds={STRETCH_REST_SECONDS}
+		restCountdownSeconds={3}
+		restCountdownSound={sounds.beep}
+		restPeriodicTickSeconds={0}
 		{sounds}
 		activityLabel="Stretch"
 		oncomplete={completeRoutine}

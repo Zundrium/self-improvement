@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 
 export type ToastId = string | number;
-export type ToastType = 'success' | 'error' | 'default' | 'achievement' | 'streak' | 'glimmer';
+export type ToastType = 'success' | 'error' | 'default';
 export type ToastAction = { label: string; onClick: () => void };
 export type ToastOptions = {
 	id?: ToastId;
@@ -71,10 +71,6 @@ export const toast = Object.assign(
 	{
 		success: (message: string, options?: ToastOptions) => createToast('success', message, options),
 		error: (message: string, options?: ToastOptions) => createToast('error', message, options),
-		achievement: (message: string, options?: ToastOptions) =>
-			createToast('achievement', message, options),
-		streak: (message: string, options?: ToastOptions) => createToast('streak', message, options),
-		glimmer: (message: string, options?: ToastOptions) => createToast('glimmer', message, options),
 		dismiss
 	}
 );

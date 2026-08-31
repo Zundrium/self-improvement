@@ -18,6 +18,7 @@
 	import {
 		breathingDisabledFade,
 		breathingEnter,
+		breathingHoldProgress,
 		breathingPhaseScale,
 		breathingPhaseText
 	} from '../breathingMotion';
@@ -166,7 +167,7 @@
 
 	<div class="relative flex size-72 items-center justify-center sm:size-80">
 		<div
-			class="flex size-full items-center justify-center rounded-full text-white shadow-lg shadow-black/10 will-change-transform"
+			class="relative flex size-full items-center justify-center rounded-full text-white shadow-lg shadow-black/10 will-change-transform"
 			style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`}
 			data-breathing-visual
 			use:breathingPhaseScale={{
@@ -176,8 +177,17 @@
 			}}
 			aria-hidden="true"
 		>
+			<div
+				class="absolute inset-[20%] rounded-full bg-white/24 will-change-transform"
+				data-breathing-hold-progress
+				use:breathingHoldProgress={{
+					phase: step.phase.id,
+					seconds: step.phase.seconds,
+					running: status === 'running'
+				}}
+			></div>
 			{#if status === 'completed'}
-				<Check class="size-12" />
+				<Check class="relative size-12" />
 			{/if}
 		</div>
 		{#if status !== 'completed'}

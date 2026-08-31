@@ -1,7 +1,8 @@
 <script lang="ts">
 import { gsap } from 'gsap';
 import { onMount } from 'svelte';
-import { Dialog, DialogContent, DialogTitle } from '$lib/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '$lib/components/ui/dialog';
+import { Pressable } from '$lib/components/ui/pressable';
 import {
 	TRACKER_COMPLETED_EVENT,
 	notifyTrackerCelebrationEnded,
@@ -70,6 +71,10 @@ function showCompletion(completion: TrackerCompletionDetail) {
 
 function handleOpenChangeComplete(isOpen: boolean) {
 	if (!isOpen) showNextCompletion();
+}
+
+function skipCelebration() {
+	open = false;
 }
 
 function showNextCompletion() {
@@ -298,7 +303,11 @@ function prefersReducedMotion() {
 			<DialogContent
 				bind:ref={surface}
 				showCloseButton={false}
-				onEscapeKeydown={(event) => event.preventDefault()}
+				onclick={skipCelebration}
+				onEscapeKeydown={(event) => {
+					event.preventDefault();
+					skipCelebration();
+				}}
 				onInteractOutside={(event) => event.preventDefault()}
 				class="inset-0 top-0 left-0 z-[70] h-svh w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none px-(--app-inset-inline-start) py-0 text-center text-white shadow-none"
 				style={`background: linear-gradient(145deg, ${tracker.colors.primary}, ${tracker.colors.secondary})`}
@@ -338,12 +347,12 @@ function prefersReducedMotion() {
 				>
 					{tracker.label} complete
 				</DialogTitle>
-				<p
+				<DialogDescription
 					data-completion-glimmers
 					class="mt-4 text-lg font-semibold text-[#d4a017] tabular-nums"
 				>
 					+{activeCompletion.glimmers.toLocaleString()} Glimmers added
-				</p>
+				</DialogDescription>
 			</div>
 
 			<div class="pointer-events-none absolute left-1/2 top-[48%]" aria-hidden="true">
@@ -361,6 +370,17 @@ function prefersReducedMotion() {
 					<GlimmerIcon data-completion-glimmer class="absolute -m-5 size-10" />
 				{/each}
 			</div>
+
+			<Pressable
+				class="absolute inset-x-0 bottom-6 mx-auto w-fit px-4 py-3 text-sm font-medium text-white/72 underline-offset-4 hover:text-white focus-visible:rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+				aria-label="Skip tracker completion celebration"
+				onclick={(event) => {
+					event.stopPropagation();
+					skipCelebration();
+				}}
+			>
+				Skip &gt;
+			</Pressable>
 			</DialogContent>
 		{/key}
 	{/if}

@@ -19,7 +19,8 @@ import {
 	type GuidedRoutinePosition,
 	initialRoutinePosition,
 	nextRoutinePosition,
-	repDurationMs
+	repDurationMs,
+	shouldPlayRestCountdownTick
 } from './guidedRoutine';
 
 interface Props {
@@ -28,6 +29,9 @@ interface Props {
 	setCount: number;
 	restBetweenActivitiesSeconds: number;
 	restBetweenSetsSeconds: number;
+	restCountdownSeconds?: number;
+	restCountdownSound?: string;
+	restPeriodicTickSeconds?: number;
 	sounds: GuidedRoutineSounds;
 	activityLabel?: string;
 	oncomplete: () => void | Promise<void>;
@@ -61,7 +65,10 @@ let {
 	setCount,
 	restBetweenActivitiesSeconds,
 	restBetweenSetsSeconds,
+	restCountdownSeconds = 3,
 	sounds,
+	restCountdownSound = sounds.tick,
+	restPeriodicTickSeconds = 10,
 	activityLabel = 'Activity',
 	oncomplete,
 	oncancel,
@@ -200,6 +207,18 @@ function tick() {
 
 function handleCountdownSound(wholeSecond: number) {
 	if (wholeSecond <= 0 || phase === 'intro') return;
+	if (phase === 'rest') {
+		if (shouldPlayRestCountdownTick(wholeSecond, restCountdownSeconds)) {
+			void audioManager.play(restCountdownSound);
+			return;
+		}
+		if (
+			restPeriodicTickSeconds > 0 &&
+			wholeSecond % Math.max(1, Math.floor(restPeriodicTickSeconds)) === 0
+		)
+			void audioManager.play(sounds.tick);
+		return;
+	}
 	if (phase === 'activity' && currentActivity?.type === 'cadenced-reps') {
 		const remaining = Math.ceil(timeLeftMs / repDurationMs(cadenceFor(currentActivity)));
 		if (remaining < lastRemainingRep) {

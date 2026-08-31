@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ActionFeedItem } from '$lib/api-types';
-import { mergeActionFeedItems } from './action-feed';
+import { mergeActionFeedItems, millisecondsUntilNextMinute } from './action-feed';
+
+describe('action feed refresh timing', () => {
+	it('waits until the exact next minute boundary', () => {
+		expect(millisecondsUntilNextMinute(new Date(2026, 3, 10, 12, 0, 0, 0))).toBe(60_000);
+		expect(millisecondsUntilNextMinute(new Date(2026, 3, 10, 12, 34, 59, 250))).toBe(750);
+	});
+});
 
 describe('action feed merging', () => {
 	it('suppresses lower tracker actions while native access is blocked', () => {

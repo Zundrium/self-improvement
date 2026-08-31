@@ -14,24 +14,33 @@
 	import { applyBedtimeReminder, requestBedtimeReminderPermission } from '../reminders';
 
 	let { settings }: { settings: SleepSettingsData } = $props();
-	let loadedSettings = $state(untrack(() => settings));
+	let loadedKey = $state(untrack(() => settingsKey(settings.bedtime, settings.remindersEnabled)));
+	let loadedRemindersEnabled = $state(untrack(() => settings.remindersEnabled));
 	let bedtime = $state(untrack(() => settings.bedtime));
 	let remindersEnabled = $state(untrack(() => settings.remindersEnabled));
 	let saving = $state(false);
 
-	$effect(() => {
-		if (loadedSettings === settings) return;
-		loadedSettings = settings;
-		bedtime = settings.bedtime;
-		remindersEnabled = settings.remindersEnabled;
-	});
+	$effect(() => syncSettings(settings.bedtime, settings.remindersEnabled));
+
+	function syncSettings(nextBedtime: string, nextRemindersEnabled: boolean) {
+		const nextKey = settingsKey(nextBedtime, nextRemindersEnabled);
+		if (loadedKey === nextKey) return;
+		loadedKey = nextKey;
+		loadedRemindersEnabled = nextRemindersEnabled;
+		bedtime = nextBedtime;
+		remindersEnabled = nextRemindersEnabled;
+	}
+
+	function settingsKey(bedtime: string, remindersEnabled: boolean) {
+		return `${bedtime}:${remindersEnabled}`;
+	}
 
 	async function saveSettings(event: SubmitEvent) {
 		event.preventDefault();
 		if (saving) return;
 		saving = true;
 		try {
-			if (remindersEnabled && !loadedSettings.remindersEnabled) {
+			if (remindersEnabled && !loadedRemindersEnabled) {
 				const granted = await requestBedtimeReminderPermission();
 				if (!granted) {
 					remindersEnabled = false;

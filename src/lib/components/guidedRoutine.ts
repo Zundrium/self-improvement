@@ -54,6 +54,13 @@ export function repDurationMs(cadencePercent: number): number {
 	return 2000 / (cadencePercent / 100);
 }
 
+export function shouldPlayRestCountdownTick(
+	remainingSeconds: number,
+	countdownSeconds: number
+): boolean {
+	return remainingSeconds > 0 && remainingSeconds <= Math.max(0, Math.floor(countdownSeconds));
+}
+
 export function activityDurationMs(
 	activity: GuidedRoutineActivity,
 	cadencePercent = activity.type === 'cadenced-reps' ? activity.cadencePercent : undefined

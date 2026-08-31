@@ -15,18 +15,6 @@ describe('toast', () => {
 		expect(get(toastStore)).toMatchObject([{ id: 'settings', message: 'Failed', type: 'error' }]);
 	});
 
-	it('supports gamification notification types', () => {
-		toast.achievement('Achievement unlocked');
-		toast.streak('Streak increased');
-		toast.glimmer('Glimmers added');
-
-		expect(get(toastStore).map(({ type }) => type)).toEqual([
-			'achievement',
-			'streak',
-			'glimmer'
-		]);
-	});
-
 	it('dismisses a toast after ten seconds by default', () => {
 		vi.useFakeTimers();
 		toast.success('Saved');

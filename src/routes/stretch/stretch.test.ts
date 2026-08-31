@@ -3,6 +3,7 @@ import { DEFAULT_STRETCH_DIFFICULTIES } from '$lib/local/tracker-settings';
 import {
 	formatStretchDuration,
 	isStretchScheduled,
+	STRETCH_REST_SECONDS,
 	STRETCH_SETS_PER_DAY,
 	stretchDurationSeconds,
 	stretchSteps,
@@ -10,6 +11,10 @@ import {
 } from './stretch';
 
 describe('stretch routine', () => {
+	it('uses a fifteen-second rest between every stretch hold', () => {
+		expect(STRETCH_REST_SECONDS).toBe(15);
+	});
+
 	it('builds the video routine with bilateral hip stretches and wall angels', () => {
 		const steps = stretchSteps(30);
 

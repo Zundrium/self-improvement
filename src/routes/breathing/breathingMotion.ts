@@ -67,6 +67,23 @@ export const breathingPhaseScale: Action<HTMLElement, BreathingMotionOptions> = 
 	};
 };
 
+export const breathingHoldProgress: Action<HTMLElement, BreathingMotionOptions> = (node, options) => {
+	let state = motionState(options);
+	setInitialHoldProgress(node, options);
+	return {
+		update(next) {
+			const nextState = motionState(next);
+			if (state === nextState) return;
+			state = nextState;
+			animateHoldProgress(node, next);
+		},
+		destroy() {
+			gsap.killTweensOf(node);
+			gsap.set(node, { clearProps: 'transform,transformOrigin' });
+		}
+	};
+};
+
 function setInitialScale(node: HTMLElement, options: BreathingMotionOptions) {
 	const scale = options.running ? phaseScale(options.phase) : RESTING_SCALE;
 	gsap.set(node, { scale, transformOrigin: 'center center', force3D: true });
@@ -74,12 +91,35 @@ function setInitialScale(node: HTMLElement, options: BreathingMotionOptions) {
 
 function animatePhase(node: HTMLElement, options: BreathingMotionOptions) {
 	gsap.killTweensOf(node);
+	if (prefersReducedMotion())
+		return void gsap.set(node, { scale: options.running ? phaseScale(options.phase) : RESTING_SCALE });
 	if (!options.running) return resetSphere(node);
 	if (options.phase === 'hold') return;
 	gsap.to(node, {
 		scale: phaseScale(options.phase),
 		duration: options.seconds,
 		ease: 'sine.inOut',
+		overwrite: true
+	});
+}
+
+function setInitialHoldProgress(node: HTMLElement, options: BreathingMotionOptions) {
+	gsap.set(node, {
+		scale: holdProgressScale(options),
+		transformOrigin: 'center center',
+		force3D: true
+	});
+}
+
+function animateHoldProgress(node: HTMLElement, options: BreathingMotionOptions) {
+	gsap.killTweensOf(node);
+	const scale = holdProgressScale(options);
+	if (prefersReducedMotion()) return void gsap.set(node, { scale });
+	if (!options.running || options.phase === 'inhale') return void gsap.set(node, { scale });
+	gsap.to(node, {
+		scale,
+		duration: options.seconds,
+		ease: options.phase === 'hold' ? 'none' : 'sine.inOut',
 		overwrite: true
 	});
 }
@@ -119,6 +159,10 @@ function resetSphere(node: HTMLElement) {
 
 function phaseScale(phase: BreathingMotionOptions['phase']) {
 	return phase === 'exhale' ? RESTING_SCALE : 1;
+}
+
+function holdProgressScale(options: BreathingMotionOptions) {
+	return options.running && options.phase === 'hold' ? 1 : 0;
 }
 
 function motionState(options: BreathingMotionOptions) {

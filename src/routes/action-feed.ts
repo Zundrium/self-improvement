@@ -6,6 +6,10 @@ const priorityOrder: Record<ActionPriority, number> = {
 	activity: 2
 };
 
+export function millisecondsUntilNextMinute(now: Date) {
+	return 60_000 - now.getSeconds() * 1_000 - now.getMilliseconds();
+}
+
 export function mergeActionFeedItems(localItems: ActionFeedItem[], nativeItems: ActionFeedItem[]) {
 	const blockedTrackers = new Set(
 		nativeItems

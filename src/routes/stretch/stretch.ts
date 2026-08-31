@@ -8,7 +8,7 @@ import {
 
 export const STRETCH_VIDEO_URL = 'https://www.youtube.com/watch?v=QaKuVOhikaY';
 export const STRETCH_SETS_PER_DAY = 2;
-export const STRETCH_REST_SECONDS = 10;
+export const STRETCH_REST_SECONDS = 15;
 export const WALL_ANGEL_REPS = 10;
 
 export type StretchImageVariant = {
