@@ -638,9 +638,7 @@ export const BOOLEAN_COLUMNS: Partial<Record<TableName, string[]>> = {
 
 export const SQLITE_SCHEMA_VERSION = 2;
 export const SQLITE_DATABASE_NAME = 'self-improvement-local-v2';
-export const LEGACY_SQLITE_DATABASE_NAME = 'self-improvement-local';
 export const BROWSER_DATABASE_NAME = 'self-improvement-local-v2';
-export const LEGACY_BROWSER_DATABASE_NAME = 'self-improvement-local';
 
 export const SQLITE_SCHEMA_SQL = `
 CREATE TABLE profile (id INTEGER PRIMARY KEY CHECK (id = 1), name TEXT NOT NULL, created_at TEXT NOT NULL);

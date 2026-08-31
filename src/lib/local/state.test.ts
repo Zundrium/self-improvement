@@ -143,8 +143,9 @@ describe('native relational SQLite state', () => {
 		expect(state.user.name).toBe('You');
 		expect(native.schemaVersion).toBe(2);
 		expect(native.events.join('\n')).not.toContain('document TEXT');
-		expect(native.events).toContain('execute:false:PRAGMA foreign_keys = ON;');
-		expect(native.events).toContain('execute:false:PRAGMA journal_mode = WAL;');
+		expect(native.events).toContain('execute:false:schema');
+		expect(native.events.join('\n')).not.toContain('PRAGMA journal_mode');
+		expect(native.events.join('\n')).not.toContain('PRAGMA foreign_keys');
 		expect(native.tableNames()).toContain('profile');
 		expect(native.tableNames()).toContain('step_days');
 	});

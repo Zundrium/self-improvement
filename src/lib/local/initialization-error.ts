@@ -1,5 +1,5 @@
 const TECHNICAL_DETAIL =
-	/\b(capacitor|sqlite|sql|database|plugin|native|schema|table|transaction|connection|constraint|pragma)\b/i;
+	/\b(capacitor|sqlite(?:database)?|sql|database|plugin|native|schema|table|transaction|connection|constraint|pragma|query|storage)\b/i;
 const SENSITIVE_VALUE =
 	/\b(api[_ -]?key|authorization|bearer|password|secret|token)\s*[:=]\s*[^\s,;]+/gi;
 const URL_CREDENTIALS = /\b([a-z][a-z\d+.-]*:\/\/)[^\s/@]+@/gi;
@@ -26,6 +26,10 @@ function detailPriority(detail: string) {
 }
 
 function collectDetails(value: unknown, details: string[], visited: Set<object>) {
+	if (typeof value === 'string') {
+		details.push(value);
+		return;
+	}
 	if (!value || typeof value !== 'object' || visited.has(value)) return;
 	visited.add(value);
 	if (value instanceof Error) {

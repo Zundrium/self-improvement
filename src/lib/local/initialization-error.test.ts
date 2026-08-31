@@ -33,6 +33,20 @@ describe('initializationErrorMessage', () => {
 		expect(message).not.toContain('user:password');
 	});
 
+	it('includes primitive plugin rejections', () => {
+		expect(initializationErrorMessage('CreateConnection: Connection local-v2 already exists')).toBe(
+			'App initialization failed while opening local storage. Technical detail: CreateConnection: Connection local-v2 already exists'
+		);
+	});
+
+	it('recognizes Android SQLiteDatabase query errors', () => {
+		expect(
+			initializationErrorMessage(
+				new Error('Queries can be performed using SQLiteDatabase query or rawQuery methods only.')
+			)
+		).toContain('Technical detail: Queries can be performed using SQLiteDatabase');
+	});
+
 	it('does not expose unrelated error messages', () => {
 		expect(initializationErrorMessage(new Error('Profile name: Taylor'))).toBe(
 			'App initialization failed while opening local storage. No safe technical detail was provided.'

@@ -76,12 +76,7 @@ These can be small functions over a shared transaction object; a class per table
 
 ## SQLite Schema
 
-Enable relational guarantees when opening the database:
-
-```sql
-PRAGMA foreign_keys = ON;
-PRAGMA journal_mode = WAL;
-```
+The Android SQLite plugin enables foreign-key constraints when it opens the database. Keep its default journal mode; `PRAGMA journal_mode = WAL` returns a row on Android SQLCipher and must not be sent through the plugin's mutation-only `execute` path.
 
 Use ISO-8601 strings for local dates and instants unless a measured query requires integer epoch timestamps.
 
@@ -535,14 +530,12 @@ No document-to-table migration is required.
 
 Recommended rollout:
 
-1. Create a new database name, such as `self-improvement-local-v2`.
-2. Initialize all tables and singleton defaults in one transaction.
-3. Open the v2 database before deleting or ignoring the old database.
-4. Remove the old `self-improvement-local` SQLite database after v2 initialization succeeds.
-5. Clear obsolete native sync-status keys after the new status rows exist.
-6. Keep browser development on a separately versioned Dexie schema.
+1. Create the production database as `self-improvement-local-v2`.
+2. Initialize the schema transactionally, then insert missing singleton defaults on the same connection.
+3. Keep browser development on a separately versioned Dexie schema.
+4. Do not add legacy-database cleanup before the first public installation.
 
-This intentionally resets existing local progress. Confirm the reset again immediately before release even though it is currently approved.
+No document-state migration is needed because the relational release predates public installation.
 
 ## Browser Development
 

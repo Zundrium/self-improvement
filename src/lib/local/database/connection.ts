@@ -9,8 +9,6 @@ import {
 	BOOLEAN_COLUMNS,
 	BROWSER_DATABASE_NAME,
 	DEXIE_STORES,
-	LEGACY_BROWSER_DATABASE_NAME,
-	LEGACY_SQLITE_DATABASE_NAME,
 	SQLITE_DATABASE_NAME,
 	SQLITE_SCHEMA_SQL,
 	SQLITE_SCHEMA_VERSION,
@@ -32,7 +30,6 @@ export type NativeDatabaseConnection = {
 	query(statement: string, values?: unknown[]): Promise<NativeQueryResult>;
 	run(statement: string, values?: unknown[], transaction?: boolean): Promise<unknown>;
 	delete(): Promise<void>;
-	cleanupLegacyDatabase?(): Promise<void>;
 };
 export type NativeDatabaseConnectionFactory = () => Promise<NativeDatabaseConnection>;
 
@@ -105,8 +102,6 @@ export class DexieRelationalConnection implements RelationalConnection {
 		if (this.initialized) return;
 		if (!(await this.database.profile.get(1))) await this.write(defaults);
 		this.initialized = true;
-		if (this.database.name === BROWSER_DATABASE_NAME)
-			await Dexie.delete(LEGACY_BROWSER_DATABASE_NAME).catch(() => undefined);
 	}
 
 	async read<T extends TableName>(tables: readonly T[], options?: { loadMedia?: boolean }) {
@@ -233,8 +228,6 @@ export class NativeRelationalConnection implements RelationalConnection {
 
 	private async initializeDatabase(defaults: RelationalData) {
 		const connection = await this.connection();
-		await connection.execute('PRAGMA foreign_keys = ON;', false);
-		await connection.execute('PRAGMA journal_mode = WAL;', false);
 		const version = Number(
 			(await connection.query('PRAGMA user_version;')).values?.[0]?.user_version
 		);
@@ -256,7 +249,6 @@ export class NativeRelationalConnection implements RelationalConnection {
 		}
 		const existing = (await connection.query('SELECT id FROM profile WHERE id = 1;')).values?.[0];
 		if (!existing) await this.write(defaults);
-		await connection.cleanupLegacyDatabase?.();
 	}
 
 	private connection() {
@@ -338,6 +330,7 @@ function clearSharedNativeDatabaseConnection() {
 
 export type NativeSQLiteConnectionOwner = {
 	closeConnection(database: string, readonly: boolean): Promise<void>;
+	checkConnectionsConsistency?(): Promise<{ result?: boolean }>;
 	createConnection?(
 		database: string,
 		encrypted: boolean,
@@ -345,7 +338,6 @@ export type NativeSQLiteConnectionOwner = {
 		version: number,
 		readonly: boolean
 	): Promise<NativeDatabaseConnection & { open(): Promise<void> }>;
-	isDatabase?(database: string): Promise<{ result?: boolean }>;
 };
 
 export function createNativeDatabaseConnectionAdapter(
@@ -366,8 +358,7 @@ export function createNativeDatabaseConnectionAdapter(
 				clearSharedNativeDatabaseConnection();
 				await sqlite.closeConnection(SQLITE_DATABASE_NAME, false);
 			}
-		},
-		cleanupLegacyDatabase: async () => cleanupLegacyNativeDatabase(sqlite)
+		}
 	};
 }
 
@@ -379,11 +370,8 @@ async function createNativeDatabaseConnection(): Promise<NativeDatabaseConnectio
 export async function openNativeDatabaseConnection(
 	sqlite: NativeSQLiteConnectionOwner
 ): Promise<NativeDatabaseConnection> {
-	const connection = await createNativeSQLiteConnection(sqlite).catch(async (error) => {
-		if (!isExistingNativeConnectionError(error)) throw error;
-		await sqlite.closeConnection(SQLITE_DATABASE_NAME, false);
-		return createNativeSQLiteConnection(sqlite);
-	});
+	await sqlite.checkConnectionsConsistency?.();
+	const connection = await createNativeSQLiteConnection(sqlite);
 	await connection.open();
 	return createNativeDatabaseConnectionAdapter(sqlite, connection);
 }
@@ -397,37 +385,6 @@ async function createNativeSQLiteConnection(sqlite: NativeSQLiteConnectionOwner)
 		SQLITE_SCHEMA_VERSION,
 		false
 	);
-}
-
-function isExistingNativeConnectionError(error: unknown) {
-	const message =
-		error instanceof Error
-			? error.message
-			: typeof error === 'string'
-				? error
-				: undefined;
-	return (
-		message?.replace(/\.$/, '') ===
-		`CreateConnection: Connection ${SQLITE_DATABASE_NAME} already exists`
-	);
-}
-
-async function cleanupLegacyNativeDatabase(sqlite: NativeSQLiteConnectionOwner) {
-	if (!(await sqlite.isDatabase?.(LEGACY_SQLITE_DATABASE_NAME))?.result || !sqlite.createConnection)
-		return;
-	const legacy = await sqlite.createConnection(
-		LEGACY_SQLITE_DATABASE_NAME,
-		false,
-		'no-encryption',
-		1,
-		false
-	);
-	try {
-		await legacy.open();
-		await legacy.delete();
-	} finally {
-		await sqlite.closeConnection(LEGACY_SQLITE_DATABASE_NAME, false);
-	}
 }
 
 async function deleteRemovedRows<K extends TableName>(
