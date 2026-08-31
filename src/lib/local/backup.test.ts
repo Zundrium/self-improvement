@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
 	BACKUP_ENVELOPE_VERSION,
 	BACKUP_INTERVAL_MS,
+	UnsupportedBackupVersionError,
 	backupFileName,
 	isAutomaticBackupDue,
 	validateBackupEnvelope
 } from './backup';
 import { createNutritionEntry } from './nutrition';
 import { createDefaultAppState } from './state';
-import { DEFAULT_STRETCH_DIFFICULTIES } from './tracker-settings';
 
 const createdAt = '2026-03-21T12:34:56.789Z';
 
@@ -21,61 +21,19 @@ function envelope() {
 }
 
 describe('backup envelope', () => {
-	it('validates the envelope and nested local state', () => {
+	it('validates the v2 envelope and nested relational export model', () => {
 		expect(validateBackupEnvelope(envelope())).toEqual(envelope());
-		expect(() => validateBackupEnvelope({ ...envelope(), version: 2 })).toThrow();
 		expect(() =>
-			validateBackupEnvelope({ ...envelope(), state: { ...envelope().state, version: 2 } })
+			validateBackupEnvelope({ ...envelope(), state: { ...envelope().state, version: 1 } })
 		).toThrow();
 	});
 
-	it('fills standardized settings when reading an older v1 export', () => {
-		const current = envelope();
-		const { dailyLimitMinutes: _dailyLimitMinutes, ...screenTime } = current.state.screenTime;
-		const { defaultSets: _defaultSets, ...fitness } = current.state.fitness;
-		const { defaultDurationSeconds: _defaultDurationSeconds, ...meditation } =
-			current.state.meditation;
-		const { rounds: _rounds, includeHold: _includeHold, ...breathing } = current.state.breathing;
-		const { stretch: _stretch, ...legacyState } = current.state;
-		const enabledTrackerIds = legacyState.enabledTrackerIds.filter((id) => id !== 'stretch');
-		const { defaultRating: _defaultRating, ...happiness } = current.state.happiness;
-		const {
-			defaultFlow: _defaultFlow,
-			fallbackCycleDays: _fallbackCycleDays,
-			...period
-		} = current.state.period;
-		const legacyEnvelope = {
-			...current,
-			state: {
-				...legacyState,
-				enabledTrackerIds,
-				screenTime,
-				fitness,
-				meditation,
-				breathing,
-				happiness,
-				period
-			}
-		};
-
-		const restored = validateBackupEnvelope(legacyEnvelope);
-
-		expect(restored.version).toBe(1);
-		expect(restored.state.screenTime.dailyLimitMinutes).toBe(240);
-		expect(restored.state.fitness.defaultSets).toBe(2);
-		expect(restored.state.meditation.defaultDurationSeconds).toBe(300);
-		expect(restored.state.breathing).toMatchObject({ rounds: 6, includeHold: true });
-		expect(restored.state.stretch).toEqual({
-			holdSeconds: 30,
-			difficulties: DEFAULT_STRETCH_DIFFICULTIES,
-			sessions: []
-		});
-		expect(restored.state.enabledTrackerIds).toContain('stretch');
-		expect(restored.state.happiness.defaultRating).toBe(3);
-		expect(restored.state.period).toMatchObject({
-			defaultFlow: 'medium',
-			fallbackCycleDays: 28
-		});
+	it('rejects v1 backups with a clear version error', () => {
+		expect(() => validateBackupEnvelope({ ...envelope(), version: 1 })).toThrow(
+			new UnsupportedBackupVersionError(
+				'Backup version 1 is no longer supported. Create a new version 2 backup.'
+			)
+		);
 	});
 
 	it('restores photo-backed entries without reintroducing the duplicate thumbnail payload', () => {

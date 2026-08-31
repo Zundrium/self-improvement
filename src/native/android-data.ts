@@ -17,8 +17,7 @@ export const androidSyncCoordinator = new SyncCoordinator(
 );
 
 export async function loadEnabledNativeTrackers(): Promise<TrackerId[]> {
-	const { enabledTrackerIds } = await localAppStore.read();
-	return enabledNativeTrackerIds(enabledTrackerIds);
+	return enabledNativeTrackerIds(await localAppStore.readEnabledTrackerIds());
 }
 
 export function enabledNativeTrackerIds(enabledTrackerIds: readonly AppTrackerId[]) {

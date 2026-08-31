@@ -1,10 +1,14 @@
 import { SecureStorage } from '@aparajita/capacitor-secure-storage';
 import type { MobileSyncStatus, SyncContext } from '../domain/model';
-import { createEmptyStatus, parseStoredStatus } from '../domain/status';
+import { parseStoredStatus } from '../domain/status';
+import { localAppStore, type LocalAppStore } from '../lib/local/state';
 import { isNativeAndroid } from './platform';
 
-const STATUS_KEY = 'self-improvement-local-sync-status-v1';
-const LEGACY_KEYS = ['self-improvement-session-v1', 'self-improvement-sync-status-v1'];
+const OBSOLETE_STATUS_KEYS = [
+	'self-improvement-local-sync-status-v1',
+	'self-improvement-session-v1',
+	'self-improvement-sync-status-v1'
+];
 let cleanupPromise: Promise<void> | undefined;
 
 export interface MobileRepository {
@@ -13,43 +17,29 @@ export interface MobileRepository {
 	saveStatus(status: MobileSyncStatus): Promise<void>;
 }
 
-export class SecureMobileRepository implements MobileRepository {
+export class DatabaseMobileRepository implements MobileRepository {
+	constructor(private readonly store: LocalAppStore = localAppStore) {}
+
 	async loadSyncContext() {
 		return { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' };
 	}
 
 	async loadStatus() {
-		await clearLegacyState();
-		const serialized = await getItem(STATUS_KEY);
-		return serialized ? storedStatus(serialized) : createEmptyStatus();
+		const status = await this.store.loadSyncStatus();
+		await clearObsoleteStatus();
+		return status;
 	}
 
 	async saveStatus(status: MobileSyncStatus) {
-		await clearLegacyState();
-		await setItem(STATUS_KEY, JSON.stringify(parseStoredStatus(status)));
+		await this.store.saveSyncStatus(parseStoredStatus(status));
+		await clearObsoleteStatus();
 	}
 }
 
-function storedStatus(serialized: string) {
-	try {
-		return parseStoredStatus(JSON.parse(serialized) as unknown);
-	} catch {
-		return createEmptyStatus();
-	}
-}
+export class SecureMobileRepository extends DatabaseMobileRepository {}
 
-async function getItem(key: string) {
-	if (isNativeAndroid()) return SecureStorage.getItem(key);
-	return globalThis.localStorage?.getItem(key) ?? null;
-}
-
-async function setItem(key: string, value: string) {
-	if (isNativeAndroid()) await SecureStorage.setItem(key, value);
-	else globalThis.localStorage?.setItem(key, value);
-}
-
-function clearLegacyState() {
-	cleanupPromise ??= Promise.all(LEGACY_KEYS.map(removeItem)).then(() => undefined);
+function clearObsoleteStatus() {
+	cleanupPromise ??= Promise.all(OBSOLETE_STATUS_KEYS.map(removeItem)).then(() => undefined);
 	return cleanupPromise;
 }
 
@@ -57,7 +47,5 @@ async function removeItem(key: string) {
 	try {
 		if (isNativeAndroid()) await SecureStorage.removeItem(key);
 		else globalThis.localStorage?.removeItem(key);
-	} catch {
-		return;
-	}
+	} catch {}
 }

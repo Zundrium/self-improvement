@@ -7,7 +7,8 @@ import { dateKeysEndingAt, isLocalDayStart, localDateForInstant } from '$lib/tra
 import { parseScreenTimePayload } from '../../routes/screen-time/screen-time';
 import { parseHealthConnectPayload } from '../../routes/steps/steps';
 import { notifyNewTrackerCompletions } from './completion-events';
-import { type LocalAppState, localAppStore } from './state';
+import { buildGamification } from './gamification';
+import { type LocalAppState, type LocalDomain, localAppStore } from './state';
 
 const sleepIntervalSchema = z.object({
 	package: z.string().trim().min(1).max(255),
@@ -34,14 +35,28 @@ export async function ingestNativePayload(
 	payload: unknown
 ) {
 	try {
-		const { before, after } = await localAppStore.updateWithPrevious((state) =>
-			processNativePayload(state, tracker, context, payload)
+		let before: LocalAppState | undefined;
+		const domains = nativePayloadDomains(tracker);
+		const after = await localAppStore.updateGamificationProjection(
+			[...domains, 'gamification'],
+			(state) => {
+				before = structuredClone(state);
+				processNativePayload(state, tracker, context, payload);
+				buildGamification(state);
+			}
 		);
+		if (!before) throw new Error('Native completion baseline was not loaded.');
 		notifyNewTrackerCompletions(before, after);
 	} catch (cause) {
 		if (cause instanceof Error && cause.name === 'SyncFailure') throw cause;
 		throw validationFailure(cause instanceof Error ? cause.message : undefined);
 	}
+}
+
+function nativePayloadDomains(tracker: TrackerId): LocalDomain[] {
+	if (tracker === 'steps') return ['steps'];
+	if (tracker === 'sleep') return ['sleep', 'screenTime'];
+	return ['screenTime'];
 }
 
 export function processNativePayload(

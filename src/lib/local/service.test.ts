@@ -42,13 +42,19 @@ describe('local app service', () => {
 			})
 		});
 		const happiness = await service.request<HappinessData>('/api/app/happiness');
+		const persistedAwards = (await store.readDomains(['gamification'])).gamification.awards;
 		const firstGamification = await service.request<GamificationData>('/api/app/gamification');
 		const secondGamification = await service.request<GamificationData>('/api/app/gamification');
 
 		expect(app.profile.id).toBe('local-profile');
 		expect(app.enabledTrackers).toHaveLength(10);
 		expect(happiness.entry).toMatchObject({ rating: 4, reasons: ['gratitude'] });
-		expect(firstGamification).toMatchObject({ score: 10, glimmers: 10, earnedNow: 10 });
+		expect(persistedAwards).toContainEqual({
+			trackerId: 'happiness',
+			localDate: '2026-03-20',
+			points: 10
+		});
+		expect(firstGamification).toMatchObject({ score: 10, glimmers: 10, earnedNow: 0 });
 		expect(secondGamification.earnedNow).toBe(0);
 	});
 

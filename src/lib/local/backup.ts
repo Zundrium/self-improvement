@@ -6,7 +6,7 @@ import {
 	type LocalAppState
 } from './state';
 
-export const BACKUP_ENVELOPE_VERSION = 1 as const;
+export const BACKUP_ENVELOPE_VERSION = 2 as const;
 export const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1_000;
 export const BACKUP_FILE_PREFIX = 'self-improvement-backup-';
 
@@ -22,6 +22,8 @@ export type BackupEnvelope = {
 	state: LocalAppState;
 };
 
+export class UnsupportedBackupVersionError extends Error {}
+
 export async function createBackupEnvelope(now = new Date()): Promise<BackupEnvelope> {
 	return validateBackupEnvelope({
 		version: BACKUP_ENVELOPE_VERSION,
@@ -31,6 +33,13 @@ export async function createBackupEnvelope(now = new Date()): Promise<BackupEnve
 }
 
 export function validateBackupEnvelope(input: unknown): BackupEnvelope {
+	const version = backupVersion(input);
+	if (version === 1)
+		throw new UnsupportedBackupVersionError(
+			'Backup version 1 is no longer supported. Create a new version 2 backup.'
+		);
+	if (version !== BACKUP_ENVELOPE_VERSION)
+		throw new UnsupportedBackupVersionError(`Unsupported backup version: ${String(version)}`);
 	const envelope = envelopeSchema.parse(input);
 	return { ...envelope, state: validateLocalAppState(envelope.state) };
 }
@@ -40,7 +49,8 @@ export function parseBackupJson(serialized: string) {
 }
 
 export function restoreBackupEnvelope(envelope: BackupEnvelope) {
-	return replaceLocalAppState(validateBackupEnvelope(envelope).state);
+	const validated = validateBackupEnvelope(envelope);
+	return replaceLocalAppState(validated.state);
 }
 
 export function isAutomaticBackupDue(lastSuccessAt: string | null | undefined, now = new Date()) {
@@ -53,4 +63,9 @@ export function isAutomaticBackupDue(lastSuccessAt: string | null | undefined, n
 export function backupFileName(createdAt: string) {
 	const timestamp = new Date(createdAt).toISOString().replaceAll(':', '-').replace('.', '-');
 	return `${BACKUP_FILE_PREFIX}${timestamp}.json`;
+}
+
+function backupVersion(input: unknown) {
+	if (!input || typeof input !== 'object' || Array.isArray(input)) return undefined;
+	return (input as { version?: unknown }).version;
 }

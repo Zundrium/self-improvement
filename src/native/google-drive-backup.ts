@@ -7,6 +7,7 @@ import {
 	isAutomaticBackupDue,
 	parseBackupJson,
 	restoreBackupEnvelope,
+	UnsupportedBackupVersionError,
 	type BackupEnvelope
 } from '$lib/local/backup';
 import { isNativeAndroid, requireNativeAndroid } from './platform';
@@ -146,6 +147,7 @@ async function parsePickedFile(file: PickedFile) {
 		return parseBackupJson(await pickedFileText(file));
 	} catch (cause) {
 		if (cause instanceof InvalidBackupError) throw cause;
+		if (cause instanceof UnsupportedBackupVersionError) throw new InvalidBackupError(cause.message);
 		throw new InvalidBackupError('This is not a valid Self Improvement backup.');
 	}
 }

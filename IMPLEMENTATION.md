@@ -19,13 +19,9 @@ The static adapter writes `dist-mobile/`. `capacitor.config.ts` and `android/` p
 
 ## Local state
 
-`src/lib/local/state.ts` defines and validates one versioned app-state document. Dexie stores that document in IndexedDB and serializes updates through transactions. The state includes:
+`src/lib/local/database/schema.ts` defines the normalized SQLite schema with Drizzle. Android stores profile, settings, tracker history, nutrition, gamification, rewards, and synchronization status in focused relational tables. Browser development uses equivalent Dexie tables, including Blob-backed nutrition media.
 
-- the local display profile and tracker visibility;
-- tracker history and settings;
-- fitness progress and exercise speed preferences;
-- manual nutrition entries, macros, calorie goals, eating windows, and fasting dates;
-- gamification awards, rewards, and redemptions.
+`src/lib/local/state.ts` maps domain projections to those tables and serializes relational transactions. Normal routes read only their required domains, while backup and gamification operations can assemble broader validated projections. Tracker mutations persist their domain rows and affected gamification rows in one transaction.
 
 `src/lib/local/service.ts` preserves the existing loader and mutation call shape without making HTTP requests. `src/lib/api.ts` dispatches directly to that service. There are no credentials or sessions.
 
@@ -33,7 +29,7 @@ The static adapter writes `dist-mobile/`. `capacitor.config.ts` and `android/` p
 
 - Steps use read-only Health Connect `READ_STEPS` access.
 - Sleep and screen time use Android Usage Access.
-- Native payloads are validated, transformed, and written directly to Dexie.
+- Native payloads are validated, transformed, and written to Android SQLite or the browser Dexie adapter in tracker-specific transactions.
 - Trackers process independently so denied access for one source does not block the others.
 - Bounded permission, validation, and native-provider failures are retained on-device for troubleshooting.
 - Stale data is processed when the app opens or resumes and can be refreshed manually.
@@ -49,7 +45,7 @@ The app has no camera surface, photo storage, AI estimate, or correction flow.
 
 ## Backups
 
-`src/lib/local/backup.ts` wraps the state in a versioned JSON envelope and validates both the envelope and nested state before restore.
+`src/lib/local/backup.ts` exports the relational domains as a version 2 JSON envelope and validates the complete envelope before a transactional restore. Version 1 document backups are rejected with a clear compatibility message.
 
 Users can export or restore a JSON file through Android's document picker. They can also explicitly select a Google Drive folder through the Storage Access Framework. The Drive app remains responsible for network transfer; Self Improvement receives only persisted document-provider access to the selected tree.
 

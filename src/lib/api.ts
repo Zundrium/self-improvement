@@ -1,7 +1,7 @@
 import { localAppService, LocalServiceError } from '$lib/local/service';
-import { SecureMobileRepository } from '$native/secure-repository';
+import { DatabaseMobileRepository } from '$native/secure-repository';
 
-export const mobileRepository = new SecureMobileRepository();
+export const mobileRepository = new DatabaseMobileRepository();
 export const GAMIFICATION_CHANGED_EVENT = 'gamification:changed';
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
