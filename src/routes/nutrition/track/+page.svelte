@@ -42,6 +42,7 @@ import {
 	analyzeMeal as requestMealAnalysis
 } from '../ai/meal-analysis';
 import type { PageProps } from './$types';
+import { cameraVideoConstraints } from './camera';
 
 let { data }: PageProps = $props();
 
@@ -104,13 +105,7 @@ async function startCamera() {
 		if (!navigator.mediaDevices?.getUserMedia)
 			throw new Error('This browser cannot open the camera.');
 		const nextStream = await navigator.mediaDevices.getUserMedia({
-			video: {
-				facingMode: { ideal: facingMode },
-				width: { ideal: 1080 },
-				height: { ideal: 1920 },
-				aspectRatio: { ideal: 9 / 16 },
-				frameRate: { ideal: 30 }
-			},
+			video: cameraVideoConstraints(facingMode),
 			audio: false
 		});
 		if (phase !== 'photo') {
