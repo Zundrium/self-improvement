@@ -2,6 +2,8 @@
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+
+	const initializationFailure = $derived(page.error?.message.startsWith('App initialization failed'));
 </script>
 
 <svelte:head>
@@ -13,7 +15,11 @@
 		<CardHeader>
 			<p class="text-sm font-medium text-(--text)/56">{page.status}</p>
 			<CardTitle class="text-xl">
-				{page.status === 404 ? 'Page not found' : 'Something went wrong'}
+				{page.status === 404
+					? 'Page not found'
+					: initializationFailure
+						? 'Local storage could not start'
+						: 'Something went wrong'}
 			</CardTitle>
 		</CardHeader>
 		<CardContent class="items-center">

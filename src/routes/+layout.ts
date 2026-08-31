@@ -1,5 +1,6 @@
-import { redirect } from '@sveltejs/kit';
+import { error, isRedirect, redirect } from '@sveltejs/kit';
 import { apiRequest, recordAchievementEvents } from '$lib/api';
+import { initializationErrorMessage } from '$lib/local/initialization-error';
 import type { AppBootstrapData } from '$lib/api-types';
 import { ANDROID_SETUP_PATH, androidSetupRepository } from '$native/android-setup';
 import { isNativeAndroid } from '$native/platform';
@@ -8,8 +9,13 @@ import type { LayoutLoad } from './$types';
 export const ssr = false;
 
 export const load: LayoutLoad = async ({ url }) => {
-	await enforceAndroidSetup(url.pathname);
-	return apiRequest<AppBootstrapData>('/api/app/bootstrap');
+	try {
+		await enforceAndroidSetup(url.pathname);
+		return await apiRequest<AppBootstrapData>('/api/app/bootstrap');
+	} catch (cause) {
+		if (isRedirect(cause)) throw cause;
+		error(500, initializationErrorMessage(cause));
+	}
 };
 
 async function enforceAndroidSetup(pathname: string) {
