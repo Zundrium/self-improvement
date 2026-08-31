@@ -43,7 +43,7 @@ import {
 	analyzeMeal as requestMealAnalysis
 } from '../ai/meal-analysis';
 import type { PageProps } from './$types';
-import { cameraVideoConstraints } from './camera';
+import { cameraVideoConstraints, createCameraStartup } from './camera';
 
 let { data }: PageProps = $props();
 
@@ -78,7 +78,9 @@ let estimate = $state<MealEstimate | null>(null);
 let correction = $state('');
 let requestError = $state('');
 let processingPhoto = $state(false);
+let cameraStartPending = $state(false);
 let stream: MediaStream | null = null;
+const cameraStartup = createCameraStartup();
 
 const totals = $derived.by(() => {
 	if (!estimate) return { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 };
@@ -98,9 +100,15 @@ function api<T>(path: string, init?: RequestInit) {
 
 async function startCamera() {
 	if (phase !== 'photo') return;
+	if (!video) {
+		cameraStartPending = true;
+		return;
+	}
+
+	stopCamera(false);
+	const attempt = cameraStartup.begin();
 	cameraState = 'opening';
 	cameraError = '';
-	stopCamera();
 	try {
 		if (!globalThis.isSecureContext) throw new Error('Camera access requires a secure connection.');
 		if (!navigator.mediaDevices?.getUserMedia)
@@ -109,18 +117,21 @@ async function startCamera() {
 			video: cameraVideoConstraints(facingMode),
 			audio: false
 		});
-		if (phase !== 'photo') {
-			nextStream.getTracks().forEach((track) => track.stop());
+		if (!cameraStartup.isCurrent(attempt) || phase !== 'photo') {
+			stopStream(nextStream);
 			return;
 		}
 		stream = nextStream;
-		await tick();
-		if (!video) throw new Error('The camera preview is unavailable.');
-		video.srcObject = stream;
+		video.srcObject = nextStream;
 		await video.play();
+		if (!cameraStartup.isCurrent(attempt) || phase !== 'photo') {
+			stopStream(nextStream);
+			return;
+		}
 		cameraState = 'ready';
 	} catch (cause) {
-		stopCamera();
+		if (!cameraStartup.isCurrent(attempt)) return;
+		stopCamera(false);
 		cameraState = 'error';
 		cameraError = cause instanceof Error ? cause.message : 'Could not open the camera.';
 	}
@@ -211,13 +222,12 @@ async function analyzeMeal() {
 	}
 }
 
-async function retakePhoto() {
+function retakePhoto() {
 	selectedImage = '';
 	mealDescription = '';
 	resetEstimate();
 	phase = 'photo';
-	await tick();
-	await startCamera();
+	cameraStartPending = true;
 }
 
 async function editMealSource() {
@@ -336,10 +346,15 @@ function encodeImage(source: CanvasImageSource | null, sourceWidth: number, sour
 	throw new Error('The photo could not be reduced to a safe upload size.');
 }
 
-function stopCamera() {
-	stream?.getTracks().forEach((track) => track.stop());
-	stream = null;
-	if (video) video.srcObject = null;
+function stopStream(value: MediaStream) {
+	value.getTracks().forEach((track) => track.stop());
+	if (stream === value) stream = null;
+	if (video?.srcObject === value) video.srcObject = null;
+}
+
+function stopCamera(invalidate = true) {
+	if (invalidate) cameraStartup.cancel();
+	if (stream) stopStream(stream);
 }
 
 function inputTime(value: Date) {
@@ -352,9 +367,14 @@ async function initialize() {
 		return;
 	}
 	phase = 'photo';
-	await tick();
-	await startCamera();
+	cameraStartPending = true;
 }
+
+$effect(() => {
+	if (!cameraStartPending || phase !== 'photo' || !video) return;
+	cameraStartPending = false;
+	void startCamera();
+});
 
 onMount(() => void initialize());
 onDestroy(stopCamera);

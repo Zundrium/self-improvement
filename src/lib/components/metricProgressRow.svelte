@@ -19,7 +19,7 @@
 		class="min-w-0 w-full"
 		{value}
 		{max}
-		indicatorStyle={colors ? `background: ${colors.primary}` : undefined}
+		indicatorColor={colors?.primary}
 		aria-label={`${label}: ${displayValue}`}
 	/>
 	<span class="pl-1 text-right text-sm text-(--text)/64 tabular-nums">{displayValue}</span>

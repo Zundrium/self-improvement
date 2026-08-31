@@ -12,7 +12,6 @@ import {
 import { fitnessProgram } from './fitness-program';
 import type { CompletionDates } from './gamification';
 import type { LocalAppState } from './state';
-import { TRACKER_DEFAULTS } from './tracker-settings';
 
 export type AchievementEvaluationContext = {
 	state: LocalAppState;
@@ -225,12 +224,6 @@ function combinationProgress(metric: CombinationMetric, context: AchievementEval
 
 function stateProgress(metric: StateAchievementMetric, state: LocalAppState) {
 	switch (metric) {
-		case 'profile-name-customized':
-			return Number(state.user.name !== 'You');
-		case 'tracker-setting-customized':
-			return Number(hasCustomizedTrackerSetting(state));
-		case 'tracker-visibility-customized':
-			return Number(hasCustomizedTrackerVisibility(state));
 		case 'reward-count':
 			return state.rewards.length;
 		case 'redemption-count':
@@ -288,37 +281,6 @@ function hasLowHappinessThenCalm(state: LocalAppState) {
 			)
 		);
 	});
-}
-
-function hasCustomizedTrackerSetting(state: LocalAppState) {
-	return (
-		state.steps.dailyGoal !== TRACKER_DEFAULTS.steps.dailyGoal ||
-		state.sleep.bedtime !== '22:30' ||
-		!state.sleep.remindersEnabled ||
-		state.screenTime.dailyLimitMinutes !== TRACKER_DEFAULTS.screenTime.dailyLimitMinutes ||
-		state.fitness.defaultSets !== TRACKER_DEFAULTS.fitness.defaultSets ||
-		Object.keys(state.fitness.exerciseSpeeds).length > 0 ||
-		state.meditation.defaultDurationSeconds !==
-			TRACKER_DEFAULTS.meditation.defaultDurationSeconds ||
-		state.breathing.rounds !== TRACKER_DEFAULTS.breathing.rounds ||
-		state.breathing.includeHold !== TRACKER_DEFAULTS.breathing.includeHold ||
-		state.stretch.holdSeconds !== TRACKER_DEFAULTS.stretch.holdSeconds ||
-		Object.entries(TRACKER_DEFAULTS.stretch.difficulties).some(
-			([id, difficulty]) =>
-				state.stretch.difficulties[id as keyof typeof state.stretch.difficulties] !== difficulty
-		) ||
-		state.happiness.defaultRating !== TRACKER_DEFAULTS.happiness.defaultRating ||
-		state.period.defaultFlow !== TRACKER_DEFAULTS.period.defaultFlow ||
-		state.period.fallbackCycleDays !== TRACKER_DEFAULTS.period.fallbackCycleDays
-	);
-}
-
-function hasCustomizedTrackerVisibility(state: LocalAppState) {
-	const defaults = appTrackers.filter(({ defaultEnabled }) => defaultEnabled).map(({ id }) => id);
-	return (
-		state.enabledTrackerIds.length !== defaults.length ||
-		defaults.some((id) => !state.enabledTrackerIds.includes(id))
-	);
 }
 
 function hasHalfLimitScreenDay(state: LocalAppState) {

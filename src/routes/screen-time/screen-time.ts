@@ -36,6 +36,10 @@ export function parseScreenTimePayload(input: unknown) {
 	return payload;
 }
 
+export function hasTrackedApps(apps: Array<{ tracked: boolean }>) {
+	return apps.some((app) => app.tracked);
+}
+
 export function formatScreenTime(minutes: number) {
 	const wholeMinutes = Math.max(0, Math.round(minutes));
 	const hours = Math.floor(wholeMinutes / 60);

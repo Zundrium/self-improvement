@@ -1,4 +1,4 @@
-import { mobileRepository, recordAchievementEvents } from '$lib/api';
+import { mobileRepository } from '$lib/api';
 import { localAppStore } from '$lib/local/state';
 import type { AppTrackerId } from '$lib/trackers/registry';
 import { TRACKER_IDS, type PermissionState, type TrackerId } from '$domain/model';
@@ -39,13 +39,5 @@ export async function checkAndroidPermissions() {
 		sleep: usage.state,
 		screenTime: usage.state
 	} satisfies Record<'steps' | 'sleep' | 'screenTime', PermissionState>;
-	const achievements = [
-		...(permissions.steps === 'granted' ? ['setup-steps-health-connect'] : []),
-		...(permissions.sleep === 'granted' ? ['setup-usage-access-granted'] : []),
-		...(permissions.steps === 'granted' && permissions.sleep === 'granted'
-			? ['setup-all-native-connections']
-			: [])
-	];
-	await recordAchievementEvents(...achievements);
 	return { healthAvailable: available, permissions };
 }

@@ -43,9 +43,7 @@ export async function chooseGoogleDriveFolder() {
 	requireNativeAndroid();
 	try {
 		const { path } = await FilePicker.pickDirectory();
-		const status = await AndroidBackup.configure({ treeUri: path });
-		if (status.configured) await recordAchievementEvents('setup-drive-folder-configured');
-		return status;
+		return AndroidBackup.configure({ treeUri: path });
 	} catch (cause) {
 		throw pickerError(cause);
 	}

@@ -47,10 +47,7 @@
 	async function loadStatus() {
 		try {
 			status = await getGoogleDriveBackupStatus();
-			await recordAchievementEvents(
-				...(status.configured ? ['setup-drive-folder-configured'] : []),
-				...(status.lastSuccessAt ? ['event-first-backup'] : [])
-			);
+			if (status.lastSuccessAt) await recordAchievementEvents('event-first-backup');
 		} catch {
 			message = 'Google Drive backup status could not be read.';
 			failed = true;

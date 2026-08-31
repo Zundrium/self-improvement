@@ -65,12 +65,12 @@ describe('local app service', () => {
 
 		await service.request('/api/app/achievements/unlock', {
 			method: 'POST',
-			body: JSON.stringify({ achievementIds: ['setup-openrouter-configured'] })
+			body: JSON.stringify({ achievementIds: ['event-first-backup'] })
 		});
 		const gamification = await service.request<GamificationData>('/api/app/gamification');
 
 		expect(
-			gamification.achievements.find(({ id }) => id === 'setup-openrouter-configured')
+			gamification.achievements.find(({ id }) => id === 'event-first-backup')
 		).toMatchObject({ unlocked: true, unlockedAt: now.toISOString() });
 		await expect(
 			service.request('/api/app/achievements/unlock', {

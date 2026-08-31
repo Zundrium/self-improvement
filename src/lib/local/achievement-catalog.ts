@@ -43,12 +43,7 @@ export type CombinationMetric =
 	| 'low-happiness-then-calm'
 	| 'fitness-then-sleep';
 
-export type StateAchievementMetric =
-	| 'profile-name-customized'
-	| 'tracker-setting-customized'
-	| 'tracker-visibility-customized'
-	| 'reward-count'
-	| 'redemption-count';
+export type StateAchievementMetric = 'reward-count' | 'redemption-count';
 
 export type AchievementMetric =
 	| { type: 'tracker-completions'; trackerId: AppTrackerId }
@@ -598,34 +593,7 @@ const combinationAchievements: AchievementDefinition[] = [
 	)
 ];
 
-const setupAndEventAchievements: AchievementDefinition[] = [
-	stateDefinition(
-		'setup-profile-name-customized',
-		'Personal Touch',
-		'Customize your profile name.',
-		'UserRoundPen',
-		'profile-name-customized'
-	),
-	stateDefinition(
-		'setup-tracker-setting-customized',
-		'Made for Me',
-		'Customize any tracker setting.',
-		'SlidersHorizontal',
-		'tracker-setting-customized'
-	),
-	stateDefinition(
-		'setup-tracker-visibility-customized',
-		'Choose Your Path',
-		'Customize tracker visibility.',
-		'Eye',
-		'tracker-visibility-customized'
-	),
-	eventDefinition(
-		'setup-openrouter-configured',
-		'AI Connected',
-		'Configure OpenRouter for meal analysis.',
-		'KeyRound'
-	),
+const rewardAndBackupAchievements: AchievementDefinition[] = [
 	stateDefinition(
 		'event-first-reward',
 		'Reward Architect',
@@ -649,37 +617,6 @@ const setupAndEventAchievements: AchievementDefinition[] = [
 		'redemption-count'
 	),
 	eventDefinition(
-		'setup-android-complete',
-		'Android Ready',
-		'Complete Android setup.',
-		'SmartphoneNfc'
-	),
-	eventDefinition(
-		'setup-steps-health-connect',
-		'Health Connected',
-		'Grant Health Connect access.',
-		'Stethoscope',
-		'steps'
-	),
-	eventDefinition(
-		'setup-usage-access-granted',
-		'Usage Connected',
-		'Grant Android Usage Access.',
-		'ScanSearch'
-	),
-	eventDefinition(
-		'setup-all-native-connections',
-		'Fully Connected',
-		'Complete every native connection.',
-		'Cable'
-	),
-	eventDefinition(
-		'setup-drive-folder-configured',
-		'Safety Net',
-		'Choose a Google Drive backup folder.',
-		'FolderCog'
-	),
-	eventDefinition(
 		'event-first-backup',
 		'Safe and Sound',
 		'Complete your first successful backup.',
@@ -692,10 +629,10 @@ export const achievementCatalog: readonly AchievementDefinition[] = [
 	...overallAchievements,
 	...trackerSpecialAchievements,
 	...combinationAchievements,
-	...setupAndEventAchievements
+	...rewardAndBackupAchievements
 ];
 
-export const eventAchievementIds = setupAndEventAchievements
+export const eventAchievementIds = rewardAndBackupAchievements
 	.filter(({ metric }) => metric.type === 'event')
 	.map(({ id }) => id);
 

@@ -2,7 +2,7 @@
 	import { Form } from '$lib/components/ui/form';
 	import { invalidateAll } from '$app/navigation';
 	import { onMount, untrack } from 'svelte';
-	import { apiRequest, recordAchievementEvents } from '$lib/api';
+	import { apiRequest } from '$lib/api';
 	import ThemeToggle from '$lib/components/themeToggle.svelte';
 	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
@@ -30,7 +30,6 @@
 	async function loadOpenRouterStatus() {
 		try {
 			configured = Boolean(await localSecretStore.openRouterApiKey());
-			if (configured) await recordAchievementEvents('setup-openrouter-configured');
 		} catch {
 			toast.error('Could not read the local OpenRouter settings.');
 		} finally {
@@ -56,7 +55,6 @@
 				trimmedApiKey ? localSecretStore.saveOpenRouterApiKey(trimmedApiKey) : Promise.resolve()
 			]);
 			if (trimmedApiKey) {
-				await recordAchievementEvents('setup-openrouter-configured');
 				configured = true;
 				apiKey = '';
 			}

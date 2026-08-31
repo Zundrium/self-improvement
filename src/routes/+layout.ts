@@ -1,5 +1,5 @@
 import { error, isRedirect, redirect } from '@sveltejs/kit';
-import { apiRequest, recordAchievementEvents } from '$lib/api';
+import { apiRequest } from '$lib/api';
 import { initializationErrorMessage } from '$lib/local/initialization-error';
 import type { AppBootstrapData } from '$lib/api-types';
 import { ANDROID_SETUP_PATH, androidSetupRepository } from '$native/android-setup';
@@ -25,6 +25,5 @@ async function enforceAndroidSetup(pathname: string) {
 	}
 	const completed = await androidSetupRepository.isCompleted();
 	if (!completed && pathname !== ANDROID_SETUP_PATH) redirect(307, ANDROID_SETUP_PATH);
-	if (completed) await recordAchievementEvents('setup-android-complete');
 	if (completed && pathname === ANDROID_SETUP_PATH) redirect(307, '/');
 }

@@ -2,6 +2,8 @@ import type { SleepAdherenceStatus } from '$lib/api-types';
 
 export const DEFAULT_BEDTIME = '22:30';
 export const LATE_USAGE_LIMIT_SECONDS = 300;
+export const SLEEPING_MESSAGE = 'You should be sleeping :)';
+const MORNING_END_MINUTES = 6 * 60;
 
 export function formatUsageSeconds(seconds: number) {
 	const wholeSeconds = Math.max(0, Math.round(seconds));
@@ -22,6 +24,23 @@ export function formatBedtime(bedtime: string) {
 	const [hour, minute] = bedtime.split(':').map(Number);
 	const date = new Date(2000, 0, 1, hour, minute);
 	return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
+}
+
+export function isWithinSleepingWindow(bedtime: string, now = new Date()) {
+	const currentMinutes = minutesFromLocalTime(now);
+	const bedtimeMinutes = minutesFromTime(bedtime);
+
+	if (currentMinutes < MORNING_END_MINUTES) {
+		return bedtimeMinutes >= MORNING_END_MINUTES || currentMinutes > bedtimeMinutes;
+	}
+
+	return bedtimeMinutes >= MORNING_END_MINUTES && currentMinutes > bedtimeMinutes;
+}
+
+export function formatSleepTrackerMessage(bedtime: string, now = new Date()) {
+	return isWithinSleepingWindow(bedtime, now)
+		? SLEEPING_MESSAGE
+		: formatTimeUntilBedtime(bedtime, now);
 }
 
 export function formatTimeUntilBedtime(bedtime: string, now = new Date()) {
@@ -46,6 +65,15 @@ function nextBedtime(bedtime: string, now: Date) {
 	if (bedtimeDate.getTime() <= now.getTime() - 60_000)
 		bedtimeDate.setDate(bedtimeDate.getDate() + 1);
 	return bedtimeDate;
+}
+
+function minutesFromLocalTime(date: Date) {
+	return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60 + date.getMilliseconds() / 60_000;
+}
+
+function minutesFromTime(time: string) {
+	const [hour, minute] = time.split(':').map(Number);
+	return hour * 60 + minute;
 }
 
 function formatDurationPart(value: number, unit: string) {

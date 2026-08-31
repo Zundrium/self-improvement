@@ -45,7 +45,7 @@ describe('achievement catalog', () => {
 	});
 
 	it('contains exactly the approved achievement families', () => {
-		expect(achievementCatalog).toHaveLength(129);
+		expect(achievementCatalog).toHaveLength(120);
 		expect(achievementCatalog.filter(({ category }) => category === 'score')).toHaveLength(5);
 		expect(achievementCatalog.filter(({ category }) => category === 'streak')).toHaveLength(5);
 		expect(achievementCatalog.filter(({ category }) => category === 'overall')).toHaveLength(6);
@@ -55,8 +55,20 @@ describe('achievement catalog', () => {
 		expect(achievementCatalog.filter(({ category }) => category === 'combination')).toHaveLength(
 			10
 		);
-		expect(achievementCatalog.filter(({ category }) => category === 'event')).toHaveLength(13);
-		expect(eventAchievementIds).toHaveLength(7);
+		expect(achievementCatalog.filter(({ category }) => category === 'event')).toHaveLength(4);
+		expect(eventAchievementIds).toEqual(['event-first-backup']);
+		const removedIds = [
+			'setup-profile-name-customized',
+			'setup-tracker-setting-customized',
+			'setup-tracker-visibility-customized',
+			'setup-openrouter-configured',
+			'setup-android-complete',
+			'setup-steps-health-connect',
+			'setup-usage-access-granted',
+			'setup-all-native-connections',
+			'setup-drive-folder-configured'
+		];
+		expect(achievementCatalog.some(({ id }) => removedIds.includes(id))).toBe(false);
 
 		for (const tracker of appTrackers) {
 			expect(
@@ -286,11 +298,8 @@ describe('achievement engine', () => {
 		expect(achievement(data, 'combination-stretch-then-fitness').unlocked).toBe(false);
 	});
 
-	it('derives state-backed setup items and records external event items', () => {
+	it('derives reward accomplishments and records the first successful backup', () => {
 		const state = achievementState();
-		state.user.name = 'Sem';
-		state.steps.dailyGoal = 8_000;
-		state.enabledTrackerIds = state.enabledTrackerIds.filter((id) => id !== 'period');
 		state.rewards = Array.from({ length: 5 }, (_, index) => ({
 			id: `reward-${index}`,
 			name: `Reward ${index}`,
@@ -304,14 +313,7 @@ describe('achievement engine', () => {
 		expect(recordAchievementUnlock(state, 'event-first-backup', unlockedAt)).toBe(false);
 		const data = buildGamification(state, new Date('2026-03-20T12:00:00.000Z'));
 
-		for (const id of [
-			'setup-profile-name-customized',
-			'setup-tracker-setting-customized',
-			'setup-tracker-visibility-customized',
-			'event-first-reward',
-			'event-five-rewards',
-			'event-first-reward-redemption'
-		]) {
+		for (const id of ['event-first-reward', 'event-five-rewards', 'event-first-reward-redemption']) {
 			expect(achievement(data, id).unlocked).toBe(true);
 		}
 		expect(achievement(data, 'event-first-backup')).toMatchObject({
@@ -319,7 +321,9 @@ describe('achievement engine', () => {
 			progress: 1,
 			unlockedAt: '2026-03-18T09:30:00.000Z'
 		});
-		expect(achievement(data, 'setup-openrouter-configured').unlocked).toBe(false);
+		expect(() => recordAchievementUnlock(state, 'setup-openrouter-configured')).toThrow(
+			/Unknown achievement/
+		);
 		expect(() => recordAchievementUnlock(state, 'not-in-catalog')).toThrow(/Unknown achievement/);
 	});
 });

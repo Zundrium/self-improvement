@@ -7,6 +7,7 @@
 		ref = $bindable(null),
 		class: className,
 		indicatorClass,
+		indicatorColor,
 		indicatorStyle,
 		animated = true,
 		max = 100,
@@ -14,9 +15,16 @@
 		...restProps
 	}: WithoutChildrenOrChild<ProgressPrimitive.RootProps> & {
 		indicatorClass?: string;
+		indicatorColor?: string;
 		indicatorStyle?: string;
 		animated?: boolean;
 	} = $props();
+
+	const resolvedIndicatorStyle = $derived(
+		[`--progress-indicator-color: ${indicatorColor ?? 'var(--text)'}`, indicatorStyle]
+			.filter(Boolean)
+			.join('; ')
+	);
 </script>
 
 <ProgressPrimitive.Root
@@ -29,8 +37,8 @@
 >
 	<div
 		data-slot="progress-indicator"
-		class={cn('h-full w-full flex-1 rounded-full bg-(--text)', indicatorClass)}
-		style={indicatorStyle}
+		class={cn('h-full w-full flex-1 rounded-full bg-(--progress-indicator-color)', indicatorClass)}
+		style={resolvedIndicatorStyle}
 		use:linearProgress={{
 			value: (100 * (value ?? 0)) / (max || 1),
 			animated
