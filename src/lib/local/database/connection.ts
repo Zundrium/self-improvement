@@ -306,19 +306,34 @@ export function relationalConnection(
 	return new DexieRelationalConnection(database);
 }
 
-let sharedNativeConnection: Promise<NativeDatabaseConnection> | undefined;
+type NativeConnectionGlobal = typeof globalThis & {
+	__zuncreativeSelfImprovementNativeConnection?: Promise<NativeDatabaseConnection>;
+};
+
+function nativeConnectionGlobal() {
+	return globalThis as NativeConnectionGlobal;
+}
 
 export function nativeConnectionFactory(): NativeDatabaseConnectionFactory | null {
 	if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') return null;
 	return sharedNativeDatabaseConnection;
 }
 
-async function sharedNativeDatabaseConnection() {
-	sharedNativeConnection ??= createNativeDatabaseConnection().catch((error) => {
-		sharedNativeConnection = undefined;
-		throw error;
+function sharedNativeDatabaseConnection() {
+	const scope = nativeConnectionGlobal();
+	if (scope.__zuncreativeSelfImprovementNativeConnection)
+		return scope.__zuncreativeSelfImprovementNativeConnection;
+	const connectionPromise = createNativeDatabaseConnection();
+	scope.__zuncreativeSelfImprovementNativeConnection = connectionPromise;
+	void connectionPromise.catch(() => {
+		if (scope.__zuncreativeSelfImprovementNativeConnection === connectionPromise)
+			scope.__zuncreativeSelfImprovementNativeConnection = undefined;
 	});
-	return sharedNativeConnection;
+	return connectionPromise;
+}
+
+function clearSharedNativeDatabaseConnection() {
+	nativeConnectionGlobal().__zuncreativeSelfImprovementNativeConnection = undefined;
 }
 
 export type NativeSQLiteConnectionOwner = {
@@ -348,7 +363,7 @@ export function createNativeDatabaseConnectionAdapter(
 			try {
 				await connection.delete();
 			} finally {
-				sharedNativeConnection = undefined;
+				clearSharedNativeDatabaseConnection();
 				await sqlite.closeConnection(SQLITE_DATABASE_NAME, false);
 			}
 		},
@@ -358,16 +373,43 @@ export function createNativeDatabaseConnectionAdapter(
 
 async function createNativeDatabaseConnection(): Promise<NativeDatabaseConnection> {
 	const { CapacitorSQLite, SQLiteConnection } = await import('@capacitor-community/sqlite');
-	const sqlite = new SQLiteConnection(CapacitorSQLite);
-	const connection = await sqlite.createConnection(
+	return openNativeDatabaseConnection(new SQLiteConnection(CapacitorSQLite));
+}
+
+export async function openNativeDatabaseConnection(
+	sqlite: NativeSQLiteConnectionOwner
+): Promise<NativeDatabaseConnection> {
+	const connection = await createNativeSQLiteConnection(sqlite).catch(async (error) => {
+		if (!isExistingNativeConnectionError(error)) throw error;
+		await sqlite.closeConnection(SQLITE_DATABASE_NAME, false);
+		return createNativeSQLiteConnection(sqlite);
+	});
+	await connection.open();
+	return createNativeDatabaseConnectionAdapter(sqlite, connection);
+}
+
+async function createNativeSQLiteConnection(sqlite: NativeSQLiteConnectionOwner) {
+	if (!sqlite.createConnection) throw new Error('Native SQLite connection creation is unavailable.');
+	return sqlite.createConnection(
 		SQLITE_DATABASE_NAME,
 		false,
 		'no-encryption',
 		SQLITE_SCHEMA_VERSION,
 		false
 	);
-	await connection.open();
-	return createNativeDatabaseConnectionAdapter(sqlite, connection);
+}
+
+function isExistingNativeConnectionError(error: unknown) {
+	const message =
+		error instanceof Error
+			? error.message
+			: typeof error === 'string'
+				? error
+				: undefined;
+	return (
+		message?.replace(/\.$/, '') ===
+		`CreateConnection: Connection ${SQLITE_DATABASE_NAME} already exists`
+	);
 }
 
 async function cleanupLegacyNativeDatabase(sqlite: NativeSQLiteConnectionOwner) {
