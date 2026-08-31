@@ -118,6 +118,43 @@ describe('sync coordinator', () => {
 			{ tracker: 'screenTime', outcome: 'failed', failure: { category: 'validation' } }
 		]);
 	});
+
+	it('filters manual and stale syncs to enabled trackers', async () => {
+		const repository = new MemoryRepository();
+		const jobs = successfulJobs();
+		let now = new Date('2025-03-09T12:00:00.000Z');
+		const coordinator = new SyncCoordinator(
+			repository,
+			jobs,
+			() => now,
+			async () => ['steps']
+		);
+
+		const manual = await coordinator.syncAll();
+		now = new Date('2025-03-09T12:16:00.000Z');
+		const stale = await coordinator.syncStale();
+
+		expect(manual.results.map(({ tracker }) => tracker)).toEqual(['steps']);
+		expect(stale.results.map(({ tracker }) => tracker)).toEqual(['steps']);
+		expect(jobs.steps.process).toHaveBeenCalledTimes(2);
+		expect(jobs.sleep.process).not.toHaveBeenCalled();
+		expect(jobs.screenTime.process).not.toHaveBeenCalled();
+	});
+
+	it('coalesces overlapping sync requests before permissions or native collection', async () => {
+		const repository = new MemoryRepository();
+		const jobs = successfulJobs();
+		const coordinator = new SyncCoordinator(repository, jobs);
+
+		const first = coordinator.sync(['steps']);
+		const overlapping = coordinator.sync(['sleep']);
+		const [firstReport, overlappingReport] = await Promise.all([first, overlapping]);
+
+		expect(firstReport).toEqual(overlappingReport);
+		expect(firstReport.results.map(({ tracker }) => tracker)).toEqual(['steps']);
+		expect(jobs.steps.collect).toHaveBeenCalledTimes(1);
+		expect(jobs.sleep.collect).not.toHaveBeenCalled();
+	});
 });
 
 function successfulJobs() {

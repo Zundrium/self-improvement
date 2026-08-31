@@ -26,27 +26,46 @@ export class SyncCoordinator {
 	constructor(
 		private readonly repository: MobileRepository,
 		private readonly jobs: Record<TrackerId, TrackerJob>,
-		private readonly clock: () => Date = () => new Date()
+		private readonly clock: () => Date = () => new Date(),
+		private readonly loadEnabledTrackers: () => Promise<readonly TrackerId[]> = async () =>
+			TRACKER_IDS
 	) {}
 
 	syncAll() {
 		return this.sync(TRACKER_IDS);
 	}
 
-	async syncStale(staleAfterMs = DEFAULT_STALE_AFTER_MS) {
+	syncStale(staleAfterMs = DEFAULT_STALE_AFTER_MS) {
 		const now = this.clock();
-		const status = await this.repository.loadStatus();
-		return this.sync(staleTrackerIds(status, now, staleAfterMs), now);
+		return this.startSync(async () => {
+			const [status, enabled] = await Promise.all([
+				this.repository.loadStatus(),
+				this.loadEnabledTrackers()
+			]);
+			return this.performSync(
+				filterEnabled(staleTrackerIds(status, now, staleAfterMs), enabled),
+				now
+			);
+		});
 	}
 
-	async sync(trackers: readonly TrackerId[], now = this.clock()) {
+	sync(trackers: readonly TrackerId[], now = this.clock()) {
+		return this.startSync(async () => {
+			const enabled = await this.loadEnabledTrackers();
+			return this.performSync(filterEnabled(trackers, enabled), now);
+		});
+	}
+
+	private startSync(operation: () => Promise<SyncReport>) {
 		if (this.activeSync) return this.activeSync;
-		this.activeSync = this.performSync(uniqueTrackers(trackers), now);
-		try {
-			return await this.activeSync;
-		} finally {
-			this.activeSync = undefined;
-		}
+		const sync = operation();
+		this.activeSync = sync;
+		void sync
+			.finally(() => {
+				if (this.activeSync === sync) this.activeSync = undefined;
+			})
+			.catch(() => undefined);
+		return sync;
 	}
 
 	private async performSync(trackers: TrackerId[], now: Date) {
@@ -142,8 +161,9 @@ function permissionFailure(state: PermissionState) {
 	return new SyncFailure('permission', message);
 }
 
-function uniqueTrackers(trackers: readonly TrackerId[]) {
-	return [...new Set(trackers)];
+function filterEnabled(trackers: readonly TrackerId[], enabled: readonly TrackerId[]) {
+	const enabledTrackers = new Set(enabled);
+	return [...new Set(trackers)].filter((tracker) => enabledTrackers.has(tracker));
 }
 
 function emptyReport(): SyncReport {

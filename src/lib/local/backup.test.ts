@@ -6,6 +6,7 @@ import {
 	isAutomaticBackupDue,
 	validateBackupEnvelope
 } from './backup';
+import { createNutritionEntry } from './nutrition';
 import { createDefaultAppState } from './state';
 import { DEFAULT_STRETCH_DIFFICULTIES } from './tracker-settings';
 
@@ -74,6 +75,24 @@ describe('backup envelope', () => {
 		expect(restored.state.period).toMatchObject({
 			defaultFlow: 'medium',
 			fallbackCycleDays: 28
+		});
+	});
+
+	it('restores photo-backed entries without reintroducing the duplicate thumbnail payload', () => {
+		const backup = envelope();
+		const imageDataUrl = 'data:image/jpeg;base64,YQ==';
+		const entry = createNutritionEntry({
+			date: '2026-03-21',
+			meals: [{ name: 'Lunch', imageDataUrl, ingredients: [{ name: 'Rice', calories: 300 }] }]
+		});
+		entry.thumbnail = imageDataUrl;
+		backup.state.nutrition.entries = [entry];
+
+		const restored = validateBackupEnvelope(backup);
+
+		expect(restored.state.nutrition.entries[0]).toMatchObject({
+			thumbnail: '',
+			meals: [{ imageDataUrl }]
 		});
 	});
 

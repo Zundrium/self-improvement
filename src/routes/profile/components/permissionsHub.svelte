@@ -24,6 +24,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { TRACKER_IDS, type MobileSyncStatus, type TrackerId } from '$domain/model';
 	import { createEmptyStatus, failedTrackerIds } from '$domain/status';
+	import { spin } from '$lib/motion/gsap';
 	import {
 		androidHealth as health,
 		androidSyncCoordinator,
@@ -241,7 +242,7 @@
 		</div>
 		<Button size="medium" type="button" class="w-full sm:w-auto" disabled={busy || !nativeAndroid} onclick={syncNow}>
 			{#if busy}
-				<LoaderCircle class="size-4" data-motion-spin />
+				<span class="inline-flex" use:spin><LoaderCircle class="size-4" /></span>
 			{:else}
 				<RefreshCw class="size-4" />
 			{/if}

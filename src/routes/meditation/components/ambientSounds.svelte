@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Bird, Bug, CloudRain, Flame, LoaderCircle, WavesHorizontal, Wind } from '@lucide/svelte';
 	import type { AudioManager } from '$lib/audio/audio-manager';
+	import { spin } from '$lib/motion/gsap';
 import { Pressable } from '$lib/components/ui/pressable';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import { ambientSounds } from '../sounds';
@@ -61,7 +62,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 						: undefined}
 				>
 					{#if loadingSoundId === sound.id}
-						<LoaderCircle class="size-6" data-motion-spin />
+						<span class="inline-flex" use:spin><LoaderCircle class="size-6" /></span>
 					{:else}
 						<SoundIcon class="size-7" />
 					{/if}

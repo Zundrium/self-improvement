@@ -18,6 +18,7 @@ import {
 	type StretchDifficulties,
 	type StretchDifficulty
 } from '$lib/local/tracker-settings';
+import { spin } from '$lib/motion/gsap';
 import { getTrackerColors } from '$lib/trackers/registry';
 import {
 	type SaveState,
@@ -203,7 +204,13 @@ function completeRoutine() {
 					<li class="flex items-center gap-3 rounded-2xl px-2 py-2 even:bg-(--text)/3">
 						<span class="w-5 shrink-0 text-center text-xs text-(--text)/40">{index + 1}</span>
 						<div class="size-14 shrink-0 overflow-hidden rounded-2xl bg-(--text)/3">
-							<img src={step.imageUrl} alt="" class="size-full object-contain" />
+							<img
+								src={step.imageUrl}
+								alt=""
+								class="size-full object-contain"
+								loading="lazy"
+								decoding="async"
+							/>
 						</div>
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-sm font-medium">{step.name}</p>
@@ -221,7 +228,7 @@ function completeRoutine() {
 			<div class="min-h-5 text-center text-sm text-(--text)/56" aria-live="polite">
 				{#if saveState === 'saving'}
 					<span class="inline-flex items-center gap-2">
-						<LoaderCircle class="size-4" data-motion-spin /> Saving routine
+						<span class="inline-flex" use:spin><LoaderCircle class="size-4" /></span> Saving routine
 					</span>
 				{:else if saveState === 'saved'}
 					<span class="inline-flex items-center gap-2">

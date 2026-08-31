@@ -8,14 +8,9 @@ export type StaggerOptions = { delay?: number; selector?: string; y?: number };
 
 const PRESS_SELECTOR =
 	"button, a[data-slot='button'], [data-motion-press], [role='button'][tabindex]";
-const SPINNER_SELECTOR = '[data-motion-spin]';
-
 export const motionRoot: Action<HTMLElement> = () => {
 	const activePointers = new Map<number, HTMLElement>();
 	const activeKeys = new Set<HTMLElement>();
-	const spinnerTweens = new Map<Element, gsap.core.Tween>();
-	const observer = observeMotionElements(spinnerTweens);
-	startSpinners(document, spinnerTweens);
 
 	const pointerDown = (event: PointerEvent) => pressPointer(event, activePointers);
 	const pointerUp = (event: PointerEvent) => releasePointer(event, activePointers);
@@ -35,8 +30,6 @@ export const motionRoot: Action<HTMLElement> = () => {
 			document.removeEventListener('pointercancel', pointerUp, true);
 			document.removeEventListener('keydown', keyDown, true);
 			document.removeEventListener('keyup', keyUp, true);
-			observer.disconnect();
-			spinnerTweens.forEach((tween) => tween.kill());
 		}
 	};
 };
@@ -133,13 +126,13 @@ export const progressRing: Action<SVGCircleElement, number> = (node, percentage)
 	let lastUpdate = performance.now();
 	const render = () => (node.style.strokeDasharray = `${progress.value} 100`);
 	const moveTo = (value: number, initial = false) => {
-		tween?.kill();
-		if (reducedMotion()) return setProgress(progress, value, render);
 		const rapidUpdate = performance.now() - lastUpdate < 250;
 		lastUpdate = performance.now();
+		tween?.kill();
+		if (reducedMotion() || (!initial && rapidUpdate)) return setProgress(progress, value, render);
 		tween = gsap.to(progress, {
 			value: clampPercentage(value),
-			duration: initial ? 0.9 : rapidUpdate ? 0.16 : 0.45,
+			duration: initial ? 0.9 : 0.45,
 			ease: initial ? 'power3.out' : 'power2.out',
 			overwrite: true,
 			onUpdate: render
@@ -150,12 +143,42 @@ export const progressRing: Action<SVGCircleElement, number> = (node, percentage)
 	return { update: moveTo, destroy: () => tween?.kill() };
 };
 
-export const linearProgress: Action<HTMLElement, number> = (node, percentage) => {
+export const spin: Action<HTMLElement, boolean | undefined> = (node, active = true) => {
 	let tween: gsap.core.Tween | undefined;
-	const moveTo = (value: number, initial = false) => {
+	const sync = (shouldSpin: boolean) => {
 		tween?.kill();
+		tween = undefined;
+		if (!shouldSpin || reducedMotion()) {
+			gsap.set(node, { clearProps: 'transform' });
+			return;
+		}
+		tween = gsap.to(node, {
+			rotation: 360,
+			duration: 0.85,
+			ease: 'none',
+			repeat: -1
+		});
+	};
+	sync(active);
+	return {
+		update(next = true) {
+			sync(next);
+		},
+		destroy() {
+			tween?.kill();
+			gsap.set(node, { clearProps: 'transform' });
+		}
+	};
+};
+
+export type LinearProgressOptions = { value: number; animated?: boolean };
+
+export const linearProgress: Action<HTMLElement, LinearProgressOptions> = (node, options) => {
+	let tween: gsap.core.Tween | undefined;
+	const moveTo = ({ value, animated = true }: LinearProgressOptions, initial = false) => {
 		const xPercent = clampPercentage(value) - 100;
-		if (reducedMotion()) return void gsap.set(node, { xPercent });
+		tween?.kill();
+		if (!animated || reducedMotion()) return setLinearProgress(node, xPercent);
 		tween = gsap.to(node, {
 			xPercent,
 			duration: initial ? 0.8 : 0.4,
@@ -163,8 +186,8 @@ export const linearProgress: Action<HTMLElement, number> = (node, percentage) =>
 			overwrite: true
 		});
 	};
-	gsap.set(node, { xPercent: -100 });
-	moveTo(percentage, true);
+	setLinearProgress(node, -100);
+	moveTo(options, true);
 	return { update: moveTo, destroy: () => tween?.kill() };
 };
 
@@ -518,55 +541,6 @@ function releaseElement(node: HTMLElement) {
 	});
 }
 
-function observeMotionElements(tweens: Map<Element, gsap.core.Tween>) {
-	const observer = new MutationObserver((mutations) => {
-		for (const mutation of mutations) {
-			if (mutation.type === 'attributes') syncSpinner(mutation.target, tweens);
-			mutation.addedNodes.forEach((node) => startSpinners(node, tweens));
-			mutation.removedNodes.forEach((node) => stopSpinners(node, tweens));
-		}
-	});
-	observer.observe(document.body, {
-		attributes: true,
-		attributeFilter: ['data-motion-spin'],
-		childList: true,
-		subtree: true
-	});
-	return observer;
-}
-
-function syncSpinner(node: Node, tweens: Map<Element, gsap.core.Tween>) {
-	if (!(node instanceof Element)) return;
-	if (node.matches(SPINNER_SELECTOR)) return startSpinners(node, tweens);
-	stopSpinner(node, tweens);
-}
-
-function startSpinners(root: Node, tweens: Map<Element, gsap.core.Tween>) {
-	for (const spinner of matchingElements(root, SPINNER_SELECTOR)) {
-		if (tweens.has(spinner) || reducedMotion()) continue;
-		const tween = gsap.to(spinner, { rotation: 360, duration: 0.85, ease: 'none', repeat: -1 });
-		tweens.set(spinner, tween);
-	}
-}
-
-function stopSpinners(root: Node, tweens: Map<Element, gsap.core.Tween>) {
-	for (const spinner of matchingElements(root, SPINNER_SELECTOR)) stopSpinner(spinner, tweens);
-}
-
-function stopSpinner(spinner: Element, tweens: Map<Element, gsap.core.Tween>) {
-	tweens.get(spinner)?.kill();
-	tweens.delete(spinner);
-	gsap.set(spinner, { clearProps: 'transform' });
-}
-
-function matchingElements(root: Node, selector: string) {
-	const elements: Element[] = [];
-	if (root instanceof Element && root.matches(selector)) elements.push(root);
-	if (root instanceof Element || root instanceof Document)
-		elements.push(...root.querySelectorAll(selector));
-	return elements;
-}
-
 function sameColors(current: GradientColors | undefined, next: GradientColors | undefined) {
 	return current?.primary === next?.primary && current?.secondary === next?.secondary;
 }
@@ -588,6 +562,10 @@ function clearGradient(node: HTMLElement) {
 function setProgress(progress: { value: number }, value: number, render: () => void) {
 	progress.value = clampPercentage(value);
 	render();
+}
+
+function setLinearProgress(node: HTMLElement, xPercent: number) {
+	node.style.transform = `translate3d(${xPercent}%, 0, 0)`;
 }
 
 function clampPercentage(value: number) {

@@ -10,6 +10,7 @@ import { usageProviderFailure } from '../domain/native-failures';
 import type { NativeUsageDay } from '../domain/screen-time';
 import type { NativeActivityInterval, NativeUsageEvents } from '../domain/sleep';
 import { resolveAndroidApplicationIdentities } from './application-identity';
+import { mapWithConcurrency } from './bounded-concurrency';
 import { requireNativeAndroid } from './platform';
 
 type AndroidUsageEventsPlugin = {
@@ -20,6 +21,7 @@ type AndroidUsageEventsPlugin = {
 };
 
 const AndroidUsageEvents = registerPlugin<AndroidUsageEventsPlugin>('AndroidUsageEvents');
+const DAY_QUERY_CONCURRENCY = 2;
 
 export class AndroidUsageAdapter {
 	async checkPermission(): Promise<PermissionCheck> {
@@ -34,17 +36,17 @@ export class AndroidUsageAdapter {
 
 	async readDailyUsage(days: LocalDayRange[], now: Date): Promise<NativeUsageDay[]> {
 		requireNativeAndroid();
+		validateDayQuery(days);
 		const collectionMilliseconds = validCollectionTime(now);
-		const results: NativeUsageDay[] = [];
-		for (const range of days) {
-			results.push(await this.readDay(range, collectionMilliseconds));
-		}
+		const results = await mapWithConcurrency(days, DAY_QUERY_CONCURRENCY, (range) =>
+			this.readDay(range, collectionMilliseconds)
+		);
 		return withApplicationLabels(results);
 	}
 
 	async readActivityEvents(days: LocalDayRange[], now: Date): Promise<NativeUsageEvents> {
 		requireNativeAndroid();
-		if (!days.length) throw validationFailure();
+		validateDayQuery(days);
 		try {
 			const events = await AndroidUsageEvents.queryEvents({
 				beginTime: days[0].startMilliseconds,
@@ -81,7 +83,7 @@ function usageStats(stats: Record<string, UsageStats>) {
 }
 
 async function withApplicationLabels(days: NativeUsageDay[]) {
-	const packageNames = days.flatMap((day) => Object.keys(day.stats));
+	const packageNames = [...new Set(days.flatMap((day) => Object.keys(day.stats)))];
 	const applications = await resolveAndroidApplicationIdentities(packageNames, false);
 	const appLabels = applicationLabels(applications);
 	return days.map((day) => ({ ...day, appLabels }));
@@ -93,6 +95,10 @@ function applicationLabels(applications: Record<string, { label?: string }>) {
 			typeof application.label === 'string' ? [[packageName, application.label]] : []
 		)
 	);
+}
+
+function validateDayQuery(days: LocalDayRange[]) {
+	if (!days.length || days.length > 7) throw validationFailure();
 }
 
 function validCollectionTime(now: Date) {

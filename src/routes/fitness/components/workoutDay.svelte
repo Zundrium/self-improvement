@@ -132,7 +132,13 @@
 					<div class="flex items-center gap-3 py-2">
 						<span class="w-5 text-center text-xs text-(--text)/40">{index + 1}</span>
 						<div class="size-14 shrink-0 overflow-hidden rounded-2xl bg-(--text)/3">
-							<img src={activity.imageUrl} alt="" class="size-full object-contain" />
+							<img
+								src={activity.imageUrl}
+								alt=""
+								class="size-full object-contain"
+								loading="lazy"
+								decoding="async"
+							/>
 						</div>
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-sm font-medium">{activity.name}</p>

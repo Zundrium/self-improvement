@@ -3,9 +3,11 @@ import type { LocalDayRange } from '../domain/day-ranges';
 import type { PermissionCheck } from '../domain/model';
 import { healthProviderFailure } from '../domain/native-failures';
 import type { AggregatedStepDay } from '../domain/steps';
+import { mapWithConcurrency } from './bounded-concurrency';
 import { requireNativeAndroid } from './platform';
 
 const HEALTH_TYPE = 'steps' as const;
+const DAY_QUERY_CONCURRENCY = 2;
 const AVAILABILITY_REASONS = new Set([
 	'Health Connect needs an update.',
 	'Health Connect is unavailable on this device.',
@@ -48,9 +50,7 @@ export class AndroidHealthAdapter {
 
 	async aggregateSteps(days: LocalDayRange[]): Promise<AggregatedStepDay[]> {
 		requireNativeAndroid();
-		const results: AggregatedStepDay[] = [];
-		for (const range of days) results.push(await this.aggregateStepDay(range));
-		return results;
+		return mapWithConcurrency(days, DAY_QUERY_CONCURRENCY, (range) => this.aggregateStepDay(range));
 	}
 
 	async openSettings() {

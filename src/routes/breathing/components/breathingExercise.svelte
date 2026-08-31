@@ -85,12 +85,19 @@
 		startedAt = Date.now();
 		elapsedMilliseconds = 0;
 		status = 'running';
-		timerId = window.setInterval(updateTimer, 100);
+		scheduleTimerUpdate();
 	}
 
 	function updateTimer() {
-		elapsedMilliseconds = Date.now() - startedAt;
-		if (elapsedMilliseconds >= durationMilliseconds) completeExercise();
+		elapsedMilliseconds = Math.min(durationMilliseconds, Date.now() - startedAt);
+		if (elapsedMilliseconds >= durationMilliseconds) return completeExercise();
+		scheduleTimerUpdate();
+	}
+
+	function scheduleTimerUpdate() {
+		if (timerId) window.clearTimeout(timerId);
+		const elapsedInSecond = elapsedMilliseconds % 1000;
+		timerId = window.setTimeout(updateTimer, Math.max(1, Math.ceil(1000 - elapsedInSecond)));
 	}
 
 	function completeExercise() {
@@ -121,7 +128,7 @@
 	}
 
 	function clearTimer() {
-		if (timerId) window.clearInterval(timerId);
+		if (timerId) window.clearTimeout(timerId);
 		timerId = undefined;
 	}
 </script>

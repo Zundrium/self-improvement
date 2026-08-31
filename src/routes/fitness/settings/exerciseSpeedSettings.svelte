@@ -84,6 +84,7 @@
 							alt=""
 							class="size-full object-contain"
 							loading="lazy"
+							decoding="async"
 						/>
 					</div>
 					<h2 class="truncate text-sm font-medium">{exercise.name}</h2>

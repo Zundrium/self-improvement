@@ -142,10 +142,9 @@ describe('native local app state', () => {
 			'query:PRAGMA user_version;',
 			'execute:false:CREATE TABLE IF NOT EXISTS app_state (id TEXT PRIMARY KEY NOT NULL, document TEXT NOT NULL);',
 			'execute:false:PRAGMA user_version = 1;',
-			'query:SELECT document FROM app_state WHERE id = ?;',
+			'query:SELECT id FROM app_state WHERE id = ?;',
 			'run:false:INSERT INTO app_state (id, document) VALUES (?, ?);',
-			'commit',
-			'query:SELECT document FROM app_state WHERE id = ?;'
+			'commit'
 		]);
 	});
 
@@ -199,10 +198,45 @@ describe('native local app state', () => {
 		expect(JSON.parse(native.document ?? '{}').user.name).toBe('You');
 		expect(native.events).toEqual([
 			'begin',
-			'query:SELECT document FROM app_state WHERE id = ?;',
 			'run:false:UPDATE app_state SET document = ? WHERE id = ?;',
 			'rollback'
 		]);
+		native.events = [];
+
+		expect((await store.read()).user.name).toBe('You');
+		expect(native.events).toEqual(['query:SELECT document FROM app_state WHERE id = ?;']);
+	});
+
+	it('serves native reads and updates from the initialized state cache', async () => {
+		const native = new FakeNativeConnection(1, createDefaultAppState());
+		const store = nativeStore(native);
+
+		await store.read();
+		native.events = [];
+		await store.read();
+		await store.update((state) => {
+			state.user.name = 'Cached profile';
+		});
+		await store.read();
+
+		expect(native.events).not.toContain('query:SELECT document FROM app_state WHERE id = ?;');
+		expect(native.events).toEqual([
+			'begin',
+			'run:false:UPDATE app_state SET document = ? WHERE id = ?;',
+			'commit'
+		]);
+	});
+
+	it('skips native persistence when a mutation leaves cached state unchanged', async () => {
+		const native = new FakeNativeConnection(1, createDefaultAppState());
+		const store = nativeStore(native);
+		const before = await store.read();
+		native.events = [];
+
+		const after = await store.update(() => {});
+
+		expect(after).toEqual(before);
+		expect(native.events).toEqual([]);
 	});
 
 	it('serializes native writes in call order', async () => {
@@ -224,16 +258,21 @@ describe('native local app state', () => {
 		expect(writes).toHaveLength(2);
 	});
 
-	it('exports and replaces native state with backup-compatible documents', async () => {
+	it('replaces the native cache only after persisting a backup-compatible document', async () => {
 		const native = new FakeNativeConnection(1, createDefaultAppState());
 		const store = nativeStore(native);
 		const backup = await store.exportState();
 		backup.user.name = 'Native backup';
+		native.events = [];
 
 		await store.replaceState(backup);
 
 		expect((await store.exportState()).user.name).toBe('Native backup');
-		expect(native.events).toContain('run:false:UPDATE app_state SET document = ? WHERE id = ?;');
+		expect(native.events).toEqual([
+			'begin',
+			'run:false:UPDATE app_state SET document = ? WHERE id = ?;',
+			'commit'
+		]);
 	});
 
 	it('deletes only native state before recreating the connection', async () => {
@@ -321,6 +360,7 @@ class FakeNativeConnection implements NativeAppStateConnection {
 	async query(statement: string) {
 		this.events.push(`query:${statement}`);
 		if (statement.startsWith('PRAGMA')) return { values: [{ user_version: this.schemaVersion }] };
+		if (statement.startsWith('SELECT id')) return { values: this.document ? [{ id: 'current' }] : [] };
 		return { values: this.document ? [{ document: this.document }] : [] };
 	}
 

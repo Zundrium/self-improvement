@@ -16,6 +16,7 @@
 		CardTitle
 	} from '$lib/components/ui/card';
 	import { Spinner } from '$lib/components/ui/spinner';
+	import { spin } from '$lib/motion/gsap';
 	import { TRACKER_IDS, type PermissionState, type TrackerId } from '$domain/model';
 	import {
 		androidHealth,
@@ -206,7 +207,8 @@
 						<Smartphone class="size-4" /> Usage access
 					</Button>
 					<Button size="medium" type="button" variant="ghost" disabled={Boolean(busy)} onclick={refreshAccess}>
-						<RefreshCw class="size-4" data-motion-spin={busy === 'check' || undefined} /> Check again
+						<span class="inline-flex" use:spin={busy === 'check'}><RefreshCw class="size-4" /></span>
+						Check again
 					</Button>
 				</div>
 

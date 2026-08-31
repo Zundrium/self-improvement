@@ -17,7 +17,9 @@
 	};
 
 	let { data }: PageProps = $props();
+	const PAGE_SIZE = 24;
 	let filter = $state<AchievementFilter>('all');
+	let visibleCount = $state(PAGE_SIZE);
 	const colors = getTrackerColors('achievements');
 	const filters = [
 		{ id: 'all', label: 'All' },
@@ -52,16 +54,23 @@
 		}
 	];
 	const filteredAchievements = $derived(data.achievements.filter(matchesFilter));
+	const visibleAchievements = $derived(filteredAchievements.slice(0, visibleCount));
 	const sections = $derived(
 		sectionDefinitions
 			.map((section) => ({
 				...section,
-				achievements: filteredAchievements.filter((achievement) =>
+				achievements: visibleAchievements.filter((achievement) =>
 					section.categories.includes(achievement.category)
 				)
 			}))
 			.filter(({ achievements }) => achievements.length)
 	);
+	const hasMore = $derived(visibleAchievements.length < filteredAchievements.length);
+
+	function selectFilter(nextFilter: AchievementFilter) {
+		filter = nextFilter;
+		visibleCount = PAGE_SIZE;
+	}
 
 	function matchesFilter(achievement: AchievementSummary) {
 		if (filter === 'unlocked') return achievement.unlocked;
@@ -112,7 +121,7 @@
 					variant={filter === option.id ? 'default' : 'ghost'}
 					size="small"
 					aria-pressed={filter === option.id}
-					onclick={() => (filter = option.id)}
+					onclick={() => selectFilter(option.id)}
 				>
 					{option.label}
 				</Button>
@@ -163,6 +172,7 @@
 								value={Math.min(achievement.progress, achievement.target)}
 								max={achievement.target}
 								indicatorStyle={`background: ${color}`}
+								animated={false}
 							/>
 						{/if}
 					</div>
@@ -170,6 +180,14 @@
 			{/each}
 		</TrackerSection>
 	{/each}
+
+	{#if hasMore}
+		<div class="flex justify-center">
+			<Button variant="ghost" size="small" onclick={() => (visibleCount += PAGE_SIZE)}>
+				Show more achievements
+			</Button>
+		</div>
+	{/if}
 
 	{#if !sections.length}
 		<p class="py-10 text-center text-sm text-(--text)/56">No achievements match this filter.</p>

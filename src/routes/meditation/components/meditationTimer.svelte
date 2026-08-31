@@ -8,6 +8,7 @@
 		BottomActionGroup
 	} from '$lib/components/ui/bottom-action-bar';
 	import { Button } from '$lib/components/ui/button';
+	import { spin } from '$lib/motion/gsap';
 	import { getTrackerColors } from '$lib/trackers/registry';
 	import MeditationIcon from '$lib/trackers/meditationIcon.svelte';
 	import {
@@ -195,7 +196,7 @@
 				Timer paused
 			{:else if saveState === 'saving'}
 				<span class="inline-flex items-center gap-2"
-					><LoaderCircle size={15} data-motion-spin /> Saving session</span
+					><span class="inline-flex" use:spin><LoaderCircle size={15} /></span> Saving session</span
 				>
 			{:else if saveState === 'saved'}
 				<span class="inline-flex items-center gap-2"><Check size={15} /> Session saved</span>

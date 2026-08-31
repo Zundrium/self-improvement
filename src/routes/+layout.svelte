@@ -27,7 +27,7 @@
 	import type { ActionFeedData } from '$lib/api-types';
 	import type { TrackerId } from '$domain/model';
 	import { failedTrackerIds } from '$domain/status';
-	import { androidSyncCoordinator } from '$native/android-data';
+	import { androidSyncCoordinator, enabledNativeTrackerIds } from '$native/android-data';
 	import { ANDROID_SETUP_PATH } from '$native/android-setup';
 	import { listenForResume } from '$native/app';
 	import { runScheduledGoogleDriveBackup } from '$native/google-drive-backup';
@@ -53,6 +53,7 @@
 	};
 
 	const ANDROID_SYNC_TOAST = 'android-sync-failure';
+	let nativeRefresh: Promise<void> | undefined;
 	let { data, children }: LayoutProps = $props();
 	const initialPageData = page.data as DatedPageData;
 	const dateSelectorState = provideDateSelectorState(markedDates(initialPageData));
@@ -80,42 +81,43 @@
 
 	onMount(() => {
 		audioVolumeState.hydrate();
-		if (!isNativeAndroid()) {
-			dismissLoadingScreen();
-			return;
-		}
-		void initializeNativeApp();
+		dismissLoadingScreen();
+		if (!isNativeAndroid()) return;
+		void refreshNativeApp();
 		let removeResume = () => {};
 		void listenForResume(refreshNativeApp).then((remove) => (removeResume = remove));
 		return () => removeResume();
 	});
 
-	async function initializeNativeApp() {
-		try {
-			await syncAndroidData();
-		} finally {
-			dismissLoadingScreen();
-		}
-		void refreshNativeMaintenance();
+	function refreshNativeApp() {
+		if (document.visibilityState !== 'visible') return Promise.resolve();
+		nativeRefresh ??= runNativeRefresh().finally(() => (nativeRefresh = undefined));
+		return nativeRefresh;
 	}
 
-	async function refreshNativeApp() {
+	async function runNativeRefresh() {
 		await syncAndroidData();
+		if (document.visibilityState !== 'visible') return;
 		await refreshNativeMaintenance();
 	}
 
 	async function refreshNativeMaintenance() {
 		await rescheduleBedtimeReminder();
+		if (document.visibilityState !== 'visible') return;
 		await runScheduledGoogleDriveBackup();
 	}
 
 	async function syncAndroidData() {
 		try {
 			const report = await androidSyncCoordinator.syncStale();
+			if (document.visibilityState !== 'visible') return;
 			if (report.results.length) await invalidateAll();
-			showSyncStatus(failedTrackerIds(await mobileRepository.loadStatus()));
+			if (document.visibilityState !== 'visible') return;
+			await showStoredSyncStatus();
 		} catch {
-			showSyncFailure('Android data could not be synchronized.');
+			if (document.visibilityState === 'visible') {
+				showSyncFailure('Android data could not be synchronized.');
+			}
 		}
 	}
 
@@ -129,7 +131,9 @@
 
 	async function showStoredSyncStatus() {
 		try {
-			showSyncStatus(failedTrackerIds(await mobileRepository.loadStatus()));
+			const status = await mobileRepository.loadStatus();
+			const enabledTrackers = enabledNativeTrackerIds(data.enabledTrackers.map(({ id }) => id));
+			showSyncStatus(failedTrackerIds(status, enabledTrackers));
 		} catch {
 			showSyncFailure('Android data status could not be read.');
 		}

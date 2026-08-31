@@ -65,7 +65,7 @@ const nutritionEntrySchema = z.object({
 	name: z.string(),
 	notes: z.string(),
 	createdAt: instant,
-	thumbnail: z.string().default(''),
+	thumbnail: z.string().default('').transform(() => ''),
 	meals: z.array(mealSchema),
 	totals: nutritionTotalsSchema
 });
@@ -279,6 +279,7 @@ const stateSchema = z.strictObject({
 
 export type LocalAppState = z.infer<typeof stateSchema>;
 type StateRow = { id: typeof STATE_ID; document: LocalAppState };
+type NativeStateCache = { state: LocalAppState; document: string };
 
 export class LocalAppDatabase extends Dexie {
 	appState!: EntityTable<StateRow, 'id'>;
@@ -293,6 +294,7 @@ export class LocalAppStore {
 	private writeQueue = Promise.resolve();
 	private nativeConnectionPromise: Promise<NativeAppStateConnection> | undefined;
 	private nativeInitialization: Promise<void> | undefined;
+	private nativeStateCache: NativeStateCache | undefined;
 
 	constructor(
 		private readonly database = new LocalAppDatabase(),
@@ -304,7 +306,7 @@ export class LocalAppStore {
 			return this.serialize(async () => {
 				const connection = await this.nativeConnection();
 				if (!connection) throw new Error('Native SQLite connection is unavailable.');
-				return clone(await this.readNativeState(connection));
+				return clone((await this.nativeState(connection)).state);
 			});
 		}
 		return clone(await this.ensureState());
@@ -338,6 +340,7 @@ export class LocalAppStore {
 			try {
 				await connection.delete();
 			} finally {
+				this.nativeStateCache = undefined;
 				this.nativeInitialization = undefined;
 				this.nativeConnectionPromise = undefined;
 				if (this.nativeConnectionFactory === undefined) sharedNativeConnection = undefined;
@@ -365,9 +368,14 @@ export class LocalAppStore {
 		}
 	}
 
-	private async readNativeState(connection: NativeAppStateConnection) {
+	private async nativeState(connection: NativeAppStateConnection) {
 		await this.ensureNativeState(connection);
-		return this.readNativeDocument(connection);
+		if (this.nativeStateCache) return this.nativeStateCache;
+		const document = await this.nativeDocument(connection);
+		if (document === undefined) throw new Error('SQLite app state is missing.');
+		const cache = nativeStateCache(validateLocalAppState(JSON.parse(document) as unknown));
+		this.nativeStateCache = cache;
+		return cache;
 	}
 
 	private async ensureNativeState(connection: NativeAppStateConnection) {
@@ -383,14 +391,16 @@ export class LocalAppStore {
 				);
 				await connection.execute(`PRAGMA user_version = ${SQLITE_SCHEMA_VERSION};`, false);
 			}
-			const existing = await this.nativeDocument(connection);
-			if (existing !== undefined) return;
-			const document = createDefaultAppState();
+			if (await this.nativeStateExists(connection)) return undefined;
+			const cache = nativeStateCache(createDefaultAppState());
 			await connection.run(
 				'INSERT INTO app_state (id, document) VALUES (?, ?);',
-				[STATE_ID, JSON.stringify(document)],
+				[STATE_ID, cache.document],
 				false
 			);
+			return cache;
+		}).then((cache) => {
+			if (cache) this.nativeStateCache = cache;
 		});
 		this.nativeInitialization = initialization;
 		try {
@@ -408,18 +418,16 @@ export class LocalAppStore {
 		return version;
 	}
 
+	private async nativeStateExists(connection: NativeAppStateConnection) {
+		return Boolean((await connection.query('SELECT id FROM app_state WHERE id = ?;', [STATE_ID])).values?.[0]);
+	}
+
 	private async nativeDocument(connection: NativeAppStateConnection) {
 		const row = (await connection.query('SELECT document FROM app_state WHERE id = ?;', [STATE_ID]))
 			.values?.[0];
 		if (!row) return undefined;
 		if (typeof row.document !== 'string') throw new Error('Invalid SQLite app state document.');
 		return row.document;
-	}
-
-	private async readNativeDocument(connection: NativeAppStateConnection) {
-		const document = await this.nativeDocument(connection);
-		if (document === undefined) throw new Error('SQLite app state is missing.');
-		return validateLocalAppState(JSON.parse(document) as unknown);
 	}
 
 	private async ensureState() {
@@ -459,20 +467,28 @@ export class LocalAppStore {
 		mutator: (state: LocalAppState) => void | Promise<void>,
 		select: (before: LocalAppState, after: LocalAppState) => T
 	) {
-		await this.ensureNativeState(connection);
-		return this.transaction(connection, async () => {
-			const state = await this.readNativeDocument(connection);
-			const before = clone(state);
-			await mutator(state);
-			state.updatedAt = new Date().toISOString();
-			const after = validateLocalAppState(state);
-			await connection.run(
-				'UPDATE app_state SET document = ? WHERE id = ?;',
-				[JSON.stringify(after), STATE_ID],
-				false
+		const cached = await this.nativeState(connection);
+		const before = clone(cached.state);
+		const next = clone(cached.state);
+		await mutator(next);
+		const after = validateLocalAppState(next);
+		if (serializeState(after) === cached.document) return select(before, clone(after));
+		after.updatedAt = new Date().toISOString();
+		const replacement = nativeStateCache(validateLocalAppState(after));
+		try {
+			await this.transaction(connection, () =>
+				connection.run(
+					'UPDATE app_state SET document = ? WHERE id = ?;',
+					[replacement.document, STATE_ID],
+					false
+				)
 			);
-			return select(before, clone(after));
-		});
+		} catch (error) {
+			this.nativeStateCache = undefined;
+			throw error;
+		}
+		this.nativeStateCache = replacement;
+		return select(before, clone(replacement.state));
 	}
 
 	private persistUpdatedState<T>(
@@ -484,10 +500,12 @@ export class LocalAppStore {
 			const state = validateLocalAppState(clone(row?.document ?? createDefaultAppState()));
 			const before = clone(state);
 			await mutator(state);
-			state.updatedAt = new Date().toISOString();
 			const after = validateLocalAppState(state);
-			await this.database.appState.put({ id: STATE_ID, document: after });
-			return select(before, clone(after));
+			if (serializeState(after) === serializeState(before)) return select(before, clone(after));
+			after.updatedAt = new Date().toISOString();
+			const persisted = validateLocalAppState(after);
+			await this.database.appState.put({ id: STATE_ID, document: persisted });
+			return select(before, clone(persisted));
 		});
 	}
 
@@ -495,14 +513,21 @@ export class LocalAppStore {
 		const connection = await this.nativeConnection();
 		if (connection) {
 			await this.ensureNativeState(connection);
-			return this.transaction(connection, async () => {
-				await connection.run(
-					'UPDATE app_state SET document = ? WHERE id = ?;',
-					[JSON.stringify(document), STATE_ID],
-					false
+			const replacement = nativeStateCache(document);
+			try {
+				await this.transaction(connection, () =>
+					connection.run(
+						'UPDATE app_state SET document = ? WHERE id = ?;',
+						[replacement.document, STATE_ID],
+						false
+					)
 				);
-				return clone(document);
-			});
+			} catch (error) {
+				this.nativeStateCache = undefined;
+				throw error;
+			}
+			this.nativeStateCache = replacement;
+			return clone(replacement.state);
 		}
 		return this.database.transaction('rw', this.database.appState, async () => {
 			await this.database.appState.put({ id: STATE_ID, document: clone(document) });
@@ -702,6 +727,15 @@ function uniqueAchievementUnlocks<T extends { achievementId: string }>(unlocks: 
 
 function localTimeZone() {
 	return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
+function nativeStateCache(state: LocalAppState): NativeStateCache {
+	const cachedState = clone(state);
+	return { state: cachedState, document: serializeState(cachedState) };
+}
+
+function serializeState(state: LocalAppState) {
+	return JSON.stringify(state);
 }
 
 function clone<T>(value: T): T {

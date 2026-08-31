@@ -4,7 +4,7 @@
 	import { apiRequest } from '$lib/api';
 	import type { DaySummaryData, GamificationData, LocalProfile } from '$lib/api-types';
 import { Pressable } from '$lib/components/ui/pressable';
-	import { closeDrawer as animateDrawerClose, drawerEnter } from '$lib/motion/gsap';
+	import { closeDrawer as animateDrawerClose, drawerEnter, spin } from '$lib/motion/gsap';
 	import type { AppTracker } from '$lib/trackers/registry';
 	import AppDrawer from './appDrawer.svelte';
 	import UserCard from './userCard.svelte';
@@ -126,7 +126,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 				</Pressable>
 			{:else}
 				<div class="flex min-h-48 items-center justify-center" aria-label="Loading tracker apps">
-					<LoaderCircle class="size-6 text-(--text)/40" data-motion-spin />
+					<span class="inline-flex" use:spin><LoaderCircle class="size-6 text-(--text)/40" /></span>
 				</div>
 			{/if}
 		</div>
@@ -148,7 +148,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
 				>
 					{#if isPending('/')}
-						<LoaderCircle class="size-6" data-motion-spin />
+						<span class="inline-flex" use:spin><LoaderCircle class="size-6" /></span>
 					{:else}
 						<House class="size-6" />
 					{/if}

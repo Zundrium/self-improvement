@@ -19,7 +19,13 @@
 
 <div class="flex items-center gap-3 rounded-2xl bg-(--text)/4 p-3">
 	{#if app.icon}
-		<img class="size-11 shrink-0 rounded-xl object-cover" src={app.icon} alt="" />
+		<img
+			class="size-11 shrink-0 rounded-xl object-cover"
+			src={app.icon}
+			alt=""
+			loading="lazy"
+			decoding="async"
+		/>
 	{:else}
 		<div
 			class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-(--text)/7 text-sm font-medium text-(--text)/56"

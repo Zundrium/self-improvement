@@ -1,5 +1,7 @@
 import { mobileRepository, recordAchievementEvents } from '$lib/api';
-import type { PermissionState } from '$domain/model';
+import { localAppStore } from '$lib/local/state';
+import type { AppTrackerId } from '$lib/trackers/registry';
+import { TRACKER_IDS, type PermissionState, type TrackerId } from '$domain/model';
 import { SyncCoordinator } from '$domain/sync-coordinator';
 import { AndroidHealthAdapter } from './health';
 import { createNativeTrackerJobs } from './jobs';
@@ -9,8 +11,21 @@ export const androidHealth = new AndroidHealthAdapter();
 export const androidUsage = new AndroidUsageAdapter();
 export const androidSyncCoordinator = new SyncCoordinator(
 	mobileRepository,
-	createNativeTrackerJobs(androidHealth, androidUsage)
+	createNativeTrackerJobs(androidHealth, androidUsage),
+	undefined,
+	loadEnabledNativeTrackers
 );
+
+export async function loadEnabledNativeTrackers(): Promise<TrackerId[]> {
+	const { enabledTrackerIds } = await localAppStore.read();
+	return enabledNativeTrackerIds(enabledTrackerIds);
+}
+
+export function enabledNativeTrackerIds(enabledTrackerIds: readonly AppTrackerId[]) {
+	return TRACKER_IDS.filter((tracker) =>
+		enabledTrackerIds.includes(tracker === 'screenTime' ? 'screen-time' : tracker)
+	);
+}
 
 export async function checkAndroidPermissions() {
 	const [{ available }, usage] = await Promise.all([

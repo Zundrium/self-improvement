@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Check, LoaderCircle } from '@lucide/svelte';
+	import { spin } from '$lib/motion/gsap';
 import { Pressable } from '$lib/components/ui/pressable';
 	import type { TrackerIconComponent } from '$lib/trackers/icons';
 	import type { TrackerColors } from '$lib/trackers/registry';
@@ -49,7 +50,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 			style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`}
 		>
 			{#if pending}
-				<LoaderCircle class="size-8" data-motion-spin />
+				<span class="inline-flex" use:spin><LoaderCircle class="size-8" /></span>
 			{:else}
 				<TrackerIcon class="size-8" />
 			{/if}

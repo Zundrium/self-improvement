@@ -367,7 +367,7 @@ describe('local app service', () => {
 			})
 		});
 
-		expect(result.entry.thumbnail).toBe(imageDataUrl);
+		expect(result.entry.thumbnail).toBe('');
 		expect(result.entry.meals[0].imageDataUrl).toBe(imageDataUrl);
 	});
 

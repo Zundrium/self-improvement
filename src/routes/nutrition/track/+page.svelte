@@ -34,6 +34,7 @@ import { Spinner } from '$lib/components/ui/spinner';
 import { Textarea } from '$lib/components/ui/textarea';
 import { toast } from '$lib/components/ui/toast';
 import WorkflowHeader from '$lib/components/workflowHeader.svelte';
+import { MAX_NUTRITION_IMAGE_DATA_URL_LENGTH } from '$lib/local/nutrition';
 import { localSecretStore } from '$lib/local/secrets';
 import {
 	type AIResult,
@@ -60,7 +61,7 @@ type Phase =
 type CameraState = 'opening' | 'ready' | 'error';
 type MealEstimate = AIResult;
 
-const MAX_IMAGE_LENGTH = 740 * 1024;
+const MAX_IMAGE_LENGTH = MAX_NUTRITION_IMAGE_DATA_URL_LENGTH;
 const MAX_DESCRIPTION_LENGTH = MAX_MEAL_DESCRIPTION_LENGTH;
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 let phase = $state<Phase>('checking');

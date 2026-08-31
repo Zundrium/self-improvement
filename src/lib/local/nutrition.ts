@@ -9,6 +9,7 @@ import { type ActivityLevel, calculateTdee } from '../../routes/nutrition/nutrit
 
 const EMPTY_TOTALS: NutritionTotals = { calories: 0, proteinG: 0, carbsG: 0, fatG: 0, count: 0 };
 const ACTIVITY_LEVELS = ['sedentary', 'light', 'moderate', 'active', 'very_active'] as const;
+export const MAX_NUTRITION_IMAGE_DATA_URL_LENGTH = 160 * 1024;
 
 export function nutritionProfile(
 	input: Record<string, unknown>,
@@ -127,7 +128,7 @@ function normalizeIngredient(input: unknown): NutritionIngredient {
 function withEntryTotals(entry: NutritionEntry) {
 	return {
 		...entry,
-		thumbnail: entry.meals.find((meal) => meal.imageDataUrl)?.imageDataUrl ?? '',
+		thumbnail: '',
 		totals: roundTotals(
 			entry.meals.reduce((total, meal) => addTotals(total, meal.totals), EMPTY_TOTALS)
 		)
@@ -241,7 +242,7 @@ function cleanNumber(value: unknown, fallback: number, maximum: number) {
 }
 
 function cleanImageDataUrl(value: unknown) {
-	if (typeof value !== 'string' || value.length > 768 * 1024) return '';
+	if (typeof value !== 'string' || value.length > MAX_NUTRITION_IMAGE_DATA_URL_LENGTH) return '';
 	return /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value) ? value : '';
 }
 

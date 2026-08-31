@@ -8,12 +8,14 @@
 		class: className,
 		indicatorClass,
 		indicatorStyle,
+		animated = true,
 		max = 100,
 		value,
 		...restProps
 	}: WithoutChildrenOrChild<ProgressPrimitive.RootProps> & {
 		indicatorClass?: string;
 		indicatorStyle?: string;
+		animated?: boolean;
 	} = $props();
 </script>
 
@@ -29,6 +31,9 @@
 		data-slot="progress-indicator"
 		class={cn('h-full w-full flex-1 rounded-full bg-(--text)', indicatorClass)}
 		style={indicatorStyle}
-		use:linearProgress={(100 * (value ?? 0)) / (max || 1)}
+		use:linearProgress={{
+			value: (100 * (value ?? 0)) / (max || 1),
+			animated
+		}}
 	></div>
 </ProgressPrimitive.Root>

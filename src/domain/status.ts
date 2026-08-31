@@ -39,8 +39,14 @@ export function parseStoredStatus(input: unknown) {
 	return mobileSyncStatusSchema.parse(input) as MobileSyncStatus;
 }
 
-export function failedTrackerIds(status: MobileSyncStatus) {
-	return TRACKER_IDS.filter((tracker) => status.trackers[tracker].outcome === 'failed');
+export function failedTrackerIds(
+	status: MobileSyncStatus,
+	enabledTrackers: readonly TrackerId[] = TRACKER_IDS
+) {
+	const enabled = new Set(enabledTrackers);
+	return TRACKER_IDS.filter(
+		(tracker) => enabled.has(tracker) && status.trackers[tracker].outcome === 'failed'
+	);
 }
 
 export function staleTrackerIds(status: MobileSyncStatus, now: Date, staleAfterMs: number) {

@@ -18,6 +18,7 @@ import {
 	type GuidedRoutineActivity,
 	type GuidedRoutinePosition,
 	initialRoutinePosition,
+	nextCountdownUpdateDelay,
 	nextRoutinePosition,
 	repDurationMs,
 	shouldPlayRestCountdownTick
@@ -106,7 +107,7 @@ let activityImageVariants = $state(
 let lastTick = 0;
 let lastWholeSecond = 0;
 let lastRemainingRep = 0;
-let timer: ReturnType<typeof setInterval> | undefined;
+let timer: ReturnType<typeof setTimeout> | undefined;
 let voiceTimeout: ReturnType<typeof setTimeout> | undefined;
 let wakeLock: WakeLockSentinelLike | null = null;
 
@@ -176,14 +177,13 @@ onMount(() => {
 	void audioManager
 		.preload([...soundUrls, ...voiceUrls])
 		.catch((error) => console.error('Routine audio preload failed:', error));
-	timer = setInterval(tick, 100);
 	startIntro();
 	void requestWakeLock();
 	document.addEventListener('visibilitychange', handleVisibilityChange);
 });
 
 onDestroy(() => {
-	if (timer) clearInterval(timer);
+	if (timer) clearTimeout(timer);
 	if (voiceTimeout) clearTimeout(voiceTimeout);
 	void wakeLock?.release().catch((error) => console.error('Wake lock release failed:', error));
 	audioManager.stopAll();
@@ -200,9 +200,29 @@ function tick() {
 	const wholeSecond = Math.ceil(timeLeftMs / 1000);
 	if (wholeSecond !== lastWholeSecond) {
 		lastWholeSecond = wholeSecond;
-		handleCountdownSound(wholeSecond);
+		if (currentActivity?.type !== 'cadenced-reps' || phase !== 'activity')
+			handleCountdownSound(wholeSecond);
+	}
+	if (phase === 'activity' && currentActivity?.type === 'cadenced-reps') {
+		const remaining = Math.ceil(timeLeftMs / repDurationMs(cadenceFor(currentActivity)));
+		if (remaining < lastRemainingRep) {
+			lastRemainingRep = remaining;
+			void audioManager.play(sounds.beep);
+			playNumber(remaining);
+		}
 	}
 	if (timeLeftMs === 0) advance();
+	else scheduleTick();
+}
+
+function scheduleTick() {
+	if (timer) clearTimeout(timer);
+	if (phase === 'complete' || isPaused || isManualReps) return;
+	const repDuration =
+		phase === 'activity' && currentActivity?.type === 'cadenced-reps'
+			? repDurationMs(cadenceFor(currentActivity))
+			: undefined;
+	timer = setTimeout(tick, nextCountdownUpdateDelay(timeLeftMs, repDuration));
 }
 
 function handleCountdownSound(wholeSecond: number) {
@@ -219,15 +239,6 @@ function handleCountdownSound(wholeSecond: number) {
 			void audioManager.play(sounds.tick);
 		return;
 	}
-	if (phase === 'activity' && currentActivity?.type === 'cadenced-reps') {
-		const remaining = Math.ceil(timeLeftMs / repDurationMs(cadenceFor(currentActivity)));
-		if (remaining < lastRemainingRep) {
-			lastRemainingRep = remaining;
-			void audioManager.play(sounds.beep);
-			playNumber(remaining);
-		}
-		return;
-	}
 	if (wholeSecond % 10 === 0 || wholeSecond <= 3) void audioManager.play(sounds.tick);
 	if (phase === 'activity' && (wholeSecond % 5 === 0 || wholeSecond <= 3)) playNumber(wholeSecond);
 }
@@ -238,6 +249,7 @@ function beginCountdown(durationMs: number) {
 	lastWholeSecond = Math.ceil(durationMs / 1000);
 	lastTick = performance.now();
 	if (durationMs <= 0) setTimeout(advance, 0);
+	else scheduleTick();
 }
 
 function startIntro() {
@@ -263,6 +275,7 @@ function startActivity() {
 		totalTimeMs = 1;
 		timeLeftMs = 0;
 		lastTick = performance.now();
+		if (timer) clearTimeout(timer);
 	} else {
 		beginCountdown(durationMs);
 	}
@@ -335,6 +348,7 @@ function handleCadenceChange(value: number) {
 		lastWholeSecond = Math.ceil(timeLeftMs / 1000);
 		lastRemainingRep = Math.ceil(timeLeftMs / repDurationMs(cadencePercent));
 		lastTick = performance.now();
+		scheduleTick();
 	}
 }
 
@@ -360,6 +374,9 @@ function formatTime(milliseconds: number): string {
 function togglePause() {
 	isPaused = !isPaused;
 	lastTick = performance.now();
+	if (isPaused) {
+		if (timer) clearTimeout(timer);
+	} else scheduleTick();
 }
 
 function skip() {
@@ -521,7 +538,7 @@ function handleVisibilityChange() {
 					</div>
 				{/if}
 			</div>
-			<Progress class="h-3" value={isManualReps ? 0 : progress} />
+			<Progress class="h-3" value={isManualReps ? 0 : progress} animated={false} />
 			{@render cadenceControl()}
 			{#if displayActivity.imageVariants?.length}
 				<div class="grid shrink-0 grid-cols-3 gap-2" aria-label={`${displayActivity.name} level`}>

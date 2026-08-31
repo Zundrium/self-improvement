@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ChevronRight, Download, LoaderCircle, RefreshCw, Shield } from '@lucide/svelte';
 	import type { ActionFeedItem } from '$lib/api-types';
+	import { spin } from '$lib/motion/gsap';
 import { Pressable } from '$lib/components/ui/pressable';
 	import { trackerIcons } from '$lib/trackers/icons';
 	import { getTrackerColors } from '$lib/trackers/registry';
@@ -40,7 +41,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 	</span>
 	<span class="flex shrink-0 items-center text-(--text)/48">
 		{#if busy}
-			<LoaderCircle class="size-5" data-motion-spin />
+			<span class="inline-flex" use:spin><LoaderCircle class="size-5" /></span>
 		{:else}
 			<ChevronRight class="size-6" />
 		{/if}

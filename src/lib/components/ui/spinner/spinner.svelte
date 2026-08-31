@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { spin } from '$lib/motion/gsap';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 
@@ -14,7 +15,7 @@
 	data-slot="spinner"
 	role="status"
 	aria-label="Loading"
-	data-motion-spin
+	use:spin
 	class={cn('size-5 rounded-full border-2 border-(--text)/12 border-t-(--text)', className)}
 	{...restProps}
 ></div>

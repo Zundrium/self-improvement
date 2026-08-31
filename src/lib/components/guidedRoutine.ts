@@ -61,6 +61,18 @@ export function shouldPlayRestCountdownTick(
 	return remainingSeconds > 0 && remainingSeconds <= Math.max(0, Math.floor(countdownSeconds));
 }
 
+export function nextCountdownUpdateDelay(timeLeftMs: number, repDuration?: number): number {
+	if (timeLeftMs <= 0) return 0;
+	const untilSecond = timeUntilBoundary(timeLeftMs, 1000);
+	const untilRep = repDuration ? timeUntilBoundary(timeLeftMs, repDuration) : Infinity;
+	return Math.max(1, Math.ceil(Math.min(timeLeftMs, untilSecond, untilRep)));
+}
+
+function timeUntilBoundary(timeLeftMs: number, intervalMs: number) {
+	const remainder = timeLeftMs % intervalMs;
+	return remainder > 0 ? remainder : intervalMs;
+}
+
 export function activityDurationMs(
 	activity: GuidedRoutineActivity,
 	cadencePercent = activity.type === 'cadenced-reps' ? activity.cadencePercent : undefined

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	activityDurationMs,
 	initialRoutinePosition,
+	nextCountdownUpdateDelay,
 	nextRoutinePosition,
 	repDurationMs,
 	shouldPlayRestCountdownTick,
@@ -59,6 +60,13 @@ describe('guided routine sequencing', () => {
 		expect(activityDurationMs(activities[1])).toBe(20_000);
 		expect(activityDurationMs(activities[1], 125)).toBe(16_000);
 		expect(activityDurationMs(activities[2])).toBeNull();
+	});
+
+	it('schedules updates at the next countdown or rep boundary', () => {
+		expect(nextCountdownUpdateDelay(9_250)).toBe(250);
+		expect(nextCountdownUpdateDelay(10_000)).toBe(1000);
+		expect(nextCountdownUpdateDelay(7_000, 1_600)).toBe(600);
+		expect(nextCountdownUpdateDelay(0)).toBe(0);
 	});
 
 	it('ticks only during the configured final rest countdown', () => {
