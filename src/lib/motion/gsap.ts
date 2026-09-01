@@ -572,7 +572,7 @@ function setProgress(progress: { value: number }, value: number, render: () => v
 }
 
 function setLinearProgress(node: HTMLElement, xPercent: number) {
-	node.style.transform = `translate3d(${xPercent}%, 0, 0)`;
+	gsap.set(node, { xPercent });
 }
 
 function clampPercentage(value: number) {

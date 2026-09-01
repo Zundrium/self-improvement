@@ -7,9 +7,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('gsap', () => ({ gsap: mocks }));
 
-import { spin } from './gsap';
+import { linearProgress, spin } from './gsap';
 
-describe('spin action', () => {
+describe('GSAP actions', () => {
 	beforeEach(() => {
 		mocks.to.mockReturnValue({ kill: vi.fn() });
 		vi.stubGlobal('window', { matchMedia: vi.fn(() => ({ matches: false })) });
@@ -43,5 +43,19 @@ describe('spin action', () => {
 		spin({} as HTMLElement);
 
 		expect(mocks.to).not.toHaveBeenCalled();
+	});
+
+	it('initializes linear progress through the same GSAP transform property it animates', () => {
+		const node = {} as HTMLElement;
+
+		linearProgress(node, { value: 50 });
+
+		expect(mocks.set).toHaveBeenCalledWith(node, { xPercent: -100 });
+		expect(mocks.to).toHaveBeenCalledWith(node, {
+			xPercent: -50,
+			duration: 0.8,
+			ease: 'power3.out',
+			overwrite: true
+		});
 	});
 });
