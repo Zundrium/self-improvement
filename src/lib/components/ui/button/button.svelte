@@ -10,25 +10,20 @@
 	import type { Action } from 'svelte/action';
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 
-	export type ButtonVariant = 'default' | 'ghost' | 'destructive' | 'link';
+	export type ButtonColorProfile = 'plain' | 'highlighted' | 'active' | 'text';
+	export type ButtonTone = 'standard' | 'destructive';
 	export type ButtonSize = 'small' | 'medium' | 'large';
 	export type ButtonFormat = 'text' | 'icon';
 
 	export type ButtonProps = WithElementRef<HTMLButtonAttributes> &
 		WithElementRef<HTMLAnchorAttributes> & {
-			variant?: ButtonVariant;
+			profile: ButtonColorProfile;
+			tone?: ButtonTone;
 			size: ButtonSize;
 			format?: ButtonFormat;
 			motionColors?: GradientColors;
 			motionScale?: InteractionScaleOptions;
 		};
-
-	const variants: Record<ButtonVariant, string> = {
-		default: 'bg-(--text) text-(--bg) hover:bg-(--text)/90 font-medium',
-		ghost: 'bg-(--text)/5 text-(--text)/72 hover:bg-(--text)/8 hover:text-(--text)',
-		destructive: 'bg-red-500/10 text-red-600 hover:bg-red-500/20 font-medium dark:text-red-400',
-		link: 'bg-transparent font-medium text-(--text) hover:text-(--text)'
-	};
 
 	const sizes: Record<ButtonSize, string> = {
 		small: 'h-11 text-sm',
@@ -74,7 +69,8 @@
 <script lang="ts">
 	let {
 		class: className,
-		variant = 'default',
+		profile,
+		tone = 'standard',
 		size,
 		format = 'text',
 		ref = $bindable(null),
@@ -86,15 +82,19 @@
 		children,
 		...restProps
 	}: ButtonProps = $props();
+
+	const baseClass =
+		'inline-flex cursor-pointer touch-manipulation items-center justify-center rounded-3xl whitespace-nowrap outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-(--text)/20 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0';
 </script>
 
 {#if href}
 	<a
 		bind:this={ref}
 		data-slot="button"
+		data-color-profile={profile}
+		data-tone={tone}
 		class={cn(
-			'inline-flex cursor-pointer touch-manipulation items-center justify-center rounded-3xl whitespace-nowrap outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-(--text)/20 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
-			variants[variant],
+			baseClass,
 			sizes[size],
 			formats[format],
 			format === 'text' && textPadding[size],
@@ -114,9 +114,10 @@
 	<button
 		bind:this={ref}
 		data-slot="button"
+		data-color-profile={profile}
+		data-tone={tone}
 		class={cn(
-			'inline-flex cursor-pointer touch-manipulation items-center justify-center rounded-3xl whitespace-nowrap outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-(--text)/20 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
-			variants[variant],
+			baseClass,
 			sizes[size],
 			formats[format],
 			format === 'text' && textPadding[size],
@@ -131,3 +132,66 @@
 		{@render children?.()}
 	</button>
 {/if}
+
+<style>
+	[data-slot='button'] {
+		--button-primary: var(--motion-primary, var(--tracker-color-primary, var(--text)));
+		--button-middle: var(--motion-secondary, var(--tracker-color-middle, var(--text)));
+		--button-tertiary: var(--motion-tertiary, var(--tracker-color-tertiary, var(--text)));
+	}
+
+	[data-color-profile='plain'] {
+		background: color-mix(in srgb, var(--text) 7%, transparent);
+		color: color-mix(in srgb, var(--text) 72%, transparent);
+	}
+
+	[data-color-profile='plain']:hover {
+		background: color-mix(in srgb, var(--text) 11%, transparent);
+		color: var(--text);
+	}
+
+	[data-color-profile='highlighted'] {
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--button-primary) 60%, transparent) 0%,
+			color-mix(in srgb, var(--button-middle) 60%, transparent) 52%,
+			color-mix(in srgb, var(--button-tertiary) 60%, transparent) 100%
+		);
+		color: #ffffff;
+		font-weight: 500;
+	}
+
+	[data-color-profile='highlighted']:hover {
+		filter: brightness(1.08);
+	}
+
+	[data-color-profile='active'] {
+		background: color-mix(in srgb, var(--button-middle) 60%, transparent);
+		color: #ffffff;
+		font-weight: 500;
+	}
+
+	[data-color-profile='active']:hover {
+		background: color-mix(in srgb, var(--button-middle) 68%, transparent);
+	}
+
+	[data-color-profile='text'] {
+		background: transparent;
+		color: inherit;
+		font-weight: 500;
+	}
+
+	[data-color-profile='text']:hover {
+		background: transparent;
+	}
+
+	[data-tone='destructive'][data-color-profile='plain'],
+	[data-tone='destructive'][data-color-profile='text'] {
+		color: #dc2626;
+	}
+
+	:global(.dark) [data-tone='destructive'][data-color-profile='plain'],
+	:global(.dark) [data-tone='destructive'][data-color-profile='text'] {
+		color: #f87171;
+	}
+</style>

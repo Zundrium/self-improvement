@@ -118,7 +118,7 @@
 		<div class="flex gap-1 rounded-full bg-(--text)/5 p-1" aria-label="Achievement filters">
 			{#each filters as option (option.id)}
 				<Button
-					variant={filter === option.id ? 'default' : 'ghost'}
+					profile={filter === option.id ? 'active' : 'plain'}
 					size="small"
 					aria-pressed={filter === option.id}
 					onclick={() => selectFilter(option.id)}
@@ -183,7 +183,7 @@
 
 	{#if hasMore}
 		<div class="flex justify-center">
-			<Button variant="ghost" size="small" onclick={() => (visibleCount += PAGE_SIZE)}>
+			<Button profile="plain" size="small" onclick={() => (visibleCount += PAGE_SIZE)}>
 				Show more achievements
 			</Button>
 		</div>

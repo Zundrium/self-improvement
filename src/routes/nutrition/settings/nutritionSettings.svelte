@@ -201,7 +201,7 @@
 	<Card>
 		<CardHeader><CardTitle>Nutrition goals</CardTitle></CardHeader>
 		<CardContent>
-			<Button size="medium" href="/nutrition/onboarding">Set up nutrition</Button>
+			<Button profile="highlighted" size="medium" href="/nutrition/onboarding">Set up nutrition</Button>
 		</CardContent>
 	</Card>
 {/if}

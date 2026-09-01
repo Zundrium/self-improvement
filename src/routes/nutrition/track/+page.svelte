@@ -400,7 +400,7 @@ onDestroy(stopCamera);
 			{#snippet leading()}
 				<Button
 					href="/nutrition/log/{data.date}"
-					variant="ghost"
+					profile="plain"
 					size="medium" format="icon"
 					aria-label="Back to food log"><X class="size-5" /></Button
 				>
@@ -417,7 +417,7 @@ onDestroy(stopCamera);
 						Add your OpenRouter API key before analyzing a meal.
 					</p>
 				</div>
-				<Button href="/profile?tab=general" size="large" class="w-full">Open profile settings</Button>
+				<Button profile="highlighted" href="/profile?tab=general" size="large" class="w-full">Open profile settings</Button>
 			</div>
 		</section>
 	{:else if phase === 'photo'}
@@ -438,7 +438,7 @@ onDestroy(stopCamera);
 				<div
 					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 text-(--text) backdrop-blur-md"
 				>
-					<Badge class="bg-(--tracker-fade-color) text-white">1 / 3</Badge>
+					<Badge class="bg-(--tracker-color-primary) text-white">1 / 3</Badge>
 					<p class="truncate text-sm font-medium">Take a photo of your meal</p>
 				</div>
 			</div>
@@ -455,11 +455,10 @@ onDestroy(stopCamera);
 								<p class="mt-1 text-sm text-white/60">{cameraError}</p>
 							</div>
 							<div class="flex justify-center gap-2">
-								<Button size="medium" class="bg-white text-black hover:bg-white/90" onclick={startCamera}
+								<Button profile="highlighted" size="medium" onclick={startCamera}
 									><RefreshCw class="mr-1.5 size-4" /> Retry</Button
 								>
-								<Button size="medium"
-									class="bg-white/12 text-white hover:bg-white/20"
+								<Button profile="active" size="medium"
 									onclick={() => fileInput?.click()}
 									><ImagePlus class="mr-1.5 size-4" /> Choose photo</Button
 								>
@@ -480,7 +479,7 @@ onDestroy(stopCamera);
 		</section>
 	{:else if phase === 'description'}
 		<WorkflowHeader title="Describe your meal">
-			{#snippet leading()}<Badge class="bg-(--tracker-fade-color) text-white">1 / 3</Badge>{/snippet}
+			{#snippet leading()}<Badge class="bg-(--tracker-color-primary) text-white">1 / 3</Badge>{/snippet}
 		</WorkflowHeader>
 
 		<section class="app-gutter mx-auto min-h-0 w-full max-w-xl flex-1 overflow-y-auto py-8 sm:py-12">
@@ -515,7 +514,7 @@ onDestroy(stopCamera);
 							/>
 							<FieldDescription>One meal per estimate. You can correct the result next.</FieldDescription>
 						</Field>
-						<Button
+						<Button profile="highlighted"
 							type="submit"
 							size="large"
 							class="w-full"
@@ -551,7 +550,7 @@ onDestroy(stopCamera);
 				<div
 					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 text-(--text) backdrop-blur-md"
 				>
-					<Badge class="bg-(--tracker-fade-color) text-white">
+					<Badge class="bg-(--tracker-color-primary) text-white">
 						{phase === 'analyzing' ? '2 / 3' : '3 / 3'}
 					</Badge>
 					<p class="truncate text-sm font-medium">
@@ -570,7 +569,7 @@ onDestroy(stopCamera);
 				<div
 					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 backdrop-blur-md"
 				>
-					<Badge class="bg-(--tracker-fade-color) text-white">2 / 3</Badge>
+					<Badge class="bg-(--tracker-color-primary) text-white">2 / 3</Badge>
 					<p class="truncate text-sm font-medium">Could not analyze meal</p>
 				</div>
 			</div>
@@ -604,7 +603,7 @@ onDestroy(stopCamera);
 				<div
 					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 backdrop-blur-md"
 				>
-					<Badge class="bg-(--tracker-fade-color) text-white">3 / 3</Badge>
+					<Badge class="bg-(--tracker-color-primary) text-white">3 / 3</Badge>
 					<p class="truncate text-sm font-medium">Review estimate</p>
 				</div>
 			</div>
@@ -660,7 +659,7 @@ onDestroy(stopCamera);
 							<div class="grid grid-cols-[auto_1fr] gap-2">
 								<Button
 									type="button"
-									variant="ghost"
+									profile="plain"
 									size="large"
 									onclick={() => {
 										requestError = '';
@@ -668,7 +667,7 @@ onDestroy(stopCamera);
 									}}
 									aria-label="Back to estimate"><ArrowLeft class="size-5" /></Button
 								>
-								<Button type="submit" size="large" disabled={correction.trim().length < 2}
+								<Button profile="highlighted" type="submit" size="large" disabled={correction.trim().length < 2}
 									>Update estimate <Send class="ml-2 size-4" /></Button
 								>
 							</div>

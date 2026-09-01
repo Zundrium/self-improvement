@@ -10,12 +10,10 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Field, FieldLabel } from '$lib/components/ui/field';
-	import { getTrackerColors, trackerGradient } from '$lib/trackers/registry';
 	import { happinessRatings, type HappinessRating } from '../happiness';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	const colors = getTrackerColors('happiness');
 	let defaultRating = $state<HappinessRating>(untrack(() => data.defaultRating));
 	let saving = $state(false);
 
@@ -52,12 +50,9 @@
 							{@const selected = defaultRating === rating}
 							<Button
 								type="button"
-								variant="ghost"
+								profile={selected ? 'active' : 'plain'}
 								size="large"
-								class="tabular-nums {selected ? 'text-white' : ''}"
-								style={selected
-									? `background: ${trackerGradient(colors)}`
-									: `background: color-mix(in srgb, ${colors.primary} 12%, transparent); color: ${colors.primary}`}
+								class="tabular-nums"
 								aria-pressed={selected}
 								onclick={() => (defaultRating = rating)}
 							>

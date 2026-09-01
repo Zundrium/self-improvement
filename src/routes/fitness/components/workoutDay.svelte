@@ -104,7 +104,6 @@
 				<h2
 					id="workout-title"
 					class="text-3xl font-medium tracking-[-0.04em] sm:text-4xl"
-					style={`color: ${colors.primary}`}
 				>
 					<Badge class="mr-2 align-middle text-white" style={`background: ${colors.primary}`}>
 						Day {workout.day}

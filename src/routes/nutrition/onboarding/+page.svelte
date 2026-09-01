@@ -132,7 +132,7 @@
 				</Field>
 			</FieldGroup>
 			<input type="hidden" name="goalMode" value="estimated" />
-			<Button type="submit" size="large" class="w-full">Calculate my goal</Button>
+			<Button profile="highlighted" type="submit" size="large" class="w-full">Calculate my goal</Button>
 		</Form>
 	</Card>
 </main>

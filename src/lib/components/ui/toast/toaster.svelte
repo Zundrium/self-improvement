@@ -162,18 +162,18 @@
 					<p class="mt-0.5 text-sm leading-5 text-white/80">{item.description}</p>
 				{/if}
 				{#if item.action}
-					<Button
+					<Button profile="highlighted"
 						size="small"
-						class="mt-2 bg-white/20 text-white hover:bg-white/30"
+						class="mt-2"
 						onclick={() => runAction(item)}>{item.action.label}</Button
 					>
 				{/if}
 			</div>
 			<Button
-				variant="ghost"
+				profile="text"
 				size="small"
 				format="icon"
-				class="self-center bg-transparent text-white/80 hover:bg-transparent hover:text-white"
+				class="self-center"
 				aria-label={`Dismiss ${item.message}`}
 				onclick={() => toast.dismiss(item.id)}
 			><X class="size-5" aria-hidden="true" /></Button>

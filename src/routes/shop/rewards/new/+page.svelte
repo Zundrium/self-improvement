@@ -45,7 +45,7 @@ async function saveReward(event: SubmitEvent) {
 
 <TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-6">
 	<div class="flex items-center gap-3">
-		<Button href="/shop" variant="ghost" size="medium" format="icon" aria-label="Back to shop">
+		<Button href="/shop" profile="plain" size="medium" format="icon" aria-label="Back to shop">
 			<ArrowLeft class="size-4" />
 		</Button>
 		<div>
@@ -86,8 +86,8 @@ async function saveReward(event: SubmitEvent) {
 			{/if}
 
 			<div class="flex justify-end gap-2">
-				<Button size="medium" href="/shop" variant="ghost">Cancel</Button>
-				<Button size="medium" type="submit" disabled={busy}>
+				<Button size="medium" href="/shop" profile="plain">Cancel</Button>
+				<Button profile="highlighted" size="medium" type="submit" disabled={busy}>
 					{#if busy}<Spinner class="mr-2 size-4" />{/if}
 					Add reward
 				</Button>

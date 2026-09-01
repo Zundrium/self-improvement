@@ -30,7 +30,7 @@
 		<Button
 			href={permissionsSettingsHref(tracker === 'screen-time' ? 'screenTime' : tracker)}
 			size="small"
-			variant="ghost"
+			profile="plain"
 		>
 			Review data access
 		</Button>

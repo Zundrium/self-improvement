@@ -130,8 +130,10 @@
 					></AlertDialogHeader
 				>
 				<AlertDialogFooter
-					><AlertDialogCancel size="medium">Cancel</AlertDialogCancel><AlertDialogAction size="medium"
-						class="bg-red-600 text-white hover:bg-red-700"
+					><AlertDialogCancel size="medium">Cancel</AlertDialogCancel><AlertDialogAction
+						size="medium"
+						profile="plain"
+						tone="destructive"
 						onclick={confirmDelete}>Delete meal</AlertDialogAction
 					></AlertDialogFooter
 				>

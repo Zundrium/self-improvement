@@ -44,25 +44,35 @@ function componentNodes(value: unknown): ComponentNode[] {
 	return node.type === 'Component' ? [node, ...nested] : nested;
 }
 
-function buttonSizingViolations(): string[] {
+function buttonContractViolations(): string[] {
+	const allowedProfiles = new Set(['plain', 'highlighted', 'active', 'text']);
 	const allowedSizes = new Set(['small', 'medium', 'large']);
 	const sizingClass = /(?:^|\s)(?:[a-z]+:)*(?:h|size|p[trblxyse]?)-\S+/;
+	const colorClass = /(?:^|\s)(?:[a-z]+:)*(?:bg|text-(?:white|black|red)|from|via|to)-\S+/;
 	return svelteFiles(sourceRoot).flatMap((path) => {
 		const source = readFileSync(path, 'utf8');
 		const buttons = componentNodes(parse(source, { modern: true }).fragment).filter(
 			(node) => node.name === 'Button'
 		);
 		const invalid = buttons.some((button) => {
+			const profileAttribute = button.attributes?.find((attribute) => attribute.name === 'profile');
 			const sizeAttribute = button.attributes?.find((attribute) => attribute.name === 'size');
+			const styleAttribute = button.attributes?.find((attribute) => attribute.name === 'style');
 			const classValue = button.attributes?.find((attribute) => attribute.name === 'class')?.value;
+			const profile = Array.isArray(profileAttribute?.value)
+				? profileAttribute.value[0]?.data
+				: undefined;
 			const size = Array.isArray(sizeAttribute?.value) ? sizeAttribute.value[0]?.data : undefined;
 			const className = Array.isArray(classValue)
 				? classValue.map((part) => part.data ?? '').join('')
 				: undefined;
 			return Boolean(
-				!sizeAttribute ||
+				!profileAttribute ||
+					(profile && !allowedProfiles.has(profile)) ||
+					!sizeAttribute ||
 					(size && !allowedSizes.has(size)) ||
-					(className && sizingClass.test(className))
+					styleAttribute ||
+					(className && (sizingClass.test(className) || colorClass.test(className)))
 			);
 		});
 		return invalid ? [path.slice(sourceRoot.length + 1)] : [];
@@ -79,8 +89,8 @@ describe('shared UI component standards', () => {
 		).toEqual([]);
 	});
 
-	it('uses universal button sizes without local dimensional overrides', () => {
-		expect(buttonSizingViolations()).toEqual([]);
+	it('uses shared button color profiles and sizes without local overrides', () => {
+		expect(buttonContractViolations()).toEqual([]);
 	});
 
 	it('renders native forms only through Form', () => {

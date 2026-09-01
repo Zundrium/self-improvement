@@ -137,7 +137,7 @@
 					Saving completion
 				</span>
 			{:else if saveState === 'error'}
-				<Button variant="link" size="small" class="link cursor-pointer" type="button" onclick={onretry}>
+				<Button profile="text" size="small" class="link cursor-pointer" type="button" onclick={onretry}>
 					Save again
 				</Button>
 			{:else if status === 'completed' || complete}

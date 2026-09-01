@@ -181,7 +181,7 @@ function reasonKey(reasons: string[]) {
 		>
 			<div class="space-y-3">
 				<Button
-					variant="ghost"
+					profile="plain"
 					size="small"
 					type="button"
 					onclick={editFeeling}
@@ -194,7 +194,6 @@ function reasonKey(reasons: string[]) {
 					<h2
 						id="happiness-reasons-title"
 						class="text-lg font-medium tracking-[-0.39px]"
-						style={`color: ${colors.primary}`}
 					>
 						What's the reason?
 					</h2>
@@ -210,10 +209,7 @@ function reasonKey(reasons: string[]) {
 				{#each reasonOptions as option (option.value)}
 					{@const selected = selectedReasons.includes(option.value)}
 					<Button size="medium"
-						variant="ghost"
-						style={selected
-							? `background: color-mix(in srgb, ${colors.secondary} 18%, transparent); color: ${colors.primary}`
-							: undefined}
+						profile={selected ? 'active' : 'plain'}
 						aria-pressed={selected}
 						onclick={() => updateReason(option.value)}
 					>

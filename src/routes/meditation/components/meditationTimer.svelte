@@ -163,7 +163,7 @@
 
 		<div class="flex w-full items-center justify-center gap-2 sm:gap-4" data-meditation-timer>
 			<Button
-				variant="ghost"
+				profile="plain"
 				size="medium" format="icon"
 				aria-label="Decrease duration by one minute"
 				disabled={!canAdjust || durationSeconds === MINIMUM_DURATION_SECONDS}
@@ -177,7 +177,7 @@
 				{formatTimer(remainingSeconds)}
 			</p>
 			<Button
-				variant="ghost"
+				profile="plain"
 				size="medium" format="icon"
 				aria-label="Increase duration by one minute"
 				disabled={!canAdjust || durationSeconds === MAXIMUM_DURATION_SECONDS}
@@ -202,7 +202,7 @@
 				<span class="inline-flex items-center gap-2"><Check size={15} /> Session saved</span>
 			{:else if saveState === 'error'}
 				<Button
-					variant="link"
+					profile="text"
 					size="small"
 					class="link cursor-pointer"
 					type="button"

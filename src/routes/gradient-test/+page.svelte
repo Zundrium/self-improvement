@@ -63,7 +63,7 @@
 		<header class="max-w-2xl">
 			<div class="flex items-center justify-between gap-4">
 				<p class="text-xs font-medium tracking-[0.16em] text-(--text)/48 uppercase">Test page</p>
-				<Button variant="ghost" size="small" class="gap-2" onclick={copyGradients}>
+				<Button profile="plain" size="small" class="gap-2" onclick={copyGradients}>
 					<Copy class="size-3.5" />
 					Copy gradients
 				</Button>

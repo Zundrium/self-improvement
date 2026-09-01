@@ -439,7 +439,7 @@ function handleVisibilityChange() {
 				<PopoverTrigger>
 					{#snippet child({ props })}
 						<Button
-							variant="ghost"
+							profile="plain"
 							size="small" format="icon"
 							class="absolute right-0"
 							aria-label={`How to do ${activity.name}`}
@@ -548,7 +548,7 @@ function handleVisibilityChange() {
 				<div class="grid shrink-0 grid-cols-3 gap-2" aria-label={`${displayActivity.name} level`}>
 					{#each displayActivity.imageVariants as variant (variant.id)}
 						<Button
-							variant={selectedImageVariant?.id === variant.id ? 'default' : 'ghost'}
+							profile={selectedImageVariant?.id === variant.id ? 'active' : 'plain'}
 							size="small"
 							onclick={() => selectImageVariant(displayActivity, variant.id)}
 							aria-pressed={selectedImageVariant?.id === variant.id}>{variant.label}</Button

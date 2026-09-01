@@ -103,7 +103,7 @@ async function deleteSelectedReward() {
 					<Button
 						size="small"
 						format="icon"
-						variant="ghost"
+						profile="plain"
 						aria-label={`Edit ${reward.name}`}
 						onclick={() => editReward(reward)}
 					>
@@ -112,7 +112,7 @@ async function deleteSelectedReward() {
 					<Button
 						size="small"
 						format="icon"
-						variant="ghost"
+						profile="plain"
 						aria-label={`Delete ${reward.name}`}
 						onclick={() => confirmDelete(reward)}
 					>
@@ -124,7 +124,7 @@ async function deleteSelectedReward() {
 	{:else}
 		<p class="text-sm leading-6 text-(--text)/56">Your shop does not have any rewards yet.</p>
 	{/if}
-	<Button size="medium" href="/shop/rewards/new"><Plus class="mr-2 size-4" /> Add reward</Button>
+	<Button profile="highlighted" size="medium" href="/shop/rewards/new"><Plus class="mr-2 size-4" /> Add reward</Button>
 </TrackerSection>
 
 <Dialog bind:open={editorOpen}>
@@ -159,8 +159,8 @@ async function deleteSelectedReward() {
 			</FieldGroup>
 			{#if errorMessage}<p class="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>{/if}
 			<DialogFooter>
-				<Button size="medium" type="button" variant="ghost" onclick={() => (editorOpen = false)}>Cancel</Button>
-				<Button size="medium" type="submit" disabled={busy}>
+				<Button size="medium" type="button" profile="plain" onclick={() => (editorOpen = false)}>Cancel</Button>
+				<Button profile="highlighted" size="medium" type="submit" disabled={busy}>
 					{#if busy}<Spinner class="mr-2 size-4" />{/if} Save reward
 				</Button>
 			</DialogFooter>
@@ -178,8 +178,8 @@ async function deleteSelectedReward() {
 		</DialogHeader>
 		{#if errorMessage}<p class="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>{/if}
 		<DialogFooter>
-			<Button size="medium" variant="ghost" onclick={() => (deleteOpen = false)}>Cancel</Button>
-			<Button size="medium" variant="destructive" disabled={busy} onclick={deleteSelectedReward}>
+			<Button size="medium" profile="plain" onclick={() => (deleteOpen = false)}>Cancel</Button>
+			<Button size="medium" profile="plain" tone="destructive" disabled={busy} onclick={deleteSelectedReward}>
 				{#if busy}<Spinner class="mr-2 size-4" />{/if} Delete reward
 			</Button>
 		</DialogFooter>

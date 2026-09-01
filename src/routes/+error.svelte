@@ -24,7 +24,7 @@
 		</CardHeader>
 		<CardContent class="items-center">
 			<p class="text-sm text-(--text)/64">{page.error?.message ?? 'Please try again.'}</p>
-			<Button size="medium" href="/">Go home</Button>
+			<Button profile="highlighted" size="medium" href="/">Go home</Button>
 		</CardContent>
 	</Card>
 </main>

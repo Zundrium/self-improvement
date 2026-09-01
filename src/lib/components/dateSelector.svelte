@@ -63,7 +63,7 @@
 >
 	<Button
 		href={hrefForDate(previousDate) as Pathname}
-		variant="default"
+		profile="plain"
 		size="medium" format="icon"
 		aria-label="Previous day"><ChevronLeft class="size-4" /></Button
 	>
@@ -71,9 +71,9 @@
 		<PopoverTrigger>
 			{#snippet child({ props })}
 				<Button
-					variant="ghost"
+					profile="highlighted"
 					size="medium"
-					class="date-picker-field w-full min-w-0 gap-2 text-white shadow-sm shadow-black/15 hover:bg-transparent hover:text-white"
+					class="w-full min-w-0 gap-2"
 					motionColors={pickerColors}
 					{...props}
 				>
@@ -106,20 +106,8 @@
 	<Button
 		href={nextDate <= today ? (hrefForDate(nextDate) as Pathname) : undefined}
 		disabled={nextDate > today}
-		variant="default"
+		profile="plain"
 		size="medium" format="icon"
 		aria-label="Next day"><ChevronRight class="size-4" /></Button
 	>
 </section>
-
-<style>
-	:global(.date-picker-field) {
-		background: linear-gradient(
-			135deg,
-			var(--motion-primary) 0%,
-			var(--motion-secondary) 52%,
-			var(--motion-tertiary) 100%
-		);
-		color: #ffffff;
-	}
-</style>

@@ -30,35 +30,30 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 			href={tracker.infoHref}
 			target="_blank"
 			rel="noreferrer"
-			variant="ghost"
+			profile="text"
 			size="medium" format="icon"
+			class="tracker-title-color"
 			aria-label={`About ${tracker.label}`}
 			title={`Watch the ${tracker.label.toLowerCase()} source video on YouTube`}
 		>
-			<Info class="size-4" style={`color: ${tracker.colors.secondary}`} />
+			<Info class="size-4" />
 		</Button>
 	{:else}
 		<span aria-hidden="true"></span>
 	{/if}
-	<h1
-		class="text-center text-sm font-medium"
-		style={`color: color-mix(in srgb, ${tracker.colors.secondary} 50%, white)`}
-	>
+	<h1 class="tracker-title-color text-center text-sm font-medium">
 		{tracker.label}{settingsActive ? ' settings' : ''}
 	</h1>
 	{#if tracker.settingsHref && !settingsActive}
 		<Button
 			type="button"
-			variant="ghost"
+			profile="text"
 			size="medium" format="icon"
-			class="bg-transparent hover:bg-transparent"
+			class="tracker-title-color"
 			aria-label={`${tracker.label} settings`}
 			onclick={() => void goto(resolve(tracker.settingsHref as '/'))}
 		>
-			<Settings
-				class="size-4"
-				style={`color: color-mix(in srgb, ${tracker.colors.secondary} 50%, white)`}
-			/>
+			<Settings class="size-4" />
 		</Button>
 	{:else}
 		<span aria-hidden="true"></span>

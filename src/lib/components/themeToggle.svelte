@@ -10,7 +10,7 @@
 
 <div class="inline-flex rounded-3xl bg-(--text)/5 p-1" aria-label="Color theme">
 	<Button
-		variant={selected('light') ? 'default' : 'ghost'}
+		profile={selected('light') ? 'active' : 'plain'}
 		size="small" format="icon"
 		aria-label="Use light theme"
 		aria-pressed={selected('light')}
@@ -19,7 +19,7 @@
 		<Sun class="size-4" />
 	</Button>
 	<Button
-		variant={selected('system') ? 'default' : 'ghost'}
+		profile={selected('system') ? 'active' : 'plain'}
 		size="small" format="icon"
 		aria-label="Follow system theme"
 		aria-pressed={selected('system')}
@@ -28,7 +28,7 @@
 		<Laptop class="size-4" />
 	</Button>
 	<Button
-		variant={selected('dark') ? 'default' : 'ghost'}
+		profile={selected('dark') ? 'active' : 'plain'}
 		size="small" format="icon"
 		aria-label="Use dark theme"
 		aria-pressed={selected('dark')}

@@ -69,6 +69,22 @@
 	const appShellActive = $derived(!standalonePage);
 
 	$effect(() => {
+		const colors = selectedFeature?.colors;
+		const root = document.documentElement;
+		if (!colors) {
+			root.removeAttribute('data-tracker-theme');
+			root.style.removeProperty('--tracker-color-primary');
+			root.style.removeProperty('--tracker-color-middle');
+			root.style.removeProperty('--tracker-color-tertiary');
+			return;
+		}
+		root.dataset.trackerTheme = selectedFeature.id;
+		root.style.setProperty('--tracker-color-primary', colors.primary);
+		root.style.setProperty('--tracker-color-middle', colors.secondary);
+		root.style.setProperty('--tracker-color-tertiary', colors.tertiary);
+	});
+
+	$effect(() => {
 		const dates = dateNavigation?.markedDates ?? [];
 		untrack(() => dateSelectorState.replace(dates));
 	});
@@ -204,14 +220,11 @@
 
 <div
 	class={appShellActive
-		? `safe-area-padding-top flex h-svh flex-col overflow-hidden ${selectedTracker ? 'tracker-fade' : ''}`
+		? `safe-area-padding-top flex h-svh flex-col overflow-hidden ${selectedFeature ? 'tracker-theme' : ''} ${selectedTracker ? 'tracker-fade' : ''}`
 		: undefined}
-	style:--tracker-fade-color={selectedTracker?.colors.primary}
-	style:--tracker-fade-secondary={selectedTracker?.colors.secondary}
-	style:--tracker-fade-tertiary={selectedTracker?.colors.tertiary}
-	style:--bottom-action-primary={selectedFeature?.colors.primary}
-	style:--bottom-action-secondary={selectedFeature?.colors.secondary}
-	style:--bottom-action-tertiary={selectedTracker?.colors.tertiary ?? selectedFeature?.colors.secondary}
+	style:--tracker-color-primary={selectedFeature?.colors.primary}
+	style:--tracker-color-middle={selectedFeature?.colors.secondary}
+	style:--tracker-color-tertiary={selectedFeature?.colors.tertiary}
 	use:motionRoot
 >
 	{#if dateNavigation || selectedFeature}

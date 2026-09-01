@@ -28,8 +28,10 @@
 	<header class="flex items-start justify-between gap-4">
 		<div class="min-w-0">
 			<h2
-				class="text-xl font-medium tracking-[-0.035em]"
-				style={colors ? `color: ${colors.primary}` : undefined}
+				class="tracker-title-color text-xl font-medium tracking-[-0.035em]"
+				style={colors
+					? `color: color-mix(in srgb, ${colors.secondary} 50%, var(--tracker-title-contrast))`
+					: undefined}
 			>
 				{title}
 			</h2>

@@ -3,7 +3,8 @@
 	import type { AlertDialog as AlertDialogTypes } from 'bits-ui';
 
 	export type AlertDialogCancelProps = Omit<AlertDialogTypes.CancelProps, 'child'> &
-	Pick<ButtonProps, 'variant' | 'size' | 'format' | 'motionColors' | 'motionScale'>;
+		Partial<Pick<ButtonProps, 'profile' | 'tone' | 'format' | 'motionColors' | 'motionScale'>> &
+		Pick<ButtonProps, 'size'>;
 </script>
 
 <script lang="ts">
@@ -13,7 +14,8 @@
 	let {
 		ref = $bindable(null),
 		class: className,
-		variant = 'ghost',
+		profile = 'plain',
+		tone = 'standard',
 		size,
 		format = 'text',
 		motionColors,
@@ -28,7 +30,8 @@
 		<Button
 			{...props}
 			class={className}
-			{variant}
+			{profile}
+			{tone}
 			{size}
 			{format}
 			{motionColors}

@@ -5,7 +5,7 @@
 	export type BottomActionFormat = 'text' | 'icon';
 	export type BottomActionButtonProps = Omit<
 		ButtonProps,
-		'variant' | 'size' | 'format' | 'motionColors'
+		'profile' | 'tone' | 'size' | 'format' | 'motionColors'
 	> & {
 		tone?: BottomActionTone;
 		format?: BottomActionFormat;
@@ -15,7 +15,7 @@
 
 <script lang="ts">
 	import { cn } from '$lib/utils';
-	import { Button } from '$lib/components/ui/button';
+	import { Button, type ButtonColorProfile } from '$lib/components/ui/button';
 
 	let {
 		tone = 'neutral',
@@ -25,14 +25,19 @@
 		children,
 		...restProps
 	}: BottomActionButtonProps = $props();
+
+	const profile = $derived<ButtonColorProfile>(
+		tone === 'primary' ? 'highlighted' : tone === 'secondary' ? 'active' : 'plain'
+	);
 </script>
 
 <Button
-	variant={tone === 'destructive' ? 'destructive' : 'ghost'}
+	{profile}
+	tone={tone === 'destructive' ? 'destructive' : 'standard'}
 	size="medium"
 	{format}
 	class={cn(
-		'bottom-action-button',
+		'bottom-action-button rounded-full',
 		format === 'text' && expand ? 'min-w-0 flex-1' : 'shrink-0',
 		className
 	)}
@@ -45,54 +50,7 @@
 </Button>
 
 <style>
-	:global(.bottom-action-button) {
-		border-radius: 9999px;
-		transition:
-			background-color 150ms ease,
-			color 150ms ease,
-			filter 150ms ease;
-	}
-
 	:global(.bottom-action-button[data-action-format='text'][data-action-expand='true']) {
 		width: 100%;
-	}
-
-	:global(.bottom-action-button[data-action-tone='neutral']) {
-		background: color-mix(in srgb, var(--text) 6%, transparent);
-		color: color-mix(in srgb, var(--text) 72%, transparent);
-	}
-
-	:global(.bottom-action-button[data-action-tone='neutral']:hover) {
-		background: color-mix(in srgb, var(--text) 10%, transparent);
-		color: var(--text);
-	}
-
-	:global(.bottom-action-button[data-action-tone='primary']),
-	:global(.bottom-action-button[data-action-tone='secondary']) {
-		background: linear-gradient(
-			135deg,
-			var(--bottom-action-primary, var(--text)) 0%,
-			var(--bottom-action-secondary, var(--text)) 52%,
-			var(--bottom-action-tertiary, var(--text)) 100%
-		);
-		color: #ffffff;
-	}
-
-	:global(.bottom-action-button[data-action-tone='primary']:hover),
-	:global(.bottom-action-button[data-action-tone='secondary']:hover) {
-		filter: brightness(1.08);
-	}
-
-	:global(.bottom-action-button[data-action-tone='destructive']) {
-		background: color-mix(in srgb, #ef4444 10%, transparent);
-		color: #dc2626;
-	}
-
-	:global(.bottom-action-button[data-action-tone='destructive']:hover) {
-		background: color-mix(in srgb, #ef4444 18%, transparent);
-	}
-
-	:global(.dark .bottom-action-button[data-action-tone='destructive']) {
-		color: #f87171;
 	}
 </style>

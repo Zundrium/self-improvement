@@ -170,23 +170,23 @@
 		<div class="flex flex-wrap gap-2">
 			<Button size="medium"
 				type="button"
-				variant="ghost"
+				profile="plain"
 				disabled={busy || !nativeAndroid}
 				onclick={chooseFolder}
 			>
 				<FolderOpen class="size-4" /> Choose Google Drive folder
 			</Button>
-			<Button size="medium"
+			<Button profile="highlighted" size="medium"
 				type="button"
 				disabled={busy || !nativeAndroid || !status.configured}
 				onclick={backUpNow}
 			>
 				{#if busy}<Spinner class="size-4" />{:else}<RefreshCw class="size-4" />{/if} Back up now
 			</Button>
-			<Button size="medium" type="button" variant="ghost" disabled={busy} onclick={exportFile}>
+			<Button size="medium" type="button" profile="plain" disabled={busy} onclick={exportFile}>
 				<Download class="size-4" /> Export file
 			</Button>
-			<Button size="medium" type="button" variant="ghost" disabled={busy} onclick={selectRestore}>
+			<Button size="medium" type="button" profile="plain" disabled={busy} onclick={selectRestore}>
 				<Upload class="size-4" /> Restore backup
 			</Button>
 		</div>
@@ -204,8 +204,10 @@
 		</AlertDialogHeader>
 		<AlertDialogFooter>
 			<AlertDialogCancel size="medium">Keep current data</AlertDialogCancel>
-			<AlertDialogAction size="medium"
-				class="bg-red-600 text-white hover:bg-red-700"
+			<AlertDialogAction
+				size="medium"
+				profile="plain"
+				tone="destructive"
 				disabled={busy}
 				onclick={confirmRestore}>Replace local data</AlertDialogAction
 			>

@@ -48,7 +48,7 @@
 		{/if}
 	</div>
 	<Button
-		variant="ghost"
+		profile="plain"
 		size="small" format="icon"
 		disabled={pending}
 		aria-label={action}

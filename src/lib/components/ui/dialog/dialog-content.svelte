@@ -46,9 +46,9 @@
 							<Button
 								{...props}
 								data-slot="dialog-close"
-								variant="ghost"
+								profile="text"
 								size="small" format="icon"
-								class="absolute end-4 top-4 text-(--text)/40"
+								class="absolute end-4 top-4"
 							>
 								<X class="size-4" aria-hidden="true" />
 								<span class="sr-only">Close</span>

@@ -103,9 +103,9 @@ async function refreshGamification() {
 
 		<Button
 			href="/profile"
-			variant="ghost"
+			profile="plain"
 			size="large"
-			class="w-full gap-2 bg-(--text)/4"
+			class="w-full gap-2"
 			data-user-card-item
 			onclick={onSelect}
 		>

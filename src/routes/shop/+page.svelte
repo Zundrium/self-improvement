@@ -148,10 +148,8 @@ async function redeemSelectedReward() {
 		</DialogHeader>
 		{#if errorMessage}<p class="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>{/if}
 		<DialogFooter>
-			<Button size="medium" variant="ghost" onclick={() => (confirmationOpen = false)}>Not yet</Button>
-			<Button size="medium"
-				class="text-white hover:text-white hover:brightness-110"
-				style={`background: ${colors.primary}`}
+			<Button size="medium" profile="plain" onclick={() => (confirmationOpen = false)}>Not yet</Button>
+			<Button profile="highlighted" size="medium"
 				disabled={redeeming}
 				onclick={redeemSelectedReward}
 			>
@@ -170,9 +168,7 @@ async function redeemSelectedReward() {
 				<DialogTitle>Enjoy {claimedReward?.name}</DialogTitle>
 				<DialogDescription class="mt-2">You earned this one.</DialogDescription>
 			</div>
-			<Button size="medium"
-				class="text-white hover:text-white hover:brightness-110"
-				style={`background: ${colors.primary}`}
+			<Button profile="highlighted" size="medium"
 				onclick={() => (celebrationOpen = false)}>Done</Button
 			>
 		</div>

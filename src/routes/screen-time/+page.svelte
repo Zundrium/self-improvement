@@ -42,7 +42,7 @@
 			<AlertTitle>No apps selected</AlertTitle>
 			<AlertDescription>Choose at least one app to start measuring screen time.</AlertDescription>
 			<div class="col-start-2 mt-2">
-				<Button href="/screen-time/settings" size="small" variant="ghost">Choose apps</Button>
+				<Button href="/screen-time/settings" size="small" profile="plain">Choose apps</Button>
 			</div>
 		</Alert>
 	{/if}
