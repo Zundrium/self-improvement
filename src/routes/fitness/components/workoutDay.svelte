@@ -105,7 +105,10 @@
 					id="workout-title"
 					class="text-3xl font-medium tracking-[-0.04em] sm:text-4xl"
 				>
-					<Badge class="mr-2 align-middle text-white" style={`background: ${colors.primary}`}>
+					<Badge
+						class="dynamic-background mr-2 align-middle text-(--app-on-color)"
+						style={`--dynamic-background: ${colors.primary}`}
+					>
 						Day {workout.day}
 					</Badge>
 					<span class="align-middle">{focus}</span>

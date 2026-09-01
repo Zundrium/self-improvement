@@ -13,7 +13,7 @@
 <p
 	bind:this={ref}
 	data-slot="field-error"
-	class={cn('text-xs leading-[1.5] tracking-[-0.3px] text-red-600 dark:text-red-400', className)}
+	class={cn('text-xs leading-[1.5] tracking-[-0.3px] text-(--status-danger-text)', className)}
 	{...restProps}
 >
 	{@render children?.()}

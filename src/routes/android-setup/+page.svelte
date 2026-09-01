@@ -117,8 +117,8 @@
 
 	function permissionClass(permission: PermissionState) {
 		return permission === 'granted'
-			? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-			: 'bg-amber-500/10 text-amber-700 dark:text-amber-400';
+			? 'bg-(--status-success)/10 text-(--status-success-text)'
+			: 'bg-(--status-warning)/10 text-(--status-warning-text)';
 	}
 </script>
 

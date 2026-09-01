@@ -11,10 +11,8 @@
 
 	let { position = 'top-center', offset }: Props = $props();
 	const placement = $derived(position === 'top-center' ? 'top-4' : 'bottom-4');
-	const offsetStyle = $derived(
-		position === 'top-center'
-			? `top: ${offset?.top ?? '1rem'}`
-			: `bottom: ${offset?.bottom ?? '1rem'}`
+	const offsetValue = $derived(
+		position === 'top-center' ? (offset?.top ?? '1rem') : (offset?.bottom ?? '1rem')
 	);
 
 	function toastMotion(node: HTMLElement, closing: boolean) {
@@ -118,9 +116,9 @@
 	}
 
 	function toastColor(type: Toast['type']) {
-		if (type === 'error') return 'bg-red-500';
-		if (type === 'success') return 'bg-emerald-500';
-		if (type === 'default') return 'bg-blue-500';
+		if (type === 'error') return 'bg-(--status-danger)';
+		if (type === 'success') return 'bg-(--status-success)';
+		if (type === 'default') return 'bg-(--status-info)';
 		return '';
 	}
 
@@ -136,9 +134,10 @@
 </script>
 
 <div
-	class={`pointer-events-none fixed left-1/2 ${placement} z-[60] flex w-(--app-overlay-width) max-w-sm -translate-x-1/2 flex-col gap-2`}
+	class={`toast-region pointer-events-none fixed left-1/2 ${placement} z-[60] flex w-(--app-overlay-width) max-w-sm -translate-x-1/2 flex-col gap-2`}
 	class:flex-col-reverse={position === 'bottom-center'}
-	style={offsetStyle}
+	data-position={position}
+	style:--toast-offset={offsetValue}
 	aria-live="polite"
 	aria-atomic="true"
 >
@@ -146,7 +145,7 @@
 		<article
 			use:toastMotion={item.closing}
 			use:swipeDismiss={item.id}
-			class={`pointer-events-auto flex touch-pan-y items-center gap-4 rounded-3xl px-5 py-4 text-white ${toastColor(item.type)}`}
+			class={`pointer-events-auto flex touch-pan-y items-center gap-4 rounded-3xl px-5 py-4 text-(--app-on-color) ${toastColor(item.type)}`}
 			role={item.type === 'error' ? 'alert' : 'status'}
 		>
 			{#if item.type === 'error'}
@@ -159,7 +158,7 @@
 			<div class="min-w-0 flex-1">
 				<p class="text-sm font-medium leading-5">{item.message}</p>
 				{#if item.description}
-					<p class="mt-0.5 text-sm leading-5 text-white/80">{item.description}</p>
+					<p class="mt-0.5 text-sm leading-5 text-(--app-on-color)/80">{item.description}</p>
 				{/if}
 				{#if item.action}
 					<Button profile="highlighted"

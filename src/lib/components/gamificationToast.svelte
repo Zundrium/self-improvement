@@ -232,7 +232,11 @@ function animateConfetti(node: HTMLElement) {
 }
 
 function confettiColor(index: number) {
-	return index % 3 === 0 ? '#d4a017' : index % 2 ? '#ffffff' : colors.secondary;
+	return index % 3 === 0
+		? 'var(--gamification-glimmers-primary)'
+		: index % 2
+			? 'var(--app-white)'
+			: colors.secondary;
 }
 
 function prefersReducedMotion() {
@@ -253,19 +257,19 @@ function prefersReducedMotion() {
 					skipCelebration();
 				}}
 				onInteractOutside={(event) => event.preventDefault()}
-				class="inset-0 top-0 left-0 z-[70] h-svh w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none px-(--app-inset-inline-start) py-0 text-center text-white shadow-none"
-				style={`background: ${trackerGradient(colors, 145)}`}
+				class="dynamic-background inset-0 top-0 left-0 z-[70] h-svh w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none px-(--app-inset-inline-start) py-0 text-center text-(--app-on-color) shadow-none"
+				style={`--dynamic-background: ${trackerGradient(colors, 145)}`}
 			>
-				<div class="absolute inset-x-0 top-0 z-10 h-1 bg-white/20" aria-hidden="true">
-					<div data-achievement-progress class="h-full origin-left rounded-r-full bg-white"></div>
+				<div class="absolute inset-x-0 top-0 z-10 h-1 bg-(--app-white)/20" aria-hidden="true">
+					<div data-achievement-progress class="h-full origin-left rounded-r-full bg-(--app-white)"></div>
 				</div>
 
 				<div class="absolute inset-x-0 top-[10%] flex justify-center" aria-hidden="true">
 					<div class="relative flex size-64 items-center justify-center">
-						<div data-achievement-halo class="absolute size-56 rounded-full bg-white/28"></div>
+						<div data-achievement-halo class="absolute size-56 rounded-full bg-(--app-white)/28"></div>
 						<div
 							data-achievement-icon
-							class="relative flex size-56 items-center justify-center rounded-full bg-white/16 text-white"
+							class="relative flex size-56 items-center justify-center rounded-full bg-(--app-white)/16 text-(--app-on-color)"
 						>
 							<AchievementIcon class="size-28" />
 						</div>
@@ -273,7 +277,7 @@ function prefersReducedMotion() {
 				</div>
 
 				<div data-achievement-copy class="absolute inset-x-6 top-[43%] flex flex-col items-center">
-					<p class="text-sm font-semibold tracking-[0.16em] text-white/72 uppercase">
+					<p class="text-sm font-semibold tracking-[0.16em] text-(--app-on-color)/72 uppercase">
 						Achievement unlocked
 					</p>
 					<DialogTitle
@@ -284,7 +288,7 @@ function prefersReducedMotion() {
 					</DialogTitle>
 					<DialogDescription
 						data-achievement-description
-						class="mt-4 max-w-sm text-base leading-6 text-white/82"
+						class="mt-4 max-w-sm text-base leading-6 text-(--app-on-color)/82"
 					>
 						{activeAchievement.description}
 					</DialogDescription>
@@ -294,14 +298,16 @@ function prefersReducedMotion() {
 					{#each Array(CONFETTI_COUNT) as _, index}
 						<span
 							data-achievement-confetti
-							class={index % 2 ? 'absolute h-3 w-1 rounded-full' : 'absolute size-2 rounded-full'}
-							style={`background: ${confettiColor(index)}`}
+							class={index % 2
+								? 'dynamic-background absolute h-3 w-1 rounded-full'
+								: 'dynamic-background absolute size-2 rounded-full'}
+							style:--dynamic-background={confettiColor(index)}
 						></span>
 					{/each}
 				</div>
 
 				<Pressable
-					class="absolute inset-x-0 bottom-6 mx-auto w-fit px-4 py-3 text-sm font-medium text-white/72 underline-offset-4 hover:text-white focus-visible:rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+					class="absolute inset-x-0 bottom-6 mx-auto w-fit px-4 py-3 text-sm font-medium text-(--app-on-color)/72 underline-offset-4 hover:text-(--app-on-color) focus-visible:rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--app-white)"
 					aria-label="Skip achievement celebration"
 					onclick={(event) => {
 						event.stopPropagation();

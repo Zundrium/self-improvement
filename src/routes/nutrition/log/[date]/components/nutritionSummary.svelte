@@ -41,7 +41,7 @@
 	{#if showEatingWindow && windowState}
 		<div
 			class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 {windowState.open
-				? 'bg-green-500/10 text-green-700 dark:text-green-400'
+				? 'bg-(--status-positive)/10 text-(--status-positive-text)'
 				: 'bg-(--text)/6 text-(--text)/64'}"
 			role="status"
 			aria-live="polite"

@@ -82,7 +82,7 @@ async function saveReward(event: SubmitEvent) {
 			</FieldGroup>
 
 			{#if errorMessage}
-				<p class="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+				<p class="text-sm text-(--status-danger-text)">{errorMessage}</p>
 			{/if}
 
 			<div class="flex justify-end gap-2">

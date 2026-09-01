@@ -426,7 +426,7 @@ onDestroy(stopCamera);
 			</div>
 		</section>
 	{:else if phase === 'photo'}
-		<section class="relative min-h-0 flex-1 overflow-hidden bg-black text-white">
+		<section class="relative min-h-0 flex-1 overflow-hidden bg-(--app-overlay-color) text-(--app-on-color)">
 			<video
 				bind:this={video}
 				autoplay
@@ -437,27 +437,27 @@ onDestroy(stopCamera);
 					: ''}"
 			></video>
 			<div
-				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/65"
+				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-(--app-overlay-color)/65"
 			></div>
 			<div class="app-gutter absolute inset-x-0 top-4 z-30">
 				<div
 					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 text-(--text) backdrop-blur-md"
 				>
-					<Badge class="bg-(--tracker-color-primary) text-white">1 / 3</Badge>
+					<Badge class="bg-(--tracker-color-primary) text-(--app-on-color)">1 / 3</Badge>
 					<p class="truncate text-sm font-medium">Take a photo of your meal</p>
 				</div>
 			</div>
 
 			{#if cameraState !== 'ready'}
-				<div class="absolute inset-0 flex items-center justify-center bg-black px-6 text-center">
+				<div class="absolute inset-0 flex items-center justify-center bg-(--app-overlay-color) px-6 text-center">
 					<div class="max-w-xs space-y-4">
 						{#if cameraState === 'error'}
-							<span class="mx-auto flex size-14 items-center justify-center rounded-full bg-white/10"
+							<span class="mx-auto flex size-14 items-center justify-center rounded-full bg-(--app-white)/10"
 								><Camera class="size-6" /></span
 							>
 							<div>
 								<p class="font-medium">Camera unavailable</p>
-								<p class="mt-1 text-sm text-white/60">{cameraError}</p>
+								<p class="mt-1 text-sm text-(--app-on-color)/60">{cameraError}</p>
 							</div>
 							<div class="flex justify-center gap-2">
 								<Button profile="highlighted" size="medium" onclick={startCamera}
@@ -469,22 +469,22 @@ onDestroy(stopCamera);
 								>
 							</div>
 						{:else}
-							<Spinner class="mx-auto size-10 text-white" />
-							<p class="text-sm text-white/60">Opening camera…</p>
+							<Spinner class="mx-auto size-10 text-(--app-on-color)" />
+							<p class="text-sm text-(--app-on-color)/60">Opening camera…</p>
 						{/if}
 					</div>
 				</div>
 			{/if}
 
 			{#if processingPhoto}
-				<div class="absolute inset-0 z-20 flex items-center justify-center bg-black/55 text-white">
+				<div class="absolute inset-0 z-20 flex items-center justify-center bg-(--app-overlay-color)/55 text-(--app-on-color)">
 					<Spinner class="size-12" />
 				</div>
 			{/if}
 		</section>
 	{:else if phase === 'description'}
 		<WorkflowHeader title="Describe your meal">
-			{#snippet leading()}<Badge class="bg-(--tracker-color-primary) text-white">1 / 3</Badge>{/snippet}
+			{#snippet leading()}<Badge class="bg-(--tracker-color-primary) text-(--app-on-color)">1 / 3</Badge>{/snippet}
 		</WorkflowHeader>
 
 		<section class="app-gutter mx-auto min-h-0 w-full max-w-xl flex-1 overflow-y-auto py-8 sm:py-12">
@@ -533,7 +533,7 @@ onDestroy(stopCamera);
 		</section>
 	{:else if phase === 'analyzing' || phase === 'refining'}
 		<section
-			class="relative min-h-0 flex-1 overflow-hidden {selectedImage ? 'bg-black' : 'bg-(--bg-elevated)'}"
+			class="relative min-h-0 flex-1 overflow-hidden {selectedImage ? 'bg-(--app-overlay-color)' : 'bg-(--bg-elevated)'}"
 			aria-live="polite"
 			aria-label={phase === 'analyzing' ? 'Analyzing meal' : 'Updating estimate'}
 		>
@@ -546,7 +546,7 @@ onDestroy(stopCamera);
 			{/if}
 			<div
 				class="absolute inset-0 flex items-center justify-center {selectedImage
-					? 'bg-black/55 text-white'
+					? 'bg-(--app-overlay-color)/55 text-(--app-on-color)'
 					: 'bg-(--bg)/70 text-(--text)'}"
 			>
 				<Spinner class="size-12" />
@@ -555,7 +555,7 @@ onDestroy(stopCamera);
 				<div
 					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 text-(--text) backdrop-blur-md"
 				>
-					<Badge class="bg-(--tracker-color-primary) text-white">
+					<Badge class="bg-(--tracker-color-primary) text-(--app-on-color)">
 						{phase === 'analyzing' ? '2 / 3' : '3 / 3'}
 					</Badge>
 					<p class="truncate text-sm font-medium">
@@ -565,16 +565,16 @@ onDestroy(stopCamera);
 			</div>
 		</section>
 	{:else if phase === 'analysis-error'}
-		<section class="relative min-h-0 flex-1 overflow-hidden {selectedImage ? 'bg-black' : ''}">
+		<section class="relative min-h-0 flex-1 overflow-hidden {selectedImage ? 'bg-(--app-overlay-color)' : ''}">
 			{#if selectedImage}
 				<img src={selectedImage} alt="Your meal" class="absolute inset-0 size-full object-cover" />
-				<div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
+				<div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-(--app-overlay-color)/60"></div>
 			{/if}
 			<div class="app-gutter absolute inset-x-0 top-4 z-30">
 				<div
 					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 backdrop-blur-md"
 				>
-					<Badge class="bg-(--tracker-color-primary) text-white">2 / 3</Badge>
+					<Badge class="bg-(--tracker-color-primary) text-(--app-on-color)">2 / 3</Badge>
 					<p class="truncate text-sm font-medium">Could not analyze meal</p>
 				</div>
 			</div>
@@ -583,7 +583,7 @@ onDestroy(stopCamera);
 					{#if !selectedImage}
 						<p class="line-clamp-4 text-sm leading-6 text-(--text)/64">{mealDescription}</p>
 					{/if}
-					<Alert variant="destructive" class="bg-red-600 text-white dark:bg-red-600 dark:text-white">
+					<Alert variant="destructive" class="bg-(--status-danger-strong) text-(--app-on-color) dark:bg-(--status-danger-strong) dark:text-(--app-on-color)">
 						<X aria-hidden="true" />
 						<AlertDescription>{requestError}</AlertDescription>
 					</Alert>
@@ -591,14 +591,14 @@ onDestroy(stopCamera);
 			</div>
 		</section>
 	{:else if estimate}
-		<section class="relative min-h-0 flex-1 overflow-y-auto {selectedImage ? 'bg-black' : ''}">
+		<section class="relative min-h-0 flex-1 overflow-y-auto {selectedImage ? 'bg-(--app-overlay-color)' : ''}">
 			{#if selectedImage}
 				<img
 					src={selectedImage}
 					alt={estimate.mealName}
 					class="absolute inset-0 size-full object-cover"
 				/>
-				<div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-black/55"></div>
+				<div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-(--app-overlay-color)/55"></div>
 			{:else}
 				<div class="app-gutter absolute inset-0 flex items-center justify-center bg-(--bg-elevated)">
 					<p class="max-w-lg text-center text-sm leading-6 text-(--text)/64">{mealDescription}</p>
@@ -608,7 +608,7 @@ onDestroy(stopCamera);
 				<div
 					class="mx-auto flex w-fit max-w-full items-center gap-3 rounded-3xl bg-(--bg-elevated)/92 px-4 py-2 backdrop-blur-md"
 				>
-					<Badge class="bg-(--tracker-color-primary) text-white">3 / 3</Badge>
+					<Badge class="bg-(--tracker-color-primary) text-(--app-on-color)">3 / 3</Badge>
 					<p class="truncate text-sm font-medium">Review estimate</p>
 				</div>
 			</div>

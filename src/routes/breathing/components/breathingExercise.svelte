@@ -163,8 +163,8 @@
 >
 	<div class="flex min-h-12 items-center justify-center">
 		<p
-			class="text-5xl font-semibold tracking-[-0.04em] tabular-nums sm:text-6xl"
-			style={`color: ${colors.primary}`}
+			class="dynamic-color text-5xl font-semibold tracking-[-0.04em] tabular-nums sm:text-6xl"
+			style:--dynamic-color={colors.primary}
 			role="timer"
 			aria-label={`${displayedRemainingSeconds} seconds remaining`}
 		>
@@ -174,8 +174,8 @@
 
 	<div class="relative flex size-72 items-center justify-center sm:size-80">
 		<div
-			class="relative flex size-full items-center justify-center rounded-full text-white shadow-lg shadow-black/10 will-change-transform"
-			style:background={trackerGradient(colors)}
+			class="dynamic-background relative flex size-full items-center justify-center rounded-full text-(--app-on-color) shadow-lg shadow-(--app-shadow-color)/10 will-change-transform"
+			style:--dynamic-background={trackerGradient(colors)}
 			data-breathing-visual
 			use:breathingPhaseScale={{
 				phase: step.phase.id,
@@ -185,7 +185,7 @@
 			aria-hidden="true"
 		>
 			<div
-				class="absolute inset-[20%] rounded-full bg-white/24 will-change-transform"
+				class="absolute inset-[20%] rounded-full bg-(--app-white)/24 will-change-transform"
 				data-breathing-hold-progress
 				use:breathingHoldProgress={{
 					phase: step.phase.id,
@@ -199,7 +199,7 @@
 		</div>
 		{#if status !== 'completed'}
 			<p
-				class="pointer-events-none absolute inset-0 flex items-center justify-center text-3xl font-semibold text-white"
+				class="pointer-events-none absolute inset-0 flex items-center justify-center text-3xl font-semibold text-(--app-on-color)"
 				aria-live="polite"
 				use:breathingPhaseText={status === 'running'}
 			>

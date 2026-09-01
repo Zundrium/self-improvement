@@ -178,7 +178,10 @@ function completeRoutine() {
 	<section aria-label="Stretch routine" class="flex min-h-0 flex-1 flex-col gap-8">
 		{#if !scheduled}
 			<div class="flex min-h-72 flex-1 flex-col items-center justify-center px-6 py-10 text-center">
-				<CalendarOff class="size-12" style={`color: ${colors.primary}`} />
+				<CalendarOff
+					class="dynamic-color size-12"
+					style={`--dynamic-color: ${colors.primary}`}
+				/>
 				<h2 class="mt-5 text-2xl font-medium tracking-[-0.04em]">Weekend recovery</h2>
 				<p class="mt-2 max-w-sm text-sm leading-6 text-(--text)/56">
 					The weekday routine resumes Monday.
@@ -187,9 +190,9 @@ function completeRoutine() {
 		{:else}
 			{#if completedBefore}
 				<div
-					class="flex items-center gap-3 rounded-3xl bg-emerald-500/10 px-5 py-4 text-emerald-700 dark:text-emerald-300"
+					class="flex items-center gap-3 rounded-3xl bg-(--status-success)/10 px-5 py-4 text-(--status-success-bright-text)"
 				>
-					<span class="flex size-9 items-center justify-center rounded-full bg-emerald-500/15">
+					<span class="flex size-9 items-center justify-center rounded-full bg-(--status-success)/15">
 						<Check class="size-4" />
 					</span>
 					<div>

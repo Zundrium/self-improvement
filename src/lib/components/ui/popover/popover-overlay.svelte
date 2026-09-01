@@ -22,7 +22,7 @@
 	<PopoverPrimitive.Overlay
 		bind:ref
 		data-slot="popover-overlay"
-		class={cn('fixed inset-0 z-[60] bg-black/20', className)}
+		class={cn('fixed inset-0 z-[60] bg-(--app-overlay-color)/20', className)}
 		forceMount
 		{...restProps}
 	/>

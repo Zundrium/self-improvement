@@ -16,15 +16,15 @@ describe('MetricProgressRow', () => {
 		});
 
 		expect(body).toContain(
-			'background: linear-gradient(135deg, #00F094 0%, #1BBDDA 52%, #4568BA 100%)'
+			'--progress-indicator-background: linear-gradient(135deg, #00F094 0%, #1BBDDA 52%, #4568BA 100%)'
 		);
 	});
 
-	it('keeps the existing indicator style override available to other progress views', () => {
+	it('supports custom progress indicator backgrounds', () => {
 		const { body } = render(Progress, {
-			props: { value: 1, indicatorStyle: 'background: #6d28d9' }
+			props: { value: 1, indicatorBackground: '#6d28d9' }
 		});
 
-		expect(body).toContain('background: #6d28d9');
+		expect(body).toContain('--progress-indicator-background: #6d28d9');
 	});
 });

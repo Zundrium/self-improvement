@@ -30,7 +30,7 @@
 	<AlertDialogPrimitive.Overlay
 		bind:ref={overlayRef}
 		data-slot="alert-dialog-overlay"
-		class="fixed inset-0 z-50 bg-black/40"
+		class="fixed inset-0 z-50 bg-(--app-overlay-color)/40"
 		forceMount
 	/>
 	<AlertDialogPrimitive.Content bind:ref forceMount {...restProps}>

@@ -512,18 +512,18 @@ function handleVisibilityChange() {
 		<div
 			class={`grid shrink-0 gap-2 text-center text-sm font-medium tabular-nums ${displayActivity.type === 'cadenced-reps' || displaySide ? 'grid-cols-3' : 'grid-cols-2'}`}
 		>
-			<div class="rounded-2xl px-3 py-2 text-blue-700 dark:text-blue-300">
+			<div class="rounded-2xl px-3 py-2 text-(--status-info-text)">
 				{activityLabel} {displayPosition.activityIndex + 1} / {activities.length}
 			</div>
-			<div class="rounded-2xl px-3 py-2 text-violet-700 dark:text-violet-300">
+			<div class="rounded-2xl px-3 py-2 text-(--status-violet-text)">
 				Set {displaySetIndex + 1} / {displaySetCount}
 			</div>
 			{#if displayActivity.type === 'cadenced-reps'}
-				<div class="rounded-2xl px-3 py-2 text-emerald-700 dark:text-emerald-300">
+				<div class="rounded-2xl px-3 py-2 text-(--status-success-bright-text)">
 					Rep {displayRep} / {displayActivity.reps}
 				</div>
 			{:else if displaySide}
-				<div class="rounded-2xl px-3 py-2 text-emerald-700 dark:text-emerald-300">
+				<div class="rounded-2xl px-3 py-2 text-(--status-success-bright-text)">
 					{displaySide}
 				</div>
 			{/if}

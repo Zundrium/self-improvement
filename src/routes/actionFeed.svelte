@@ -26,7 +26,7 @@
 		</div>
 	{:else}
 		<Empty class="bg-(--bg-elevated)">
-			<EmptyMedia class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+			<EmptyMedia class="bg-(--status-success)/10 text-(--status-success-soft-text)">
 				<Check />
 			</EmptyMedia>
 			<EmptyTitle>You're all caught up for today</EmptyTitle>

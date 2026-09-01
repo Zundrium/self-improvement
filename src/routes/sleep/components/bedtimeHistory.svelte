@@ -16,8 +16,8 @@
 
 	function badgeClass(status: SleepAdherenceSummary['status']) {
 		if (setupRequired || status === 'pending') return 'bg-(--text)/8 text-(--text)/64';
-		if (status === 'pass') return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
-		return 'bg-amber-500/10 text-amber-700 dark:text-amber-400';
+		if (status === 'pass') return 'bg-(--status-success)/10 text-(--status-success-text)';
+		return 'bg-(--status-warning)/10 text-(--status-warning-text)';
 	}
 </script>
 

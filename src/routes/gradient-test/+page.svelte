@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Copy } from '@lucide/svelte';
+	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from '$lib/components/ui/toast';
 	import { appTrackers, type AppTrackerId } from '$lib/trackers/registry';
@@ -28,6 +29,18 @@
 			])
 		) as Record<AppTrackerId, Palette>
 	);
+
+	onMount(() => {
+		const styles = getComputedStyle(document.documentElement);
+		palettes = Object.fromEntries(
+			appTrackers.map((tracker) => [
+				tracker.id,
+				(['primary', 'secondary', 'tertiary'] as const).map((tone) =>
+					styles.getPropertyValue(`--tracker-${tracker.id}-${tone}`).trim().toUpperCase()
+				) as Palette
+			])
+		) as Record<AppTrackerId, Palette>;
+	});
 
 	function gradient(colors: Palette) {
 		return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 52%, ${colors[2]} 100%)`;
@@ -58,7 +71,7 @@
 	/>
 </svelte:head>
 
-<main class="app-gutter w-full py-8 pb-10 sm:py-12">
+<main class="gradient-lab app-gutter w-full py-8 pb-10 sm:py-12">
 	<div class="mx-auto max-w-6xl">
 		<header class="max-w-2xl">
 			<div class="flex items-center justify-between gap-4">
@@ -81,23 +94,23 @@
 				{@const colors = palettes[tracker.id]}
 				{@const TrackerIcon = trackerIcons[tracker.id]}
 				<article
-					class="gradient-atmosphere relative isolate flex min-h-72 overflow-hidden rounded-3xl p-6 text-white"
-					style:background={gradient(colors)}
+					class="gradient-atmosphere dynamic-background relative isolate flex min-h-72 overflow-hidden rounded-3xl p-6 text-(--app-on-color)"
+					style:--dynamic-background={gradient(colors)}
 				>
 					<div class="relative z-10 flex w-full flex-col">
 						<header class="flex items-start justify-between gap-4">
 							<div>
-								<p class="text-sm font-medium text-white/72">{atmosphere}</p>
+								<p class="text-sm font-medium text-(--app-on-color)/72">{atmosphere}</p>
 								<h2 class="mt-1 text-2xl font-semibold tracking-[-0.03em]">{tracker.label}</h2>
 							</div>
-							<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/16">
+							<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--app-white)/16">
 								<TrackerIcon class="size-6" />
 							</div>
 						</header>
 
 						<div class="mt-auto grid grid-cols-3 gap-2 pt-12">
 							{#each colors as color, index (`${tracker.id}-${index}`)}
-								<label class="min-w-0 rounded-2xl bg-black/16 p-2.5 backdrop-blur-sm">
+								<label class="min-w-0 rounded-2xl bg-(--app-overlay-color)/16 p-2.5 backdrop-blur-sm">
 									<span class="sr-only">{tracker.label} gradient color {index + 1}</span>
 									<input
 										type="color"
@@ -105,7 +118,7 @@
 										class="h-7 w-full cursor-pointer rounded-xl bg-transparent"
 										oninput={(event) => updateColor(tracker.id, index, event.currentTarget.value)}
 									/>
-									<code class="mt-1.5 block truncate text-center text-[10px] text-white/80">{color}</code>
+									<code class="mt-1.5 block truncate text-center text-[10px] text-(--app-on-color)/80">{color}</code>
 								</label>
 							{/each}
 						</div>
@@ -115,29 +128,3 @@
 		</section>
 	</div>
 </main>
-
-<style>
-	.gradient-atmosphere::before {
-		position: absolute;
-		inset: 0;
-		background:
-			radial-gradient(circle at 82% 0%, rgb(255 255 255 / 28%), transparent 42%),
-			linear-gradient(to top, rgb(0 0 0 / 18%), transparent 52%);
-		content: '';
-	}
-
-	input[type='color'] {
-		border: 0;
-		padding: 0;
-	}
-
-	input[type='color']::-webkit-color-swatch-wrapper {
-		padding: 0;
-	}
-
-	input[type='color']::-webkit-color-swatch,
-	input[type='color']::-moz-color-swatch {
-		border: 0;
-		border-radius: 0.75rem;
-	}
-</style>

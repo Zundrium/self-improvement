@@ -55,9 +55,9 @@ import { Pressable } from '$lib/components/ui/pressable';
 			>
 				<span
 					class="flex size-14 items-center justify-center rounded-2xl {active
-						? 'text-white shadow-sm shadow-black/15'
+						? 'dynamic-background text-(--app-on-color) shadow-sm shadow-(--app-shadow-color)/15'
 						: 'bg-(--text)/6 text-(--text)/56'}"
-					style:background={active ? trackerGradient(colors) : undefined}
+					style:--dynamic-background={active ? trackerGradient(colors) : undefined}
 				>
 					{#if loadingSoundId === sound.id}
 						<span class="inline-flex" use:spin><LoaderCircle class="size-6" /></span>
@@ -71,6 +71,6 @@ import { Pressable } from '$lib/components/ui/pressable';
 	</div>
 
 	{#if audioError}
-		<p class="text-sm text-red-600 dark:text-red-400" role="alert">{audioError}</p>
+		<p class="text-sm text-(--status-danger-text)" role="alert">{audioError}</p>
 	{/if}
 </section>

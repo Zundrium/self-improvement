@@ -109,7 +109,10 @@
 <TrackerPage>
 	{#if data.fasting}
 		<Empty class="min-h-80 bg-(--bg-elevated) sm:min-h-96">
-			<EmptyMedia class="bg-(--text)/5" style={`color: ${colors.primary}`}>
+			<EmptyMedia
+				class="dynamic-color bg-(--text)/5"
+				style={`--dynamic-color: ${colors.primary}`}
+			>
 				<MoonStar />
 			</EmptyMedia>
 			<EmptyTitle>Full-day fast</EmptyTitle>
@@ -193,7 +196,7 @@
 					{/if}
 				</FieldDescription>
 			</Field>
-			{#if requestError}<p class="text-sm text-red-600 dark:text-red-400">{requestError}</p>{/if}
+			{#if requestError}<p class="text-sm text-(--status-danger-text)">{requestError}</p>{/if}
 			<DialogFooter>
 				<Button size="medium" type="button" profile="plain" onclick={() => (markOpen = false)}>Cancel</Button>
 				<Button profile="highlighted" size="medium"

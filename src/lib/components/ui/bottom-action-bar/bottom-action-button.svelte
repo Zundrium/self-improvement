@@ -48,9 +48,3 @@
 >
 	{@render children?.()}
 </Button>
-
-<style>
-	:global(.bottom-action-button[data-action-format='text'][data-action-expand='true']) {
-		width: 100%;
-	}
-</style>

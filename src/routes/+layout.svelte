@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '@fontsource-variable/ibm-plex-sans';
-	import './layout.css';
+	import './global.css';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -212,11 +212,7 @@
 	}
 </script>
 
-<ModeWatcher
-	defaultMode="system"
-	modeStorageKey="self-improvement-theme"
-	themeColors={{ light: '#ffffff', dark: '#000000' }}
-/>
+<ModeWatcher defaultMode="system" modeStorageKey="self-improvement-theme" />
 
 <div
 	class={appShellActive

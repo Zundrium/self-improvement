@@ -15,10 +15,10 @@ let { colors, children, class: className, ...restProps }: Props = $props();
 <span
 	{...restProps}
 	class={cn(
-		'inline-flex shrink-0 items-center justify-center rounded-full text-white',
+		'dynamic-background inline-flex shrink-0 items-center justify-center rounded-full text-(--app-on-color)',
 		className
 	)}
-	style={`background: ${gameGradient(colors)}`}
+	style={`--dynamic-background: ${gameGradient(colors)}`}
 >
 	{@render children()}
 </span>

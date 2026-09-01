@@ -3,8 +3,8 @@
 </script>
 
 <svg
-	class={className}
-	style={color ? `color: ${color}` : undefined}
+	class={`dynamic-color ${className ?? ''}`}
+	style:--dynamic-color={color}
 	viewBox="0 0 24 24"
 	fill="none"
 	stroke="currentColor"

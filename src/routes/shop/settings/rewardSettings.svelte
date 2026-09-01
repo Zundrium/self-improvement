@@ -157,7 +157,7 @@ async function deleteSelectedReward() {
 					/>
 				</Field>
 			</FieldGroup>
-			{#if errorMessage}<p class="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>{/if}
+			{#if errorMessage}<p class="text-sm text-(--status-danger-text)">{errorMessage}</p>{/if}
 			<DialogFooter>
 				<Button size="medium" type="button" profile="plain" onclick={() => (editorOpen = false)}>Cancel</Button>
 				<Button profile="highlighted" size="medium" type="submit" disabled={busy}>
@@ -176,7 +176,7 @@ async function deleteSelectedReward() {
 				>This removes it from your shop. Previous claims remain in your history.</DialogDescription
 			>
 		</DialogHeader>
-		{#if errorMessage}<p class="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>{/if}
+		{#if errorMessage}<p class="text-sm text-(--status-danger-text)">{errorMessage}</p>{/if}
 		<DialogFooter>
 			<Button size="medium" profile="plain" onclick={() => (deleteOpen = false)}>Cancel</Button>
 			<Button size="medium" profile="plain" tone="destructive" disabled={busy} onclick={deleteSelectedReward}>

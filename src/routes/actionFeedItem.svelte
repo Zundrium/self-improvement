@@ -26,10 +26,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 </script>
 
 {#snippet actionContent()}
-	<span
-		class="flex size-10 shrink-0 items-center justify-center"
-		style:color="color-mix(in srgb, var(--action-secondary) 50%, white)"
-	>
+	<span class="action-card-icon flex size-10 shrink-0 items-center justify-center">
 		{#if item.icon === 'tracker' && TrackerIcon}
 			<TrackerIcon class="size-7" />
 		{:else if item.icon === 'sync'}
@@ -79,21 +76,3 @@ import { Pressable } from '$lib/components/ui/pressable';
 		</Pressable>
 	{/if}
 </div>
-
-<style>
-	.action-card-container :global(.action-card)::before {
-		position: absolute;
-		inset-block: 0;
-		left: 0;
-		width: 80%;
-		background: linear-gradient(
-			to right,
-			color-mix(in srgb, var(--action-primary) 14%, transparent) 0%,
-			color-mix(in srgb, var(--action-secondary) 10%, transparent) 34%,
-			color-mix(in srgb, var(--action-tertiary) 8%, transparent) 62%,
-			transparent 100%
-		);
-		content: '';
-		pointer-events: none;
-	}
-</style>

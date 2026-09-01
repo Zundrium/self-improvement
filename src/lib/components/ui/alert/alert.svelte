@@ -8,7 +8,7 @@
 			'relative grid w-full grid-cols-[0_1fr] items-start gap-x-3 gap-y-1 rounded-3xl px-4 py-3.5 text-sm tracking-[-0.39px] has-[>svg]:grid-cols-[1.25rem_1fr] [&>svg]:size-5 [&>svg]:translate-y-0.5';
 		const variants: Record<AlertVariant, string> = {
 			default: 'bg-(--text)/5 text-(--text)',
-			destructive: 'bg-red-500/8 text-red-600 dark:text-red-400'
+			destructive: 'bg-(--status-danger)/8 text-(--status-danger-text)'
 		};
 		return cn(base, variants[variant]);
 	}

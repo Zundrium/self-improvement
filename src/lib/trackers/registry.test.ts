@@ -30,34 +30,14 @@ describe('tracker registry', () => {
 		);
 	});
 
-	it('uses three-color tracker gradients', () => {
+	it('uses global CSS variables for three-color tracker gradients', () => {
 		expect(getTrackerColors('nutrition')).toEqual({
-			primary: '#FFAE00',
-			secondary: '#BECC00',
-			tertiary: '#1A9900'
-		});
-		expect(getTrackerColors('stretch')).toEqual({
-			primary: '#FF7B00',
-			secondary: '#8E009E',
-			tertiary: '#00EEFF'
-		});
-		expect(getTrackerColors('chores')).toEqual({
-			primary: '#6455AF',
-			secondary: '#8E4848',
-			tertiary: '#884482'
-		});
-		expect(getTrackerColors('steps')).toEqual({
-			primary: '#FFF700',
-			secondary: '#C78800',
-			tertiary: '#FF0000'
-		});
-		expect(getTrackerColors('happiness')).toEqual({
-			primary: '#00F094',
-			secondary: '#1BBDDA',
-			tertiary: '#4568BA'
+			primary: 'var(--tracker-nutrition-primary)',
+			secondary: 'var(--tracker-nutrition-secondary)',
+			tertiary: 'var(--tracker-nutrition-tertiary)'
 		});
 		expect(trackerGradient(getTrackerColors('steps'))).toBe(
-			'linear-gradient(135deg, #FFF700 0%, #C78800 52%, #FF0000 100%)'
+			'linear-gradient(135deg, var(--tracker-steps-primary) 0%, var(--tracker-steps-secondary) 52%, var(--tracker-steps-tertiary) 100%)'
 		);
 	});
 

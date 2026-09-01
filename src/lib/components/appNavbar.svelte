@@ -132,7 +132,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 		</div>
 	{/if}
 	<div
-		class="app-gutter relative z-50 bg-white pb-[var(--app-safe-area-inset-bottom)] dark:bg-black"
+		class="app-gutter relative z-50 bg-(--navbar-background) pb-[var(--app-safe-area-inset-bottom)]"
 	>
 		<div class="mx-auto grid h-16 w-full max-w-(--app-compact-max-width) grid-cols-3 items-stretch">
 			<Pressable
@@ -145,7 +145,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 				onclick={closeDrawer}
 			>
 				<span
-					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
+					class="flex size-11 items-center justify-center rounded-2xl bg-(--navbar-item-background) text-(--text)"
 				>
 					{#if isPending('/')}
 						<span class="inline-flex" use:spin><LoaderCircle class="size-6" /></span>
@@ -164,7 +164,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 				onclick={() => void toggleDrawer('apps')}
 			>
 				<span
-					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
+					class="flex size-11 items-center justify-center rounded-2xl bg-(--navbar-item-background) text-(--text)"
 				>
 					{#if activeDrawer === 'apps'}
 						<ChevronDown class="size-6" />
@@ -184,7 +184,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 			>
 				<span
 					data-glimmer-target
-					class="flex size-11 items-center justify-center rounded-2xl bg-[#f2f2f2] text-(--text) dark:bg-[#1c1c1c]"
+					class="flex size-11 items-center justify-center rounded-2xl bg-(--navbar-item-background) text-(--text)"
 				>
 					{#if activeDrawer === 'user'}
 						<ChevronDown class="size-6" />

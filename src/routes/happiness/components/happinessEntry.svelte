@@ -149,12 +149,16 @@ function reasonKey(reasons: string[]) {
 	{#if step === 'feeling'}
 		<Field class="items-center gap-4 text-center">
 			<div class="h-24" use:staggerChildren={{ delay: 0, y: 6 }}>
-				{#key rating}<FaceIcon class="size-24" style={`color: ${faceColor}`} aria-hidden="true" />{/key}
+				{#key rating}<FaceIcon
+						class="dynamic-color size-24"
+						style={`--dynamic-color: ${faceColor}`}
+						aria-hidden="true"
+					/>{/key}
 			</div>
 			<FieldLabel id="happiness-rating-label">How are you feeling?</FieldLabel>
 			<div
 				class="happiness-slider w-full"
-				style={`--happiness-slider-gradient: ${happinessGradient}`}
+				style:--happiness-slider-gradient={happinessGradient}
 			>
 				<Slider
 					bind:ref={ratingSlider}
@@ -239,22 +243,3 @@ function reasonKey(reasons: string[]) {
 		{/if}
 	</BottomActionGroup>
 </BottomActionBar>
-
-<style>
-	.happiness-slider :global([data-slot='slider']) {
-		min-height: 3.5rem;
-	}
-
-	.happiness-slider :global([data-slot='slider-track']) {
-		height: 1.25rem;
-	}
-
-	.happiness-slider :global([data-slot='slider-thumb']) {
-		height: 3rem;
-		width: 3rem;
-	}
-
-	.happiness-slider :global([data-slot='slider-range']) {
-		background: var(--happiness-slider-gradient);
-	}
-</style>

@@ -248,7 +248,12 @@ function animateGlimmers(node: HTMLElement) {
 		timeline
 			.to(
 				target,
-				{ backgroundColor: '#d4a017', color: '#ffffff', duration: 0.14, ease: 'power2.out' },
+				{
+					backgroundColor: appColor('--gamification-glimmers-primary'),
+					color: appColor('--app-white'),
+					duration: 0.14,
+					ease: 'power2.out'
+				},
 				3.62
 			)
 			.to(target, { scale: 1.2, duration: 0.16, ease: 'power2.out' }, 3.75)
@@ -287,8 +292,12 @@ function glimmerDestination(node: HTMLElement, target: HTMLElement | null) {
 }
 
 function confettiColor(index: number) {
-	if (index % 3 === 0) return '#d4a017';
-	return index % 2 ? '#ffffff' : tracker?.colors.secondary;
+	if (index % 3 === 0) return 'var(--gamification-glimmers-primary)';
+	return index % 2 ? 'var(--app-white)' : tracker?.colors.secondary;
+}
+
+function appColor(property: string) {
+	return getComputedStyle(document.documentElement).getPropertyValue(property).trim();
 }
 
 function prefersReducedMotion() {
@@ -309,13 +318,13 @@ function prefersReducedMotion() {
 					skipCelebration();
 				}}
 				onInteractOutside={(event) => event.preventDefault()}
-				class="inset-0 top-0 left-0 z-[70] h-svh w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none px-(--app-inset-inline-start) py-0 text-center text-white shadow-none"
-				style={`background: ${trackerGradient(tracker.colors, 145)}`}
+				class="dynamic-background inset-0 top-0 left-0 z-[70] h-svh w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none px-(--app-inset-inline-start) py-0 text-center text-(--app-on-color) shadow-none"
+				style={`--dynamic-background: ${trackerGradient(tracker.colors, 145)}`}
 			>
-				<div class="absolute inset-x-0 top-0 z-10 h-1 bg-white/20" aria-hidden="true">
+				<div class="absolute inset-x-0 top-0 z-10 h-1 bg-(--app-white)/20" aria-hidden="true">
 					<div
 						data-completion-progress
-						class="h-full origin-left rounded-r-full bg-white"
+						class="h-full origin-left rounded-r-full bg-(--app-white)"
 					></div>
 				</div>
 
@@ -326,11 +335,11 @@ function prefersReducedMotion() {
 					<div class="relative flex size-64 items-center justify-center">
 						<div
 							data-completion-halo
-							class="absolute size-56 rounded-full bg-white/28"
+							class="absolute size-56 rounded-full bg-(--app-white)/28"
 						></div>
 						<div
 							data-completion-icon
-							class="relative flex size-56 items-center justify-center rounded-full bg-white/16 text-white"
+							class="relative flex size-56 items-center justify-center rounded-full bg-(--app-white)/16 text-(--app-on-color)"
 						>
 							<TrackerIcon class="size-32" />
 						</div>
@@ -349,7 +358,7 @@ function prefersReducedMotion() {
 				</DialogTitle>
 				<DialogDescription
 					data-completion-glimmers
-					class="mt-4 text-lg font-semibold text-[#d4a017] tabular-nums"
+					class="mt-4 text-lg font-semibold text-(--gamification-glimmers-primary) tabular-nums"
 				>
 					+{activeCompletion.glimmers.toLocaleString()} Glimmers added
 				</DialogDescription>
@@ -359,8 +368,10 @@ function prefersReducedMotion() {
 				{#each Array(CONFETTI_COUNT) as _, index}
 					<span
 						data-completion-confetti
-						class={index % 2 ? 'absolute h-3 w-1 rounded-full' : 'absolute size-2 rounded-full'}
-						style={`background: ${confettiColor(index)}`}
+						class={index % 2
+							? 'dynamic-background absolute h-3 w-1 rounded-full'
+							: 'dynamic-background absolute size-2 rounded-full'}
+						style:--dynamic-background={confettiColor(index)}
 					></span>
 				{/each}
 			</div>
@@ -372,7 +383,7 @@ function prefersReducedMotion() {
 			</div>
 
 			<Pressable
-				class="absolute inset-x-0 bottom-6 mx-auto w-fit px-4 py-3 text-sm font-medium text-white/72 underline-offset-4 hover:text-white focus-visible:rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+				class="absolute inset-x-0 bottom-6 mx-auto w-fit px-4 py-3 text-sm font-medium text-(--app-on-color)/72 underline-offset-4 hover:text-(--app-on-color) focus-visible:rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--app-white)"
 				aria-label="Skip tracker completion celebration"
 				onclick={(event) => {
 					event.stopPropagation();

@@ -34,8 +34,8 @@
 			{@const trackerColors = getTrackerColors(streak.trackerId)}
 			<div class="grid grid-cols-[1fr_2.75rem_1fr] items-center gap-4">
 				<span
-					class="flex size-11 items-center justify-center justify-self-end"
-					style={`color: ${trackerColors.primary}`}
+					class="dynamic-color flex size-11 items-center justify-center justify-self-end"
+					style:--dynamic-color={trackerColors.primary}
 				>
 					<TrackerIcon class="size-8" />
 				</span>

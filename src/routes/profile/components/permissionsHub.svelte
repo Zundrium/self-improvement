@@ -270,7 +270,7 @@
 								<strong class="block text-sm font-medium">{label(tracker)}</strong>
 								<span class="block text-xs text-(--text)/48">{provider(tracker)}</span>
 							</span>
-							<span class="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+							<span class="flex items-center gap-2 text-sm font-medium text-(--status-success-text)">
 								<Check class="size-5" strokeWidth={2.5} />
 								<span class="hidden sm:inline">Working correctly</span>
 							</span>
@@ -290,7 +290,7 @@
 						</AccordionTrigger>
 						<AccordionContent class="space-y-5 sm:pl-13">
 							{#if status.trackers[tracker].failure?.message}
-								<div class="flex gap-2 text-red-600 dark:text-red-400">
+								<div class="flex gap-2 text-(--status-danger-text)">
 									<CircleAlert class="mt-0.5 size-4 shrink-0" />
 									<p>{status.trackers[tracker].failure?.message}</p>
 								</div>

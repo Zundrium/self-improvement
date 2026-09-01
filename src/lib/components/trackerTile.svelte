@@ -46,8 +46,8 @@ import { Pressable } from '$lib/components/ui/pressable';
 >
 	<span class="relative shrink-0">
 		<span
-			class="flex size-14 items-center justify-center rounded-2xl text-white"
-			style:background={trackerGradient(colors)}
+			class="dynamic-background flex size-14 items-center justify-center rounded-2xl text-(--app-on-color)"
+			style:--dynamic-background={trackerGradient(colors)}
 		>
 			{#if pending}
 				<span class="inline-flex" use:spin><LoaderCircle class="size-8" /></span>
@@ -57,7 +57,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 		</span>
 		{#if state !== 'incomplete'}
 			<span
-				class="absolute -top-1.5 -right-1.5 flex size-5.5 items-center justify-center rounded-full text-white ring-2 ring-(--bg) {state ===
+				class="absolute -top-1.5 -right-1.5 flex size-5.5 items-center justify-center rounded-full text-(--app-on-color) ring-2 ring-(--bg) {state ===
 				'complete'
 					? 'bg-(--chart-2)'
 					: 'bg-(--chart-3)'}"

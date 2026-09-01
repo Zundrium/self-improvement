@@ -31,9 +31,9 @@
 	let calendarDate = $state<DateValue | undefined>(untrack(() => parseDate(date)));
 	const previousDate = $derived(parseDate(date).subtract({ days: 1 }).toString());
 	const nextDate = $derived(parseDate(date).add({ days: 1 }).toString());
-	const primaryColor = $derived(colors[0]?.primary ?? '#262626');
-	const secondaryColor = $derived(colors[0]?.secondary ?? '#171717');
-	const tertiaryColor = $derived(colors[0]?.tertiary ?? '#0d0d0d');
+	const primaryColor = $derived(colors[0]?.primary ?? 'var(--date-fallback-primary)');
+	const secondaryColor = $derived(colors[0]?.secondary ?? 'var(--date-fallback-secondary)');
+	const tertiaryColor = $derived(colors[0]?.tertiary ?? 'var(--date-fallback-tertiary)');
 	const pickerColors = $derived({
 		primary: primaryColor,
 		secondary: secondaryColor,
@@ -81,7 +81,7 @@
 					<span class="min-w-0 truncate">{fullDateLabel(date)}</span>
 					{#if date === today}
 						<Badge
-							class="bg-white px-1.5 py-0.5 text-[10px] leading-3 text-black shadow-sm shadow-black/15"
+							class="bg-(--app-white) px-1.5 py-0.5 text-[10px] leading-3 text-(--app-inverse-text) shadow-sm shadow-(--app-shadow-color)/15"
 							>Today</Badge
 						>
 					{/if}
@@ -111,14 +111,3 @@
 		aria-label="Next day"><ChevronRight class="size-4" /></Button
 	>
 </section>
-
-<style>
-	:global(.date-picker-field[data-color-profile='highlighted']) {
-		background: linear-gradient(
-			135deg,
-			var(--motion-primary) 0%,
-			var(--motion-secondary) 52%,
-			var(--motion-tertiary) 100%
-		);
-	}
-</style>

@@ -141,8 +141,8 @@
 				{@const color = achievementColor(achievement)}
 				<div class="flex items-start gap-4">
 					<span
-						class="flex size-11 shrink-0 items-center justify-center rounded-2xl"
-						style={`color: ${color}; background: color-mix(in srgb, ${color} 12%, transparent)`}
+						class="dynamic-color dynamic-color-surface flex size-11 shrink-0 items-center justify-center rounded-2xl"
+						style:--dynamic-color={color}
 						aria-hidden="true"
 					>
 						<AchievementIcon class="size-6" />
@@ -159,7 +159,10 @@
 								class={`flex shrink-0 items-center gap-1.5 text-xs tabular-nums ${achievement.unlocked ? 'text-(--text)' : 'text-(--text)/48'}`}
 							>
 								{#if achievement.unlocked}
-									<CircleCheck class="size-3.5" style={`color: ${color}`} /> Unlocked
+									<CircleCheck
+										class="dynamic-color size-3.5"
+										style={`--dynamic-color: ${color}`}
+									/> Unlocked
 								{:else}
 									<LockKeyhole class="size-3.5" /> {progressLabel(achievement)}
 								{/if}
@@ -171,7 +174,7 @@
 								class="mt-3 h-1.5"
 								value={Math.min(achievement.progress, achievement.target)}
 								max={achievement.target}
-								indicatorStyle={`background: ${color}`}
+								indicatorBackground={color}
 								animated={false}
 							/>
 						{/if}

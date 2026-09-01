@@ -8,8 +8,8 @@
 
 <Empty class="py-20">
 	<EmptyMedia
-		class="text-white shadow-sm shadow-black/15"
-		style={`background: ${trackerGradient(colors)}`}
+		class="dynamic-background text-(--app-on-color) shadow-sm shadow-(--app-shadow-color)/15"
+		style={`--dynamic-background: ${trackerGradient(colors)}`}
 	>
 		<Dumbbell class="size-6" />
 	</EmptyMedia>
