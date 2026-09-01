@@ -31,10 +31,15 @@ describe('tracker registry', () => {
 	});
 
 	it('uses three-color tracker gradients', () => {
+		expect(getTrackerColors('nutrition')).toEqual({
+			primary: '#1A9900',
+			secondary: '#BECC00',
+			tertiary: '#FFAE00'
+		});
 		expect(getTrackerColors('stretch')).toEqual({
-			primary: '#FEAC5E',
-			secondary: '#C779D0',
-			tertiary: '#4BC0C8'
+			primary: '#FF7B00',
+			secondary: '#E600FF',
+			tertiary: '#00EEFF'
 		});
 		expect(getTrackerColors('chores')).toEqual({
 			primary: '#6455AF',

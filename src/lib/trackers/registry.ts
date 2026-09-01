@@ -45,7 +45,7 @@ export const trackers = [
 		description: 'Meals, calories, and daily nutrition goals.',
 		href: '/nutrition/log/today',
 		settingsHref: '/nutrition/settings',
-		colors: { primary: '#1A9900', secondary: '#00B341', tertiary: '#FFAE00' },
+		colors: { primary: '#1A9900', secondary: '#BECC00', tertiary: '#FFAE00' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -76,7 +76,7 @@ export const trackers = [
 		href: '/stretch',
 		settingsHref: '/stretch/settings',
 		infoHref: 'https://www.youtube.com/watch?v=QaKuVOhikaY',
-		colors: { primary: '#FEAC5E', secondary: '#C779D0', tertiary: '#4BC0C8' },
+		colors: { primary: '#FF7B00', secondary: '#E600FF', tertiary: '#00EEFF' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
