@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cameraVideoConstraints, createCameraStartup } from './camera';
+import { cameraVideoConstraints, createCameraStartup, decodeGalleryImage } from './camera';
 
 describe('nutrition camera constraints', () => {
 	it('uses the standard Android sensor request and lets the browser apply portrait orientation', () => {
@@ -22,5 +22,18 @@ describe('nutrition camera constraints', () => {
 
 		expect(startup.isCurrent(initialAttempt)).toBe(false);
 		expect(startup.isCurrent(retryAttempt)).toBe(true);
+	});
+
+	it('falls back to an image element when the bitmap decoder rejects a gallery file', async () => {
+		const decodeBitmap = () => Promise.reject(new DOMException('The source image could not be decoded'));
+		const decodeImageElement = () => Promise.resolve('decoded');
+
+		await expect(decodeGalleryImage(decodeBitmap, decodeImageElement)).resolves.toBe('decoded');
+	});
+
+	it('uses the image element decoder when createImageBitmap is unavailable', async () => {
+		const decodeImageElement = () => Promise.resolve('decoded');
+
+		await expect(decodeGalleryImage(undefined, decodeImageElement)).resolves.toBe('decoded');
 	});
 });

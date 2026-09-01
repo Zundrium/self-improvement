@@ -43,7 +43,7 @@ import {
 	analyzeMeal as requestMealAnalysis
 } from '../ai/meal-analysis';
 import type { PageProps } from './$types';
-import { cameraVideoConstraints, createCameraStartup } from './camera';
+import { cameraVideoConstraints, createCameraStartup, decodeGalleryImage } from './camera';
 
 let { data }: PageProps = $props();
 
@@ -304,24 +304,29 @@ async function confirmMeal() {
 }
 
 async function compressFile(file: File) {
-	if (typeof globalThis.createImageBitmap === 'function') {
-		const bitmap = await createImageBitmap(file);
-		try {
-			return encodeImage(bitmap, bitmap.width, bitmap.height);
-		} finally {
-			bitmap.close();
+	return decodeGalleryImage(
+		typeof globalThis.createImageBitmap === 'function'
+			? async () => {
+					const bitmap = await createImageBitmap(file);
+					try {
+						return encodeImage(bitmap, bitmap.width, bitmap.height);
+					} finally {
+						bitmap.close();
+					}
+				}
+			: undefined,
+		async () => {
+			const objectUrl = URL.createObjectURL(file);
+			try {
+				const image = document.createElement('img');
+				image.src = objectUrl;
+				await image.decode();
+				return encodeImage(image, image.naturalWidth, image.naturalHeight);
+			} finally {
+				URL.revokeObjectURL(objectUrl);
+			}
 		}
-	}
-
-	const objectUrl = URL.createObjectURL(file);
-	try {
-		const image = document.createElement('img');
-		image.src = objectUrl;
-		await image.decode();
-		return encodeImage(image, image.naturalWidth, image.naturalHeight);
-	} finally {
-		URL.revokeObjectURL(objectUrl);
-	}
+	);
 }
 
 function encodeImage(source: CanvasImageSource | null, sourceWidth: number, sourceHeight: number) {

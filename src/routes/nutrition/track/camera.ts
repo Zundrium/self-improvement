@@ -18,3 +18,17 @@ export function cameraVideoConstraints(facingMode: CameraFacingMode): MediaTrack
 		frameRate: { ideal: 30 }
 	};
 }
+
+export async function decodeGalleryImage<T>(
+	decodeBitmap: (() => Promise<T>) | undefined,
+	decodeImageElement: () => Promise<T>
+): Promise<T> {
+	if (decodeBitmap) {
+		try {
+			return await decodeBitmap();
+		} catch {
+			return decodeImageElement();
+		}
+	}
+	return decodeImageElement();
+}
