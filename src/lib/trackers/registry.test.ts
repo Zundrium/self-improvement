@@ -32,9 +32,9 @@ describe('tracker registry', () => {
 
 	it('uses three-color tracker gradients', () => {
 		expect(getTrackerColors('nutrition')).toEqual({
-			primary: '#1A9900',
+			primary: '#FFAE00',
 			secondary: '#BECC00',
-			tertiary: '#FFAE00'
+			tertiary: '#1A9900'
 		});
 		expect(getTrackerColors('stretch')).toEqual({
 			primary: '#FF7B00',
@@ -47,9 +47,9 @@ describe('tracker registry', () => {
 			tertiary: '#884482'
 		});
 		expect(getTrackerColors('happiness')).toEqual({
-			primary: '#FF0000',
+			primary: '#FFF700',
 			secondary: '#C78800',
-			tertiary: '#FFF700'
+			tertiary: '#FF0000'
 		});
 		expect(trackerGradient(getTrackerColors('steps'))).toBe(
 			'linear-gradient(135deg, #00F094 0%, #1BBDDA 52%, #4568BA 100%)'

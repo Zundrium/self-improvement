@@ -45,7 +45,7 @@ export const trackers = [
 		description: 'Meals, calories, and daily nutrition goals.',
 		href: '/nutrition/log/today',
 		settingsHref: '/nutrition/settings',
-		colors: { primary: '#1A9900', secondary: '#BECC00', tertiary: '#FFAE00' },
+		colors: { primary: '#FFAE00', secondary: '#BECC00', tertiary: '#1A9900' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -96,7 +96,7 @@ export const trackers = [
 		description: 'Daily happiness levels and the reasons behind them.',
 		href: '/happiness',
 		settingsHref: '/happiness/settings',
-		colors: { primary: '#FF0000', secondary: '#C78800', tertiary: '#FFF700' },
+		colors: { primary: '#FFF700', secondary: '#C78800', tertiary: '#FF0000' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
