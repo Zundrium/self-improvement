@@ -15,6 +15,7 @@ import {
 	activityDurationMs,
 	activityRepeatCount,
 	type CadencedRepGuidedRoutineActivity,
+	completeGuidedRoutine,
 	type GuidedRoutineActivity,
 	type GuidedRoutinePosition,
 	initialRoutinePosition,
@@ -186,7 +187,7 @@ onDestroy(() => {
 	if (timer) clearTimeout(timer);
 	if (voiceTimeout) clearTimeout(voiceTimeout);
 	void wakeLock?.release().catch((error) => console.error('Wake lock release failed:', error));
-	audioManager.stopAll();
+	if (phase !== 'complete') audioManager.stopAll();
 	document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 
@@ -311,9 +312,12 @@ function advanceAfterRest() {
 
 async function finishRoutine() {
 	phase = 'complete';
+	await completeGuidedRoutine(playCompletionSounds, oncomplete);
+}
+
+async function playCompletionSounds() {
 	await audioManager.play(sounds.complete);
 	if (sounds.missionComplete) await audioManager.play(sounds.missionComplete);
-	await oncomplete();
 }
 
 async function announceActivity(activity: GuidedRoutineActivity) {

@@ -82,6 +82,14 @@ export function activityDurationMs(
 	return activity.reps * repDurationMs(cadencePercent ?? activity.cadencePercent);
 }
 
+export async function completeGuidedRoutine(
+	playCompletionSounds: () => Promise<void>,
+	oncomplete: () => void | Promise<void>
+) {
+	const soundPlayback = playCompletionSounds();
+	await Promise.all([soundPlayback, oncomplete()]);
+}
+
 export function initialRoutinePosition(): GuidedRoutinePosition {
 	return { setIndex: 0, activityIndex: 0, activityRepeatIndex: 0 };
 }

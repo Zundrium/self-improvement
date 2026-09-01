@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	activityDurationMs,
+	completeGuidedRoutine,
 	initialRoutinePosition,
 	nextCountdownUpdateDelay,
 	nextRoutinePosition,
@@ -60,6 +61,29 @@ describe('guided routine sequencing', () => {
 		expect(activityDurationMs(activities[1])).toBe(20_000);
 		expect(activityDurationMs(activities[1], 125)).toBe(16_000);
 		expect(activityDurationMs(activities[2])).toBeNull();
+	});
+
+	it('reports completion without waiting for completion audio', async () => {
+		let finishSound: () => void = () => undefined;
+		const soundFinished = new Promise<void>((resolve) => {
+			finishSound = resolve;
+		});
+		const events: string[] = [];
+		const completion = completeGuidedRoutine(
+			async () => {
+				events.push('sound started');
+				await soundFinished;
+				events.push('sound finished');
+			},
+			() => {
+				events.push('routine completed');
+			}
+		);
+
+		expect(events).toEqual(['sound started', 'routine completed']);
+		finishSound();
+		await completion;
+		expect(events).toEqual(['sound started', 'routine completed', 'sound finished']);
 	});
 
 	it('schedules updates at the next countdown or rep boundary', () => {
