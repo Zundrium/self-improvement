@@ -55,7 +55,7 @@ export const trackers = [
 		description: 'Timed sessions and meditation history.',
 		href: '/meditation',
 		settingsHref: '/meditation/settings',
-		colors: { primary: '#1500FF', secondary: '#8400FF', tertiary: '#FF0073' },
+		colors: { primary: '#1500FF', secondary: '#8400FF', tertiary: '#B80053' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -76,7 +76,7 @@ export const trackers = [
 		href: '/stretch',
 		settingsHref: '/stretch/settings',
 		infoHref: 'https://www.youtube.com/watch?v=QaKuVOhikaY',
-		colors: { primary: '#FF7B00', secondary: '#E600FF', tertiary: '#00EEFF' },
+		colors: { primary: '#FF7B00', secondary: '#8E009E', tertiary: '#00EEFF' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},

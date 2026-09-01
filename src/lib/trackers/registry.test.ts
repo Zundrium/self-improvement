@@ -38,7 +38,7 @@ describe('tracker registry', () => {
 		});
 		expect(getTrackerColors('stretch')).toEqual({
 			primary: '#FF7B00',
-			secondary: '#E600FF',
+			secondary: '#8E009E',
 			tertiary: '#00EEFF'
 		});
 		expect(getTrackerColors('chores')).toEqual({
