@@ -73,7 +73,7 @@
 				<Button
 					profile="highlighted"
 					size="medium"
-					class="w-full min-w-0 gap-2"
+					class="date-picker-field w-full min-w-0 gap-2"
 					motionColors={pickerColors}
 					{...props}
 				>
@@ -111,3 +111,14 @@
 		aria-label="Next day"><ChevronRight class="size-4" /></Button
 	>
 </section>
+
+<style>
+	:global(.date-picker-field[data-color-profile='highlighted']) {
+		background: linear-gradient(
+			135deg,
+			var(--motion-primary) 0%,
+			var(--motion-secondary) 52%,
+			var(--motion-tertiary) 100%
+		);
+	}
+</style>

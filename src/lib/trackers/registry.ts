@@ -5,7 +5,7 @@ export const trackers = [
 		description: 'Daily steps and Health Connect history.',
 		href: '/steps',
 		settingsHref: '/steps/settings',
-		colors: { primary: '#00F094', secondary: '#1BBDDA', tertiary: '#4568BA' },
+		colors: { primary: '#FFF700', secondary: '#C78800', tertiary: '#FF0000' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -96,7 +96,7 @@ export const trackers = [
 		description: 'Daily happiness levels and the reasons behind them.',
 		href: '/happiness',
 		settingsHref: '/happiness/settings',
-		colors: { primary: '#FFF700', secondary: '#C78800', tertiary: '#FF0000' },
+		colors: { primary: '#00F094', secondary: '#1BBDDA', tertiary: '#4568BA' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},

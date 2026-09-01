@@ -46,13 +46,18 @@ describe('tracker registry', () => {
 			secondary: '#8E4848',
 			tertiary: '#884482'
 		});
-		expect(getTrackerColors('happiness')).toEqual({
+		expect(getTrackerColors('steps')).toEqual({
 			primary: '#FFF700',
 			secondary: '#C78800',
 			tertiary: '#FF0000'
 		});
+		expect(getTrackerColors('happiness')).toEqual({
+			primary: '#00F094',
+			secondary: '#1BBDDA',
+			tertiary: '#4568BA'
+		});
 		expect(trackerGradient(getTrackerColors('steps'))).toBe(
-			'linear-gradient(135deg, #00F094 0%, #1BBDDA 52%, #4568BA 100%)'
+			'linear-gradient(135deg, #FFF700 0%, #C78800 52%, #FF0000 100%)'
 		);
 	});
 
