@@ -35,12 +35,12 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 			aria-label={`About ${tracker.label}`}
 			title={`Watch the ${tracker.label.toLowerCase()} source video on YouTube`}
 		>
-			<Info class="size-4" style={`color: ${tracker.colors.primary}`} />
+			<Info class="size-4" style={`color: ${tracker.colors.secondary}`} />
 		</Button>
 	{:else}
 		<span aria-hidden="true"></span>
 	{/if}
-	<h1 class="text-center text-sm font-medium" style={`color: ${tracker.colors.primary}`}>
+	<h1 class="text-center text-sm font-medium" style={`color: ${tracker.colors.secondary}`}>
 		{tracker.label}{settingsActive ? ' settings' : ''}
 	</h1>
 	{#if tracker.settingsHref && !settingsActive}
@@ -52,7 +52,7 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 			aria-label={`${tracker.label} settings`}
 			onclick={() => void goto(resolve(tracker.settingsHref as '/'))}
 		>
-			<Settings class="size-4" style={`color: ${tracker.colors.primary}`} />
+			<Settings class="size-4" style={`color: ${tracker.colors.secondary}`} />
 		</Button>
 	{:else}
 		<span aria-hidden="true"></span>

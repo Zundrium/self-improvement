@@ -42,9 +42,9 @@ describe('tracker registry', () => {
 			tertiary: '#884482'
 		});
 		expect(getTrackerColors('happiness')).toEqual({
-			primary: '#FFF700',
+			primary: '#FF0000',
 			secondary: '#C78800',
-			tertiary: '#FF0000'
+			tertiary: '#FFF700'
 		});
 		expect(trackerGradient(getTrackerColors('steps'))).toBe(
 			'linear-gradient(135deg, #00F094 0%, #1BBDDA 52%, #4568BA 100%)'

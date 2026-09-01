@@ -27,6 +27,14 @@ import {
 let { data }: { data: HappinessData } = $props();
 const colors = getTrackerColors('happiness');
 const faceIcons = { 1: Frown, 2: Annoyed, 3: Meh, 4: Smile, 5: Laugh };
+const happinessGradient = trackerGradient(colors, 90);
+const faceColors = {
+	1: colors.primary,
+	2: `color-mix(in srgb, ${colors.primary} 50%, ${colors.secondary})`,
+	3: colors.secondary,
+	4: `color-mix(in srgb, ${colors.secondary} 50%, ${colors.tertiary})`,
+	5: colors.tertiary
+} satisfies Record<HappinessRating, string>;
 let errorMessage = $state('');
 let saving = $state(false);
 let step = $state<'feeling' | 'reasons'>('feeling');
@@ -43,6 +51,7 @@ let savedRating = $state<HappinessRating | undefined>(untrack(() => data.entry?.
 let savedReasons = $state<string[]>(untrack(() => data.entry?.reasons ?? []));
 let hasSavedEntry = $state(untrack(() => Boolean(data.entry)));
 const FaceIcon = $derived(faceIcons[rating]);
+const faceColor = $derived(faceColors[rating]);
 const reasonOptions = $derived(reasonOptionsForRating(rating));
 const dirty = $derived(
 	!hasSavedEntry || rating !== savedRating || reasonKey(selectedReasons) !== reasonKey(savedReasons)
@@ -140,15 +149,12 @@ function reasonKey(reasons: string[]) {
 	{#if step === 'feeling'}
 		<Field class="items-center gap-4 text-center">
 			<div class="h-24" use:staggerChildren={{ delay: 0, y: 6 }}>
-				{#key rating}<FaceIcon class="size-24" style={`color: ${colors.secondary}`} aria-hidden="true" />{/key}
+				{#key rating}<FaceIcon class="size-24" style={`color: ${faceColor}`} aria-hidden="true" />{/key}
 			</div>
 			<FieldLabel id="happiness-rating-label">How are you feeling?</FieldLabel>
-			<FieldDescription id="happiness-rating-description" aria-live="polite">
-				{rating} of 5 · {happinessLabel(rating)}
-			</FieldDescription>
 			<div
 				class="happiness-slider w-full"
-				style={`--happiness-slider-gradient: ${trackerGradient(colors)}`}
+				style={`--happiness-slider-gradient: ${happinessGradient}`}
 			>
 				<Slider
 					bind:ref={ratingSlider}
@@ -158,7 +164,6 @@ function reasonKey(reasons: string[]) {
 					max={5}
 					step={1}
 					aria-labelledby="happiness-rating-label"
-					aria-describedby="happiness-rating-description"
 					aria-valuetext={happinessLabel(rating)}
 					onValueChange={chooseRating}
 				/>

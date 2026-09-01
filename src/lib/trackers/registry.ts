@@ -96,7 +96,7 @@ export const trackers = [
 		description: 'Daily happiness levels and the reasons behind them.',
 		href: '/happiness',
 		settingsHref: '/happiness/settings',
-		colors: { primary: '#FFF700', secondary: '#C78800', tertiary: '#FF0000' },
+		colors: { primary: '#FF0000', secondary: '#C78800', tertiary: '#FFF700' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
