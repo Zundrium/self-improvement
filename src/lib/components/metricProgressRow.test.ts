@@ -4,18 +4,20 @@ import MetricProgressRow from './metricProgressRow.svelte';
 import Progress from './ui/progress/progress.svelte';
 
 describe('MetricProgressRow', () => {
-	it('uses the tracker primary color for its progress indicator', () => {
+	it('uses the tracker gradient for its progress indicator', () => {
 		const { body } = render(MetricProgressRow, {
 			props: {
 				label: 'Mon',
 				value: 5000,
 				max: 10000,
 				displayValue: '5,000',
-				colors: { primary: '#047857', secondary: '#0f766e' }
+				colors: { primary: '#00F094', secondary: '#1BBDDA', tertiary: '#4568BA' }
 			}
 		});
 
-		expect(body).toContain('--progress-indicator-color: #047857');
+		expect(body).toContain(
+			'background: linear-gradient(135deg, #00F094 0%, #1BBDDA 52%, #4568BA 100%)'
+		);
 	});
 
 	it('keeps the existing indicator style override available to other progress views', () => {

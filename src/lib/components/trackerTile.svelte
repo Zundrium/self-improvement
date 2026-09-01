@@ -3,7 +3,7 @@
 	import { spin } from '$lib/motion/gsap';
 import { Pressable } from '$lib/components/ui/pressable';
 	import type { TrackerIconComponent } from '$lib/trackers/icons';
-	import type { TrackerColors } from '$lib/trackers/registry';
+	import { trackerGradient, type TrackerColors } from '$lib/trackers/registry';
 
 	type TrackerState = 'complete' | 'attention' | 'incomplete';
 	type Props = {
@@ -47,7 +47,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 	<span class="relative shrink-0">
 		<span
 			class="flex size-14 items-center justify-center rounded-2xl text-white"
-			style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`}
+			style:background={trackerGradient(colors)}
 		>
 			{#if pending}
 				<span class="inline-flex" use:spin><LoaderCircle class="size-8" /></span>

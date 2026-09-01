@@ -5,7 +5,7 @@ export const trackers = [
 		description: 'Daily steps and Health Connect history.',
 		href: '/steps',
 		settingsHref: '/steps/settings',
-		colors: { primary: '#047857', secondary: '#0f766e' },
+		colors: { primary: '#00F094', secondary: '#1BBDDA', tertiary: '#4568BA' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -15,7 +15,7 @@ export const trackers = [
 		description: 'Bedtime adherence from selected Android app activity.',
 		href: '/sleep',
 		settingsHref: '/sleep/settings',
-		colors: { primary: '#4338ca', secondary: '#7e22ce' },
+		colors: { primary: '#00124D', secondary: '#1100D1', tertiary: '#8400FF' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -25,7 +25,7 @@ export const trackers = [
 		description: 'Daily Android usage and per-app screen-time history.',
 		href: '/screen-time',
 		settingsHref: '/screen-time/settings',
-		colors: { primary: '#1d4ed8', secondary: '#0369a1' },
+		colors: { primary: '#FFD89B', secondary: '#19547B', tertiary: '#000F3D' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -35,7 +35,7 @@ export const trackers = [
 		description: 'Workouts, progress, and exercise preferences.',
 		href: '/fitness',
 		settingsHref: '/fitness/settings',
-		colors: { primary: '#b91c1c', secondary: '#c2410c' },
+		colors: { primary: '#833AB4', secondary: '#FD1D1D', tertiary: '#FCB045' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -45,7 +45,7 @@ export const trackers = [
 		description: 'Meals, calories, and daily nutrition goals.',
 		href: '/nutrition/log/today',
 		settingsHref: '/nutrition/settings',
-		colors: { primary: '#15803d', secondary: '#4d7c0f' },
+		colors: { primary: '#1A9900', secondary: '#00B341', tertiary: '#FFAE00' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -55,7 +55,7 @@ export const trackers = [
 		description: 'Timed sessions and meditation history.',
 		href: '/meditation',
 		settingsHref: '/meditation/settings',
-		colors: { primary: '#6d28d9', secondary: '#a21caf' },
+		colors: { primary: '#1500FF', secondary: '#8400FF', tertiary: '#FF0073' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -65,7 +65,7 @@ export const trackers = [
 		description: 'A guided daily 4-7-8 breathing exercise.',
 		href: '/breathing',
 		settingsHref: '/breathing/settings',
-		colors: { primary: '#0e7490', secondary: '#2563eb' },
+		colors: { primary: '#00A6FF', secondary: '#1FA0B7', tertiary: '#00FFAE' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -76,7 +76,7 @@ export const trackers = [
 		href: '/stretch',
 		settingsHref: '/stretch/settings',
 		infoHref: 'https://www.youtube.com/watch?v=QaKuVOhikaY',
-		colors: { primary: '#c2410c', secondary: '#9a3412' },
+		colors: { primary: '#FEAC5E', secondary: '#C779D0', tertiary: '#4BC0C8' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -86,7 +86,7 @@ export const trackers = [
 		description: 'A daily 10-minute timer for tidying, laundry, or any quick chore.',
 		href: '/chores',
 		settingsHref: null,
-		colors: { primary: '#a21caf', secondary: '#be185d' },
+		colors: { primary: '#6455AF', secondary: '#8E4848', tertiary: '#884482' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -96,7 +96,7 @@ export const trackers = [
 		description: 'Daily happiness levels and the reasons behind them.',
 		href: '/happiness',
 		settingsHref: '/happiness/settings',
-		colors: { primary: '#a16207', secondary: '#ca8a04' },
+		colors: { primary: '#FFF700', secondary: '#C78800', tertiary: '#FF0000' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -106,7 +106,7 @@ export const trackers = [
 		description: 'Menstruation flow, notes, and recent history.',
 		href: '/period',
 		settingsHref: '/period/settings',
-		colors: { primary: '#be123c', secondary: '#be185d' },
+		colors: { primary: '#C04848', secondary: '#BC6620', tertiary: '#480048' },
 		hasAppIcon: true,
 		defaultEnabled: true
 	},
@@ -116,7 +116,7 @@ export const trackers = [
 		description: 'Unlocked achievements and personal progress.',
 		href: '/achievements',
 		settingsHref: null,
-		colors: { primary: '#8b5cf6', secondary: '#ec4899' },
+		colors: { primary: '#7C3AED', secondary: '#EC4899', tertiary: '#F59E0B' },
 		hasAppIcon: false
 	},
 	{
@@ -125,7 +125,7 @@ export const trackers = [
 		description: 'Current and best streaks for active trackers.',
 		href: '/streaks',
 		settingsHref: null,
-		colors: { primary: '#f97316', secondary: '#ef4444' },
+		colors: { primary: '#F97316', secondary: '#EF4444', tertiary: '#7C3AED' },
 		hasAppIcon: false
 	}
 ] as const;
@@ -134,7 +134,7 @@ export type Tracker = (typeof trackers)[number];
 export type TrackerId = Tracker['id'];
 export type AppTracker = Extract<Tracker, { hasAppIcon: true }>;
 export type AppTrackerId = AppTracker['id'];
-export type TrackerColors = { primary: string; secondary: string };
+export type TrackerColors = { primary: string; secondary: string; tertiary: string };
 
 export const appTrackers = trackers.filter((tracker): tracker is AppTracker => tracker.hasAppIcon);
 
@@ -142,6 +142,10 @@ export function getTrackerColors(id: TrackerId) {
 	const tracker = trackers.find((tracker) => tracker.id === id);
 	if (!tracker) throw new Error(`Unknown tracker: ${id}`);
 	return tracker.colors;
+}
+
+export function trackerGradient(colors: TrackerColors, angle = 135) {
+	return `linear-gradient(${angle}deg, ${colors.primary} 0%, ${colors.secondary} 52%, ${colors.tertiary} 100%)`;
 }
 
 export function getTrackerForPathname(pathname: string) {

@@ -11,7 +11,7 @@ import {
 import { trackerPoints } from '$lib/local/gamification';
 import GlimmerIcon from '$lib/components/glimmerIcon.svelte';
 import { trackerIcons } from '$lib/trackers/icons';
-import { appTrackers, isAppTrackerId } from '$lib/trackers/registry';
+import { appTrackers, isAppTrackerId, trackerGradient } from '$lib/trackers/registry';
 
 const CELEBRATION_DURATION_MS = 5000;
 const CONFETTI_COUNT = 18;
@@ -310,7 +310,7 @@ function prefersReducedMotion() {
 				}}
 				onInteractOutside={(event) => event.preventDefault()}
 				class="inset-0 top-0 left-0 z-[70] h-svh w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none px-(--app-inset-inline-start) py-0 text-center text-white shadow-none"
-				style={`background: linear-gradient(145deg, ${tracker.colors.primary}, ${tracker.colors.secondary})`}
+				style={`background: ${trackerGradient(tracker.colors, 145)}`}
 			>
 				<div class="absolute inset-x-0 top-0 z-10 h-1 bg-white/20" aria-hidden="true">
 					<div

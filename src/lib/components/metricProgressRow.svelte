@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Progress } from '$lib/components/ui/progress';
-	import type { TrackerColors } from '$lib/trackers/registry';
+	import { trackerGradient, type TrackerColors } from '$lib/trackers/registry';
 
 	type Props = {
 		label: string;
@@ -19,7 +19,7 @@
 		class="min-w-0 w-full"
 		{value}
 		{max}
-		indicatorColor={colors?.primary}
+		indicatorStyle={colors ? `background: ${trackerGradient(colors)}` : undefined}
 		aria-label={`${label}: ${displayValue}`}
 	/>
 	<span class="pl-1 text-right text-sm text-(--text)/64 tabular-nums">{displayValue}</span>

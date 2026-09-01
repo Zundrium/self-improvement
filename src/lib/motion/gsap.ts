@@ -1,7 +1,7 @@
 import { gsap } from 'gsap';
 import type { Action } from 'svelte/action';
 
-export type GradientColors = { primary: string; secondary: string };
+export type GradientColors = { primary: string; secondary: string; tertiary: string };
 export type InteractionScaleOptions = { disabled?: boolean; hover?: number; pressed?: number };
 export type SurfaceMotion = 'accordion' | 'dialog' | 'menu' | 'overlay';
 export type StaggerOptions = { delay?: number; selector?: string; y?: number };
@@ -203,6 +203,7 @@ export const gradientColors: Action<HTMLElement, GradientColors | undefined> = (
 			gsap.to(node, {
 				'--motion-primary': next.primary,
 				'--motion-secondary': next.secondary,
+				'--motion-tertiary': next.tertiary,
 				duration: 0.35,
 				ease: 'power2.out',
 				overwrite: 'auto'
@@ -542,7 +543,11 @@ function releaseElement(node: HTMLElement) {
 }
 
 function sameColors(current: GradientColors | undefined, next: GradientColors | undefined) {
-	return current?.primary === next?.primary && current?.secondary === next?.secondary;
+	return (
+		current?.primary === next?.primary &&
+		current?.secondary === next?.secondary &&
+		current?.tertiary === next?.tertiary
+	);
 }
 
 function drawerTravel(node: HTMLElement) {
@@ -552,11 +557,13 @@ function drawerTravel(node: HTMLElement) {
 function setGradient(node: HTMLElement, colors: GradientColors) {
 	node.style.setProperty('--motion-primary', colors.primary);
 	node.style.setProperty('--motion-secondary', colors.secondary);
+	node.style.setProperty('--motion-tertiary', colors.tertiary);
 }
 
 function clearGradient(node: HTMLElement) {
 	node.style.removeProperty('--motion-primary');
 	node.style.removeProperty('--motion-secondary');
+	node.style.removeProperty('--motion-tertiary');
 }
 
 function setProgress(progress: { value: number }, value: number, render: () => void) {

@@ -15,7 +15,7 @@ import { Button } from '$lib/components/ui/button';
 import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 import { Slider } from '$lib/components/ui/slider';
 import { staggerChildren } from '$lib/motion/gsap';
-import { getTrackerColors } from '$lib/trackers/registry';
+import { getTrackerColors, trackerGradient } from '$lib/trackers/registry';
 import {
 	type HappinessRating,
 	type HappinessReason,
@@ -146,7 +146,10 @@ function reasonKey(reasons: string[]) {
 			<FieldDescription id="happiness-rating-description" aria-live="polite">
 				{rating} of 5 · {happinessLabel(rating)}
 			</FieldDescription>
-			<div class="happiness-slider w-full" style={`--happiness-slider-color: ${colors.secondary}`}>
+			<div
+				class="happiness-slider w-full"
+				style={`--happiness-slider-gradient: ${trackerGradient(colors)}`}
+			>
 				<Slider
 					bind:ref={ratingSlider}
 					type="single"
@@ -251,6 +254,6 @@ function reasonKey(reasons: string[]) {
 	}
 
 	.happiness-slider :global([data-slot='slider-range']) {
-		background: var(--happiness-slider-color);
+		background: var(--happiness-slider-gradient);
 	}
 </style>

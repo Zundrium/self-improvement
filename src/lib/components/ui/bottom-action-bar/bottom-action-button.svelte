@@ -67,13 +67,14 @@
 		color: var(--text);
 	}
 
-	:global(.bottom-action-button[data-action-tone='primary']) {
-		background: var(--bottom-action-primary, var(--text));
-		color: #ffffff;
-	}
-
+	:global(.bottom-action-button[data-action-tone='primary']),
 	:global(.bottom-action-button[data-action-tone='secondary']) {
-		background: var(--bottom-action-secondary, var(--text));
+		background: linear-gradient(
+			135deg,
+			var(--bottom-action-primary, var(--text)) 0%,
+			var(--bottom-action-secondary, var(--text)) 52%,
+			var(--bottom-action-tertiary, var(--text)) 100%
+		);
 		color: #ffffff;
 	}
 

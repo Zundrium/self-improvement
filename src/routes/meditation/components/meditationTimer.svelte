@@ -158,7 +158,7 @@
 <section aria-label="Meditation timer">
 	<div class="flex flex-col items-center gap-4 pt-2">
 		<div data-meditation-icon>
-			<MeditationIcon class="size-56 sm:size-64" color={colors.primary} />
+			<MeditationIcon class="size-56 sm:size-64" color={colors.secondary} />
 		</div>
 
 		<div class="flex w-full items-center justify-center gap-2 sm:gap-4" data-meditation-timer>

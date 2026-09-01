@@ -3,7 +3,7 @@
 	import type { AudioManager } from '$lib/audio/audio-manager';
 	import { spin } from '$lib/motion/gsap';
 import { Pressable } from '$lib/components/ui/pressable';
-	import { getTrackerColors } from '$lib/trackers/registry';
+	import { getTrackerColors, trackerGradient } from '$lib/trackers/registry';
 	import { ambientSounds } from '../sounds';
 
 	let { audioManager }: { audioManager?: AudioManager } = $props();
@@ -57,9 +57,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 					class="flex size-14 items-center justify-center rounded-2xl {active
 						? 'text-white shadow-sm shadow-black/15'
 						: 'bg-(--text)/6 text-(--text)/56'}"
-					style={active
-						? `background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`
-						: undefined}
+					style:background={active ? trackerGradient(colors) : undefined}
 				>
 					{#if loadingSoundId === sound.id}
 						<span class="inline-flex" use:spin><LoaderCircle class="size-6" /></span>

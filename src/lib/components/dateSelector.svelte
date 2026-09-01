@@ -32,8 +32,13 @@
 	const previousDate = $derived(parseDate(date).subtract({ days: 1 }).toString());
 	const nextDate = $derived(parseDate(date).add({ days: 1 }).toString());
 	const primaryColor = $derived(colors[0]?.primary ?? '#262626');
-	const secondaryColor = $derived(colors[0]?.secondary ?? '#0d0d0d');
-	const pickerColors = $derived({ primary: primaryColor, secondary: secondaryColor });
+	const secondaryColor = $derived(colors[0]?.secondary ?? '#171717');
+	const tertiaryColor = $derived(colors[0]?.tertiary ?? '#0d0d0d');
+	const pickerColors = $derived({
+		primary: primaryColor,
+		secondary: secondaryColor,
+		tertiary: tertiaryColor
+	});
 
 	$effect(() => {
 		if (calendarDate?.toString() !== date) calendarDate = parseDate(date);
@@ -109,7 +114,12 @@
 
 <style>
 	:global(.date-picker-field) {
-		background: linear-gradient(135deg, var(--motion-primary), var(--motion-secondary));
+		background: linear-gradient(
+			135deg,
+			var(--motion-primary) 0%,
+			var(--motion-secondary) 52%,
+			var(--motion-tertiary) 100%
+		);
 		color: #ffffff;
 	}
 </style>

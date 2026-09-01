@@ -7,7 +7,7 @@
 		BottomActionGroup
 	} from '$lib/components/ui/bottom-action-bar';
 	import { Button } from '$lib/components/ui/button';
-	import { getTrackerColors } from '$lib/trackers/registry';
+	import { getTrackerColors, trackerGradient } from '$lib/trackers/registry';
 	import {
 		breathingDurationSeconds,
 		breathingStep,
@@ -175,7 +175,7 @@
 	<div class="relative flex size-72 items-center justify-center sm:size-80">
 		<div
 			class="relative flex size-full items-center justify-center rounded-full text-white shadow-lg shadow-black/10 will-change-transform"
-			style={`background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`}
+			style:background={trackerGradient(colors)}
 			data-breathing-visual
 			use:breathingPhaseScale={{
 				phase: step.phase.id,

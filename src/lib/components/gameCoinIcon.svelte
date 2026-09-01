@@ -5,7 +5,7 @@ import { gameGradient } from '$lib/gamification/theme';
 import { cn } from '$lib/utils';
 
 type Props = HTMLAttributes<HTMLSpanElement> & {
-	colors: { primary: string; secondary: string };
+	colors: { primary: string; secondary: string; tertiary: string };
 	children: Snippet;
 };
 

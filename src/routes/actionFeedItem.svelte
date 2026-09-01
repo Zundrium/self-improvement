@@ -16,12 +16,19 @@ import { Pressable } from '$lib/components/ui/pressable';
 	const trackerId = $derived(item.trackerIds[0]);
 	const TrackerIcon = $derived(trackerId ? trackerIcons[trackerId] : undefined);
 	const trackerColors = $derived(trackerId ? getTrackerColors(trackerId) : undefined);
+	const actionColorStyle = $derived(
+		[
+			`--action-primary: ${trackerColors?.primary ?? 'var(--text)'}`,
+			`--action-secondary: ${trackerColors?.secondary ?? 'var(--text)'}`,
+			`--action-tertiary: ${trackerColors?.tertiary ?? 'var(--text)'}`
+		].join('; ')
+	);
 </script>
 
 {#snippet actionContent()}
 	<span
 		class="flex size-10 shrink-0 items-center justify-center"
-		style:color={trackerColors?.primary}
+		style:color={trackerColors?.secondary}
 	>
 		{#if item.icon === 'tracker' && TrackerIcon}
 			<TrackerIcon class="size-7" />
@@ -53,7 +60,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 		<Pressable
 			href={item.action.href}
 			class="action-card relative flex min-h-20 items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 hover:bg-(--text)/3 focus-visible:bg-(--text)/5"
-			style={`--action-primary: ${trackerColors?.primary ?? 'var(--text)'}`}
+			style={actionColorStyle}
 			motionScale={{ hover: 1.01, pressed: 0.96 }}
 		>
 			{@render actionContent()}
@@ -62,7 +69,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 		<Pressable
 			type="button"
 			class="action-card relative flex min-h-20 w-full cursor-pointer touch-manipulation items-center gap-3 overflow-hidden rounded-3xl bg-(--bg-elevated) px-4 py-4 outline-none hover:bg-(--text)/3 focus-visible:bg-(--text)/5 disabled:pointer-events-none disabled:opacity-60"
-			style={`--action-primary: ${trackerColors?.primary ?? 'var(--text)'}`}
+			style={actionColorStyle}
 			disabled={busy}
 			aria-busy={busy}
 			motionScale={{ disabled: busy, hover: 1.01, pressed: 0.96 }}
@@ -76,16 +83,15 @@ import { Pressable } from '$lib/components/ui/pressable';
 <style>
 	.action-card-container :global(.action-card)::before {
 		position: absolute;
-		top: 50%;
-		left: -3rem;
-		width: 12rem;
-		aspect-ratio: 1;
-		translate: 0 -50%;
-		border-radius: 9999px;
-		background: radial-gradient(
-			circle,
-			color-mix(in srgb, var(--action-primary) 10%, transparent),
-			transparent 70%
+		inset-block: 0;
+		left: 0;
+		width: 80%;
+		background: linear-gradient(
+			to right,
+			color-mix(in srgb, var(--action-primary) 14%, transparent) 0%,
+			color-mix(in srgb, var(--action-secondary) 10%, transparent) 34%,
+			color-mix(in srgb, var(--action-tertiary) 8%, transparent) 62%,
+			transparent 100%
 		);
 		content: '';
 		pointer-events: none;

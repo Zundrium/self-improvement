@@ -33,7 +33,8 @@
 			<defs>
 				<linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
 					<stop offset="0%" stop-color={colors.primary} />
-					<stop offset="100%" stop-color={colors.secondary} />
+					<stop offset="52%" stop-color={colors.secondary} />
+					<stop offset="100%" stop-color={colors.tertiary} />
 				</linearGradient>
 			</defs>
 		{/if}

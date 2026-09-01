@@ -175,9 +175,11 @@
 		};
 	}
 
-	function dateSelectorColors(pathname: string) {
-		const colors = getTrackerColorsForPathname(pathname) ?? getShopColorsForPathname(pathname);
-		return colors ? [colors] : [];
+	function dateSelectorColors(pathname: string): TrackerColors[] {
+		const trackerColors = getTrackerColorsForPathname(pathname);
+		if (trackerColors) return [trackerColors];
+		const shopColors = getShopColorsForPathname(pathname);
+		return shopColors ? [{ ...shopColors, tertiary: shopColors.secondary }] : [];
 	}
 
 	function markedDates(pageData: DatedPageData) {
@@ -205,8 +207,11 @@
 		? `safe-area-padding-top flex h-svh flex-col overflow-hidden ${selectedTracker ? 'tracker-fade' : ''}`
 		: undefined}
 	style:--tracker-fade-color={selectedTracker?.colors.primary}
+	style:--tracker-fade-secondary={selectedTracker?.colors.secondary}
+	style:--tracker-fade-tertiary={selectedTracker?.colors.tertiary}
 	style:--bottom-action-primary={selectedFeature?.colors.primary}
 	style:--bottom-action-secondary={selectedFeature?.colors.secondary}
+	style:--bottom-action-tertiary={selectedTracker?.colors.tertiary ?? selectedFeature?.colors.secondary}
 	use:motionRoot
 >
 	{#if dateNavigation || selectedFeature}
