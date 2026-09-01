@@ -17,6 +17,7 @@ export const trackerPoints: Record<AppTrackerId, number> = {
 	meditation: 15,
 	breathing: 10,
 	stretch: 10,
+	chores: 10,
 	happiness: 10,
 	period: 10
 };
@@ -72,6 +73,7 @@ export function completionDates(state: LocalAppState, today: string): Completion
 	dates.meditation = state.meditation.sessions.map(localDate);
 	dates.breathing = state.breathing.exercises.map(localDate);
 	dates.stretch = state.stretch.sessions.map(localDate);
+	dates.chores = state.chores.sessions.map(localDate);
 	dates.happiness = state.happiness.entries.map(localDate);
 	dates.period = state.period.entries.map(localDate);
 	return trimCompletionDates(dates, state.gamification.startedLocalDate, today);

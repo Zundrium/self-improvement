@@ -101,6 +101,7 @@ export type DaySummaryData = {
 	breathingDone: boolean;
 	stretchDone: boolean;
 	stretchScheduled: boolean;
+	choresDone: boolean;
 	happinessRating: HappinessRating | null;
 	periodFlow: MenstruationFlow | null;
 };
@@ -216,6 +217,14 @@ export type StretchData = DatedData & {
 	settings: StretchSettingsData;
 	scheduled: boolean;
 	sessions: StretchSession[];
+};
+export type ChoresSession = {
+	localDate: string;
+	durationSeconds: number;
+	startedAt: number;
+};
+export type ChoresData = DatedData & {
+	session: ChoresSession | null;
 };
 export type HappinessData = DatedData & {
 	settings: HappinessSettingsData;

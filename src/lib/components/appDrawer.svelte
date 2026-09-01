@@ -85,6 +85,12 @@
 			'/stretch',
 			daySummary.stretchScheduled
 		),
+		chores: trackerDetail(
+			daySummary.choresDone ? 'Completed' : '10 minutes',
+			daySummary.choresDone,
+			'/chores',
+			true
+		),
 		happiness: trackerDetail(
 			daySummary.happinessRating ? `${daySummary.happinessRating}/5` : 'Not logged',
 			daySummary.happinessRating !== null,

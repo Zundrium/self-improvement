@@ -1,6 +1,7 @@
 import type { Component } from 'svelte';
 import {
 	Apple,
+	BrushCleaning,
 	Droplet,
 	Dumbbell,
 	Footprints,
@@ -24,6 +25,7 @@ export const trackerIcons = {
 	meditation: MeditationIcon,
 	breathing: Wind,
 	stretch: PersonStanding,
+	chores: BrushCleaning,
 	happiness: Smile,
 	period: Droplet
 } satisfies Record<AppTrackerId, TrackerIconComponent>;

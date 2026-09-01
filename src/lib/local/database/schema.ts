@@ -288,6 +288,15 @@ export const stretchSessions = sqliteTable(
 	},
 	(table) => [index('stretch_sessions_date_idx').on(table.localDate)]
 );
+export const choresSessions = sqliteTable(
+	'chores_sessions',
+	{
+		localDate: text('local_date').primaryKey(),
+		durationSeconds: integer('duration_seconds').notNull(),
+		startedAt: integer('started_at').notNull()
+	},
+	(table) => [index('chores_sessions_started_idx').on(table.startedAt)]
+);
 export const happinessEntries = sqliteTable('happiness_entries', {
 	localDate: text('local_date').primaryKey(),
 	rating: integer('rating').notNull(),
@@ -389,6 +398,7 @@ export const sqliteTables = {
 	meditationSessions,
 	breathingExercises,
 	stretchSessions,
+	choresSessions,
 	happinessEntries,
 	happinessReasons,
 	periodEntries,
@@ -441,6 +451,7 @@ export const TABLE_KEYS: { [K in TableName]: Array<keyof RelationalRows[K] & str
 	meditationSessions: ['id'],
 	breathingExercises: ['id'],
 	stretchSessions: ['id'],
+	choresSessions: ['localDate'],
 	happinessEntries: ['localDate'],
 	happinessReasons: ['localDate', 'reason'],
 	periodEntries: ['localDate'],
@@ -595,6 +606,11 @@ export const TABLE_COLUMNS: { [K in TableName]: Record<keyof RelationalRows[K] &
 			completedAt: 'completed_at',
 			hardVariationCompleted: 'hard_variation_completed'
 		},
+		choresSessions: {
+			localDate: 'local_date',
+			durationSeconds: 'duration_seconds',
+			startedAt: 'started_at'
+		},
 		happinessEntries: { localDate: 'local_date', rating: 'rating', updatedAt: 'updated_at' },
 		happinessReasons: { localDate: 'local_date', reason: 'reason' },
 		periodEntries: {
@@ -636,7 +652,7 @@ export const BOOLEAN_COLUMNS: Partial<Record<TableName, string[]>> = {
 	nativeSyncStatus: ['failureRetryable']
 };
 
-export const SQLITE_SCHEMA_VERSION = 2;
+export const SQLITE_SCHEMA_VERSION = 3;
 export const SQLITE_DATABASE_NAME = 'self-improvement-local-v2';
 export const BROWSER_DATABASE_NAME = 'self-improvement-local-v2';
 
@@ -680,6 +696,8 @@ CREATE TABLE breathing_exercises (id TEXT PRIMARY KEY, local_date TEXT NOT NULL,
 CREATE INDEX breathing_exercises_date_idx ON breathing_exercises(local_date DESC);
 CREATE TABLE stretch_sessions (id TEXT PRIMARY KEY, local_date TEXT NOT NULL, hold_seconds INTEGER NOT NULL, completed_at TEXT NOT NULL, hard_variation_completed INTEGER NOT NULL DEFAULT 0 CHECK (hard_variation_completed IN (0, 1)));
 CREATE INDEX stretch_sessions_date_idx ON stretch_sessions(local_date DESC);
+CREATE TABLE chores_sessions (local_date TEXT PRIMARY KEY, duration_seconds INTEGER NOT NULL, started_at INTEGER NOT NULL);
+CREATE INDEX chores_sessions_started_idx ON chores_sessions(started_at DESC);
 CREATE TABLE happiness_entries (local_date TEXT PRIMARY KEY, rating INTEGER NOT NULL, updated_at TEXT NOT NULL);
 CREATE TABLE happiness_reasons (local_date TEXT NOT NULL, reason TEXT NOT NULL, PRIMARY KEY (local_date, reason), FOREIGN KEY (local_date) REFERENCES happiness_entries(local_date) ON DELETE CASCADE);
 CREATE TABLE period_entries (local_date TEXT PRIMARY KEY, flow TEXT NOT NULL, notes TEXT NOT NULL, updated_at TEXT NOT NULL);
@@ -691,7 +709,15 @@ CREATE TABLE rewards (id TEXT PRIMARY KEY, name TEXT NOT NULL, emoji TEXT NOT NU
 CREATE TABLE redemptions (id TEXT PRIMARY KEY, reward_id TEXT, name TEXT NOT NULL, emoji TEXT NOT NULL, price INTEGER NOT NULL, redeemed_at TEXT NOT NULL, FOREIGN KEY (reward_id) REFERENCES rewards(id) ON DELETE SET NULL);
 CREATE INDEX redemptions_date_idx ON redemptions(redeemed_at DESC);
 CREATE TABLE native_sync_status (tracker_id TEXT PRIMARY KEY, permission TEXT NOT NULL, outcome TEXT NOT NULL, last_attempt_at TEXT, last_success_at TEXT, failure_category TEXT, failure_message TEXT, failure_retryable INTEGER NOT NULL DEFAULT 1 CHECK (failure_retryable IN (0, 1)));
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
+`;
+
+export const SQLITE_V2_TO_V3_SQL = `
+CREATE TABLE chores_sessions (local_date TEXT PRIMARY KEY, duration_seconds INTEGER NOT NULL, started_at INTEGER NOT NULL);
+CREATE INDEX chores_sessions_started_idx ON chores_sessions(started_at DESC);
+INSERT OR IGNORE INTO enabled_trackers (tracker_id, position)
+VALUES ('chores', COALESCE((SELECT MAX(position) + 1 FROM enabled_trackers), 0));
+PRAGMA user_version = 3;
 `;
 
 export const DEXIE_STORES: Record<TableName, string> = {
@@ -724,6 +750,7 @@ export const DEXIE_STORES: Record<TableName, string> = {
 	meditationSessions: 'id, localDate',
 	breathingExercises: 'id, localDate',
 	stretchSessions: 'id, localDate',
+	choresSessions: 'localDate, startedAt',
 	happinessEntries: 'localDate',
 	happinessReasons: '[localDate+reason], localDate',
 	periodEntries: 'localDate',

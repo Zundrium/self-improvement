@@ -4,6 +4,7 @@ import type {
 	ActionFeedData,
 	AppBootstrapData,
 	BreathingData,
+	ChoresData,
 	DaySummaryData,
 	FitnessData,
 	GamificationData,
@@ -47,7 +48,7 @@ describe('local app service', () => {
 		const secondGamification = await service.request<GamificationData>('/api/app/gamification');
 
 		expect(app.profile.id).toBe('local-profile');
-		expect(app.enabledTrackers).toHaveLength(10);
+		expect(app.enabledTrackers).toHaveLength(11);
 		expect(happiness.entry).toMatchObject({ rating: 4, reasons: ['gratitude'] });
 		expect(persistedAwards).toContainEqual({
 			trackerId: 'happiness',
@@ -56,6 +57,30 @@ describe('local app service', () => {
 		});
 		expect(firstGamification).toMatchObject({ score: 10, glimmers: 10, earnedNow: 0 });
 		expect(secondGamification.earnedNow).toBe(0);
+	});
+
+	it('records one fixed 10-minute chores completion per day', async () => {
+		const now = new Date('2026-03-20T12:00:00.000Z');
+		const store = trackedStore();
+		const service = new LocalAppService(store, () => now);
+		const completion = {
+			localDate: '2026-03-20',
+			startedAt: now.getTime() - 10 * 60 * 1_000
+		};
+
+		const saved = await service.request('/api/app/chores', {
+			method: 'POST',
+			body: JSON.stringify(completion)
+		});
+		const chores = await service.request<ChoresData>('/api/app/chores');
+
+		expect(saved).toEqual({ ...completion, durationSeconds: 600 });
+		expect(chores).toMatchObject({
+			date: '2026-03-20',
+			markedDates: ['2026-03-20'],
+			session: { ...completion, durationSeconds: 600 }
+		});
+		expect((await store.readDomains(['chores'])).chores.sessions).toHaveLength(1);
 	});
 
 	it('records permanent event achievements through the local API', async () => {

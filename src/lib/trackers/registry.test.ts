@@ -25,14 +25,27 @@ describe('tracker registry', () => {
 		);
 	});
 
-	it('uses readable warm colors for Stretch and Happiness', () => {
+	it('uses readable tracker colors', () => {
 		expect(getTrackerColors('stretch')).toEqual({ primary: '#c2410c', secondary: '#9a3412' });
+		expect(getTrackerColors('chores')).toEqual({ primary: '#a21caf', secondary: '#be185d' });
 		expect(getTrackerColors('happiness')).toEqual({ primary: '#a16207', secondary: '#ca8a04' });
 	});
 
-	it('registers settings for every app tracker', () => {
+	it('registers Chores as a fixed daily tracker without settings', () => {
+		expect(appTrackers).toContainEqual(
+			expect.objectContaining({
+				id: 'chores',
+				label: 'Chores',
+				href: '/chores',
+				settingsHref: null,
+				defaultEnabled: true
+			})
+		);
+	});
+
+	it('uses matching settings routes when trackers expose settings', () => {
 		for (const tracker of appTrackers) {
-			expect(tracker.settingsHref).toBe(`/${tracker.id}/settings`);
+			if (tracker.settingsHref) expect(tracker.settingsHref).toBe(`/${tracker.id}/settings`);
 		}
 	});
 });

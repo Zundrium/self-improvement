@@ -162,6 +162,17 @@ const trackerCatalogDetails: Record<AppTrackerId, TrackerCatalogDetails> = {
 		],
 		icons: ['Accessibility', 'PersonStanding', 'Move', 'Move3d', 'Expand', 'Maximize']
 	},
+	chores: {
+		titles: [
+			'First Task',
+			'Getting Things Done',
+			'Tidy Rhythm',
+			'Household Habit',
+			'Home in Hand',
+			'Century of Chores'
+		],
+		icons: ['BrushCleaning', 'SprayCan', 'WashingMachine', 'House', 'HouseHeart', 'CircleCheckBig']
+	},
 	happiness: {
 		titles: [
 			'First Check-in',

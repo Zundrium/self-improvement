@@ -24,17 +24,18 @@ const milestoneTitleBounds = {
 	meditation: ['First Stillness', 'Hundred Moments of Calm'],
 	breathing: ['First Breath', 'Breathe Easy'],
 	stretch: ['First Reach', 'Century Stretch'],
+	chores: ['First Task', 'Century of Chores'],
 	happiness: ['First Check-in', 'Hundred Honest Moments'],
 	period: ['First Entry', 'Century of Care']
 } as const;
 
 describe('achievement catalog', () => {
-	it('defines all sixty approved tracker milestones and titles', () => {
+	it('defines six milestones and titles for every tracker', () => {
 		const milestones = achievementCatalog.filter(
 			({ category }) => category === 'tracker-milestone'
 		);
 
-		expect(milestones).toHaveLength(60);
+		expect(milestones).toHaveLength(appTrackers.length * TRACKER_MILESTONE_TARGETS.length);
 		for (const tracker of appTrackers) {
 			const trackerMilestones = milestones.filter(({ trackerId }) => trackerId === tracker.id);
 			expect(trackerMilestones.map(({ target }) => target)).toEqual(TRACKER_MILESTONE_TARGETS);
@@ -45,7 +46,7 @@ describe('achievement catalog', () => {
 	});
 
 	it('contains exactly the approved achievement families', () => {
-		expect(achievementCatalog).toHaveLength(120);
+		expect(achievementCatalog).toHaveLength(126);
 		expect(achievementCatalog.filter(({ category }) => category === 'score')).toHaveLength(5);
 		expect(achievementCatalog.filter(({ category }) => category === 'streak')).toHaveLength(5);
 		expect(achievementCatalog.filter(({ category }) => category === 'overall')).toHaveLength(6);
@@ -71,11 +72,12 @@ describe('achievement catalog', () => {
 		expect(achievementCatalog.some(({ id }) => removedIds.includes(id))).toBe(false);
 
 		for (const tracker of appTrackers) {
+			const specialCount = tracker.id === 'chores' ? 0 : 3;
 			expect(
 				achievementCatalog.filter(
 					({ category, trackerId }) => category === 'tracker-special' && trackerId === tracker.id
 				)
-			).toHaveLength(3);
+			).toHaveLength(specialCount);
 		}
 	});
 
@@ -368,6 +370,11 @@ function addCompleteDate(state: LocalAppState, date: string, index: number) {
 		holdSeconds: 60,
 		completedAt: `${date}T08:00:00.000Z`,
 		hardVariationCompleted: true
+	});
+	state.chores.sessions.push({
+		localDate: date,
+		durationSeconds: 600,
+		startedAt: Date.parse(`${date}T08:30:00.000Z`)
 	});
 	state.happiness.entries.push({
 		localDate: date,

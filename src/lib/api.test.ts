@@ -15,7 +15,7 @@ describe('apiRequest', () => {
 		const app = await apiRequest<AppBootstrapData>('/api/app/bootstrap');
 
 		expect(app.profile.id).toBe('local-profile');
-		expect(app.enabledTrackers).toHaveLength(10);
+		expect(app.enabledTrackers).toHaveLength(11);
 		expect(fetch).not.toHaveBeenCalled();
 	});
 });

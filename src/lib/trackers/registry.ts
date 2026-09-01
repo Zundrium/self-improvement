@@ -81,6 +81,16 @@ export const trackers = [
 		defaultEnabled: true
 	},
 	{
+		id: 'chores',
+		label: 'Chores',
+		description: 'A daily 10-minute timer for tidying, laundry, or any quick chore.',
+		href: '/chores',
+		settingsHref: null,
+		colors: { primary: '#a21caf', secondary: '#be185d' },
+		hasAppIcon: true,
+		defaultEnabled: true
+	},
+	{
 		id: 'happiness',
 		label: 'Happiness',
 		description: 'Daily happiness levels and the reasons behind them.',
@@ -129,7 +139,9 @@ export type TrackerColors = { primary: string; secondary: string };
 export const appTrackers = trackers.filter((tracker): tracker is AppTracker => tracker.hasAppIcon);
 
 export function getTrackerColors(id: TrackerId) {
-	return trackers.find((tracker) => tracker.id === id)!.colors;
+	const tracker = trackers.find((tracker) => tracker.id === id);
+	if (!tracker) throw new Error(`Unknown tracker: ${id}`);
+	return tracker.colors;
 }
 
 export function getTrackerForPathname(pathname: string) {

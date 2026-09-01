@@ -5,6 +5,7 @@ import type {
 	ActionFeedData,
 	AppBootstrapData,
 	BreathingData,
+	ChoresData,
 	DaySummaryData,
 	ExerciseData,
 	FitnessData,
@@ -29,6 +30,7 @@ import type {
 import { dateKeysEndingAt, isValidDateKey, localDateForInstant } from '$lib/trackers/dates';
 import { type AppTrackerId, appTrackers, isAppTrackerId } from '$lib/trackers/registry';
 import { breathingDurationSeconds } from '../../routes/breathing/breathing';
+import { CHORES_DURATION_SECONDS } from '../../routes/chores/chores';
 import { defaultWorkoutSets } from '../../routes/fitness/fitness';
 import {
 	type HappinessRating,
@@ -96,6 +98,7 @@ export class LocalAppService {
 		if (path === '/api/app/meditation') return this.meditation(url, method, body);
 		if (path === '/api/app/breathing') return this.breathing(url, method, body);
 		if (path === '/api/app/stretch') return this.stretch(url, method, body);
+		if (path === '/api/app/chores') return this.chores(url, method, body);
 		if (path === '/api/app/happiness') return this.happiness(url, method, body);
 		if (path === '/api/app/period') return this.period(url, method, body);
 		if (path === '/api/app/rewards' && method === 'GET') return this.rewards();
@@ -367,6 +370,25 @@ export class LocalAppService {
 		});
 		if (!session) throw new Error('Stretch session was not created.');
 		return session;
+	}
+
+	private async chores(url: URL, method: string, body: Record<string, unknown>) {
+		if (method === 'GET')
+			return choresData(
+				await this.store.readDomains(['chores']),
+				selectedDate(url, this.today()),
+				this.today()
+			);
+		if (method !== 'POST') throw methodNotAllowed();
+		let session: LocalAppState['chores']['sessions'][number] | undefined;
+		await this.updateWithCompletionNotification(['chores'], (state) => {
+			const completion = validChores(body, this.today(), this.clock());
+			session =
+				state.chores.sessions.find(({ localDate }) => localDate === completion.localDate) ?? completion;
+			if (!state.chores.sessions.some(({ localDate }) => localDate === completion.localDate))
+				state.chores.sessions.push(completion);
+		});
+		return requiredResult(session, 'Chores session was not created.');
 	}
 
 	private async happiness(url: URL, method: string, body: Record<string, unknown>) {
@@ -889,6 +911,15 @@ function stretchData(state: LocalAppState, date: string, today: string): Stretch
 	};
 }
 
+function choresData(state: LocalAppState, date: string, today: string): ChoresData {
+	return {
+		date,
+		today,
+		markedDates: state.chores.sessions.map(({ localDate }) => localDate),
+		session: state.chores.sessions.find((session) => session.localDate === date) ?? null
+	};
+}
+
 function happinessData(state: LocalAppState, date: string, today: string): HappinessData {
 	const entries = [...state.happiness.entries].sort(byLocalDateDescending);
 	const selected = entries.find((entry) => entry.localDate === date);
@@ -981,6 +1012,7 @@ function daySummaryData(state: LocalAppState, date: string, today: string): DayS
 		breathingDone: state.breathing.exercises.some((exercise) => exercise.localDate === date),
 		stretchDone: state.stretch.sessions.some((session) => session.localDate === date),
 		stretchScheduled: isStretchScheduled(date),
+		choresDone: state.chores.sessions.some((session) => session.localDate === date),
 		happinessRating:
 			state.happiness.entries.find((entry) => entry.localDate === date)?.rating ?? null,
 		periodFlow: state.period.entries.find((entry) => entry.localDate === date)?.flow ?? null
@@ -1048,6 +1080,18 @@ function validStretch(
 		completedAt: now.toISOString(),
 		hardVariationCompleted: Object.values(difficulties).includes('hard')
 	};
+}
+
+function validChores(body: Record<string, unknown>, today: string, now: Date) {
+	const localDate = String(body.localDate ?? '');
+	const startedAt = Number(body.startedAt);
+	if (
+		localDate !== today ||
+		!Number.isInteger(startedAt) ||
+		Math.abs(now.getTime() - startedAt) > 24 * 60 * 60 * 1_000
+	)
+		throw badRequest('Invalid chores session.');
+	return { localDate, durationSeconds: CHORES_DURATION_SECONDS, startedAt } as const;
 }
 
 function validHappiness(

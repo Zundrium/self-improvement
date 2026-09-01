@@ -133,6 +133,7 @@ const stateSchema = z.strictObject({
 			'meditation',
 			'breathing',
 			'stretch',
+			'chores',
 			'happiness',
 			'period'
 		])
@@ -228,6 +229,17 @@ const stateSchema = z.strictObject({
 			})
 		)
 	}),
+	chores: z
+		.object({
+			sessions: z.array(
+				z.object({
+					localDate: date,
+					durationSeconds: z.literal(600),
+					startedAt: z.number().int().positive()
+				})
+			)
+		})
+		.default({ sessions: [] }),
 	happiness: z.object({
 		defaultRating: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
 		entries: z.array(
@@ -264,6 +276,7 @@ export type LocalDomain =
 	| 'meditation'
 	| 'breathing'
 	| 'stretch'
+	| 'chores'
 	| 'happiness'
 	| 'period'
 	| 'gamification'
@@ -279,6 +292,7 @@ export const ALL_LOCAL_DOMAINS: readonly LocalDomain[] = [
 	'meditation',
 	'breathing',
 	'stretch',
+	'chores',
 	'happiness',
 	'period',
 	'gamification',
@@ -302,6 +316,7 @@ const DOMAIN_TABLES: Record<LocalDomain, readonly TableName[]> = {
 	meditation: ['meditationSettings', 'meditationSessions'],
 	breathing: ['breathingSettings', 'breathingExercises'],
 	stretch: ['stretchSettings', 'stretchDifficulties', 'stretchSessions'],
+	chores: ['choresSessions'],
 	happiness: ['happinessSettings', 'happinessEntries', 'happinessReasons'],
 	period: ['periodSettings', 'periodEntries'],
 	gamification: ['gamificationMeta', 'gamificationAwards', 'achievementUnlocks'],
@@ -622,6 +637,7 @@ export function createDefaultAppState(now = new Date()): LocalAppState {
 			difficulties: structuredClone(TRACKER_DEFAULTS.stretch.difficulties),
 			sessions: []
 		},
+		chores: { sessions: [] },
 		happiness: { defaultRating: TRACKER_DEFAULTS.happiness.defaultRating, entries: [] },
 		period: {
 			defaultFlow: TRACKER_DEFAULTS.period.defaultFlow,
@@ -660,6 +676,7 @@ function trackerDomains(): LocalDomain[] {
 		'meditation',
 		'breathing',
 		'stretch',
+		'chores',
 		'happiness',
 		'period'
 	];
@@ -700,6 +717,7 @@ function stateToRelationalData(
 	if (selected.has('meditation')) writeMeditationRows(data, state);
 	if (selected.has('breathing')) writeBreathingRows(data, state);
 	if (selected.has('stretch')) writeStretchRows(data, state);
+	if (selected.has('chores')) writeChoresRows(data, state);
 	if (selected.has('happiness')) writeHappinessRows(data, state);
 	if (selected.has('period')) writePeriodRows(data, state);
 	if (selected.has('gamification')) writeGamificationRows(data, state);
@@ -864,6 +882,9 @@ function writeStretchRows(data: RelationalData, state: LocalAppState) {
 		hardVariationCompleted: session.hardVariationCompleted ?? false
 	}));
 }
+function writeChoresRows(data: RelationalData, state: LocalAppState) {
+	data.choresSessions = state.chores.sessions.map((session) => ({ ...session }));
+}
 function writeHappinessRows(data: RelationalData, state: LocalAppState) {
 	data.happinessSettings = [{ id: 1, defaultRating: state.happiness.defaultRating }];
 	data.happinessEntries = state.happiness.entries.map(({ localDate, rating, updatedAt }) => ({
@@ -914,6 +935,7 @@ async function relationalDataToState(
 	if (selected.has('meditation')) readMeditationRows(state, data);
 	if (selected.has('breathing')) readBreathingRows(state, data);
 	if (selected.has('stretch')) readStretchRows(state, data);
+	if (selected.has('chores')) readChoresRows(state, data);
 	if (selected.has('happiness')) readHappinessRows(state, data);
 	if (selected.has('period')) readPeriodRows(state, data);
 	if (selected.has('gamification')) readGamificationRows(state, data);
@@ -1078,6 +1100,12 @@ function readStretchRows(state: LocalAppState, data: Partial<RelationalData>) {
 			...(hardVariationCompleted ? { hardVariationCompleted } : {})
 		})
 	);
+}
+function readChoresRows(state: LocalAppState, data: Partial<RelationalData>) {
+	state.chores.sessions = (data.choresSessions ?? []).map((session) => ({
+		...session,
+		durationSeconds: 600
+	}));
 }
 function readHappinessRows(state: LocalAppState, data: Partial<RelationalData>) {
 	state.happiness.defaultRating = (data.happinessSettings?.[0]?.defaultRating ??

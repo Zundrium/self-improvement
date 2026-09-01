@@ -159,6 +159,7 @@ function snapshot(
 			meditation: { date: '2026-04-10', completed: false, daysSinceLastSession: 2 },
 			breathing: { date: '2026-04-10', completed: false },
 			stretch: { date: '2026-04-10', scheduled: true, completed: false },
+			chores: { date: '2026-04-10', completed: false },
 			happiness: { date: '2026-04-10', rating: null },
 			period: { date: '2026-04-10', flow: null }
 		}

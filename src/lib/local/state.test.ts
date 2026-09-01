@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import Dexie from 'dexie';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createEmptyStatus } from '$domain/status';
 import {
@@ -10,6 +11,7 @@ import {
 	type NativeAppStateConnection,
 	validateLocalAppState
 } from './state';
+import { DEXIE_STORES } from './database/schema';
 import { DEFAULT_STRETCH_DIFFICULTIES } from './tracker-settings';
 
 const stores: LocalAppStore[] = [];
@@ -19,7 +21,7 @@ afterEach(async () => {
 });
 
 describe('relational local app state', () => {
-	it('starts with v2 defaults and empty tracker tables', () => {
+	it('starts with v2 export defaults and empty tracker tables', () => {
 		const state = createDefaultAppState(new Date('2026-03-20T12:00:00.000Z'));
 
 		expect(state.version).toBe(LOCAL_STATE_VERSION);
@@ -28,15 +30,37 @@ describe('relational local app state', () => {
 			name: 'You',
 			createdAt: '2026-03-20T12:00:00.000Z'
 		});
-		expect(state.enabledTrackerIds).toHaveLength(10);
+		expect(state.enabledTrackerIds).toHaveLength(11);
 		expect(state.stretch.difficulties).toEqual(DEFAULT_STRETCH_DIFFICULTIES);
 		expect(state.steps.days).toEqual([]);
 		expect(state.nutrition.entries).toEqual([]);
+		expect(state.chores.sessions).toEqual([]);
 	});
 
 	it('rejects the removed v1 aggregate format', () => {
 		const state = createDefaultAppState();
 		expect(() => validateLocalAppState({ ...state, version: 1 })).toThrow();
+	});
+
+	it('migrates v2 browser data and enables Chores', async () => {
+		const name = databaseName();
+		const legacy = new Dexie(name);
+		const { choresSessions: _choresSessions, ...versionTwoStores } = DEXIE_STORES;
+		legacy.version(2).stores(versionTwoStores);
+		await legacy.table('profile').put({
+			id: 1,
+			name: 'Existing user',
+			createdAt: '2026-03-20T12:00:00.000Z'
+		});
+		await legacy.table('enabledTrackers').put({ trackerId: 'steps', position: 0 });
+		legacy.close();
+		const store = trackedStore(name);
+
+		const state = await store.readDomains(['profile', 'chores']);
+
+		expect(state.user.name).toBe('Existing user');
+		expect(state.enabledTrackerIds).toEqual(['steps', 'chores']);
+		expect(state.chores.sessions).toEqual([]);
 	});
 
 	it('persists concurrent mutations in normalized Dexie tables', async () => {
@@ -134,14 +158,14 @@ describe('relational local app state', () => {
 });
 
 describe('native relational SQLite state', () => {
-	it('initializes v2 normalized tables without a legacy document table', async () => {
+	it('initializes v3 normalized tables without a legacy document table', async () => {
 		const native = new FakeNativeConnection();
 		const store = nativeStore(native);
 
 		const state = await store.readDomains(['profile', 'steps']);
 
 		expect(state.user.name).toBe('You');
-		expect(native.schemaVersion).toBe(2);
+		expect(native.schemaVersion).toBe(3);
 		expect(native.events.join('\n')).not.toContain('document TEXT');
 		expect(native.events).toContain('execute:false:schema');
 		expect(native.events.join('\n')).not.toContain('PRAGMA journal_mode');
@@ -186,8 +210,8 @@ describe('native relational SQLite state', () => {
 	});
 
 	it('rejects unsupported SQLite schemas', async () => {
-		const store = nativeStore(new FakeNativeConnection(3));
-		await expect(store.read()).rejects.toThrow('Unsupported SQLite schema version: 3');
+		const store = nativeStore(new FakeNativeConnection(4));
+		await expect(store.read()).rejects.toThrow('Unsupported SQLite schema version: 4');
 	});
 });
 
@@ -223,7 +247,7 @@ class FakeNativeConnection implements NativeAppStateConnection {
 	async execute(statement: string, transaction = true) {
 		this.rejectNestedTransaction(transaction);
 		this.events.push(`execute:${transaction}:${statement.startsWith('\n') ? 'schema' : statement}`);
-		if (statement.includes('PRAGMA user_version = 2')) this.schemaVersion = 2;
+		if (statement.includes('PRAGMA user_version = 3')) this.schemaVersion = 3;
 	}
 
 	async query(statement: string) {

@@ -12,6 +12,7 @@ import {
 	SQLITE_DATABASE_NAME,
 	SQLITE_SCHEMA_SQL,
 	SQLITE_SCHEMA_VERSION,
+	SQLITE_V2_TO_V3_SQL,
 	TABLE_COLUMNS,
 	TABLE_KEYS,
 	TABLE_ORDER,
@@ -77,6 +78,7 @@ export class LocalAppDatabase extends Dexie {
 	declare meditationSessions: TypedTables['meditationSessions'];
 	declare breathingExercises: TypedTables['breathingExercises'];
 	declare stretchSessions: TypedTables['stretchSessions'];
+	declare choresSessions: TypedTables['choresSessions'];
 	declare happinessEntries: TypedTables['happinessEntries'];
 	declare happinessReasons: TypedTables['happinessReasons'];
 	declare periodEntries: TypedTables['periodEntries'];
@@ -89,7 +91,17 @@ export class LocalAppDatabase extends Dexie {
 
 	constructor(name = BROWSER_DATABASE_NAME) {
 		super(name);
-		this.version(2).stores(DEXIE_STORES);
+		const { choresSessions: _choresSessions, ...versionTwoStores } = DEXIE_STORES;
+		this.version(2).stores(versionTwoStores);
+		this.version(3)
+			.stores(DEXIE_STORES)
+			.upgrade(async (transaction) => {
+				const enabledTrackers = transaction.table('enabledTrackers');
+				if (await enabledTrackers.get('chores')) return;
+				const rows = (await enabledTrackers.toArray()) as Array<{ position: number }>;
+				const position = Math.max(-1, ...rows.map((row) => row.position)) + 1;
+				await enabledTrackers.put({ trackerId: 'chores', position });
+			});
 	}
 }
 
@@ -233,22 +245,28 @@ export class NativeRelationalConnection implements RelationalConnection {
 		);
 		if (!Number.isInteger(version) || version < 0)
 			throw new Error('Invalid SQLite schema version.');
-		if (version !== 0 && version !== SQLITE_SCHEMA_VERSION)
+		if (![0, 2, SQLITE_SCHEMA_VERSION].includes(version))
 			throw new Error(`Unsupported SQLite schema version: ${version}`);
-		if (version === 0) {
-			await connection.beginTransaction();
-			try {
-				await connection.execute(SQLITE_SCHEMA_SQL, false);
-				await connection.commitTransaction();
-			} catch (error) {
-				try {
-					await connection.rollbackTransaction();
-				} catch {}
-				throw error;
-			}
-		}
+		if (version === 0) await this.runSchemaStatements(connection, SQLITE_SCHEMA_SQL);
+		if (version === 2) await this.runSchemaStatements(connection, SQLITE_V2_TO_V3_SQL);
 		const existing = (await connection.query('SELECT id FROM profile WHERE id = 1;')).values?.[0];
 		if (!existing) await this.write(defaults);
+	}
+
+	private async runSchemaStatements(
+		connection: NativeDatabaseConnection,
+		statements: string
+	) {
+		await connection.beginTransaction();
+		try {
+			await connection.execute(statements, false);
+			await connection.commitTransaction();
+		} catch (error) {
+			try {
+				await connection.rollbackTransaction();
+			} catch {}
+			throw error;
+		}
 	}
 
 	private connection() {

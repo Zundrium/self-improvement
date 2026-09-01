@@ -23,6 +23,7 @@ export function buildActionSnapshot(
 			meditation: meditationState(state, date),
 			breathing: breathingState(state, date),
 			stretch: stretchState(state, date),
+			chores: choresState(state, date),
 			happiness: happinessState(state, date),
 			period: periodState(state, date)
 		}
@@ -116,6 +117,13 @@ function stretchState(state: LocalAppState, date: string): TrackerActionStates['
 		date,
 		scheduled: isStretchScheduled(date),
 		completed: state.stretch.sessions.some((session) => session.localDate === date)
+	};
+}
+
+function choresState(state: LocalAppState, date: string): TrackerActionStates['chores'] {
+	return {
+		date,
+		completed: state.chores.sessions.some((session) => session.localDate === date)
 	};
 }
 

@@ -1,4 +1,5 @@
 import { breathingActionCandidates } from '../../routes/breathing/actions';
+import { choresActionCandidates } from '../../routes/chores/actions';
 import { fitnessActionCandidates } from '../../routes/fitness/actions';
 import { happinessActionCandidates } from '../../routes/happiness/actions';
 import { meditationActionCandidates } from '../../routes/meditation/actions';
@@ -18,5 +19,6 @@ export const actionCandidates: ActionCandidate[] = [
 	...meditationActionCandidates,
 	...breathingActionCandidates,
 	...stretchActionCandidates,
+	...choresActionCandidates,
 	...happinessActionCandidates
 ];
