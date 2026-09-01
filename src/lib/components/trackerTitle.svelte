@@ -40,7 +40,10 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 	{:else}
 		<span aria-hidden="true"></span>
 	{/if}
-	<h1 class="text-center text-sm font-medium" style={`color: ${tracker.colors.secondary}`}>
+	<h1
+		class="text-center text-sm font-medium"
+		style={`color: color-mix(in srgb, ${tracker.colors.secondary} 50%, white)`}
+	>
 		{tracker.label}{settingsActive ? ' settings' : ''}
 	</h1>
 	{#if tracker.settingsHref && !settingsActive}
@@ -52,7 +55,10 @@ let { tracker, settingsActive = false, class: className }: Props = $props();
 			aria-label={`${tracker.label} settings`}
 			onclick={() => void goto(resolve(tracker.settingsHref as '/'))}
 		>
-			<Settings class="size-4" style={`color: ${tracker.colors.secondary}`} />
+			<Settings
+				class="size-4"
+				style={`color: color-mix(in srgb, ${tracker.colors.secondary} 50%, white)`}
+			/>
 		</Button>
 	{:else}
 		<span aria-hidden="true"></span>

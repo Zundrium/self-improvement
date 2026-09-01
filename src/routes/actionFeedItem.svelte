@@ -28,7 +28,7 @@ import { Pressable } from '$lib/components/ui/pressable';
 {#snippet actionContent()}
 	<span
 		class="flex size-10 shrink-0 items-center justify-center"
-		style:color={trackerColors?.secondary}
+		style:color="color-mix(in srgb, var(--action-secondary) 50%, white)"
 	>
 		{#if item.icon === 'tracker' && TrackerIcon}
 			<TrackerIcon class="size-7" />
