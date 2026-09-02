@@ -2,7 +2,7 @@
 
 /* lily design system — written into your stylesheet by the lily CLI; yours to edit. */
 
-@custom-variant dark (&:is(.dark *));
+@variant dark (&:where(.dark, .dark *));
 
 /* ----------------------------------------------------------------------------
  * Radius scale (applied via utility classes, by ROLE not pixel size)
@@ -23,6 +23,8 @@
  * ------------------------------------------------------------------------- */
 @layer base {
 	:root {
+		color-scheme: light;
+
 		/* Neutral theme */
 		--app-white: #ffffff;
 		--app-black: #000000;
@@ -87,9 +89,7 @@
 			var(--tracker-color-middle) 50%,
 			var(--tracker-title-contrast)
 		);
-	}
 
-	:root {
 		/* Tracker palettes */
 		--tracker-steps-primary: #4568ba;
 		--tracker-steps-secondary: #1bbdda;
@@ -130,9 +130,7 @@
 		--tracker-streaks-primary: #f97316;
 		--tracker-streaks-secondary: #ef4444;
 		--tracker-streaks-tertiary: #7c3aed;
-	}
 
-	:root {
 		/* Chart palette */
 		--chart-1: #3182f6;
 		--chart-2: #10b981;
@@ -149,12 +147,14 @@
 	}
 
 	:root.dark {
+		color-scheme: dark;
+
 		/* Neutral theme overrides */
 		--bg: #000000;
 		--bg-elevated: #020202;
-		--text: #EFEFEF;
+		--text: #efefef;
 		--navbar-background: var(--app-black);
-		--navbar-item-background: #0F0F0F;
+		--navbar-item-background: #0f0f0f;
 		--tracker-title-contrast: var(--app-white);
 
 		/* Semantic feature overrides */
@@ -175,9 +175,14 @@
 		--chart-5: #fb7185;
 	}
 
+	html {
+		-webkit-tap-highlight-color: transparent;
+	}
+
 	body {
 		min-width: 320px;
 		min-height: 100vh;
+		min-height: 100dvh;
 		margin: 0;
 		background: var(--bg);
 		color: var(--text);
@@ -185,6 +190,7 @@
 		word-break: keep-all;
 		overflow-wrap: break-word;
 		-webkit-font-smoothing: antialiased;
+		-webkit-tap-highlight-color: transparent;
 	}
 
 	::selection {
@@ -258,6 +264,7 @@
 		background-position: 0 100%;
 		background-repeat: no-repeat;
 		background-size: 0% 1px;
+		transition: background-size 0.2s ease;
 	}
 
 	.link:hover {
@@ -269,6 +276,7 @@
  * Shared component helpers (animations, stateful variants)
  * ------------------------------------------------------------------------- */
 @theme inline {
+	--font-sans: 'IBM Plex Sans Variable', sans-serif;
 	--color-chart-1: var(--chart-1);
 	--color-chart-2: var(--chart-2);
 	--color-chart-3: var(--chart-3);
@@ -276,55 +284,55 @@
 	--color-chart-5: var(--chart-5);
 }
 
-@custom-variant data-open {
+@variant data-open {
 	&:where([data-state='open']),
 	&:where([data-open]:not([data-open='false'])) {
 		@slot;
 	}
 }
 
-@custom-variant data-closed {
+@variant data-closed {
 	&:where([data-state='closed']),
 	&:where([data-closed]:not([data-closed='false'])) {
 		@slot;
 	}
 }
 
-@custom-variant data-checked {
+@variant data-checked {
 	&:where([data-state='checked']),
 	&:where([data-checked]:not([data-checked='false'])) {
 		@slot;
 	}
 }
 
-@custom-variant data-unchecked {
+@variant data-unchecked {
 	&:where([data-state='unchecked']),
 	&:where([data-unchecked]:not([data-unchecked='false'])) {
 		@slot;
 	}
 }
 
-@custom-variant data-disabled {
+@variant data-disabled {
 	&:where([data-disabled='true']),
 	&:where([data-disabled]:not([data-disabled='false'])) {
 		@slot;
 	}
 }
 
-@custom-variant data-active {
+@variant data-active {
 	&:where([data-state='active']),
 	&:where([data-active]:not([data-active='false'])) {
 		@slot;
 	}
 }
 
-@custom-variant data-horizontal {
+@variant data-horizontal {
 	&:where([data-orientation='horizontal']) {
 		@slot;
 	}
 }
 
-@custom-variant data-vertical {
+@variant data-vertical {
 	&:where([data-orientation='vertical']) {
 		@slot;
 	}
@@ -351,19 +359,15 @@
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 	}
+
+	#app-loading-spinner {
+		animation-duration: 1.8s !important;
+	}
 }
 
 /* ----------------------------------------------------------------------------
  * App and component styles
  * ------------------------------------------------------------------------- */
-html {
-	color-scheme: light;
-}
-
-html.dark {
-	color-scheme: dark;
-}
-
 .sveltekit-body {
 	display: contents;
 }
@@ -375,11 +379,7 @@ html.dark {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: #f5f2eb;
-}
-
-html.dark #app-loading-screen {
-	background: #111111;
+	background: var(--bg);
 }
 
 #app-loading-content {
@@ -407,12 +407,6 @@ html.dark #app-loading-screen {
 @keyframes app-loading-spin {
 	to {
 		transform: rotate(360deg);
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	#app-loading-spinner {
-		animation-duration: 1.8s;
 	}
 }
 
@@ -543,11 +537,6 @@ html.dark #app-loading-screen {
 	color: color-mix(in srgb, var(--text) 72%, transparent);
 }
 
-[data-color-profile='plain']:hover {
-	background: color-mix(in srgb, var(--text) 11%, transparent);
-	color: var(--text);
-}
-
 [data-color-profile='highlighted'] {
 	background: linear-gradient(
 		135deg,
@@ -559,18 +548,10 @@ html.dark #app-loading-screen {
 	font-weight: 500;
 }
 
-[data-color-profile='highlighted']:hover {
-	filter: brightness(1.08);
-}
-
 [data-color-profile='active'] {
 	background: color-mix(in srgb, var(--button-middle) 60%, transparent);
 	color: var(--app-on-color);
 	font-weight: 500;
-}
-
-[data-color-profile='active']:hover {
-	background: color-mix(in srgb, var(--button-middle) 68%, transparent);
 }
 
 [data-color-profile='text'] {
@@ -581,6 +562,21 @@ html.dark #app-loading-screen {
 
 [data-color-profile='text']:hover {
 	background: transparent;
+}
+
+@media (hover: hover) {
+	[data-color-profile='plain']:hover {
+		background: color-mix(in srgb, var(--text) 11%, transparent);
+		color: var(--text);
+	}
+
+	[data-color-profile='highlighted']:hover {
+		filter: brightness(1.08);
+	}
+
+	[data-color-profile='active']:hover {
+		background: color-mix(in srgb, var(--button-middle) 68%, transparent);
+	}
 }
 
 [data-tone='destructive'][data-color-profile='plain'],
