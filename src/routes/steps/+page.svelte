@@ -26,7 +26,15 @@
 	<meta name="description" content="Track daily steps from Android Health Connect." />
 </svelte:head>
 
-<TrackerPage class="max-w-3xl">
+<TrackerPage
+	class="max-w-3xl"
+	progress={{
+		mode: 'line',
+		days: data.progressDays,
+		maxValue: dailyGoal,
+		ariaLabel: 'Five-day step progress'
+	}}
+>
 	<StepsSummary steps={data.steps} goal={dailyGoal} />
 	{#if !data.hasData}<NativeDataHelpAlert tracker="steps" isSynced={data.isSynced} />{/if}
 	<TrackerHistory items={history} {colors} />

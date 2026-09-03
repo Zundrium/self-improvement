@@ -74,7 +74,13 @@ export type AppBootstrapData = {
 	enabledTrackers: AppTracker[];
 	gamification: GamificationData;
 };
-export type DatedData = { date: string; today: string; markedDates?: string[] };
+export type TrackerProgressDay = { date: string; value: number | null };
+export type DatedData = {
+	date: string;
+	today: string;
+	markedDates?: string[];
+	progressDays: TrackerProgressDay[];
+};
 
 export type DaySummaryData = {
 	date: string;

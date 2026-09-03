@@ -30,6 +30,11 @@ onMount(() => {
 <TrackerPage
 	class="flex max-w-(--app-compact-max-width) flex-col"
 	contentClass="flex flex-1 items-center justify-center"
+	progress={{
+		mode: 'check',
+		days: data.progressDays,
+		ariaLabel: 'Five-day bedtime progress'
+	}}
 >
 	<section class="pb-8 text-center" aria-label="Bedtime" data-motion-item>
 		<Moon

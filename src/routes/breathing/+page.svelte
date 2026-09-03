@@ -20,6 +20,11 @@
 	let saveState = $state<SaveState>('idle');
 	const exerciseCompleted = $derived(Boolean(data.exercise || savedExercise));
 	const isToday = $derived(data.date === data.today);
+	const progressDays = $derived(
+		data.progressDays.map((day) =>
+			day.date === data.date && exerciseCompleted ? { ...day, value: 1 } : day
+		)
+	);
 
 	$effect(() => {
 		if (data.date === loadedDate) return;
@@ -64,6 +69,11 @@
 <TrackerPage
 	class="flex max-w-(--app-compact-max-width) flex-col"
 	contentClass="flex flex-1 flex-col"
+	progress={{
+		mode: 'check',
+		days: progressDays,
+		ariaLabel: 'Five-day breathing progress'
+	}}
 >
 	<BreathingExercise
 		localDate={data.date}

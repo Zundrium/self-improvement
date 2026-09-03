@@ -106,7 +106,14 @@
 
 <svelte:head><title>{fullDateLabel(data.date)} · Self Improvement</title></svelte:head>
 
-<TrackerPage>
+<TrackerPage
+	progress={{
+		mode: 'line',
+		days: data.progressDays,
+		maxValue: data.calorieGoal,
+		ariaLabel: 'Five-day calorie progress'
+	}}
+>
 	{#if data.fasting}
 		<Empty class="min-h-80 bg-(--bg-elevated) sm:min-h-96">
 			<EmptyMedia

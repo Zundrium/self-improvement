@@ -19,6 +19,11 @@ let difficulties = $state(untrack(() => ({ ...data.settings.difficulties })));
 let saveState = $state<SaveState>('idle');
 const completed = $derived(data.sessions.length > 0 || Boolean(savedSession));
 const interactive = $derived(data.date === data.today);
+const progressDays = $derived(
+	data.progressDays.map((day) =>
+		day.date === data.date && completed ? { ...day, value: 1 } : day
+	)
+);
 
 $effect(() => resetDate(data.date));
 
@@ -78,6 +83,11 @@ async function saveDifficulty(activityId: StretchActivityId, difficulty: Stretch
 <TrackerPage
 	class="flex min-h-0 max-w-3xl flex-col"
 	contentClass="flex min-h-0 flex-1 flex-col gap-8 space-y-0"
+	progress={{
+		mode: 'check',
+		days: progressDays,
+		ariaLabel: 'Five-day stretch progress'
+	}}
 >
 	<StretchRoutine
 		localDate={data.date}

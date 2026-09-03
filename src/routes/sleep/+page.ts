@@ -10,6 +10,7 @@ export const load: PageLoad = async ({ url }) => {
 		bedtime: data.settings.bedtime,
 		date: data.date,
 		today: data.today,
+		progressDays: data.progressDays,
 		trackedDates: data.days
 			.filter((day) => day.status !== 'pending')
 			.map((day) => day.localDate)

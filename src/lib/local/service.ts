@@ -28,6 +28,7 @@ import type {
 	TrackerSettingsDataMap
 } from '$lib/api-types';
 import { dateKeysEndingAt, isValidDateKey, localDateForInstant } from '$lib/trackers/dates';
+import { trackerProgressDays } from '$lib/trackers/progress';
 import { type AppTrackerId, appTrackers, isAppTrackerId } from '$lib/trackers/registry';
 import { breathingDurationSeconds } from '../../routes/breathing/breathing';
 import { CHORES_DURATION_SECONDS } from '../../routes/chores/chores';
@@ -211,6 +212,7 @@ export class LocalAppService {
 			date,
 			today,
 			steps: counts.get(date) ?? 0,
+			progressDays: trackerProgressDays(date, today, (day) => counts.get(day) ?? 0),
 			days: keys.toReversed().map((date) => ({ date, count: counts.get(date) ?? 0 }))
 		};
 	}
@@ -256,6 +258,7 @@ export class LocalAppService {
 		const today = this.today();
 		const date = selectedDate(url, today);
 		const program = fitnessProgram(numberKeyRecord(state.fitness.exerciseSpeeds));
+		const completedDates = new Set(state.fitness.completedDays.map(({ dateKey }) => dateKey));
 		return {
 			date,
 			today,
@@ -266,7 +269,13 @@ export class LocalAppService {
 				url.searchParams.get('sets'),
 				state.fitness.defaultSets
 			),
-			completedDays: state.fitness.completedDays
+			completedDays: state.fitness.completedDays,
+			progressDays: trackerProgressDays(date, today, (day) => {
+				const scheduled = program.workouts.some(
+					({ day: workoutDay }) => workoutDay === Number(day.slice(-2))
+				);
+				return scheduled ? Number(completedDates.has(day)) : null;
+			})
 		};
 	}
 
@@ -477,7 +486,12 @@ export class LocalAppService {
 					}
 				: null,
 			fasting: state.nutrition.fastingDates.includes(date),
-			trackedDates: trackedNutritionDates(state, date)
+			trackedDates: trackedNutritionDates(state, date),
+			progressDays: trackerProgressDays(
+				date,
+				today,
+				(day) => sumEntries(state.nutrition.entries.filter((entry) => entry.date === day)).calories
+			)
 		};
 	}
 
@@ -829,6 +843,10 @@ function sleepData(state: LocalAppState, date: string, today: string): SleepData
 		date,
 		today,
 		markedDates: state.sleep.days.map(({ localDate }) => localDate),
+		progressDays: trackerProgressDays(date, today, (day) => {
+			const status = summaries.get(day)?.status ?? 'pending';
+			return status === 'pending' ? null : Number(status === 'pass');
+		}),
 		summary: summaries.get(date) ?? pendingSleepSummary(date, state.sleep.bedtime),
 		days: keys
 			.toReversed()
@@ -855,6 +873,11 @@ function screenTimeData(state: LocalAppState, date: string, today: string): Scre
 		today,
 		markedDates: state.screenTime.days.map(({ date }) => date),
 		usage: { totalMinutes: selected?.totalMinutes ?? 0, apps: selected?.apps ?? [] },
+		progressDays: trackerProgressDays(
+			date,
+			today,
+			(day) => days.find((entry) => entry.date === day)?.totalMinutes ?? 0
+		),
 		knownApps: knownApps(state),
 		averageMinutes: summary.averageMinutes,
 		historyMaxMinutes: summary.maxMinutes,
@@ -878,6 +901,9 @@ function meditationData(
 			state.meditation.defaultDurationSeconds
 		),
 		markedDates: unique(state.meditation.sessions.map(({ localDate }) => localDate)),
+		progressDays: trackerProgressDays(date, today, (day) =>
+			Number(state.meditation.sessions.some(({ localDate }) => localDate === day))
+		),
 		meditationHistory: sessions.length
 			? [
 					{
@@ -896,6 +922,9 @@ function breathingData(state: LocalAppState, date: string, today: string): Breat
 		today,
 		settings: settingsForTracker(state, 'breathing'),
 		markedDates: state.breathing.exercises.map(({ localDate }) => localDate),
+		progressDays: trackerProgressDays(date, today, (day) =>
+			Number(state.breathing.exercises.some(({ localDate }) => localDate === day))
+		),
 		exercise: state.breathing.exercises.find((exercise) => exercise.localDate === date) ?? null
 	};
 }
@@ -907,6 +936,11 @@ function stretchData(state: LocalAppState, date: string, today: string): Stretch
 		settings: settingsForTracker(state, 'stretch'),
 		scheduled: isStretchScheduled(date),
 		markedDates: unique(state.stretch.sessions.map(({ localDate }) => localDate)),
+		progressDays: trackerProgressDays(date, today, (day) =>
+			isStretchScheduled(day)
+				? Number(state.stretch.sessions.some(({ localDate }) => localDate === day))
+				: null
+		),
 		sessions: state.stretch.sessions.filter((session) => session.localDate === date)
 	};
 }
@@ -916,6 +950,9 @@ function choresData(state: LocalAppState, date: string, today: string): ChoresDa
 		date,
 		today,
 		markedDates: state.chores.sessions.map(({ localDate }) => localDate),
+		progressDays: trackerProgressDays(date, today, (day) =>
+			Number(state.chores.sessions.some(({ localDate }) => localDate === day))
+		),
 		session: state.chores.sessions.find((session) => session.localDate === date) ?? null
 	};
 }
@@ -929,6 +966,11 @@ function happinessData(state: LocalAppState, date: string, today: string): Happi
 		settings: settingsForTracker(state, 'happiness'),
 		entry: selected ? { ...selected, reasons: selected.reasons as HappinessReason[] } : null,
 		markedDates: entries.map(({ localDate }) => localDate),
+		progressDays: trackerProgressDays(
+			date,
+			today,
+			(day) => entries.find(({ localDate }) => localDate === day)?.rating ?? null
+		),
 		recentEntries: entries.slice(0, 10).map(({ localDate, rating }) => ({ localDate, rating }))
 	};
 }
@@ -942,6 +984,10 @@ function periodData(state: LocalAppState, date: string, today: string): PeriodDa
 		settings: settingsForTracker(state, 'period'),
 		entry: entries.find((entry) => entry.localDate === date) ?? null,
 		markedDates,
+		progressDays: trackerProgressDays(date, today, (day) => {
+			const flow = entries.find(({ localDate }) => localDate === day)?.flow;
+			return flow ? flowOptions.findIndex(({ value }) => value === flow) + 1 : null;
+		}),
 		recentEntries: entries.slice(0, 10).map(({ localDate, flow }) => ({ localDate, flow })),
 		cycle: cycleSummary(markedDates, today, state.period.fallbackCycleDays)
 	};

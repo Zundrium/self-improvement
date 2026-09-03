@@ -34,7 +34,15 @@
 	<meta name="description" content="Track daily Android screen time and per-app usage." />
 </svelte:head>
 
-<TrackerPage class="max-w-3xl">
+<TrackerPage
+	class="max-w-3xl"
+	progress={{
+		mode: 'line',
+		days: data.progressDays,
+		maxValue: data.settings.dailyLimitMinutes,
+		ariaLabel: 'Five-day screen-time progress'
+	}}
+>
 	<ScreenTimeSummary totalMinutes={data.usage.totalMinutes} limit={data.settings.dailyLimitMinutes} />
 	{#if !hasTrackedApps(data.knownApps)}
 		<Alert>

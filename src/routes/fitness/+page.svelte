@@ -28,6 +28,11 @@
 	const selectedWorkout = $derived(
 		data.program.workouts.find((workout) => workout.day === Number(data.date.slice(-2)))
 	);
+	const progressDays = $derived(
+		data.progressDays.map((day) =>
+			day.value === null ? day : { ...day, value: Number(completedDateKeys.has(day.date)) }
+		)
+	);
 	const selectedWorkoutWithSpeeds = $derived<Workout | undefined>(
 		selectedWorkout
 			? {
@@ -124,6 +129,11 @@
 <TrackerPage
 	class="flex min-h-0 max-w-3xl flex-col"
 	contentClass="flex min-h-0 flex-1 flex-col gap-8 space-y-0"
+	progress={{
+		mode: 'check',
+		days: progressDays,
+		ariaLabel: 'Five-day fitness progress'
+	}}
 >
 	{#if errorMessage}
 		<Alert variant="destructive">

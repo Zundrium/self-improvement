@@ -17,6 +17,11 @@
 
 	const isToday = $derived(data.date === data.today);
 	const completed = $derived(Boolean(data.session || savedSession));
+	const progressDays = $derived(
+		data.progressDays.map((day) =>
+			day.date === data.date && completed ? { ...day, value: 1 } : day
+		)
+	);
 
 	$effect(() => {
 		if (data.date === loadedDate) return;
@@ -55,7 +60,15 @@
 	<meta name="description" content="A simple daily 10-minute timer for any quick chore." />
 </svelte:head>
 
-<TrackerPage class="flex max-w-(--app-compact-max-width) flex-col" contentClass="flex flex-1 flex-col">
+<TrackerPage
+	class="flex max-w-(--app-compact-max-width) flex-col"
+	contentClass="flex flex-1 flex-col"
+	progress={{
+		mode: 'check',
+		days: progressDays,
+		ariaLabel: 'Five-day chores progress'
+	}}
+>
 	{#key data.date}
 		<ChoresTimer
 			localDate={data.date}

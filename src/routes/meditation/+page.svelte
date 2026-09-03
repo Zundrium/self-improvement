@@ -20,6 +20,15 @@
 	let saveState = $state<SaveState>('idle');
 
 	const isToday = $derived(data.date === data.today);
+	const completed = $derived(
+		data.progressDays.find(({ date }) => date === data.date)?.value === 1 ||
+		Boolean(savedCompletions.length)
+	);
+	const progressDays = $derived(
+		data.progressDays.map((day) =>
+			day.date === data.date && completed ? { ...day, value: 1 } : day
+		)
+	);
 
 	$effect(() => {
 		if (data.date === loadedDate) return;
@@ -84,7 +93,15 @@
 	/>
 </svelte:head>
 
-<TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-1">
+<TrackerPage
+	class="max-w-(--app-compact-max-width)"
+	contentClass="space-y-1"
+	progress={{
+		mode: 'check',
+		days: progressDays,
+		ariaLabel: 'Five-day meditation progress'
+	}}
+>
 	{#if isToday}
 		<div class="space-y-1" data-motion-page-enter="custom" use:meditationEnter>
 			<MeditationTimer
