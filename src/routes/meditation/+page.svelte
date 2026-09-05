@@ -3,6 +3,7 @@ import { onDestroy, untrack } from 'svelte';
 import { apiRequest } from '$lib/api';
 import { AudioManager } from '$lib/audio/audio-manager';
 import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
+import { DateBoundRequestLifetime } from '$lib/forms/date-bound-request';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import MeditationPracticeSection from './components/meditationPracticeSection.svelte';
 import { type MeditationCompletion, type SaveState } from './meditation';
@@ -13,6 +14,7 @@ let { data }: PageProps = $props();
 const dateSelectorState = useDateSelectorState();
 let audioManager = $state<AudioManager>();
 let loadedDate = $state(untrack(() => data.date));
+const completionRequests = new DateBoundRequestLifetime(untrack(() => data.date));
 let savedCompletions = $state<MeditationCompletion[]>([]);
 let pendingCompletion = $state<MeditationCompletion>();
 let saveState = $state<SaveState>('idle');
@@ -29,6 +31,7 @@ const progressDays = $derived(
 $effect(() => {
 	if (data.date === loadedDate) return;
 	loadedDate = data.date;
+	completionRequests.syncDate(data.date);
 	savedCompletions = [];
 	pendingCompletion = undefined;
 	saveState = 'idle';
@@ -39,7 +42,10 @@ $effect(() => {
 	if (!isToday && audioManager) destroyAudioManager();
 });
 
-onDestroy(() => audioManager?.destroy());
+onDestroy(() => {
+	completionRequests.dispose();
+	audioManager?.destroy();
+});
 
 function createAudioManager() {
 	const manager = new AudioManager();
@@ -53,13 +59,18 @@ function destroyAudioManager() {
 }
 
 async function saveCompletion(completion: MeditationCompletion) {
+	const submittedDate = completion.localDate;
+	const request = completionRequests.begin(submittedDate);
 	pendingCompletion = completion;
 	saveState = 'saving';
 	try {
-		recordCompletion(await postCompletion(completion));
+		const saved = await postCompletion(completion);
+		if (!completionRequests.isCurrent(request, data.date)) return;
+		dateSelectorState.mark(submittedDate, true);
+		recordCompletion(saved);
 		saveState = 'saved';
 	} catch {
-		saveState = 'error';
+		if (completionRequests.isCurrent(request, data.date)) saveState = 'error';
 	}
 }
 
@@ -73,7 +84,6 @@ async function postCompletion(completion: MeditationCompletion) {
 function recordCompletion(completion: MeditationCompletion) {
 	if (savedCompletions.some((saved) => saved.id === completion.id)) return;
 	savedCompletions = [...savedCompletions, completion];
-	dateSelectorState.mark(completion.localDate, true);
 }
 
 function retryCompletion() {

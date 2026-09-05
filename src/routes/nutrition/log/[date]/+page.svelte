@@ -1,4 +1,5 @@
 <script lang="ts">
+import { onDestroy, untrack } from 'svelte';
 import { Form } from '$lib/components/ui/form';
 import { invalidateAll } from '$app/navigation';
 import { MoonStar, Plus } from '@lucide/svelte';
@@ -31,6 +32,7 @@ import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 import { Input } from '$lib/components/ui/input';
 import { Spinner } from '$lib/components/ui/spinner';
 import { fullDateLabel, shortDateLabel } from '$lib/dateFormatting';
+import { DateBoundRequestLifetime } from '$lib/forms/date-bound-request';
 import FastingStatusSection from './components/fastingStatusSection.svelte';
 import FoodLogSection from './components/foodLogSection.svelte';
 import NutritionSummarySection from './components/nutritionSummarySection.svelte';
@@ -38,12 +40,28 @@ import type { PageProps } from './$types';
 
 const MAX_FASTING_DAYS = 30;
 let { data }: PageProps = $props();
+let loadedDate = $state(untrack(() => data.date));
+const fastingRequests = new DateBoundRequestLifetime(untrack(() => data.date));
 let markOpen = $state(false);
+let cancelOpen = $state(false);
 let days = $state(1);
 let busy = $state(false);
 let requestError = $state('');
 const maxDays = $derived(daysThroughToday(data.date, data.today));
 const lastFastingDate = $derived(addDays(data.date, Math.max(0, Number(days) - 1)));
+
+$effect(() => {
+	if (data.date === loadedDate) return;
+	loadedDate = data.date;
+	fastingRequests.syncDate(data.date);
+	markOpen = false;
+	cancelOpen = false;
+	days = 1;
+	busy = false;
+	requestError = '';
+});
+
+onDestroy(() => fastingRequests.dispose());
 
 function openMarkDialog() {
 	if (data.entries.length) {
@@ -57,30 +75,41 @@ function openMarkDialog() {
 
 async function markFasting(event: SubmitEvent) {
 	event.preventDefault();
+	const submittedDate = data.date;
+	const submittedDays = Number(days);
+	const request = fastingRequests.begin(submittedDate);
 	busy = true;
 	requestError = '';
 	try {
-		await localOperation('markNutritionFasting', { date: data.date, days: Number(days) });
-		markOpen = false;
-		toast.success(Number(days) === 1 ? 'Fasting day marked' : `${days} fasting days marked`);
+		await localOperation('markNutritionFasting', { date: submittedDate, days: submittedDays });
+		if (fastingRequests.isCurrent(request, data.date)) {
+			markOpen = false;
+			toast.success(
+				submittedDays === 1 ? 'Fasting day marked' : `${submittedDays} fasting days marked`
+			);
+		}
 		await invalidateAll();
 	} catch (cause) {
-		requestError = cause instanceof Error ? cause.message : 'Could not mark these fasting days.';
+		if (fastingRequests.isCurrent(request, data.date))
+			requestError = cause instanceof Error ? cause.message : 'Could not mark these fasting days.';
 	} finally {
-		busy = false;
+		if (fastingRequests.isCurrent(request, data.date)) busy = false;
 	}
 }
 
 async function cancelFasting() {
+	const submittedDate = data.date;
+	const request = fastingRequests.begin(submittedDate);
 	busy = true;
 	try {
-		await localOperation('cancelNutritionFasting', { date: data.date });
-		toast.success('Fasting day cancelled');
+		await localOperation('cancelNutritionFasting', { date: submittedDate });
+		if (fastingRequests.isCurrent(request, data.date)) toast.success('Fasting day cancelled');
 		await invalidateAll();
 	} catch (cause) {
-		toast.error(cause instanceof Error ? cause.message : 'Could not cancel this fasting day.');
+		if (fastingRequests.isCurrent(request, data.date))
+			toast.error(cause instanceof Error ? cause.message : 'Could not cancel this fasting day.');
 	} finally {
-		busy = false;
+		if (fastingRequests.isCurrent(request, data.date)) busy = false;
 	}
 }
 
@@ -121,7 +150,7 @@ function addDays(date: string, offset: number) {
 <PageActionBar contentClass="max-w-5xl" mobileOnly={false}>
 	<BottomActionGroup>
 		{#if data.fasting}
-			<AlertDialog>
+			<AlertDialog bind:open={cancelOpen}>
 				<AlertDialogTrigger>
 					{#snippet child({ props })}
 						<BottomActionButton tone="destructive" disabled={busy} {...props}>

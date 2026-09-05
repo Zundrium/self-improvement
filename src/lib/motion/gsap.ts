@@ -37,8 +37,14 @@ export const motionRoot: Action<HTMLElement> = () => {
 export const pageEnter: Action<HTMLElement> = (node) => {
 	if (reducedMotion()) return showImmediately(node);
 	node.style.visibility = 'hidden';
-	const frame = requestAnimationFrame(() => revealPage(node));
-	return { destroy: () => cancelAnimationFrame(frame) };
+	const context = gsap.context(() => {}, node);
+	const frame = requestAnimationFrame(() => context.add(() => revealPage(node)));
+	return {
+		destroy() {
+			cancelAnimationFrame(frame);
+			context.revert();
+		}
+	};
 };
 
 export const interactionScale: Action<HTMLElement, InteractionScaleOptions | undefined> = (
@@ -123,13 +129,10 @@ export const staggerChildren: Action<HTMLElement, StaggerOptions | undefined> = 
 export const progressRing: Action<SVGCircleElement, number> = (node, percentage) => {
 	const progress = { value: 0 };
 	let tween: gsap.core.Tween | undefined;
-	let lastUpdate = performance.now();
 	const render = () => (node.style.strokeDasharray = `${progress.value} 100`);
 	const moveTo = (value: number, initial = false) => {
-		const rapidUpdate = performance.now() - lastUpdate < 250;
-		lastUpdate = performance.now();
 		tween?.kill();
-		if (reducedMotion() || (!initial && rapidUpdate)) return setProgress(progress, value, render);
+		if (reducedMotion()) return setProgress(progress, value, render);
 		tween = gsap.to(progress, {
 			value: clampPercentage(value),
 			duration: initial ? 0.9 : 0.45,

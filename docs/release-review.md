@@ -1,28 +1,27 @@
-# Release review: v0.40.16
+# Release review: v0.40.17
 
-This release standardizes tracker action rules and tracker-page composition so new trackers have explicit, compiler-checked integration points.
+This release replaces date-triggered tracker remounts with in-place GSAP transitions.
 
-## Tracker architecture
+## Date navigation
 
-- Action candidates now use `defineActionCandidate`. The factory owns enabled-tracker requirements, condition composition, the default tracker icon, and stable per-instance IDs.
-- Reusable conditions cover tracker-state predicates, local-day matching, and local-time boundaries. Candidate resolvers now focus on presentation and navigation.
-- `trackerActionCandidates` is a complete `AppTrackerId` record. Period tracking has an intentional empty registration, so adding a tracker can no longer leave action registration silently incomplete.
-- Candidate attribution and extra enabled-tracker requirements are separate contracts. Sleep setup remains attributed to Sleep and available when the standalone Screen time tracker is hidden.
-- Main tracker pages now compose their content only from reusable `*Section` components and the `TrackerSections` layout container. A Svelte AST test enforces the rule for every registered app tracker.
-
-The implementation checklist and ownership rules are documented in [the architecture guide](architecture.md).
+- The root layout preserves registered tracker-page identity across date queries and nutrition log date parameters. Nested workflows retain their existing identity resets; restore still remounts the shell.
+- The shared five-day line and completion charts retain date-keyed elements. Earlier dates slide right, later dates slide left, and calendar jumps use bounded travel. Rapid changes retarget from current positions; missing days remain gaps.
+- Shared metrics count to their new values, including localized calorie/step totals and screen-time duration changes. Their accessible text exposes the final value rather than every animation frame.
+- Tracker sections receive a short directional transition, including newly mounted conditional content. Reduced motion skips or finishes date motion, and component teardown releases tweens, observers and media-query listeners.
+- Date-bound save guards prevent late success, failure or cleanup from changing another date's forms, fasting dialogs or completion state. An already committed historical write is still refreshed normally.
 
 ## Local validation
 
 - `npm run check`: no errors or warnings.
 - `npm run lint`: passed.
 - `npm run format:check`: passed.
-- `npm run test`: 63 files, 252 tests passed.
-- `npm run test:browser`: 6 files, 15 Chromium tests passed.
+- `npm run test`: 67 files, 281 tests passed.
+- `npm run test:browser`: 7 files, 20 Chromium tests passed.
 - `git diff --check`: passed.
+- Development-app checks verified preserved page/chart elements across all eleven trackers. Scroll remained unchanged across date navigation on scrollable tracker pages. Seeded nutrition data verified intermediate calorie values, keyboard calendar selection, browser Back, and reduced motion in light desktop and dark mobile views. No production build was run locally.
 
-The tag workflow repeats validation on Node 22 and owns the production build, Android tests and lint, permission checks, signing, and GitHub release publication. No local production build or build-dependent Capacitor command was run.
+The tag workflow repeats validation on Node 22 and owns the production build, Android tests and lint, permission checks, signing, and GitHub release publication.
 
 ## Remaining acceptance work
 
-No Android device or emulator was used for this review. Run [the Android smoke-test checklist](android-smoke-test.md) on the signed release. The release changes composition and maintainability contracts; it does not change stored data, backup schemas, Android permissions, or native integrations.
+No physical Android device or emulator was used. Run [the Android smoke-test checklist](android-smoke-test.md) on the signed release, especially rapid date navigation, pending saves, reduced motion, TalkBack and active-session cleanup. This release does not change stored data, backup schemas, permissions or native integrations.

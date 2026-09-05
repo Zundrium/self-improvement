@@ -3,7 +3,7 @@ import PageActionBar from '$lib/components/app/PageActionBar.svelte';
 import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { Form } from '$lib/components/ui/form';
 import { APP_RESOURCES, refreshAppData } from '$lib/app/resources';
-import { untrack } from 'svelte';
+import { onDestroy, untrack } from 'svelte';
 import { apiRequest } from '$lib/api';
 import type { PeriodData } from '$lib/api-types';
 import { Alert, AlertDescription } from '$lib/components/ui/alert';
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/component
 import { Textarea } from '$lib/components/ui/textarea';
 import { getTrackerColors } from '$lib/trackers/registry';
 import { flowLabel, flowOptions, type MenstruationFlow } from '../period';
+import { DateBoundRequestLifetime } from '$lib/forms/date-bound-request';
 import { submittedSnapshot } from '$lib/forms/draft';
 import { guardUnsavedNavigation } from '$lib/forms/unsaved-navigation.svelte';
 
@@ -22,6 +23,7 @@ const colors = getTrackerColors('period');
 let errorMessage = $state('');
 let saving = $state(false);
 let loadedDate = $state(untrack(() => data.date));
+const entryRequests = new DateBoundRequestLifetime(untrack(() => data.date));
 let loadedUpdatedAt = $state(untrack(() => String(data.entry?.updatedAt ?? '')));
 let loadedDefaultFlow = $state(untrack(() => data.settings.defaultFlow));
 let flow = $state<MenstruationFlow>(untrack(() => data.entry?.flow ?? data.settings.defaultFlow));
@@ -47,6 +49,11 @@ function syncEntry(nextData: PeriodData) {
 	loadedDate = nextData.date;
 	loadedUpdatedAt = updatedAt;
 	loadedDefaultFlow = defaultFlow;
+	if (dateChanged) {
+		entryRequests.syncDate(nextData.date);
+		saving = false;
+		errorMessage = '';
+	}
 	if (!dateChanged && dirty) {
 		hasSavedEntry = Boolean(nextData.entry);
 		savedFlow = nextData.entry?.flow;
@@ -61,26 +68,33 @@ function syncEntry(nextData: PeriodData) {
 async function saveEntry(event: SubmitEvent) {
 	event.preventDefault();
 	if (!dirty || saving) return;
+	const submitted = submittedSnapshot({ localDate: data.date, flow, notes });
+	const request = entryRequests.begin(submitted.localDate);
 	saving = true;
 	errorMessage = '';
-	const submitted = submittedSnapshot({ localDate: data.date, flow, notes });
 	try {
 		await apiRequest('/api/app/period', {
 			method: 'PUT',
 			body: JSON.stringify(submitted)
 		});
-		hasSavedEntry = true;
-		savedFlow = submitted.flow;
-		savedNotes = submitted.notes;
+		if (entryRequests.isCurrent(request, data.date)) {
+			hasSavedEntry = true;
+			savedFlow = submitted.flow;
+			savedNotes = submitted.notes;
+		}
 		await refreshAppData(APP_RESOURCES.bootstrap).catch(() => {
-			errorMessage = 'Saved, but could not refresh the page.';
+			if (entryRequests.isCurrent(request, data.date))
+				errorMessage = 'Saved, but could not refresh the page.';
 		});
 	} catch (cause) {
-		errorMessage = cause instanceof Error ? cause.message : 'Could not save your entry.';
+		if (entryRequests.isCurrent(request, data.date))
+			errorMessage = cause instanceof Error ? cause.message : 'Could not save your entry.';
 	} finally {
-		saving = false;
+		if (entryRequests.isCurrent(request, data.date)) saving = false;
 	}
 }
+
+onDestroy(() => entryRequests.dispose());
 
 function markSaved(saved: boolean) {
 	hasSavedEntry = saved;

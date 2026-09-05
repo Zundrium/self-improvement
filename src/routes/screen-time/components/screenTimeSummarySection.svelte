@@ -11,6 +11,7 @@ const colors = getTrackerColors('screen-time');
 	value={totalMinutes}
 	max={limit}
 	displayValue={formatScreenTime(totalMinutes)}
+	formatValue={formatScreenTime}
 	secondaryText={`/ ${formatScreenTime(limit)}`}
 	label={`${totalMinutes} screen-time minutes`}
 	{colors}

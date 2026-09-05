@@ -27,6 +27,7 @@ import {
 } from '$lib/trackers/registry';
 import { mobileRepository } from '$lib/api';
 import { dismissLoadingScreen, motionRoot, pageEnter } from '$lib/motion/gsap';
+import { dateNavigationKey } from '$lib/motion/date-navigation';
 import type { ActionFeedData } from '$lib/api-types';
 import type { AppBootstrapData } from '$lib/api-types';
 import type { TrackerId } from '$domain/model';
@@ -333,7 +334,7 @@ function dateHref(pathname: string, date: string, today: string) {
 					markedDates={[...dateSelectorState.markedDates]}
 					colors={dateNavigation.colors}
 					hrefForDate={dateNavigation.hrefForDate}
-					onselect={(date: string) => goto(resolve(dateNavigation.hrefForDate(date) as '/'))}
+					onselect={(date: string) => goto(resolve(dateNavigation.hrefForDate(date) as '/'), { noScroll: true, keepFocus: true })}
 				/>
 			{/if}
 			{#if selectedFeature}
@@ -345,7 +346,7 @@ function dateHref(pathname: string, date: string, today: string) {
 			{/if}
 		</div>
 	{/if}
-	{#key `${page.url.pathname}:${page.url.searchParams.get('date') ?? ''}`}
+	{#key dateNavigationKey(page.url.pathname, page.url.searchParams.get('date'))}
 		<div class={appShellActive ? 'flex min-h-0 flex-1 flex-col overflow-y-auto' : undefined}>
 			<div class="contents" use:pageEnter>{@render children()}</div>
 		</div>

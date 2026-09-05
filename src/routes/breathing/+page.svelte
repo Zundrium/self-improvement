@@ -1,7 +1,8 @@
 <script lang="ts">
-import { untrack } from 'svelte';
+import { onDestroy, untrack } from 'svelte';
 import { apiRequest } from '$lib/api';
 import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
+import { DateBoundRequestLifetime } from '$lib/forms/date-bound-request';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import BreathingExerciseSection from './components/breathingExerciseSection.svelte';
 import { type BreathingCompletion, type SaveState } from './breathing';
@@ -15,6 +16,7 @@ type SavedExercise = BreathingCompletion & {
 let { data }: PageProps = $props();
 const dateSelectorState = useDateSelectorState();
 let loadedDate = $state(untrack(() => data.date));
+const completionRequests = new DateBoundRequestLifetime(untrack(() => data.date));
 let savedExercise = $state<SavedExercise>();
 let pendingCompletion = $state<BreathingCompletion>();
 let saveState = $state<SaveState>('idle');
@@ -29,22 +31,29 @@ const progressDays = $derived(
 $effect(() => {
 	if (data.date === loadedDate) return;
 	loadedDate = data.date;
+	completionRequests.syncDate(data.date);
 	savedExercise = undefined;
 	pendingCompletion = undefined;
 	saveState = 'idle';
 });
 
 async function saveCompletion(completion: BreathingCompletion) {
+	const submittedDate = completion.localDate;
+	const request = completionRequests.begin(submittedDate);
 	pendingCompletion = completion;
 	saveState = 'saving';
 	try {
-		savedExercise = await postCompletion(completion);
-		dateSelectorState.mark(completion.localDate, true);
+		const saved = await postCompletion(completion);
+		if (!completionRequests.isCurrent(request, data.date)) return;
+		dateSelectorState.mark(submittedDate, true);
+		savedExercise = saved;
 		saveState = 'saved';
 	} catch {
-		saveState = 'error';
+		if (completionRequests.isCurrent(request, data.date)) saveState = 'error';
 	}
 }
+
+onDestroy(() => completionRequests.dispose());
 
 async function postCompletion(completion: BreathingCompletion) {
 	return apiRequest<SavedExercise>('/api/app/breathing', {

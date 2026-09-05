@@ -1,8 +1,9 @@
 <script lang="ts">
-import { untrack } from 'svelte';
+import { onDestroy, untrack } from 'svelte';
 import { apiRequest } from '$lib/api';
 import type { StretchSession, StretchSettingsData } from '$lib/api-types';
 import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
+import { DateBoundRequestLifetime } from '$lib/forms/date-bound-request';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import { toast } from '$lib/components/ui/toast';
 import type { StretchActivityId, StretchDifficulty } from '$lib/local/tracker-settings';
@@ -13,6 +14,7 @@ import type { SaveState, StretchCompletion } from './stretch';
 let { data }: PageProps = $props();
 const dateSelectorState = useDateSelectorState();
 let loadedDate = $state(untrack(() => data.date));
+const completionRequests = new DateBoundRequestLifetime(untrack(() => data.date));
 let savedSession = $state<StretchSession>();
 let pendingCompletion = $state<StretchCompletion>();
 let difficulties = $state(untrack(() => ({ ...data.settings.difficulties })));
@@ -28,22 +30,29 @@ $effect(() => resetDate(data.date));
 function resetDate(nextDate: string) {
 	if (nextDate === loadedDate) return;
 	loadedDate = nextDate;
+	completionRequests.syncDate(nextDate);
 	savedSession = undefined;
 	pendingCompletion = undefined;
 	saveState = 'idle';
 }
 
 async function saveCompletion(completion: StretchCompletion) {
+	const submittedDate = completion.localDate;
+	const request = completionRequests.begin(submittedDate);
 	pendingCompletion = completion;
 	saveState = 'saving';
 	try {
-		savedSession = await postCompletion(completion);
-		dateSelectorState.mark(completion.localDate, true);
+		const saved = await postCompletion(completion);
+		if (!completionRequests.isCurrent(request, data.date)) return;
+		dateSelectorState.mark(submittedDate, true);
+		savedSession = saved;
 		saveState = 'saved';
 	} catch {
-		saveState = 'error';
+		if (completionRequests.isCurrent(request, data.date)) saveState = 'error';
 	}
 }
+
+onDestroy(() => completionRequests.dispose());
 
 function postCompletion(completion: StretchCompletion) {
 	return apiRequest<StretchSession>('/api/app/stretch', {

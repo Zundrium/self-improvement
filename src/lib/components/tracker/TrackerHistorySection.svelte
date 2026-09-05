@@ -17,9 +17,16 @@ type Props = {
 	title?: string;
 	description?: string;
 	colors: TrackerColors;
+	formatValue?: (value: number) => string;
 };
 
-let { items, colors, title = 'Last 7 days', description }: Props = $props();
+let {
+	items,
+	colors,
+	title = 'Last 7 days',
+	description,
+	formatValue = (value) => Math.round(value).toLocaleString()
+}: Props = $props();
 </script>
 
 <TrackerSection {title} {description} {colors}>
@@ -30,6 +37,7 @@ let { items, colors, title = 'Last 7 days', description }: Props = $props();
 				value={item.value}
 				max={item.max}
 				displayValue={item.displayValue}
+				{formatValue}
 				{colors}
 			/>
 		{/each}

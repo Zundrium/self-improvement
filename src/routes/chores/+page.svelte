@@ -1,8 +1,9 @@
 <script lang="ts">
-import { untrack } from 'svelte';
+import { onDestroy, untrack } from 'svelte';
 import { apiRequest } from '$lib/api';
 import type { ChoresSession } from '$lib/api-types';
 import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
+import { DateBoundRequestLifetime } from '$lib/forms/date-bound-request';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import ChoresTimerSection from './components/choresTimerSection.svelte';
 import type { ChoresCompletion, SaveState } from './chores';
@@ -11,6 +12,7 @@ import type { PageProps } from './$types';
 let { data }: PageProps = $props();
 const dateSelectorState = useDateSelectorState();
 let loadedDate = $state(untrack(() => data.date));
+const completionRequests = new DateBoundRequestLifetime(untrack(() => data.date));
 let savedSession = $state<ChoresSession>();
 let pendingCompletion = $state<ChoresCompletion>();
 let saveState = $state<SaveState>('idle');
@@ -24,22 +26,29 @@ const progressDays = $derived(
 $effect(() => {
 	if (data.date === loadedDate) return;
 	loadedDate = data.date;
+	completionRequests.syncDate(data.date);
 	savedSession = undefined;
 	pendingCompletion = undefined;
 	saveState = 'idle';
 });
 
 async function saveCompletion(completion: ChoresCompletion) {
+	const submittedDate = completion.localDate;
+	const request = completionRequests.begin(submittedDate);
 	pendingCompletion = completion;
 	saveState = 'saving';
 	try {
-		savedSession = await postCompletion(completion);
-		dateSelectorState.mark(completion.localDate, true);
+		const saved = await postCompletion(completion);
+		if (!completionRequests.isCurrent(request, data.date)) return;
+		dateSelectorState.mark(submittedDate, true);
+		savedSession = saved;
 		saveState = 'saved';
 	} catch {
-		saveState = 'error';
+		if (completionRequests.isCurrent(request, data.date)) saveState = 'error';
 	}
 }
+
+onDestroy(() => completionRequests.dispose());
 
 function postCompletion(completion: ChoresCompletion) {
 	return apiRequest<ChoresSession>('/api/app/chores', {

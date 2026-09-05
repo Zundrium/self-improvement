@@ -64,6 +64,7 @@ function millisecondsUntilNextMinute(date: Date) {
 			value={consumed}
 			max={goal}
 			displayValue={consumed.toLocaleString()}
+			formatValue={(value) => Math.round(value).toLocaleString()}
 			secondaryText={`/ ${goal.toLocaleString()} kcal`}
 			label={`${consumed} of ${goal} calories consumed`}
 			{colors}

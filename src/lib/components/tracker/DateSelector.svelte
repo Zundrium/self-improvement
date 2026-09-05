@@ -62,6 +62,8 @@ function dismissCalendar(event: MouseEvent) {
 >
 	<Button
 		href={hrefForDate(previousDate) as Pathname}
+		data-sveltekit-noscroll
+		data-sveltekit-keepfocus
 		profile="plain"
 		size="medium" format="icon"
 		aria-label="Previous day"><ChevronLeft class="size-4" /></Button
@@ -105,6 +107,8 @@ function dismissCalendar(event: MouseEvent) {
 	{#if nextDate <= today}
 		<Button
 			href={hrefForDate(nextDate) as Pathname}
+			data-sveltekit-noscroll
+			data-sveltekit-keepfocus
 			profile="plain"
 			size="medium" format="icon"
 			aria-label="Next day"><ChevronRight class="size-4" /></Button

@@ -1,6 +1,7 @@
 <script lang="ts">
 import type { LucideIcon } from '@lucide/svelte';
 import { cn } from '$lib/utils';
+import AnimatedValue from './AnimatedValue.svelte';
 
 type Props = {
 	icon: LucideIcon;
@@ -17,6 +18,6 @@ let { icon: MetricIcon, value, label, iconClass, boxed = true }: Props = $props(
 	<span class={boxed ? 'flex size-10 items-center justify-center rounded-2xl bg-(--text)/6' : ''}>
 		<MetricIcon class={cn('size-5', iconClass)} aria-hidden="true" />
 	</span>
-	<strong class="text-2xl font-medium tabular-nums">{value}</strong>
+	<strong class="text-2xl font-medium tabular-nums"><AnimatedValue {value} /></strong>
 	<span class="text-xs text-(--text-muted)">{label}</span>
 </div>

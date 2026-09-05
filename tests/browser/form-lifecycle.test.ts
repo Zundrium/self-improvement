@@ -4,6 +4,7 @@ import { mount, tick, unmount } from 'svelte';
 import StepsSettingsHarness from './StepsSettingsHarness.svelte';
 import NutritionEntryHarness from './NutritionEntryHarness.svelte';
 import NutritionTrackHarness from './NutritionTrackHarness.svelte';
+import PeriodDateHarness from './PeriodDateHarness.svelte';
 import '../../src/routes/global.css';
 
 const mocks = vi.hoisted(() => ({
@@ -48,6 +49,28 @@ afterEach(async () => {
 });
 
 describe('form draft lifecycle in Chromium', () => {
+	it('does not apply a previous date save to a new pending entry', async () => {
+		const component = mount(PeriodDateHarness, { target: document.body });
+		mounted.push(component);
+		const notes = page.getByRole('textbox', { name: 'Notes' });
+		await notes.fill('First day');
+		await page.getByRole('button', { name: 'Save entry' }).click();
+		const resolveFirst = mocks.resolveSave;
+		component.select('2026-09-04');
+		await expect.element(notes).toHaveValue('');
+		await notes.fill('Second day');
+		await page.getByRole('button', { name: 'Save entry' }).click();
+		resolveFirst?.();
+		await tick();
+		await expect.element(page.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+		await expect.element(notes).toHaveValue('Second day');
+		expect(
+			mocks.apiRequest.mock.calls.map(([, init]) => JSON.parse(String(init?.body)).localDate)
+		).toEqual(['2026-09-05', '2026-09-04']);
+		mocks.resolveSave?.();
+		await expect.element(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+	});
+
 	it('preserves edits made while a settings save is pending', async () => {
 		mounted.push(mount(StepsSettingsHarness, { target: document.body }));
 		const input = page.getByRole('spinbutton', { name: 'Steps per day' });

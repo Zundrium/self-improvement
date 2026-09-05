@@ -15,6 +15,7 @@ const colors = getTrackerColors('steps');
 	value={steps}
 	max={goal}
 	displayValue={steps.toLocaleString()}
+	formatValue={(value) => Math.round(value).toLocaleString()}
 	secondaryText={`/ ${goal.toLocaleString()}`}
 	label={`${steps} of ${goal} steps`}
 	{colors}

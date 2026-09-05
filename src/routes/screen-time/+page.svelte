@@ -54,5 +54,5 @@ const history = $derived(
 	{:else}
 		<NativeDataHelpSection tracker="screen-time" isSynced={data.isSynced} />
 	{/if}
-	<TrackerHistorySection items={history} {colors} />
+	<TrackerHistorySection items={history} {colors} formatValue={formatScreenTime} />
 </TrackerPage>

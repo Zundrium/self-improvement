@@ -3,7 +3,7 @@ import PageActionBar from '$lib/components/app/PageActionBar.svelte';
 import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { Form } from '$lib/components/ui/form';
 import { Annoyed, ChevronLeft, Frown, Laugh, Meh, Smile } from '@lucide/svelte';
-import { tick, untrack } from 'svelte';
+import { onDestroy, tick, untrack } from 'svelte';
 import { APP_RESOURCES, refreshAppData } from '$lib/app/resources';
 import { apiRequest } from '$lib/api';
 import type { HappinessData } from '$lib/api-types';
@@ -21,6 +21,7 @@ import {
 	happinessRatings,
 	reasonOptionsForRating
 } from '../happiness';
+import { DateBoundRequestLifetime } from '$lib/forms/date-bound-request';
 import { submittedSnapshot } from '$lib/forms/draft';
 import { guardUnsavedNavigation } from '$lib/forms/unsaved-navigation.svelte';
 
@@ -41,6 +42,7 @@ let step = $state<'feeling' | 'reasons'>('feeling');
 let ratingSlider = $state<HTMLElement | null>(null);
 let reasonsSection = $state<HTMLElement | null>(null);
 let loadedDate = $state(untrack(() => data.date));
+const entryRequests = new DateBoundRequestLifetime(untrack(() => data.date));
 let loadedUpdatedAt = $state(untrack(() => String(data.entry?.updatedAt ?? '')));
 let loadedDefaultRating = $state(untrack(() => data.settings.defaultRating));
 let rating = $state<HappinessRating>(
@@ -74,6 +76,11 @@ function syncEntry(nextData: HappinessData) {
 	loadedDate = nextData.date;
 	loadedUpdatedAt = updatedAt;
 	loadedDefaultRating = defaultRating;
+	if (dateChanged) {
+		entryRequests.syncDate(nextData.date);
+		saving = false;
+		errorMessage = '';
+	}
 	if (!dateChanged && dirty) {
 		hasSavedEntry = Boolean(nextData.entry);
 		savedRating = nextData.entry?.rating;
@@ -122,26 +129,33 @@ async function editFeeling() {
 async function saveEntry(event: SubmitEvent) {
 	event.preventDefault();
 	if (!canSave || saving) return;
+	const submitted = submittedSnapshot({ localDate: data.date, rating, reasons: selectedReasons });
+	const request = entryRequests.begin(submitted.localDate);
 	saving = true;
 	errorMessage = '';
-	const submitted = submittedSnapshot({ localDate: data.date, rating, reasons: selectedReasons });
 	try {
 		await apiRequest('/api/app/happiness', {
 			method: 'PUT',
 			body: JSON.stringify(submitted)
 		});
-		hasSavedEntry = true;
-		savedRating = submitted.rating;
-		savedReasons = submitted.reasons;
+		if (entryRequests.isCurrent(request, data.date)) {
+			hasSavedEntry = true;
+			savedRating = submitted.rating;
+			savedReasons = submitted.reasons;
+		}
 		await refreshAppData(APP_RESOURCES.bootstrap).catch(() => {
-			errorMessage = 'Saved, but could not refresh the page.';
+			if (entryRequests.isCurrent(request, data.date))
+				errorMessage = 'Saved, but could not refresh the page.';
 		});
 	} catch (cause) {
-		errorMessage = cause instanceof Error ? cause.message : 'Could not save your entry.';
+		if (entryRequests.isCurrent(request, data.date))
+			errorMessage = cause instanceof Error ? cause.message : 'Could not save your entry.';
 	} finally {
-		saving = false;
+		if (entryRequests.isCurrent(request, data.date)) saving = false;
 	}
 }
+
+onDestroy(() => entryRequests.dispose());
 
 function markSaved(saved: boolean) {
 	hasSavedEntry = saved;
