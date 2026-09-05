@@ -31,11 +31,14 @@ afterEach(async () => {
 });
 
 describe('in-place date motion in Chromium', () => {
-	it('keeps content mounted while moving yesterday right and counting metrics', async () => {
+	it('fades stationary sections while moving yesterday right and counting metrics', async () => {
 		const component = render();
 		await tick();
 		await pause(950);
 		const main = document.querySelector('main');
+		const progress = document.querySelector('[aria-label="Calories"]');
+		if (!progress) throw new Error('Missing circular progress section');
+		const progressLeft = progress.getBoundingClientRect().x;
 		const input = document.querySelector('input');
 		if (!input) throw new Error('Missing input');
 		input.value = 'Keep my state';
@@ -58,14 +61,19 @@ describe('in-place date motion in Chromium', () => {
 			const section = document.querySelector(`[aria-label="${label}"]`);
 			if (!section) throw new Error(`Missing ${label} section`);
 			expect(Number(getComputedStyle(section).opacity)).toBeLessThan(1);
+			expect(getComputedStyle(section).transform).toBe('none');
 		}
+		expect(progress.getBoundingClientRect().x).toBeCloseTo(progressLeft, 3);
 		await expect.poll(calories).toBe('1,000');
+		expect(progress.getBoundingClientRect().x).toBeCloseTo(progressLeft, 3);
 		await expect.poll(() => document.querySelectorAll('[data-chart-date]').length).toBe(5);
 		const yesterdayPosition = today.getBoundingClientRect().x;
 		component.select('2026-09-05');
 		await pause(100);
 		expect(today.getBoundingClientRect().x).toBeLessThan(yesterdayPosition);
+		expect(progress.getBoundingClientRect().x).toBeCloseTo(progressLeft, 3);
 		await expect.poll(calories).toBe('2,000');
+		expect(progress.getBoundingClientRect().x).toBeCloseTo(progressLeft, 3);
 	});
 
 	it('settles rapid direction reversals and calendar jumps on only the requested dates', async () => {

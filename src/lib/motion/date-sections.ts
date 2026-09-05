@@ -1,12 +1,10 @@
 import { gsap } from 'gsap';
 import type { Action } from 'svelte/action';
-import { dateDistance } from './date-navigation';
 import { prefersReducedMotion, watchReducedMotion } from './preference';
 
 export const dateSections: Action<HTMLElement, string | undefined> = (node, date) => {
 	let currentDate = date;
 	let frame = 0;
-	let pendingDirection = 0;
 	let pendingAll = false;
 	let context: gsap.Context | undefined;
 	let known = new Set(sectionTargets(node));
@@ -15,15 +13,12 @@ export const dateSections: Action<HTMLElement, string | undefined> = (node, date
 		context?.revert();
 		context = undefined;
 	};
-	const animate = (direction: number, all: boolean) => {
+	const animate = (all: boolean) => {
 		cancelAnimationFrame(frame);
-		if (all) pendingDirection = direction;
 		pendingAll ||= all;
 		frame = requestAnimationFrame(() => {
 			const sections = sectionTargets(node);
 			const targets = pendingAll ? sections : sections.filter((section) => !known.has(section));
-			const travel = pendingDirection * 12;
-			pendingDirection = 0;
 			pendingAll = false;
 			known = new Set(sections);
 			if (!targets.length) return;
@@ -32,15 +27,14 @@ export const dateSections: Action<HTMLElement, string | undefined> = (node, date
 			context = gsap.context(() => {
 				gsap.fromTo(
 					targets,
-					{ x: -travel, opacity: 0.65 },
+					{ opacity: 0.65 },
 					{
-						x: 0,
 						opacity: 1,
 						duration: 0.45,
 						stagger: 0.035,
 						ease: 'power3.out',
 						overwrite: 'auto',
-						clearProps: 'transform,opacity'
+						clearProps: 'opacity'
 					}
 				);
 			}, node);
@@ -54,17 +48,15 @@ export const dateSections: Action<HTMLElement, string | undefined> = (node, date
 					(child.matches('[data-motion-item]') || child.querySelector('[data-motion-item]'))
 			)
 		);
-		if (addedSection && sectionTargets(node).some((section) => !known.has(section)))
-			animate(0, false);
+		if (addedSection && sectionTargets(node).some((section) => !known.has(section))) animate(false);
 	});
 	observer.observe(node, { childList: true, subtree: true });
 	const unwatch = watchReducedMotion(stop);
 	return {
 		update(next) {
 			if (next === currentDate) return;
-			const direction = currentDate && next ? -Math.sign(dateDistance(currentDate, next)) : 0;
 			currentDate = next;
-			animate(direction, true);
+			animate(true);
 		},
 		destroy() {
 			stop();
