@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ActionEnvironment, ActionSnapshot } from '$lib/actions/contracts';
 import { createDefaultAppState } from '$lib/local/state';
 import { buildActionSnapshot } from '$lib/local/action-snapshot';
+import { selectActionFeedItems } from '$lib/actions/selector';
 import { stretchActionCandidates } from './actions';
 
 describe('stretch action candidates', () => {
@@ -42,6 +43,6 @@ describe('stretch action candidates', () => {
 	}
 
 	function resolve(snapshot: ActionSnapshot) {
-		return stretchActionCandidates[0].resolve(snapshot, environment);
+		return selectActionFeedItems(stretchActionCandidates, snapshot, environment)[0] ?? null;
 	}
 });

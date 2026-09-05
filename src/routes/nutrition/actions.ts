@@ -1,84 +1,99 @@
-import type { ActionCandidate } from '$lib/actions/contracts';
+import { defineActionCandidate } from '$lib/actions/candidate';
+import {
+	localMinuteIsAtLeast,
+	trackerDateIsLocalDate,
+	trackerStateCondition
+} from '$lib/actions/conditions';
 import { isEatingWindowOpen } from './nutrition';
 
 const MORNING_START = 5 * 60;
 
-export const nutritionActionCandidates: ActionCandidate[] = [
-	{
+export const nutritionActionCandidates = [
+	defineActionCandidate({
 		id: 'nutrition.setup',
 		trackerIds: ['nutrition'],
-		resolve(snapshot) {
-			const nutrition = snapshot.trackers.nutrition;
-			if (nutrition.configured) return null;
+		conditions: [trackerStateCondition('nutrition', ({ configured }) => !configured)],
+		resolve() {
 			return {
-				id: 'nutrition.setup',
 				priority: 'warning',
 				score: 92,
-				icon: 'tracker',
 				title: 'Set up your nutrition goals',
 				reason: 'Set your daily goals',
 				action: { type: 'navigate', href: '/nutrition/onboarding' }
 			};
 		}
-	},
-	{
+	}),
+	defineActionCandidate({
 		id: 'nutrition.eating-window-upcoming',
 		trackerIds: ['nutrition'],
+		conditions: [
+			trackerDateIsLocalDate('nutrition'),
+			trackerStateCondition(
+				'nutrition',
+				(nutrition, environment) =>
+					!nutrition.fasting &&
+					nutrition.eatingWindow !== null &&
+					environment.localMinuteOfDay < minutesFromTime(nutrition.eatingWindow.start)
+			),
+			localMinuteIsAtLeast(MORNING_START)
+		],
 		resolve(snapshot, environment) {
 			const nutrition = snapshot.trackers.nutrition;
-			if (nutrition.date !== environment.localDate || nutrition.fasting) return null;
 			if (!nutrition.eatingWindow) return null;
 			const start = minutesFromTime(nutrition.eatingWindow.start);
-			if (environment.localMinuteOfDay < MORNING_START || environment.localMinuteOfDay >= start)
-				return null;
 			return {
-				id: `nutrition.eating-window-upcoming:${nutrition.date}`,
+				instanceId: nutrition.date,
 				priority: 'activity',
 				score: 55,
-				icon: 'tracker',
 				title: `Eating starts in ${formatMinutes(start - environment.localMinuteOfDay)}`,
 				reason: `Your eating window starts at ${nutrition.eatingWindow.start}`,
 				action: { type: 'navigate', href: `/nutrition/track?date=${nutrition.date}` }
 			};
 		}
-	},
-	{
+	}),
+	defineActionCandidate({
 		id: 'nutrition.eating-window-open',
 		trackerIds: ['nutrition'],
+		conditions: [
+			trackerDateIsLocalDate('nutrition'),
+			trackerStateCondition(
+				'nutrition',
+				(nutrition, environment) =>
+					!nutrition.fasting &&
+					nutrition.eatingWindow !== null &&
+					isEatingWindowOpen(nutrition.eatingWindow, environment.localMinuteOfDay)
+			)
+		],
 		resolve(snapshot, environment) {
 			const nutrition = snapshot.trackers.nutrition;
-			if (nutrition.date !== environment.localDate || nutrition.fasting) return null;
 			if (!nutrition.eatingWindow) return null;
-			if (!isEatingWindowOpen(nutrition.eatingWindow, environment.localMinuteOfDay)) return null;
 			const end = minutesFromTime(nutrition.eatingWindow.end);
 			return {
-				id: `nutrition.eating-window-open:${nutrition.date}`,
+				instanceId: nutrition.date,
 				priority: 'activity',
 				score: 60,
-				icon: 'tracker',
 				title: 'Add a meal',
 				reason: `${formatMinutes(end - environment.localMinuteOfDay)} left in your eating window`,
 				action: { type: 'navigate', href: `/nutrition/track?date=${nutrition.date}` }
 			};
 		}
-	},
-	{
+	}),
+	defineActionCandidate({
 		id: 'nutrition.full-day-fast',
 		trackerIds: ['nutrition'],
+		conditions: [trackerStateCondition('nutrition', ({ fasting }) => fasting)],
 		resolve(snapshot) {
 			const nutrition = snapshot.trackers.nutrition;
-			if (!nutrition.fasting) return null;
 			return {
-				id: `nutrition.full-day-fast:${nutrition.date}`,
+				instanceId: nutrition.date,
 				priority: 'activity',
 				score: 35,
-				icon: 'tracker',
 				title: 'Full-day fast marked',
 				reason: "Review today's fast",
 				action: { type: 'navigate', href: `/nutrition/log/${nutrition.date}` }
 			};
 		}
-	}
+	})
 ];
 
 function minutesFromTime(time: string) {

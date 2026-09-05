@@ -1,21 +1,23 @@
-import type { ActionCandidate } from '$lib/actions/contracts';
+import { defineActionCandidate } from '$lib/actions/candidate';
+import { trackerDateIsLocalDate, trackerStateCondition } from '$lib/actions/conditions';
 
-export const breathingActionCandidates: ActionCandidate[] = [
-	{
+export const breathingActionCandidates = [
+	defineActionCandidate({
 		id: 'breathing.daily-exercise',
 		trackerIds: ['breathing'],
-		resolve(snapshot, environment) {
-			const breathing = snapshot.trackers.breathing;
-			if (breathing.date !== environment.localDate || breathing.completed) return null;
+		conditions: [
+			trackerDateIsLocalDate('breathing'),
+			trackerStateCondition('breathing', ({ completed }) => !completed)
+		],
+		resolve(snapshot) {
 			return {
-				id: `breathing.daily-exercise:${breathing.date}`,
+				instanceId: snapshot.trackers.breathing.date,
 				priority: 'activity',
 				score: 40,
-				icon: 'tracker',
 				title: "Let's breathe now",
 				reason: 'A guided exercise to feel at ease',
 				action: { type: 'navigate', href: '/breathing' }
 			};
 		}
-	}
+	})
 ];

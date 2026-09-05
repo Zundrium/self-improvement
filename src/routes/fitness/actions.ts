@@ -1,5 +1,11 @@
+import { defineActionCandidate } from '$lib/actions/candidate';
+import {
+	localMinuteIsAtLeast,
+	localMinuteIsBefore,
+	trackerDateIsLocalDate,
+	trackerStateCondition
+} from '$lib/actions/conditions';
 import type {
-	ActionCandidate,
 	ActionEnvironment,
 	ActionResolution,
 	FitnessActionState
@@ -8,44 +14,62 @@ import type {
 const MORNING_START = 5 * 60;
 const MORNING_END = 12 * 60;
 const QUICK_EVENING_START = 20 * 60;
+const workoutIsAvailable = trackerStateCondition(
+	'fitness',
+	(fitness) =>
+		fitness.scheduled &&
+		!fitness.completed &&
+		fitness.workoutId !== null &&
+		fitness.sets !== null &&
+		fitness.firstSetDurationSeconds !== null &&
+		fitness.additionalSetDurationSeconds !== null
+);
 
-export const fitnessActionCandidates: ActionCandidate[] = [
-	{
+export const fitnessActionCandidates = [
+	defineActionCandidate({
 		id: 'fitness.morning-workout',
 		trackerIds: ['fitness'],
+		conditions: [
+			trackerDateIsLocalDate('fitness'),
+			workoutIsAvailable,
+			localMinuteIsAtLeast(MORNING_START),
+			localMinuteIsBefore(MORNING_END)
+		],
 		resolve(snapshot, environment) {
 			const fitness = eligibleWorkout(snapshot.trackers.fitness, environment);
 			if (!fitness) return null;
-			if (environment.localMinuteOfDay < MORNING_START) return null;
-			if (environment.localMinuteOfDay >= MORNING_END) return null;
-			return workoutResolution(fitness, 'morning-workout', 75, 'Start with a morning workout');
+			return workoutResolution(fitness, 75, 'Start with a morning workout');
 		}
-	},
-	{
+	}),
+	defineActionCandidate({
 		id: 'fitness.scheduled-workout',
 		trackerIds: ['fitness'],
+		conditions: [trackerDateIsLocalDate('fitness'), workoutIsAvailable],
 		resolve(snapshot, environment) {
 			const fitness = eligibleWorkout(snapshot.trackers.fitness, environment);
 			if (!fitness) return null;
-			return workoutResolution(fitness, 'scheduled-workout', 60, "Let's do today's workout");
+			return workoutResolution(fitness, 60, "Let's do today's workout");
 		}
-	},
-	{
+	}),
+	defineActionCandidate({
 		id: 'fitness.quick-evening-workout',
 		trackerIds: ['fitness'],
+		conditions: [
+			trackerDateIsLocalDate('fitness'),
+			workoutIsAvailable,
+			localMinuteIsAtLeast(QUICK_EVENING_START)
+		],
 		resolve(snapshot, environment) {
 			const fitness = eligibleWorkout(snapshot.trackers.fitness, environment);
-			if (!fitness || environment.localMinuteOfDay < QUICK_EVENING_START) return null;
-			const sets = Math.max(1, Math.ceil(fitness.sets / 2));
+			if (!fitness) return null;
 			return workoutResolution(
 				fitness,
-				'quick-evening-workout',
 				80,
 				'Fit in a quick evening workout',
-				sets
+				Math.max(1, Math.ceil(fitness.sets / 2))
 			);
 		}
-	}
+	})
 ];
 
 function eligibleWorkout(fitness: FitnessActionState, environment: ActionEnvironment) {
@@ -70,18 +94,16 @@ function workoutResolution(
 		firstSetDurationSeconds: number;
 		additionalSetDurationSeconds: number;
 	},
-	variant: string,
 	score: number,
 	title: string,
 	sets = fitness.sets
-): ActionResolution {
+): Omit<ActionResolution, 'id' | 'icon'> & { instanceId: string } {
 	return {
-		id: `fitness.${variant}:${fitness.date}`,
+		instanceId: fitness.date,
 		goalId: `fitness.daily-workout:${fitness.date}`,
 		conflictKeys: ['physical-effort-now'],
 		priority: 'activity',
 		score,
-		icon: 'tracker',
 		title,
 		reason: `${workoutDuration(sets, fitness)} to feel stronger`,
 		action: {

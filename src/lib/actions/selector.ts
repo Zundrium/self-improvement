@@ -18,10 +18,12 @@ export function evaluateCandidate(
 	snapshot: ActionSnapshot,
 	environment: ActionEnvironment
 ): ActionProposal | null {
-	if (!candidate.trackerIds.every((id) => snapshot.enabledTrackerIds.includes(id))) return null;
+	if (!candidate.requiredTrackerIds.every((id) => snapshot.enabledTrackerIds.includes(id)))
+		return null;
+	if (!candidate.conditions.every((condition) => condition(snapshot, environment))) return null;
 	const resolution = candidate.resolve(snapshot, environment);
 	if (!resolution || !(resolution.score > 0)) return null;
-	return { ...resolution, candidateId: candidate.id, trackerIds: candidate.trackerIds };
+	return { ...resolution, candidateId: candidate.id, trackerIds: [...candidate.trackerIds] };
 }
 
 export function selectActionFeedItems(

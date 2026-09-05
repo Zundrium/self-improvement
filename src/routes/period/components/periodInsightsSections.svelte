@@ -2,6 +2,7 @@
 import type { PeriodData } from '$lib/api-types';
 import TrackerHistoryItem from '$lib/components/tracker/TrackerHistoryItem.svelte';
 import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
+import TrackerSections from '$lib/components/tracker/TrackerSections.svelte';
 import { shortDateLabel } from '$lib/dateFormatting';
 import { getTrackerColors } from '$lib/trackers/registry';
 import { flowLabel } from '../period';
@@ -22,7 +23,7 @@ function href(date: string) {
 }
 </script>
 
-<div class="space-y-10">
+<TrackerSections>
 	<TrackerSection title="Cycle overview" {colors}>
 		{#if cycle}
 			<div class="space-y-4 text-sm">
@@ -66,4 +67,4 @@ function href(date: string) {
 			<p class="text-sm text-(--text-muted)">No period entries yet.</p>
 		{/if}
 	</TrackerSection>
-</div>
+</TrackerSections>

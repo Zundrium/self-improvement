@@ -98,7 +98,9 @@ export type PeriodActionState = {
 	flow: 'spotting' | 'light' | 'medium' | 'heavy' | null;
 };
 
-export type TrackerActionStates = {
+type RegisteredTrackerActionStates<States extends Record<AppTrackerId, { date: string }>> = States;
+
+export type TrackerActionStates = RegisteredTrackerActionStates<{
 	steps: StepActionState;
 	sleep: SleepActionState;
 	'screen-time': ScreenTimeActionState;
@@ -110,7 +112,7 @@ export type TrackerActionStates = {
 	chores: ChoresActionState;
 	happiness: HappinessActionState;
 	period: PeriodActionState;
-};
+}>;
 
 export type ActionSnapshot = {
 	date: string;
@@ -119,9 +121,13 @@ export type ActionSnapshot = {
 	trackers: TrackerActionStates;
 };
 
+export type ActionCondition = (snapshot: ActionSnapshot, environment: ActionEnvironment) => boolean;
+
 export type ActionCandidate = {
 	id: string;
-	trackerIds: AppTrackerId[];
+	trackerIds: readonly AppTrackerId[];
+	requiredTrackerIds: readonly AppTrackerId[];
+	conditions: readonly ActionCondition[];
 	resolve(snapshot: ActionSnapshot, environment: ActionEnvironment): ActionResolution | null;
 };
 
@@ -135,6 +141,11 @@ export type ActionResolution = {
 	title: string;
 	reason: string;
 	action: NavigateAction;
+};
+
+export type ActionCandidateResult = Omit<ActionResolution, 'id' | 'icon'> & {
+	instanceId?: string;
+	icon?: ActionIcon;
 };
 
 export type ActionProposal = ActionResolution & {

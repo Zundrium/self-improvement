@@ -7,7 +7,7 @@ import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import { toast } from '$lib/components/ui/toast';
 import type { StretchActivityId, StretchDifficulty } from '$lib/local/tracker-settings';
 import type { PageProps } from './$types';
-import StretchRoutine from './components/stretchRoutine.svelte';
+import StretchRoutineSection from './components/stretchRoutineSection.svelte';
 import type { SaveState, StretchCompletion } from './stretch';
 
 let { data }: PageProps = $props();
@@ -87,7 +87,7 @@ async function saveDifficulty(activityId: StretchActivityId, difficulty: Stretch
 		ariaLabel: 'Five-day stretch progress'
 	}}
 >
-	<StretchRoutine
+	<StretchRoutineSection
 		localDate={data.date}
 		holdSeconds={data.settings.holdSeconds}
 		{difficulties}

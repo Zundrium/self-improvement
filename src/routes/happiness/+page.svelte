@@ -1,6 +1,6 @@
 <script lang="ts">
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
-import HappinessEntry from './components/happinessEntry.svelte';
+import HappinessEntrySection from './components/happinessEntrySection.svelte';
 import type { PageProps } from './$types';
 
 let { data }: PageProps = $props();
@@ -21,5 +21,5 @@ let { data }: PageProps = $props();
 		ariaLabel: 'Five-day happiness progress'
 	}}
 >
-	<HappinessEntry {data} />
+	<HappinessEntrySection {data} />
 </TrackerPage>

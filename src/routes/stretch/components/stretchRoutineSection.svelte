@@ -8,6 +8,7 @@ import type { GuidedRoutineActivity } from '$lib/routines/model';
 import GuidedRoutineRunner, {
 	type GuidedRoutineSounds
 } from '$lib/components/routines/GuidedRoutineRunner.svelte';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import {
 	STRETCH_ACTIVITY_IDS,
 	STRETCH_DIFFICULTIES_BY_ACTIVITY,
@@ -173,7 +174,11 @@ function completeRoutine() {
 		onimagevariantcommit={selectDifficulty}
 	/>
 {:else}
-	<section aria-label="Stretch routine" class="flex min-h-0 flex-1 flex-col gap-8">
+	<TrackerSection
+		ariaLabel="Stretch routine"
+		class="flex min-h-0 flex-1"
+		contentClass="flex min-h-0 flex-1 flex-col gap-8"
+	>
 		{#if !scheduled}
 			<div class="flex min-h-72 flex-1 flex-col items-center justify-center px-6 py-10 text-center">
 				<CalendarOff
@@ -244,7 +249,7 @@ function completeRoutine() {
 		{#if interactive}
 			<div class="hidden sm:block">{@render actions()}</div>
 		{/if}
-	</section>
+	</TrackerSection>
 
 	{#if interactive}
 		<PageActionBar>{@render actions()}</PageActionBar>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ActionEnvironment, ActionSnapshot } from '$lib/actions/contracts';
+import { selectActionFeedItems } from '$lib/actions/selector';
 import { choresActionCandidates } from './actions';
 
 const environment: ActionEnvironment = {
@@ -11,16 +12,19 @@ const environment: ActionEnvironment = {
 
 describe('chores actions', () => {
 	it('suggests the daily timer until it is completed', () => {
-		const candidate = choresActionCandidates[0];
-		const incomplete = candidate.resolve(snapshot(false), environment);
-		const complete = candidate.resolve(snapshot(true), environment);
+		const [incomplete] = selectActionFeedItems(
+			choresActionCandidates,
+			snapshot(false),
+			environment
+		);
+		const complete = selectActionFeedItems(choresActionCandidates, snapshot(true), environment);
 
 		expect(incomplete).toMatchObject({
 			id: 'chores.daily-reset:2026-04-10',
 			title: 'Take 10 minutes to reset',
 			action: { type: 'navigate', href: '/chores' }
 		});
-		expect(complete).toBeNull();
+		expect(complete).toEqual([]);
 	});
 });
 

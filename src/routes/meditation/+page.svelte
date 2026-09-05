@@ -4,10 +4,8 @@ import { apiRequest } from '$lib/api';
 import { AudioManager } from '$lib/audio/audio-manager';
 import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
-import AmbientSounds from './components/ambientSounds.svelte';
-import MeditationTimer from './components/meditationTimer.svelte';
+import MeditationPracticeSection from './components/meditationPracticeSection.svelte';
 import { type MeditationCompletion, type SaveState } from './meditation';
-import { meditationEnter } from './meditationMotion';
 import { ambientSounds } from './sounds';
 import type { PageProps } from './$types';
 
@@ -101,15 +99,12 @@ function retryCompletion() {
 	}}
 >
 	{#if isToday}
-		<div class="space-y-1" data-motion-page-enter="custom" use:meditationEnter>
-			<MeditationTimer
-				{audioManager}
-				initialDurationSeconds={data.initialDurationSeconds}
-				{saveState}
-				oncomplete={(completion) => void saveCompletion(completion)}
-				onretry={retryCompletion}
-			/>
-			<AmbientSounds {audioManager} />
-		</div>
+		<MeditationPracticeSection
+			{audioManager}
+			initialDurationSeconds={data.initialDurationSeconds}
+			{saveState}
+			oncomplete={(completion) => void saveCompletion(completion)}
+			onretry={retryCompletion}
+		/>
 	{/if}
 </TrackerPage>

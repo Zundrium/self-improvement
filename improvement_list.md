@@ -198,7 +198,7 @@ The shell's `DatedPageData` union-like shape recognizes `markedDates`, `complete
 
 ### 11. P2 — Form drafts do not have a consistent identity, save, or navigation contract
 
-**Evidence:** [nutrition/entry/[entryId]/+page.svelte](src/routes/nutrition/entry/[entryId]/+page.svelte), `const initial` at line 32 and save at line 63; [stepsSettings.svelte](src/routes/steps/settings/stepsSettings.svelte); [nutritionSettings.svelte](src/routes/nutrition/settings/nutritionSettings.svelte); [periodEntry.svelte](src/routes/period/components/periodEntry.svelte); [happinessEntry.svelte](src/routes/happiness/components/happinessEntry.svelte); [settingsSaveBar.svelte](src/lib/components/forms/SettingsSaveBar.svelte).
+**Evidence:** [nutrition/entry/[entryId]/+page.svelte](src/routes/nutrition/entry/[entryId]/+page.svelte), `const initial` at line 32 and save at line 63; [stepsSettings.svelte](src/routes/steps/settings/stepsSettings.svelte); [nutritionSettings.svelte](src/routes/nutrition/settings/nutritionSettings.svelte); [periodEntrySection.svelte](src/routes/period/components/periodEntrySection.svelte); [happinessEntrySection.svelte](src/routes/happiness/components/happinessEntrySection.svelte); [settingsSaveBar.svelte](src/lib/components/forms/SettingsSaveBar.svelte).
 
 The nutrition editor captures the initial entry once, including the ID used for PUT/DELETE. The shell is keyed by route ID, which does not change between two `/nutrition/entry/[entryId]` URLs. Same-route parameter navigation can therefore retain the earlier draft and target ID. Other forms initialize with `untrack()` and never reconcile later values, while period/happiness implement their own date/update/default comparison logic. SvelteKit load reruns preserve component state, so this behavior needs an explicit policy. [SvelteKit component reuse](https://svelte.dev/docs/kit/load#Rerunning-load-functions).
 
@@ -246,7 +246,7 @@ This matters when root resume maintenance, the permissions screen, and a manual 
 
 ### 15. P2 — Timed sessions lack a consistent background, interruption, and recovery policy
 
-**Evidence:** [meditationTimer.svelte](src/routes/meditation/components/meditationTimer.svelte); [choresTimer.svelte](src/routes/chores/components/choresTimer.svelte); [breathingExercise.svelte](src/routes/breathing/components/breathingExercise.svelte); [guidedRoutineRunner.svelte](src/lib/components/routines/GuidedRoutineRunner.svelte); [audio-manager.ts](src/lib/audio/audio-manager.ts).
+**Evidence:** [meditationTimer.svelte](src/routes/meditation/components/meditationTimer.svelte); [choresTimerSection.svelte](src/routes/chores/components/choresTimerSection.svelte); [breathingExerciseSection.svelte](src/routes/breathing/components/breathingExerciseSection.svelte); [guidedRoutineRunner.svelte](src/lib/components/routines/GuidedRoutineRunner.svelte); [audio-manager.ts](src/lib/audio/audio-manager.ts).
 
 Meditation and chores use wall-clock deadlines; breathing derives elapsed time from `Date.now()`; fitness/stretch consume `performance.now()` deltas. Using deadlines avoids simple interval drift, but background behavior remains implicit. The routine's visibility handler only reacquires a wake lock. After a long suspension it can consume the elapsed time for the current activity and advance one phase, while other timers can immediately complete on resumption. There is no shared decision about whether hidden time should count.
 
@@ -348,7 +348,7 @@ The bottom action bar lives under `ui` but requires an app-shell context and ren
 
 ### 23. P2 — Accessibility and Android navigation need checks beyond compiler warnings
 
-**Evidence:** [nutritionSettings.svelte](src/routes/nutrition/settings/nutritionSettings.svelte), select labels; [periodEntry.svelte](src/routes/period/components/periodEntry.svelte), flow label; [field-label.svelte](src/lib/components/ui/field/field-label.svelte); [select-trigger.svelte](src/lib/components/ui/select/select-trigger.svelte); [dialog-content.svelte](src/lib/components/ui/dialog/dialog-content.svelte); [native/app.ts](src/native/app.ts); [routes/+layout.svelte](src/routes/+layout.svelte).
+**Evidence:** [nutritionSettings.svelte](src/routes/nutrition/settings/nutritionSettings.svelte), select labels; [periodEntrySection.svelte](src/routes/period/components/periodEntrySection.svelte), flow label; [field-label.svelte](src/lib/components/ui/field/field-label.svelte); [select-trigger.svelte](src/lib/components/ui/select/select-trigger.svelte); [dialog-content.svelte](src/lib/components/ui/dialog/dialog-content.svelte); [native/app.ts](src/native/app.ts); [routes/+layout.svelte](src/routes/+layout.svelte).
 
 Several `FieldLabel` instances are plain labels without a `for` relationship to their select trigger. `FieldLabel` does not supply context automatically, so visible text such as “Gender,” “Activity level,” or “Flow” is not programmatically associated with the control. A trigger announcing only its selected value loses important context.
 
@@ -388,7 +388,7 @@ There is already useful error infrastructure for native sync categories and sani
 
 ### 26. P3 — Remove prototype residue and make development conventions executable
 
-**Evidence:** [gradient-test/+page.svelte](src/routes/gradient-test/+page.svelte); [biome.json](biome.json); [package.json](package.json); [README.md](README.md); [periodEntry.svelte](src/routes/period/components/periodEntry.svelte); Android starter test packages under `com/getcapacitor/myapp`.
+**Evidence:** [gradient-test/+page.svelte](src/routes/gradient-test/+page.svelte); [biome.json](biome.json); [package.json](package.json); [README.md](README.md); [periodEntrySection.svelte](src/routes/period/components/periodEntrySection.svelte); Android starter test packages under `com/getcapacitor/myapp`.
 
 The gradient playground is an ordinary production route. Its styles are also global. Android starter tests remain under the template application package. The period form says notes are private to an “account,” although this app has no account system. Documentation describes manual nutrition entry that the creation UI does not currently expose.
 

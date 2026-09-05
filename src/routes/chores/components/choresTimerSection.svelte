@@ -1,5 +1,6 @@
 <script lang="ts">
 import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { onDestroy, onMount, untrack } from 'svelte';
 import { BrushCleaning, Check, LoaderCircle, Pause, Play, RotateCcw, Square } from '@lucide/svelte';
 import { BottomActionButton, BottomActionGroup } from '$lib/components/ui/bottom-action-bar';
@@ -153,7 +154,11 @@ function isChoresSnapshot(
 	{/if}
 {/snippet}
 
-<section aria-label="Chores timer" class="flex flex-1 flex-col items-center justify-center gap-6 py-8">
+<TrackerSection
+	ariaLabel="Chores timer"
+	class="flex flex-1"
+	contentClass="flex flex-1 flex-col items-center justify-center gap-6 py-8"
+>
 	<BrushCleaning class="size-40 sm:size-48" strokeWidth={1.25} color={colors.primary} />
 
 	<div class="space-y-3 text-center">
@@ -185,7 +190,7 @@ function isChoresSnapshot(
 	<div class="hidden w-full sm:block">
 		{@render actions()}
 	</div>
-</section>
+</TrackerSection>
 
 <PageActionBar>
 	{@render actions()}

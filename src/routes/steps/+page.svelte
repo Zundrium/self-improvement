@@ -1,10 +1,10 @@
 <script lang="ts">
-import NativeDataHelpAlert from '$lib/components/tracker/NativeDataHelpAlert.svelte';
-import TrackerHistory from '$lib/components/tracker/TrackerHistory.svelte';
+import NativeDataHelpSection from '$lib/components/tracker/NativeDataHelpSection.svelte';
+import TrackerHistorySection from '$lib/components/tracker/TrackerHistorySection.svelte';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import { shortDayLabel } from '$lib/dateFormatting';
 import { getTrackerColors } from '$lib/trackers/registry';
-import StepsSummary from './components/stepsSummary.svelte';
+import StepsSummarySection from './components/stepsSummarySection.svelte';
 import type { PageProps } from './$types';
 
 let { data }: PageProps = $props();
@@ -35,7 +35,7 @@ const history = $derived(
 		ariaLabel: 'Five-day step progress'
 	}}
 >
-	<StepsSummary steps={data.steps} goal={dailyGoal} />
-	{#if !data.hasData}<NativeDataHelpAlert tracker="steps" isSynced={data.isSynced} />{/if}
-	<TrackerHistory items={history} {colors} />
+	<StepsSummarySection steps={data.steps} goal={dailyGoal} />
+	{#if !data.hasData}<NativeDataHelpSection tracker="steps" isSynced={data.isSynced} />{/if}
+	<TrackerHistorySection items={history} {colors} />
 </TrackerPage>

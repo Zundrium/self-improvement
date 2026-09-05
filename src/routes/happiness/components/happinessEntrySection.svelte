@@ -1,5 +1,6 @@
 <script lang="ts">
 import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { Form } from '$lib/components/ui/form';
 import { Annoyed, ChevronLeft, Frown, Laugh, Meh, Smile } from '@lucide/svelte';
 import { tick, untrack } from 'svelte';
@@ -153,7 +154,8 @@ function reasonKey(reasons: string[]) {
 }
 </script>
 
-<Form id="happiness-entry" onsubmit={saveEntry}>
+<TrackerSection ariaLabel="Daily happiness entry">
+	<Form id="happiness-entry" onsubmit={saveEntry}>
 	{#if errorMessage}
 		<Alert variant="destructive"><AlertDescription>{errorMessage}</AlertDescription></Alert>
 	{/if}
@@ -234,7 +236,8 @@ function reasonKey(reasons: string[]) {
 			</div>
 		</section>
 	{/if}
-</Form>
+	</Form>
+</TrackerSection>
 
 <PageActionBar contentClass="max-w-3xl" mobileOnly={false}>
 	<BottomActionGroup>

@@ -88,7 +88,7 @@ async function handleSessionComplete() {
 		{onspeedchange}
 	/>
 {:else}
-	<section class="mx-auto max-w-3xl" aria-labelledby="workout-title">
+	<TrackerSection ariaLabel="Workout details" class="mx-auto max-w-3xl">
 		<div class="space-y-4">
 			<div>
 				<h2
@@ -152,7 +152,7 @@ async function handleSessionComplete() {
 		<div class="mt-5 hidden grid-cols-2 gap-3 sm:grid">
 			{@render actions()}
 		</div>
-	</section>
+	</TrackerSection>
 
 	<PageActionBar>
 		<div class="grid grid-cols-2 gap-3">

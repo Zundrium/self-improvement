@@ -1,8 +1,8 @@
 <script lang="ts">
-import TrackerColumns from '$lib/components/tracker/TrackerColumns.svelte';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
-import PeriodEntry from './components/periodEntry.svelte';
-import PeriodInsights from './components/periodInsights.svelte';
+import TrackerSections from '$lib/components/tracker/TrackerSections.svelte';
+import PeriodEntrySection from './components/periodEntrySection.svelte';
+import PeriodInsightsSections from './components/periodInsightsSections.svelte';
 import type { PageProps } from './$types';
 
 let { data }: PageProps = $props();
@@ -22,8 +22,11 @@ let { data }: PageProps = $props();
 		ariaLabel: 'Five-day period flow progress'
 	}}
 >
-	<TrackerColumns class="md:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
-		<PeriodEntry {data} />
-		<PeriodInsights cycle={data.cycle} entries={data.recentEntries} today={data.today} />
-	</TrackerColumns>
+	<TrackerSections
+		layout="columns"
+		class="md:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]"
+	>
+		<PeriodEntrySection {data} />
+		<PeriodInsightsSections cycle={data.cycle} entries={data.recentEntries} today={data.today} />
+	</TrackerSections>
 </TrackerPage>

@@ -1,22 +1,23 @@
-import type { ActionCandidate } from '$lib/actions/contracts';
+import { defineActionCandidate } from '$lib/actions/candidate';
+import { trackerDateIsLocalDate, trackerStateCondition } from '$lib/actions/conditions';
 
-export const stretchActionCandidates: ActionCandidate[] = [
-	{
+export const stretchActionCandidates = [
+	defineActionCandidate({
 		id: 'stretch.daily-routine',
 		trackerIds: ['stretch'],
-		resolve(snapshot, environment) {
-			const stretch = snapshot.trackers.stretch;
-			if (stretch.date !== environment.localDate || !stretch.scheduled || stretch.completed)
-				return null;
+		conditions: [
+			trackerDateIsLocalDate('stretch'),
+			trackerStateCondition('stretch', ({ scheduled, completed }) => scheduled && !completed)
+		],
+		resolve(snapshot) {
 			return {
-				id: `stretch.daily-routine:${stretch.date}`,
+				instanceId: snapshot.trackers.stretch.date,
 				priority: 'activity',
 				score: 45,
-				icon: 'tracker',
 				title: "Let's stretch now",
 				reason: 'A short full-body flexibility routine',
 				action: { type: 'navigate', href: '/stretch' }
 			};
 		}
-	}
+	})
 ];

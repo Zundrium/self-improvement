@@ -3,7 +3,7 @@ import { untrack } from 'svelte';
 import { apiRequest } from '$lib/api';
 import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
-import BreathingExercise from './components/breathingExercise.svelte';
+import BreathingExerciseSection from './components/breathingExerciseSection.svelte';
 import { type BreathingCompletion, type SaveState } from './breathing';
 import type { PageProps } from './$types';
 
@@ -75,7 +75,7 @@ function retryCompletion() {
 		ariaLabel: 'Five-day breathing progress'
 	}}
 >
-	<BreathingExercise
+	<BreathingExerciseSection
 		localDate={data.date}
 		rounds={data.settings.rounds}
 		includeHold={data.settings.includeHold}

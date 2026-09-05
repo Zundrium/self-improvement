@@ -1,5 +1,6 @@
 <script lang="ts">
 import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { Check, Play, Square } from '@lucide/svelte';
 import { onDestroy, onMount, untrack } from 'svelte';
 import { BottomActionButton, BottomActionGroup } from '$lib/components/ui/bottom-action-bar';
@@ -159,12 +160,12 @@ function clearTimer() {
 	</div>
 {/snippet}
 
-<section
-	class="flex flex-1 flex-col items-center justify-center gap-5 py-4"
-	aria-label="Breathing timer"
-	data-motion-page-enter="custom"
-	use:breathingEnter
+<TrackerSection
+	ariaLabel="Breathing timer"
+	class="flex flex-1"
+	contentClass="flex flex-1 flex-col items-center justify-center gap-5 py-4"
 >
+	<div class="contents" data-motion-page-enter="custom" use:breathingEnter>
 	<div class="flex min-h-12 items-center justify-center">
 		<p
 			class="dynamic-color text-5xl font-semibold tracking-[-0.04em] tabular-nums sm:text-6xl"
@@ -213,10 +214,11 @@ function clearTimer() {
 	</div>
 
 
-	<div class="hidden w-full sm:block">
-		{@render actions()}
+		<div class="hidden w-full sm:block">
+			{@render actions()}
+		</div>
 	</div>
-</section>
+</TrackerSection>
 
 {#if actionsVisible}
 	<PageActionBar>

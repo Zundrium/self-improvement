@@ -1,43 +1,46 @@
-import type { ActionCandidate } from '$lib/actions/contracts';
+import { defineActionCandidate } from '$lib/actions/candidate';
+import { trackerStateCondition } from '$lib/actions/conditions';
 import { permissionsSettingsHref } from '$lib/permissions';
 
-export const screenTimeActionCandidates: ActionCandidate[] = [
-	{
+export const screenTimeActionCandidates = [
+	defineActionCandidate({
 		id: 'screen-time.missing-measurements',
 		trackerIds: ['screen-time'],
+		conditions: [trackerStateCondition('screen-time', ({ hasMeasurements }) => !hasMeasurements)],
 		resolve(snapshot) {
 			const screenTime = snapshot.trackers['screen-time'];
-			if (screenTime.hasMeasurements) return null;
 			return {
-				id: `screen-time.missing-measurements:${screenTime.date}`,
+				instanceId: screenTime.date,
 				priority: 'warning',
 				score: 90,
-				icon: 'tracker',
 				title: 'No screen-time data yet',
 				reason: "Sync today's screen time",
 				action: { type: 'navigate', href: permissionsSettingsHref('screenTime') }
 			};
 		}
-	},
-	{
+	}),
+	defineActionCandidate({
 		id: 'screen-time.limit',
 		trackerIds: ['screen-time'],
+		conditions: [
+			trackerStateCondition(
+				'screen-time',
+				(screenTime) => screenTime.recorded && screenTime.limitMinutes - screenTime.minutes <= 60
+			)
+		],
 		resolve(snapshot) {
 			const screenTime = snapshot.trackers['screen-time'];
-			if (!screenTime.recorded) return null;
 			const remaining = screenTime.limitMinutes - screenTime.minutes;
-			if (remaining > 60) return null;
 			return {
-				id: `screen-time.limit:${screenTime.date}`,
+				instanceId: screenTime.date,
 				priority: 'warning',
 				score: 80 + Math.min(10, Math.ceil(Math.max(0, -remaining) / 15)),
-				icon: 'tracker',
 				title: limitTitle(remaining),
 				reason: limitReason(remaining),
 				action: { type: 'navigate', href: `/screen-time?date=${screenTime.date}` }
 			};
 		}
-	}
+	})
 ];
 
 function limitTitle(remaining: number) {

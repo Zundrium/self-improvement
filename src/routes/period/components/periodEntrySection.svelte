@@ -1,5 +1,6 @@
 <script lang="ts">
 import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { Form } from '$lib/components/ui/form';
 import { APP_RESOURCES, refreshAppData } from '$lib/app/resources';
 import { untrack } from 'svelte';
@@ -88,7 +89,8 @@ function markSaved(saved: boolean) {
 }
 </script>
 
-<Form id="period-entry" class="space-y-5" onsubmit={saveEntry}>
+<TrackerSection ariaLabel="Daily period entry">
+	<Form id="period-entry" class="space-y-5" onsubmit={saveEntry}>
 	{#if errorMessage}
 		<Alert variant="destructive"><AlertDescription>{errorMessage}</AlertDescription></Alert>
 	{/if}
@@ -115,7 +117,8 @@ function markSaved(saved: boolean) {
 		/>
 		<FieldDescription>Optional and private to your account.</FieldDescription>
 	</Field>
-</Form>
+	</Form>
+</TrackerSection>
 
 <PageActionBar contentClass="max-w-4xl" mobileOnly={false}>
 	<BottomActionGroup>

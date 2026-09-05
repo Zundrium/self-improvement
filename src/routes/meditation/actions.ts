@@ -1,43 +1,50 @@
-import type { ActionCandidate } from '$lib/actions/contracts';
+import { defineActionCandidate } from '$lib/actions/candidate';
+import { trackerDateIsLocalDate, trackerStateCondition } from '$lib/actions/conditions';
 import { DEFAULT_DURATION_SECONDS } from './meditation';
 
-export const meditationActionCandidates: ActionCandidate[] = [
-	{
+export const meditationActionCandidates = [
+	defineActionCandidate({
 		id: 'meditation.restart',
 		trackerIds: ['meditation'],
-		resolve(snapshot, environment) {
+		conditions: [
+			trackerDateIsLocalDate('meditation'),
+			trackerStateCondition(
+				'meditation',
+				({ completed, daysSinceLastSession }) =>
+					!completed && daysSinceLastSession !== null && daysSinceLastSession >= 5
+			)
+		],
+		resolve(snapshot) {
 			const meditation = snapshot.trackers.meditation;
-			if (meditation.date !== environment.localDate || meditation.completed) return null;
-			if (meditation.daysSinceLastSession === null || meditation.daysSinceLastSession < 5)
-				return null;
 			return {
-				id: `meditation.restart:${meditation.date}`,
+				instanceId: meditation.date,
 				goalId: `meditation.daily-session:${meditation.date}`,
 				priority: 'activity',
 				score: 65,
-				icon: 'tracker',
 				title: 'Ease back into meditation',
 				reason: '1 minute to feel rested',
 				action: { type: 'navigate', href: '/meditation?duration=60' }
 			};
 		}
-	},
-	{
+	}),
+	defineActionCandidate({
 		id: 'meditation.daily-session',
 		trackerIds: ['meditation'],
-		resolve(snapshot, environment) {
+		conditions: [
+			trackerDateIsLocalDate('meditation'),
+			trackerStateCondition('meditation', ({ completed }) => !completed)
+		],
+		resolve(snapshot) {
 			const meditation = snapshot.trackers.meditation;
-			if (meditation.date !== environment.localDate || meditation.completed) return null;
 			return {
-				id: `meditation.daily-session:${meditation.date}`,
+				instanceId: meditation.date,
 				goalId: `meditation.daily-session:${meditation.date}`,
 				priority: 'activity',
 				score: 50,
-				icon: 'tracker',
 				title: "Let's meditate now",
 				reason: `${DEFAULT_DURATION_SECONDS / 60} minutes to feel rested`,
 				action: { type: 'navigate', href: '/meditation' }
 			};
 		}
-	}
+	})
 ];

@@ -1,6 +1,7 @@
 <script lang="ts">
 import { ChevronRight, Salad } from '@lucide/svelte';
 import type { NutritionEntry } from '$lib/api-types';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { Pressable } from '$lib/components/ui/pressable';
 import { Card } from '$lib/components/ui/card';
 import { Empty, EmptyTitle } from '$lib/components/ui/empty';
@@ -15,7 +16,8 @@ function displayTime(value: Date | string) {
 }
 </script>
 
-<Card class={entries.length ? 'gap-0' : 'gap-0 p-0'}>
+<TrackerSection ariaLabel="Food log">
+	<Card class={entries.length ? 'gap-0' : 'gap-0 p-0'}>
 	{#if entries.length > 0}
 		{#each entries as entry (entry.id)}
 			{@const entryTime = displayTime(entry.createdAt)}
@@ -48,4 +50,5 @@ function displayTime(value: Date | string) {
 			<EmptyTitle>No meals yet</EmptyTitle>
 		</Empty>
 	{/if}
-</Card>
+	</Card>
+</TrackerSection>

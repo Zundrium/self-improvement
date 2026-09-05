@@ -4,7 +4,7 @@ import { apiRequest } from '$lib/api';
 import type { ChoresSession } from '$lib/api-types';
 import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
-import ChoresTimer from './components/choresTimer.svelte';
+import ChoresTimerSection from './components/choresTimerSection.svelte';
 import type { ChoresCompletion, SaveState } from './chores';
 import type { PageProps } from './$types';
 
@@ -68,7 +68,7 @@ function retryCompletion() {
 	}}
 >
 	{#key data.date}
-		<ChoresTimer
+		<ChoresTimerSection
 			localDate={data.date}
 			complete={completed}
 			interactive={isToday}

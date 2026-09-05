@@ -1,27 +1,28 @@
-# Release review: v0.40.15
+# Release review: v0.40.16
 
-The Codex changes reorganize shared components and domain contracts, harden local storage and backup operations, and improve startup, native synchronization, forms, session cleanup and manual nutrition entry. The detailed implementation scope and remaining work are in [the improvement report](../improvement_list.md).
+This release standardizes tracker action rules and tracker-page composition so new trackers have explicit, compiler-checked integration points.
 
-## Regressions found and fixed during release review
+## Tracker architecture
 
-- **Nutrition photo reads:** indexed entry/day reads decoded Blob data inside an IndexedDB read transaction. Real Chromium rejected a large-photo read with `PrematureCommitError`. Row and Blob selection now finishes within the snapshot; conversion to application data happens afterward while the store operation remains serialized. `tests/browser/nutrition-storage.test.ts` covers both entry and day reads.
-- **Typed mutation refresh:** typed nutrition operations bypassed the legacy client's change event, leaving shared progress stale when an edit completed without navigation. Successful typed mutations now publish the same event once; reads and rejected writes do not. `src/lib/api-operations.test.ts` covers this contract.
-- **Deferred native home cards:** loader invalidation replaced asynchronously loaded update/permission cards with the loader's empty placeholder, while their fetch ran only on mount. The home page now keeps native cards separate from local loader results and refreshes them when the bootstrap tracker projection changes. `tests/browser/home-feed.test.ts` covers refresh without remounting.
+- Action candidates now use `defineActionCandidate`. The factory owns enabled-tracker requirements, condition composition, the default tracker icon, and stable per-instance IDs.
+- Reusable conditions cover tracker-state predicates, local-day matching, and local-time boundaries. Candidate resolvers now focus on presentation and navigation.
+- `trackerActionCandidates` is a complete `AppTrackerId` record. Period tracking has an intentional empty registration, so adding a tracker can no longer leave action registration silently incomplete.
+- Candidate attribution and extra enabled-tracker requirements are separate contracts. Sleep setup remains attributed to Sleep and available when the standalone Screen time tracker is hidden.
+- Main tracker pages now compose their content only from reusable `*Section` components and the `TrackerSections` layout container. A Svelte AST test enforces the rule for every registered app tracker.
 
-Each regression test failed before its fix and passed afterward. Existing tests are retained. The release workflow also runs formatting and mounted Chromium tests before packaging Android.
+The implementation checklist and ownership rules are documented in [the architecture guide](architecture.md).
 
 ## Local validation
 
 - `npm run check`: no errors or warnings.
-- `npm run lint` and `npm run format:check`: 463 files passed.
-- `npm run test`: 59 files, 236 tests passed.
+- `npm run lint`: passed.
+- `npm run format:check`: passed.
+- `npm run test`: 63 files, 252 tests passed.
 - `npm run test:browser`: 6 files, 15 Chromium tests passed.
 - `git diff --check`: passed.
 
-Local validation used Node 25.9.0. The tag workflow repeats validation on Node 22 and owns the production build, Android tests/lint, permission checks, signing and publication. No local production build or build-dependent Capacitor command was run.
+The tag workflow repeats validation on Node 22 and owns the production build, Android tests and lint, permission checks, signing, and GitHub release publication. No local production build or build-dependent Capacitor command was run.
 
 ## Remaining acceptance work
 
-No Android device or emulator was available for this review. Run [the Android smoke-test checklist](android-smoke-test.md) on the signed release, especially secure-key migration, camera access, background sessions, Back navigation, SAF providers and restoration.
-
-The storage changes test transaction failures and in-session media rollback, not crash-atomic recovery after process termination. Backups retain the 25 MiB limit; larger photo histories and browser multi-tab write coordination remain follow-up work. This release does not add a schema version or remote application database.
+No Android device or emulator was used for this review. Run [the Android smoke-test checklist](android-smoke-test.md) on the signed release. The release changes composition and maintainability contracts; it does not change stored data, backup schemas, Android permissions, or native integrations.

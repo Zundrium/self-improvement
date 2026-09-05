@@ -27,18 +27,16 @@ import {
 	DialogHeader,
 	DialogTitle
 } from '$lib/components/ui/dialog';
-import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
 import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 import { Input } from '$lib/components/ui/input';
 import { Spinner } from '$lib/components/ui/spinner';
 import { fullDateLabel, shortDateLabel } from '$lib/dateFormatting';
-import { getTrackerColors } from '$lib/trackers/registry';
-import FoodLog from './components/foodLog.svelte';
-import NutritionSummary from './components/nutritionSummary.svelte';
+import FastingStatusSection from './components/fastingStatusSection.svelte';
+import FoodLogSection from './components/foodLogSection.svelte';
+import NutritionSummarySection from './components/nutritionSummarySection.svelte';
 import type { PageProps } from './$types';
 
 const MAX_FASTING_DAYS = 30;
-const colors = getTrackerColors('nutrition');
 let { data }: PageProps = $props();
 let markOpen = $state(false);
 let days = $state(1);
@@ -107,27 +105,16 @@ function addDays(date: string, offset: number) {
 	}}
 >
 	{#if data.fasting}
-		<Empty class="min-h-80 bg-(--bg-elevated) sm:min-h-96">
-			<EmptyMedia
-				class="dynamic-color bg-(--text)/5"
-				style={`--dynamic-color: ${colors.primary}`}
-			>
-				<MoonStar />
-			</EmptyMedia>
-			<EmptyTitle>Full-day fast</EmptyTitle>
-			<EmptyDescription>
-				Meals are paused for this date. Cancel the fasting day before adding or moving a meal here.
-			</EmptyDescription>
-		</Empty>
+		<FastingStatusSection />
 	{:else}
-		<NutritionSummary
+		<NutritionSummarySection
 			totals={data.totals}
 			goal={data.calorieGoal}
 			date={data.date}
 			today={data.today}
 			eatingWindow={data.eatingWindow}
 		/>
-		<FoodLog entries={data.entries} />
+		<FoodLogSection entries={data.entries} />
 	{/if}
 </TrackerPage>
 

@@ -19,7 +19,9 @@ describe('action candidate selection', () => {
 		const resolve = vi.fn(() => resolution('disabled'));
 		const disabledCandidate: ActionCandidate = {
 			id: 'cross-tracker.disabled',
-			trackerIds: ['steps', 'sleep'],
+			trackerIds: ['steps'],
+			requiredTrackerIds: ['steps', 'sleep'],
+			conditions: [],
 			resolve
 		};
 
@@ -95,6 +97,8 @@ function candidate(id: string, overrides: Partial<ActionResolution> = {}): Actio
 	return {
 		id,
 		trackerIds: ['steps'],
+		requiredTrackerIds: ['steps'],
+		conditions: [],
 		resolve: () => ({ ...resolution(id), ...overrides })
 	};
 }

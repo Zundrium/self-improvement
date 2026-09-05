@@ -1,13 +1,12 @@
 <script lang="ts">
-import { CircleAlert } from '@lucide/svelte';
-import NativeDataHelpAlert from '$lib/components/tracker/NativeDataHelpAlert.svelte';
-import TrackerHistory from '$lib/components/tracker/TrackerHistory.svelte';
+import NativeDataHelpSection from '$lib/components/tracker/NativeDataHelpSection.svelte';
+import TrackerHistorySection from '$lib/components/tracker/TrackerHistorySection.svelte';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
-import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
-import { Button } from '$lib/components/ui/button';
 import { shortDayLabel } from '$lib/dateFormatting';
 import { getTrackerColors } from '$lib/trackers/registry';
-import ScreenTimeSummary from './components/screenTimeSummary.svelte';
+import ScreenTimeSetupSection from './components/screenTimeSetupSection.svelte';
+import ScreenTimeSummarySection from './components/screenTimeSummarySection.svelte';
+import ScreenTimeSyncSection from './components/screenTimeSyncSection.svelte';
 import { formatScreenTime, hasTrackedApps } from './screen-time';
 import type { PageProps } from './$types';
 
@@ -43,24 +42,17 @@ const history = $derived(
 		ariaLabel: 'Five-day screen-time progress'
 	}}
 >
-	<ScreenTimeSummary totalMinutes={data.usage.totalMinutes} limit={data.settings.dailyLimitMinutes} />
+	<ScreenTimeSummarySection
+		totalMinutes={data.usage.totalMinutes}
+		limit={data.settings.dailyLimitMinutes}
+	/>
 	{#if !hasTrackedApps(data.knownApps)}
-		<Alert>
-			<CircleAlert />
-			<AlertTitle>No apps selected</AlertTitle>
-			<AlertDescription>Choose at least one app to start measuring screen time.</AlertDescription>
-			<div class="col-start-2 mt-2">
-				<Button href="/screen-time/settings" size="small" profile="plain">Choose apps</Button>
-			</div>
-		</Alert>
+		<ScreenTimeSetupSection />
 	{/if}
 	{#if data.hasData}
-		<Alert>
-			<AlertTitle>Android data processed</AlertTitle>
-			<AlertDescription>Last sync: {lastProcessed}</AlertDescription>
-		</Alert>
+		<ScreenTimeSyncSection {lastProcessed} />
 	{:else}
-		<NativeDataHelpAlert tracker="screen-time" isSynced={data.isSynced} />
+		<NativeDataHelpSection tracker="screen-time" isSynced={data.isSynced} />
 	{/if}
-	<TrackerHistory items={history} {colors} />
+	<TrackerHistorySection items={history} {colors} />
 </TrackerPage>

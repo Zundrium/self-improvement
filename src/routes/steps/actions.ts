@@ -1,22 +1,22 @@
-import type { ActionCandidate } from '$lib/actions/contracts';
+import { defineActionCandidate } from '$lib/actions/candidate';
+import { trackerStateCondition } from '$lib/actions/conditions';
 import { permissionsSettingsHref } from '$lib/permissions';
 
-export const stepActionCandidates: ActionCandidate[] = [
-	{
+export const stepActionCandidates = [
+	defineActionCandidate({
 		id: 'steps.missing-measurements',
 		trackerIds: ['steps'],
+		conditions: [trackerStateCondition('steps', ({ hasMeasurements }) => !hasMeasurements)],
 		resolve(snapshot) {
 			const steps = snapshot.trackers.steps;
-			if (steps.hasMeasurements) return null;
 			return {
-				id: `steps.missing-measurements:${steps.date}`,
+				instanceId: steps.date,
 				priority: 'warning',
 				score: 100,
-				icon: 'tracker',
 				title: 'No step data yet',
 				reason: "Sync today's movement",
 				action: { type: 'navigate', href: permissionsSettingsHref('steps') }
 			};
 		}
-	}
+	})
 ];

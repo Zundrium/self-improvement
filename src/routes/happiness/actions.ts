@@ -1,21 +1,23 @@
-import type { ActionCandidate } from '$lib/actions/contracts';
+import { defineActionCandidate } from '$lib/actions/candidate';
+import { trackerDateIsLocalDate, trackerStateCondition } from '$lib/actions/conditions';
 
-export const happinessActionCandidates: ActionCandidate[] = [
-	{
+export const happinessActionCandidates = [
+	defineActionCandidate({
 		id: 'happiness.daily-check-in',
 		trackerIds: ['happiness'],
-		resolve(snapshot, environment) {
-			const happiness = snapshot.trackers.happiness;
-			if (happiness.date !== environment.localDate || happiness.rating !== null) return null;
+		conditions: [
+			trackerDateIsLocalDate('happiness'),
+			trackerStateCondition('happiness', ({ rating }) => rating === null)
+		],
+		resolve(snapshot) {
 			return {
-				id: `happiness.daily-check-in:${happiness.date}`,
+				instanceId: snapshot.trackers.happiness.date,
 				priority: 'activity',
 				score: 55,
-				icon: 'tracker',
 				title: 'How are you feeling today?',
 				reason: '15 seconds to check in with yourself',
 				action: { type: 'navigate', href: '/happiness' }
 			};
 		}
-	}
+	})
 ];

@@ -5,9 +5,9 @@ import { apiRequest } from '$lib/api';
 import { AudioManager } from '$lib/audio/audio-manager';
 import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
-import { Alert, AlertDescription } from '$lib/components/ui/alert';
-import FitnessRestDay from './components/fitnessRestDay.svelte';
-import WorkoutDay from './components/workoutDay.svelte';
+import FitnessRestSection from './components/fitnessRestSection.svelte';
+import FitnessSaveStatusSection from './components/fitnessSaveStatusSection.svelte';
+import WorkoutSection from './components/workoutSection.svelte';
 import type { Workout } from './fitness';
 import type { PageProps } from './$types';
 
@@ -134,13 +134,11 @@ function restoreCompletion(date: string, completed: boolean) {
 	}}
 >
 	{#if errorMessage}
-		<Alert variant="destructive">
-			<AlertDescription>{errorMessage}</AlertDescription>
-		</Alert>
+		<FitnessSaveStatusSection message={errorMessage} />
 	{/if}
 
 	{#if selectedWorkoutWithSpeeds}
-		<WorkoutDay
+		<WorkoutSection
 			date={data.date}
 			workout={selectedWorkoutWithSpeeds}
 			{audioManager}
@@ -149,6 +147,6 @@ function restoreCompletion(date: string, completed: boolean) {
 			onspeedchange={handleSpeedChange}
 		/>
 	{:else}
-		<FitnessRestDay />
+		<FitnessRestSection />
 	{/if}
 </TrackerPage>

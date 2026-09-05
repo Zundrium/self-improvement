@@ -3,7 +3,8 @@ import { onMount } from 'svelte';
 import { CircleCheck, CircleX, Droplet, Drumstick, Wheat } from '@lucide/svelte';
 import type { NutritionLogData, NutritionTotals } from '$lib/api-types';
 import MetricStat from '$lib/components/metrics/MetricStat.svelte';
-import TrackerProgressSummary from '$lib/components/tracker/TrackerProgressSummary.svelte';
+import TrackerProgressSection from '$lib/components/tracker/TrackerProgressSection.svelte';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { getTrackerColors } from '$lib/trackers/registry';
 import { eatingWindowState } from './eatingWindow';
 
@@ -37,7 +38,7 @@ function millisecondsUntilNextMinute(date: Date) {
 }
 </script>
 
-<section class="space-y-4 py-2" aria-label="Daily nutrition">
+<TrackerSection ariaLabel="Daily nutrition" class="py-2" contentClass="space-y-4">
 	{#if showEatingWindow && windowState}
 		<div
 			class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 {windowState.open
@@ -59,7 +60,7 @@ function millisecondsUntilNextMinute(date: Date) {
 	{/if}
 
 	<div class="grid items-center gap-6 lg:grid-cols-[1.35fr_1fr] lg:gap-12">
-		<TrackerProgressSummary
+		<TrackerProgressSection
 			value={consumed}
 			max={goal}
 			displayValue={consumed.toLocaleString()}
@@ -92,4 +93,4 @@ function millisecondsUntilNextMinute(date: Date) {
 			/>
 		</div>
 	</div>
-</section>
+</TrackerSection>

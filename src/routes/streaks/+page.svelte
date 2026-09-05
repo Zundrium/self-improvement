@@ -1,6 +1,6 @@
 <script lang="ts">
 import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
-import TrackerProgressSummary from '$lib/components/tracker/TrackerProgressSummary.svelte';
+import TrackerProgressSection from '$lib/components/tracker/TrackerProgressSection.svelte';
 import { trackerIcons } from '$lib/trackers/icons';
 import { getTrackerColors } from '$lib/trackers/registry';
 import type { PageProps } from './$types';
@@ -17,7 +17,7 @@ const nextDayMilestone = $derived(Math.max(5, Math.ceil((data.dayStreak.current 
 
 <TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-8">
 	<div class="space-y-2">
-		<TrackerProgressSummary
+		<TrackerProgressSection
 			value={data.dayStreak.current}
 			max={nextDayMilestone}
 			displayValue={data.dayStreak.current.toString()}

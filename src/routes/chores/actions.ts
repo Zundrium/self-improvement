@@ -1,22 +1,24 @@
-import type { ActionCandidate } from '$lib/actions/contracts';
+import { defineActionCandidate } from '$lib/actions/candidate';
+import { trackerDateIsLocalDate, trackerStateCondition } from '$lib/actions/conditions';
 import { CHORES_DURATION_SECONDS } from './chores';
 
-export const choresActionCandidates: ActionCandidate[] = [
-	{
+export const choresActionCandidates = [
+	defineActionCandidate({
 		id: 'chores.daily-reset',
 		trackerIds: ['chores'],
-		resolve(snapshot, environment) {
-			const chores = snapshot.trackers.chores;
-			if (chores.date !== environment.localDate || chores.completed) return null;
+		conditions: [
+			trackerDateIsLocalDate('chores'),
+			trackerStateCondition('chores', ({ completed }) => !completed)
+		],
+		resolve(snapshot) {
 			return {
-				id: `chores.daily-reset:${chores.date}`,
+				instanceId: snapshot.trackers.chores.date,
 				priority: 'activity',
 				score: 35,
-				icon: 'tracker',
 				title: 'Take 10 minutes to reset',
 				reason: `${CHORES_DURATION_SECONDS / 60} minutes for any quick chore`,
 				action: { type: 'navigate', href: '/chores' }
 			};
 		}
-	}
+	})
 ];
