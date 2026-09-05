@@ -35,6 +35,7 @@ public class AndroidBackupPlugin extends Plugin {
     private static final String LAST_FAILURE_AT = "last-failure-at";
     private static final String LAST_FAILURE_MESSAGE = "last-failure-message";
     private static final String EXPORT_CANCELLED = "EXPORT_CANCELLED";
+    private static final int MAX_BACKUP_BYTES = 25 * 1024 * 1024;
 
     @PluginMethod
     public void configure(PluginCall call) {
@@ -185,6 +186,9 @@ public class AndroidBackupPlugin extends Plugin {
 
     private BackupInput backupInput(PluginCall call) throws Exception {
         String contents = required(call, "contents");
+        if (contents.getBytes(StandardCharsets.UTF_8).length > MAX_BACKUP_BYTES) {
+            throw new BackupException("The backup file is too large.");
+        }
         Instant createdAt = Instant.parse(required(call, "createdAt"));
         return new BackupInput(contents, createdAt);
     }

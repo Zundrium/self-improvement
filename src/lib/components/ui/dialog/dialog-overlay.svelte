@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { Dialog as DialogPrimitive } from 'bits-ui';
-	import { cn } from '$lib/utils.js';
-	import { watchMotionState } from '$lib/motion/gsap';
+import { Dialog as DialogPrimitive } from 'bits-ui';
+import { cn } from '$lib/utils.js';
+import { watchMotionState } from '$lib/motion/gsap';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		...restProps
-	}: DialogPrimitive.OverlayProps = $props();
+let {
+	ref = $bindable(null),
+	class: className,
+	...restProps
+}: DialogPrimitive.OverlayProps = $props();
 
-	$effect(() => {
-		if (!ref) return;
-		return watchMotionState(ref, 'overlay');
-	});
+$effect(() => {
+	if (!ref) return;
+	return watchMotionState(ref, 'overlay');
+});
 </script>
 
 <DialogPrimitive.Overlay

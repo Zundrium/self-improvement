@@ -67,7 +67,10 @@ export const breathingPhaseScale: Action<HTMLElement, BreathingMotionOptions> = 
 	};
 };
 
-export const breathingHoldProgress: Action<HTMLElement, BreathingMotionOptions> = (node, options) => {
+export const breathingHoldProgress: Action<HTMLElement, BreathingMotionOptions> = (
+	node,
+	options
+) => {
 	let state = motionState(options);
 	setInitialHoldProgress(node, options);
 	return {
@@ -92,7 +95,9 @@ function setInitialScale(node: HTMLElement, options: BreathingMotionOptions) {
 function animatePhase(node: HTMLElement, options: BreathingMotionOptions) {
 	gsap.killTweensOf(node);
 	if (prefersReducedMotion())
-		return void gsap.set(node, { scale: options.running ? phaseScale(options.phase) : RESTING_SCALE });
+		return void gsap.set(node, {
+			scale: options.running ? phaseScale(options.phase) : RESTING_SCALE
+		});
 	if (!options.running) return resetSphere(node);
 	if (options.phase === 'hold') return;
 	gsap.to(node, {

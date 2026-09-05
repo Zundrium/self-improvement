@@ -3,9 +3,9 @@ import { untrack } from 'svelte';
 import { Plus } from '@lucide/svelte';
 import { apiRequest } from '$lib/api';
 import type { Reward } from '$lib/api-types';
-import GlimmerIcon from '$lib/components/glimmerIcon.svelte';
-import TrackerPage from '$lib/components/trackerPage.svelte';
-import TrackerSection from '$lib/components/trackerSection.svelte';
+import GlimmerIcon from '$lib/components/gamification/GlimmerIcon.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { Button } from '$lib/components/ui/button';
 import { Pressable } from '$lib/components/ui/pressable';
 import {
@@ -69,7 +69,7 @@ async function redeemSelectedReward() {
 			<strong class="text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl">
 				{glimmers.toLocaleString()}
 			</strong>
-			<span class="mt-1 text-sm text-(--text)/48">Glimmers</span>
+			<span class="mt-1 text-sm text-(--text-muted)">Glimmers</span>
 		</div>
 	</section>
 
@@ -107,7 +107,7 @@ async function redeemSelectedReward() {
 			{/each}
 			<Pressable
 				href="/shop/rewards/new"
-				class="aspect-square h-auto min-w-0 flex-col gap-3 rounded-3xl border-2 border-dotted border-(--text)/20 bg-transparent text-(--text)/48 hover:border-(--text)/32 hover:bg-transparent hover:text-(--text)"
+				class="aspect-square h-auto min-w-0 flex-col gap-3 rounded-3xl border-2 border-dotted border-(--text)/20 bg-transparent text-(--text-muted) hover:border-(--text)/32 hover:bg-transparent hover:text-(--text)"
 				aria-label="Add a new reward"
 			>
 				<Plus class="size-8" />
@@ -127,7 +127,7 @@ async function redeemSelectedReward() {
 				<div class="flex items-center gap-4">
 					<GlimmerIcon class="size-9" aria-hidden="true" />
 					<span class="min-w-0 flex-1 truncate text-sm">{redemption.name}</span>
-					<span class="flex items-center gap-1.5 text-xs text-(--text)/48 tabular-nums">
+					<span class="flex items-center gap-1.5 text-xs text-(--text-muted) tabular-nums">
 						<GlimmerIcon class="size-4" aria-hidden="true" />
 						-{redemption.price}
 					</span>

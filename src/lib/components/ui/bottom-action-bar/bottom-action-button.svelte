@@ -1,16 +1,13 @@
 <script lang="ts" module>
-	import type { ButtonProps } from '$lib/components/ui/button';
+import type { PressableProps } from '$lib/components/ui/pressable';
 
-	export type BottomActionTone = 'neutral' | 'primary' | 'secondary' | 'destructive';
-	export type BottomActionFormat = 'text' | 'icon';
-	export type BottomActionButtonProps = Omit<
-		ButtonProps,
-		'profile' | 'tone' | 'size' | 'format' | 'motionColors'
-	> & {
-		tone?: BottomActionTone;
-		format?: BottomActionFormat;
-		expand?: boolean;
-	};
+export type BottomActionTone = 'neutral' | 'primary' | 'secondary' | 'destructive';
+export type BottomActionFormat = 'text' | 'icon';
+export type BottomActionButtonProps = PressableProps & {
+	tone?: BottomActionTone;
+	format?: BottomActionFormat;
+	expand?: boolean;
+};
 </script>
 
 <script lang="ts">

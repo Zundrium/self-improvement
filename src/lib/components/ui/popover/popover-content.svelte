@@ -1,26 +1,26 @@
 <script lang="ts">
-	import { Popover as PopoverPrimitive } from 'bits-ui';
-	import { cn } from '$lib/utils.js';
-	import { watchMotionState } from '$lib/motion/gsap';
+import { Popover as PopoverPrimitive } from 'bits-ui';
+import { cn } from '$lib/utils.js';
+import { watchMotionState } from '$lib/motion/gsap';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		wrapperClass,
-		sideOffset = 6,
-		align = 'center',
-		portalProps,
-		children,
-		...restProps
-	}: Omit<PopoverPrimitive.ContentProps, 'child'> & {
-		portalProps?: PopoverPrimitive.PortalProps;
-		wrapperClass?: string;
-	} = $props();
+let {
+	ref = $bindable(null),
+	class: className,
+	wrapperClass,
+	sideOffset = 6,
+	align = 'center',
+	portalProps,
+	children,
+	...restProps
+}: Omit<PopoverPrimitive.ContentProps, 'child'> & {
+	portalProps?: PopoverPrimitive.PortalProps;
+	wrapperClass?: string;
+} = $props();
 
-	$effect(() => {
-		if (!ref) return;
-		return watchMotionState(ref, 'menu');
-	});
+$effect(() => {
+	if (!ref) return;
+	return watchMotionState(ref, 'menu');
+});
 </script>
 
 <PopoverPrimitive.Portal {...portalProps}>

@@ -1,49 +1,50 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { Activity, Ruler, Sparkles, Weight } from '@lucide/svelte';
-	import { apiRequest } from '$lib/api';
-	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import { Card } from '$lib/components/ui/card';
-	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
-	import { Input } from '$lib/components/ui/input';
-	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
-	import { toast } from '$lib/components/ui/toast';
+import { Form } from '$lib/components/ui/form';
+import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
+import { Activity, Ruler, Sparkles, Weight } from '@lucide/svelte';
+import { localOperation } from '$lib/api';
+import type { NutritionProfileInput } from '$lib/app/model';
+import { Alert, AlertDescription } from '$lib/components/ui/alert';
+import { Button } from '$lib/components/ui/button';
+import { Card } from '$lib/components/ui/card';
+import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
+import { Input } from '$lib/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
+import { toast } from '$lib/components/ui/toast';
 
-	let formError = $state('');
-	let gender = $state('');
-	let activityLevel = $state('sedentary');
-	const genderLabel = $derived(
-		gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Choose gender'
-	);
-	async function submit(event: SubmitEvent) {
-		event.preventDefault();
-		const form = new FormData(event.currentTarget as HTMLFormElement);
-		try {
-			await apiRequest('/api/app/profile', {
-				method: 'POST',
-				body: JSON.stringify(Object.fromEntries(form))
-			});
-			toast.success('Nutrition profile created.');
-			await goto(resolve('/nutrition/log/[date]', { date: 'today' }));
-		} catch (cause) {
-			formError = cause instanceof Error ? cause.message : 'Could not save your profile.';
-		}
+let formError = $state('');
+let gender = $state('');
+let activityLevel = $state('sedentary');
+const genderLabel = $derived(
+	gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Choose gender'
+);
+async function submit(event: SubmitEvent) {
+	event.preventDefault();
+	const form = new FormData(event.currentTarget as HTMLFormElement);
+	try {
+		await localOperation('saveNutritionProfile', {
+			mode: 'create',
+			profile: Object.fromEntries(form) as NutritionProfileInput
+		});
+		toast.success('Nutrition profile created.');
+		await goto(resolve('/nutrition/log/[date]', { date: 'today' }));
+	} catch (cause) {
+		formError = cause instanceof Error ? cause.message : 'Could not save your profile.';
 	}
+}
 
-	const activityLabel = $derived(
-		(
-			{
-				sedentary: 'Sedentary',
-				light: 'Light activity',
-				moderate: 'Moderate activity',
-				active: 'Active',
-				very_active: 'Very active'
-			} as Record<string, string>
-		)[activityLevel] ?? 'Choose activity'
-	);
+const activityLabel = $derived(
+	(
+		{
+			sedentary: 'Sedentary',
+			light: 'Light activity',
+			moderate: 'Moderate activity',
+			active: 'Active',
+			very_active: 'Very active'
+		} as Record<string, string>
+	)[activityLevel] ?? 'Choose activity'
+);
 </script>
 
 <svelte:head><title>Set your calorie goal · Self Improvement</title></svelte:head>
@@ -54,7 +55,7 @@
 			><Sparkles class="size-6" /></span
 		>
 		<h1 class="text-3xl font-medium tracking-[-0.05em]">Set your daily baseline</h1>
-		<p class="mt-2 text-(--text)/56">
+		<p class="mt-2 text-(--text-muted)">
 			A few details help estimate your maintenance calories with the Mifflin–St Jeor formula.
 		</p>
 	</div>

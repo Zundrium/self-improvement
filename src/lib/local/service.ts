@@ -1,60 +1,50 @@
-import { actionCandidates } from '$lib/actions/candidates';
+import type { ActionCandidate } from '$lib/actions/contracts';
 import { buildActionEnvironment } from '$lib/actions/environment';
 import { selectActionFeedItems } from '$lib/actions/selector';
 import type {
 	ActionFeedData,
-	AppBootstrapData,
-	BreathingData,
-	ChoresData,
 	DaySummaryData,
-	ExerciseData,
-	FitnessData,
-	GamificationData,
-	HappinessData,
-	MeditationData,
-	NutritionEntry,
+	LocalOperationMap,
 	NutritionEntryData,
 	NutritionFastingStatusData,
 	NutritionLogData,
-	PeriodData,
-	ProfileData,
-	Reward,
-	RewardsData,
-	ScreenTimeData,
-	SleepData,
-	SleepSettingsData,
-	StepsData,
-	StretchData,
-	TrackerSettingsDataMap
-} from '$lib/api-types';
+	ProfileData
+} from '$lib/app/model';
+import type { BreathingData } from '$lib/local/breathing/model';
+import type { ChoresData } from '$lib/local/chores/model';
+import type { ExerciseData, FitnessData } from '$lib/local/fitness/model';
+import type { Reward, RewardsData } from '$lib/local/gamification/model';
+import type { HappinessData } from '$lib/local/happiness/model';
+import type { MeditationData } from '$lib/local/meditation/model';
+import type { PeriodData } from '$lib/local/period/model';
+import type { ScreenTimeData } from '$lib/local/screen-time/model';
+import type { SleepData, SleepSettingsData } from '$lib/local/sleep/model';
+import type { StepsData } from '$lib/local/steps/model';
+import type { StretchData } from '$lib/local/stretch/model';
+import type { TrackerSettingsDataMap } from '$lib/trackers/model';
 import { dateKeysEndingAt, isValidDateKey, localDateForInstant } from '$lib/trackers/dates';
 import { trackerProgressDays } from '$lib/trackers/progress';
-import { type AppTrackerId, appTrackers, isAppTrackerId } from '$lib/trackers/registry';
-import { breathingDurationSeconds } from '../../routes/breathing/breathing';
-import { CHORES_DURATION_SECONDS } from '../../routes/chores/chores';
-import { defaultWorkoutSets } from '../../routes/fitness/fitness';
+import { appTrackers, isAppTrackerId } from '$lib/trackers/registry';
+import { breathingDurationSeconds } from './breathing/model';
+import { CHORES_DURATION_SECONDS } from './chores/model';
+import { defaultWorkoutSets } from './fitness/model';
 import {
 	type HappinessRating,
 	type HappinessReason,
 	happinessRatings,
-	reasonOptionsForRating
-} from '../../routes/happiness/happiness';
-import { cycleSummary, flowOptions, type MenstruationFlow } from '../../routes/period/period';
-import { summarizeUsage } from '../../routes/screen-time/screen-time';
-import { isStretchScheduled } from '../../routes/stretch/stretch';
+	isHappinessReasonForRating
+} from './happiness/model';
+import { type MenstruationFlow, cycleSummary, menstruationFlows } from './period/model';
+import { summarizeUsage } from './screen-time/model';
+import { isStretchScheduled } from './stretch/model';
 import { buildActionSnapshot } from './action-snapshot';
 import { recordAchievementUnlock } from './achievement-engine';
 import { notifyNewTrackerCompletions } from './completion-events';
 import { exercisePreferences, fitnessProgram, workoutDay } from './fitness-program';
 import { buildGamification } from './gamification';
-import {
-	createNutritionEntry,
-	estimatedTdee,
-	nutritionDateTime,
-	nutritionProfile,
-	replaceNutritionEntry,
-	sumEntries
-} from './nutrition';
+import * as nutritionMutations from './nutrition/mutations';
+import * as nutritionQueries from './nutrition/queries';
+import { estimatedTdee, nutritionProfile, sumEntries } from './nutrition';
 import { type LocalAppState, type LocalAppStore, type LocalDomain, localAppStore } from './state';
 import {
 	STRETCH_ACTIVITY_IDS,
@@ -73,16 +63,86 @@ export class LocalServiceError extends Error {
 }
 
 export class LocalAppService {
+	private reconciliationDate: string | undefined;
+
 	constructor(
 		private readonly store: LocalAppStore = localAppStore,
-		private readonly clock: () => Date = () => new Date()
+		private readonly clock: () => Date = () => new Date(),
+		private readonly actionCandidates: readonly ActionCandidate[] = []
 	) {}
+
+	resetCaches() {
+		this.reconciliationDate = undefined;
+	}
 
 	async request<T>(path: string, init?: RequestInit): Promise<T> {
 		const url = localUrl(path);
 		const method = (init?.method ?? 'GET').toUpperCase();
 		const body = requestBody(init?.body);
 		return this.dispatch(url, method, body) as Promise<T>;
+	}
+
+	async execute<K extends keyof LocalOperationMap>(
+		operation: K,
+		input: LocalOperationMap[K]['input']
+	): Promise<LocalOperationMap[K]['output']> {
+		let result: unknown;
+		if (operation === 'bootstrap') result = await this.bootstrap();
+		else if (operation === 'gamification') result = await this.gamification();
+		else if (operation === 'nutritionLog')
+			result = await nutritionQueries.log(
+				this.nutritionQueryContext(),
+				(input as LocalOperationMap['nutritionLog']['input']).date
+			);
+		else if (operation === 'nutritionEntry')
+			result = await nutritionQueries.entry(
+				this.nutritionQueryContext(),
+				(input as LocalOperationMap['nutritionEntry']['input']).entryId
+			);
+		else if (operation === 'nutritionFastingStatus')
+			result = await nutritionQueries.fasting(
+				this.nutritionQueryContext(),
+				(input as LocalOperationMap['nutritionFastingStatus']['input']).date
+			);
+		else if (operation === 'createNutritionEntry')
+			result = await nutritionMutations.createEntry(
+				this.nutritionMutationContext(),
+				input as unknown as Record<string, unknown>
+			);
+		else if (operation === 'updateNutritionEntry') {
+			const value = input as LocalOperationMap['updateNutritionEntry']['input'];
+			result = await nutritionMutations.updateEntry(
+				this.nutritionMutationContext(),
+				value.entryId,
+				value.entry as unknown as Record<string, unknown>
+			);
+		} else if (operation === 'deleteNutritionEntry')
+			result = await nutritionMutations.deleteEntry(
+				this.nutritionMutationContext(),
+				(input as LocalOperationMap['deleteNutritionEntry']['input']).entryId
+			);
+		else if (operation === 'markNutritionFasting')
+			result = await nutritionMutations.markFasting(
+				this.nutritionMutationContext(),
+				input as unknown as Record<string, unknown>
+			);
+		else if (operation === 'cancelNutritionFasting')
+			result = await nutritionMutations.cancelFasting(
+				this.nutritionMutationContext(),
+				(input as LocalOperationMap['cancelNutritionFasting']['input']).date
+			);
+		else if (operation === 'saveNutritionProfile') {
+			const value = input as LocalOperationMap['saveNutritionProfile']['input'];
+			result = await this.profile(
+				value.mode === 'create' ? 'POST' : 'PATCH',
+				value.profile as unknown as Record<string, unknown>
+			);
+		} else if (operation === 'unlockAchievements')
+			result = await this.unlockAchievements('POST', {
+				achievementIds: (input as LocalOperationMap['unlockAchievements']['input']).achievementIds
+			});
+		else throw new Error(`Unknown local operation: ${String(operation)}`);
+		return result as LocalOperationMap[K]['output'];
 	}
 
 	private dispatch(url: URL, method: string, body: Record<string, unknown>) {
@@ -134,26 +194,25 @@ export class LocalAppService {
 		throw new LocalServiceError(404, `Local route not found: ${url.pathname}`);
 	}
 
-	private bootstrap() {
-		let result: AppBootstrapData;
-		return this.store
-			.updateGamificationProjection(['gamification'], (state) => {
-				result = {
-					profile: state.user,
-					enabledTrackers: enabledTrackers(state),
-					gamification: buildGamification(state, this.clock())
-				};
-			})
-			.then(() => result);
+	private async bootstrap() {
+		const today = this.today();
+		const state =
+			this.reconciliationDate === today
+				? await this.store.readGamificationProjection()
+				: await this.store.updateGamificationProjection(['gamification'], (state) => {
+						buildGamification(state, this.clock());
+					});
+		this.reconciliationDate = today;
+		return {
+			profile: state.user,
+			enabledTrackers: enabledTrackers(state),
+			gamification: buildGamification(structuredClone(state), this.clock())
+		};
 	}
 
-	private gamification() {
-		let result: GamificationData;
-		return this.store
-			.updateGamificationProjection(['gamification'], (state) => {
-				result = buildGamification(state, this.clock());
-			})
-			.then(() => result);
+	private async gamification() {
+		const state = await this.store.readGamificationProjection();
+		return buildGamification(structuredClone(state), this.clock());
 	}
 
 	private async unlockAchievements(method: string, body: Record<string, unknown>) {
@@ -393,7 +452,8 @@ export class LocalAppService {
 		await this.updateWithCompletionNotification(['chores'], (state) => {
 			const completion = validChores(body, this.today(), this.clock());
 			session =
-				state.chores.sessions.find(({ localDate }) => localDate === completion.localDate) ?? completion;
+				state.chores.sessions.find(({ localDate }) => localDate === completion.localDate) ??
+				completion;
 			if (!state.chores.sessions.some(({ localDate }) => localDate === completion.localDate))
 				state.chores.sessions.push(completion);
 		});
@@ -464,74 +524,22 @@ export class LocalAppService {
 	}
 
 	private async nutritionLog(requestedDate: string): Promise<NutritionLogData> {
-		const state = await this.store.readDomains(['nutrition']);
-		if (!state.nutrition.profile) throw new LocalServiceError(409, 'Nutrition setup required.');
-		const today = this.today();
-		const date = requestedDate === 'today' ? today : requestedDate;
-		if (!validPastDate(date, today))
-			throw badRequest('Choose a valid date that is not in the future.');
-		const entries = state.nutrition.entries
-			.filter((entry) => entry.date === date)
-			.sort(byCreatedAt);
-		return {
-			date,
-			today,
-			entries,
-			totals: sumEntries(entries),
-			calorieGoal: state.nutrition.profile.dailyCalorieGoal,
-			eatingWindow: state.nutrition.profile.eatingWindowEnabled
-				? {
-						start: state.nutrition.profile.eatingWindowStart,
-						end: state.nutrition.profile.eatingWindowEnd
-					}
-				: null,
-			fasting: state.nutrition.fastingDates.includes(date),
-			trackedDates: trackedNutritionDates(state, date),
-			progressDays: trackerProgressDays(
-				date,
-				today,
-				(day) => sumEntries(state.nutrition.entries.filter((entry) => entry.date === day)).calories
-			)
-		};
+		return nutritionQueries.log(this.nutritionQueryContext(), requestedDate);
 	}
 
 	private async nutritionEntry(entryId: string, method: string, body: Record<string, unknown>) {
 		if (method === 'GET') return this.readNutritionEntry(entryId);
 		if (method === 'DELETE') return this.deleteNutritionEntry(entryId);
 		if (method !== 'PUT') throw methodNotAllowed();
-		if (!validPastDate(body.date, this.today())) throw badRequest('Choose a valid date.');
-		let entry: NutritionEntry | undefined;
-		await this.updateWithCompletionNotification(['nutrition'], (state) => {
-			const existing = state.nutrition.entries.find(({ id }) => id === entryId);
-			if (!existing) throw new LocalServiceError(404, 'Entry not found.');
-			if (state.nutrition.fastingDates.includes(String(body.date)))
-				throw new LocalServiceError(409, 'Cancel the full-day fast first.');
-			const updatedEntry = replaceNutritionEntry(existing, body);
-			entry = updatedEntry;
-			state.nutrition.entries = state.nutrition.entries.map((item) =>
-				item.id === entryId ? updatedEntry : item
-			);
-		});
-		return { entry: requiredResult(entry, 'Nutrition entry was not updated.') };
+		return nutritionMutations.updateEntry(this.nutritionMutationContext(), entryId, body);
 	}
 
 	private async readNutritionEntry(entryId: string): Promise<NutritionEntryData> {
-		const entry = (await this.store.readDomains(['nutrition'])).nutrition.entries.find(
-			({ id }) => id === entryId
-		);
-		if (!entry) throw new LocalServiceError(404, 'Entry not found.');
-		return { entry };
+		return nutritionQueries.entry(this.nutritionQueryContext(), entryId);
 	}
 
 	private async deleteNutritionEntry(entryId: string) {
-		let date = '';
-		await this.store.updateDomains(['nutrition'], (state) => {
-			const entry = state.nutrition.entries.find(({ id }) => id === entryId);
-			if (!entry) throw new LocalServiceError(404, 'Entry not found.');
-			date = entry.date;
-			state.nutrition.entries = state.nutrition.entries.filter(({ id }) => id !== entryId);
-		});
-		return { date };
+		return nutritionMutations.deleteEntry(this.nutritionMutationContext(), entryId);
 	}
 
 	private async fasting(date: string | undefined, method: string, body: Record<string, unknown>) {
@@ -542,53 +550,36 @@ export class LocalAppService {
 	}
 
 	private async fastingStatus(date: string): Promise<NutritionFastingStatusData> {
-		if (!validPastDate(date, this.today())) throw badRequest('Choose a valid date.');
-		return {
-			date,
-			fasting: (await this.store.readDomains(['nutrition'])).nutrition.fastingDates.includes(date)
-		};
+		return nutritionQueries.fasting(this.nutritionQueryContext(), date);
 	}
 
 	private async cancelFasting(date: string) {
-		await this.store.updateDomains(['nutrition'], (state) => {
-			if (!state.nutrition.fastingDates.includes(date))
-				throw new LocalServiceError(404, 'Fasting day not found.');
-			state.nutrition.fastingDates = state.nutrition.fastingDates.filter((value) => value !== date);
-		});
-		return { date };
+		return nutritionMutations.cancelFasting(this.nutritionMutationContext(), date);
 	}
 
 	private async markFasting(body: Record<string, unknown>) {
-		const dates = consecutiveDates(body.date, body.days, this.today());
-		await this.updateWithCompletionNotification(['nutrition'], (state) => {
-			if (state.nutrition.entries.some((entry) => dates.includes(entry.date)))
-				throw new LocalServiceError(409, 'A fasting day already has a meal.');
-			if (dates.some((date) => state.nutrition.fastingDates.includes(date)))
-				throw new LocalServiceError(409, 'A day is already marked as fasting.');
-			state.nutrition.fastingDates = [...state.nutrition.fastingDates, ...dates].sort();
-		});
-		return { dates };
+		return nutritionMutations.markFasting(this.nutritionMutationContext(), body);
 	}
 
 	private async createNutritionEntry(body: Record<string, unknown>) {
-		const date = String(body.date ?? '');
-		if (!validPastDate(date, this.today())) throw badRequest('Choose a valid date.');
-		const meals = body.meals;
-		if (!Array.isArray(meals)) throw badRequest('Add at least one meal.');
-		let entry: NutritionEntry | undefined;
-		await this.updateWithCompletionNotification(['nutrition'], (state) => {
-			if (state.nutrition.fastingDates.includes(date))
-				throw new LocalServiceError(409, 'Cancel the full-day fast first.');
-			entry = createNutritionEntry({
-				date,
-				name: body.name,
-				notes: body.notes,
-				createdAt: nutritionDateTime(date, String(body.time), Number(body.timeZoneOffset)),
-				meals
-			});
-			state.nutrition.entries.push(entry);
-		});
-		return { entry: requiredResult(entry, 'Nutrition entry was not created.') };
+		return nutritionMutations.createEntry(this.nutritionMutationContext(), body);
+	}
+
+	private nutritionMutationContext(): nutritionMutations.NutritionMutationContext {
+		return {
+			today: this.today(),
+			fail: (status, message) => new LocalServiceError(status, message),
+			update: (mutator) => this.updateWithCompletionNotification(['nutrition'], mutator),
+			updatePlain: (mutator) => this.store.updateDomains(['nutrition'], mutator)
+		};
+	}
+
+	private nutritionQueryContext(): nutritionQueries.NutritionQueryContext {
+		return {
+			store: this.store,
+			today: this.today(),
+			fail: (status, message) => new LocalServiceError(status, message)
+		};
 	}
 
 	private async rewards(): Promise<RewardsData> {
@@ -672,7 +663,7 @@ export class LocalAppService {
 		return {
 			date,
 			daySummary: summary,
-			items: selectActionFeedItems(actionCandidates, snapshot, environment)
+			items: selectActionFeedItems(this.actionCandidates, snapshot, environment)
 		};
 	}
 
@@ -986,7 +977,7 @@ function periodData(state: LocalAppState, date: string, today: string): PeriodDa
 		markedDates,
 		progressDays: trackerProgressDays(date, today, (day) => {
 			const flow = entries.find(({ localDate }) => localDate === day)?.flow;
-			return flow ? flowOptions.findIndex(({ value }) => value === flow) + 1 : null;
+			return flow ? menstruationFlows.indexOf(flow) + 1 : null;
 		}),
 		recentEntries: entries.slice(0, 10).map(({ localDate, flow }) => ({ localDate, flow })),
 		cycle: cycleSummary(markedDates, today, state.period.fallbackCycleDays)
@@ -1153,8 +1144,7 @@ function validHappiness(
 		: [];
 	if (!validPastDate(localDate, today) || !happinessRatings.includes(rating) || !reasons.length)
 		throw badRequest('Invalid happiness entry.');
-	const allowed = new Set<string>(reasonOptionsForRating(rating).map(({ value }) => value));
-	if (reasons.some((reason) => !allowed.has(reason)))
+	if (reasons.some((reason) => !isHappinessReasonForRating(reason, rating)))
 		throw badRequest('Choose reasons that match your happiness level.');
 	return { localDate, rating, reasons, updatedAt: now.toISOString() };
 }
@@ -1170,7 +1160,7 @@ function validPeriod(
 	const notes = String(body.notes ?? '').trim();
 	if (
 		!validPastDate(localDate, today) ||
-		!flowOptions.some(({ value }) => value === flow) ||
+		!menstruationFlows.includes(flow as MenstruationFlow) ||
 		notes.length > 1_000
 	)
 		throw badRequest('Invalid period entry.');
@@ -1190,25 +1180,6 @@ function glimmers(state: LocalAppState, now: Date) {
 	const score = state.gamification.awards.reduce((total, award) => total + award.points, 0);
 	const spent = state.redemptions.reduce((total, reward) => total + reward.price, 0);
 	return Math.max(0, score - spent);
-}
-
-function consecutiveDates(value: unknown, countValue: unknown, today: string) {
-	const start = String(value ?? '');
-	const count = Number(countValue);
-	if (!validPastDate(start, today) || !Number.isInteger(count) || count < 1 || count > 30)
-		throw badRequest('Choose between 1 and 30 valid fasting days.');
-	const dates = Array.from({ length: count }, (_, offset) => shiftDate(start, offset));
-	const finalDate = dates.at(-1);
-	if (!finalDate || finalDate > today) throw badRequest('Fasting days cannot be in the future.');
-	return dates;
-}
-
-function trackedNutritionDates(state: LocalAppState, date: string) {
-	const month = date.slice(0, 7);
-	return unique([
-		...state.nutrition.entries.map(({ date }) => date),
-		...state.nutrition.fastingDates
-	]).filter((date) => date.startsWith(month));
 }
 
 function knownApps(state: LocalAppState) {
@@ -1384,8 +1355,7 @@ function happinessRatingSetting(value: unknown, current: HappinessRating) {
 function periodFlowSetting(value: unknown, current: MenstruationFlow) {
 	if (value === undefined) return current;
 	const flow = String(value) as MenstruationFlow;
-	if (!flowOptions.some((option) => option.value === flow))
-		throw badRequest('Choose a valid flow.');
+	if (!menstruationFlows.includes(flow)) throw badRequest('Choose a valid flow.');
 	return flow;
 }
 
@@ -1411,18 +1381,8 @@ function unique<T>(values: T[]) {
 	return [...new Set(values)];
 }
 
-function byCreatedAt(left: NutritionEntry, right: NutritionEntry) {
-	return left.createdAt.localeCompare(right.createdAt);
-}
-
 function byLocalDateDescending(left: { localDate: string }, right: { localDate: string }) {
 	return right.localDate.localeCompare(left.localDate);
-}
-
-function shiftDate(value: string, days: number) {
-	const date = new Date(`${value}T00:00:00Z`);
-	date.setUTCDate(date.getUTCDate() + days);
-	return date.toISOString().slice(0, 10);
 }
 
 function localTimeZone() {
@@ -1441,5 +1401,3 @@ function badRequest(message: string) {
 function methodNotAllowed() {
 	return new LocalServiceError(405, 'Method not allowed.');
 }
-
-export const localAppService = new LocalAppService();

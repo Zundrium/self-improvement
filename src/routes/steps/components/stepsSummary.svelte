@@ -1,14 +1,14 @@
 <script lang="ts">
-	import TrackerProgressSummary from '$lib/components/trackerProgressSummary.svelte';
-	import { getTrackerColors } from '$lib/trackers/registry';
+import TrackerProgressSummary from '$lib/components/tracker/TrackerProgressSummary.svelte';
+import { getTrackerColors } from '$lib/trackers/registry';
 
-	type Props = {
-		steps: number;
-		goal: number;
-	};
+type Props = {
+	steps: number;
+	goal: number;
+};
 
-	let { steps, goal }: Props = $props();
-	const colors = getTrackerColors('steps');
+let { steps, goal }: Props = $props();
+const colors = getTrackerColors('steps');
 </script>
 
 <TrackerProgressSummary

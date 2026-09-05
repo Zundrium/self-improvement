@@ -4,7 +4,9 @@ import {
 	BACKUP_INTERVAL_MS,
 	UnsupportedBackupVersionError,
 	backupFileName,
+	BACKUP_MAX_BYTES,
 	isAutomaticBackupDue,
+	serializeBackupEnvelope,
 	validateBackupEnvelope
 } from './backup';
 import { createNutritionEntry } from './nutrition';
@@ -21,6 +23,17 @@ function envelope() {
 }
 
 describe('backup envelope', () => {
+	it('refuses to serialize a backup larger than the restore limit', () => {
+		const backup = envelope();
+		backup.state.nutrition.entries = [
+			createNutritionEntry({
+				date: '2026-03-21',
+				meals: [{ name: 'Meal', ingredients: [{ name: 'Food', calories: 1 }] }]
+			})
+		];
+		backup.state.nutrition.entries[0].notes = 'x'.repeat(BACKUP_MAX_BYTES);
+		expect(() => serializeBackupEnvelope(backup)).toThrow('too large to export or restore');
+	});
 	it('validates the v2 envelope and nested relational export model', () => {
 		expect(validateBackupEnvelope(envelope())).toEqual(envelope());
 		expect(() =>
@@ -52,6 +65,20 @@ describe('backup envelope', () => {
 			thumbnail: '',
 			meals: [{ imageDataUrl }]
 		});
+	});
+
+	it('rejects duplicate nested identities and unresolved media references', () => {
+		const backup = envelope();
+		const entry = createNutritionEntry({
+			date: '2026-03-21',
+			meals: [{ name: 'Lunch', ingredients: [{ name: 'Rice', calories: 1 }] }]
+		});
+		backup.state.nutrition.entries = [entry, structuredClone(entry)];
+		expect(() => validateBackupEnvelope(backup)).toThrow('Duplicate nutrition entry identity');
+
+		backup.state.nutrition.entries = [entry];
+		entry.meals[0].imageDataUrl = `stored-media:meal-${entry.meals[0].id}`;
+		expect(() => validateBackupEnvelope(backup)).toThrow('Invalid nutrition media');
 	});
 
 	it('uses a deterministic timestamped JSON file name', () => {

@@ -1,4 +1,4 @@
-import type { ExercisePreference, WorkoutProgram } from '../../routes/fitness/fitness';
+import type { ExercisePreference, WorkoutProgram } from './fitness/model';
 
 const baseProgram = {
 	id: 1,

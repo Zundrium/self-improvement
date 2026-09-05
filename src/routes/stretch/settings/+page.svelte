@@ -1,5 +1,5 @@
 <script lang="ts">
-import TrackerPage from '$lib/components/trackerPage.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import StretchSettings from './stretchSettings.svelte';
 import type { PageProps } from './$types';
 

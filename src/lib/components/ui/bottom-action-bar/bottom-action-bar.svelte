@@ -1,23 +1,17 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
-	import { useBottomActionBarState } from '../../bottomActionBarState.svelte';
-
-	type Props = {
-		children: Snippet;
-		contentClass?: string;
-		mobileOnly?: boolean;
-	};
-
-	let {
-		children,
-		contentClass = 'max-w-(--app-compact-max-width)',
-		mobileOnly = true
-	}: Props = $props();
-	const state = useBottomActionBarState();
-	const id = Symbol('bottom-action-bar');
-
-	$effect(() => {
-		state.show({ id, children, contentClass, mobileOnly });
-		return () => state.hide(id);
-	});
+import type { Snippet } from 'svelte';
+import { cn } from '$lib/utils';
+let {
+	children,
+	contentClass = 'max-w-(--app-compact-max-width)',
+	mobileOnly = true
+}: {
+	children: Snippet;
+	contentClass?: string;
+	mobileOnly?: boolean;
+} = $props();
 </script>
+
+<div class={cn('app-gutter shrink-0 bg-(--bg) py-(--bottom-action-padding-block)', mobileOnly && 'sm:hidden')} data-bottom-action-bar>
+	<div class={cn('mx-auto w-full', contentClass)}>{@render children()}</div>
+</div>

@@ -5,8 +5,6 @@ export const flowOptions = [
 	{ value: 'heavy', label: 'Heavy' }
 ] as const;
 
-export type MenstruationFlow = (typeof flowOptions)[number]['value'];
-
 export function periodInputFromForm(form: FormData) {
 	const localDate = String(form.get('localDate') ?? '');
 	const flow = String(form.get('flow') ?? '');
@@ -23,60 +21,10 @@ export function isValidDate(value: string) {
 	return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
-export function isMenstruationFlow(value: string): value is MenstruationFlow {
-	return flowOptions.some((option) => option.value === value);
-}
-
 export function flowLabel(flow: MenstruationFlow) {
 	return flowOptions.find((option) => option.value === flow)?.label ?? flow;
 }
 
-export function cycleSummary(localDates: string[], today?: string, fallbackCycleDays = 28) {
-	const starts = cycleStarts(localDates);
-	if (!starts.length) return null;
-	const lengths = cycleLengths(starts);
-	const averageCycleDays = average(lengths) ?? fallbackCycleDays;
-	const lastPeriodStarted = starts.at(-1);
-	if (!lastPeriodStarted) return null;
-	return {
-		lastPeriodStarted,
-		averageCycleDays,
-		averageFromHistory: lengths.length > 0,
-		estimatedNextPeriod: nextPeriod(lastPeriodStarted, averageCycleDays, today)
-	};
-}
+import { isMenstruationFlow, type MenstruationFlow } from '$lib/local/period/model';
 
-function cycleStarts(localDates: string[]) {
-	const dates = [...new Set(localDates)].sort();
-	return dates.filter((date, index) => index === 0 || daysBetween(dates[index - 1], date) > 1);
-}
-
-function cycleLengths(starts: string[]) {
-	return starts
-		.slice(1)
-		.map((date, index) => daysBetween(starts[index], date))
-		.filter((days) => days >= 15 && days <= 60);
-}
-
-function average(values: number[]) {
-	if (!values.length) return null;
-	return Math.round(values.reduce((total, value) => total + value, 0) / values.length);
-}
-
-function daysBetween(start: string, end: string) {
-	return Math.round(
-		(Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000
-	);
-}
-
-function nextPeriod(lastStart: string, cycleDays: number, today?: string) {
-	let estimate = addDays(lastStart, cycleDays);
-	while (today && estimate < today) estimate = addDays(estimate, cycleDays);
-	return estimate;
-}
-
-function addDays(date: string, days: number) {
-	const result = new Date(`${date}T00:00:00Z`);
-	result.setUTCDate(result.getUTCDate() + days);
-	return result.toISOString().slice(0, 10);
-}
+export { cycleSummary, type MenstruationFlow } from '$lib/local/period/model';

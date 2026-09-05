@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { Check, ChevronLeft, ChevronRight } from '@lucide/svelte';
-	import { Calendar as CalendarPrimitive } from 'bits-ui';
-	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
+import { Check, ChevronLeft, ChevronRight } from '@lucide/svelte';
+import { Calendar as CalendarPrimitive } from 'bits-ui';
+import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
 
-	type Props = WithoutChildrenOrChild<CalendarPrimitive.RootProps> & {
-		fluid?: boolean;
-		markedDates?: string[];
-	};
+type Props = WithoutChildrenOrChild<CalendarPrimitive.RootProps> & {
+	fluid?: boolean;
+	markedDates?: string[];
+};
 
-	let {
-		ref = $bindable(null),
-		value = $bindable(),
-		placeholder = $bindable(),
-		class: className,
-		weekdayFormat = 'short',
-		locale = 'en-US',
-		fluid = false,
-		markedDates = [],
-		...restProps
-	}: Props = $props();
-	const markedDateKeys = $derived(new Set(markedDates));
+let {
+	ref = $bindable(null),
+	value = $bindable(),
+	placeholder = $bindable(),
+	class: className,
+	weekdayFormat = 'short',
+	locale = 'en-US',
+	fluid = false,
+	markedDates = [],
+	...restProps
+}: Props = $props();
+const markedDateKeys = $derived(new Set(markedDates));
 </script>
 
 <CalendarPrimitive.Root
@@ -54,7 +54,7 @@
 							{#each weekdays as weekday (weekday)}
 								<CalendarPrimitive.HeadCell
 									class={cn(
-										'pb-1 text-xs font-normal tracking-[-0.3px] text-(--text)/40',
+										'pb-1 text-xs font-normal tracking-[-0.3px] text-(--text-muted)',
 										fluid ? 'w-full' : 'w-9'
 									)}
 								>

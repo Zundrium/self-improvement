@@ -1,102 +1,134 @@
 <script lang="ts">
-	import { onDestroy, untrack } from 'svelte';
-	import { BrushCleaning, Check, LoaderCircle, Pause, Play, RotateCcw, Square } from '@lucide/svelte';
-	import {
-		BottomActionBar,
-		BottomActionButton,
-		BottomActionGroup
-	} from '$lib/components/ui/bottom-action-bar';
-	import { Button } from '$lib/components/ui/button';
-	import { spin } from '$lib/motion/gsap';
-	import { getTrackerColors } from '$lib/trackers/registry';
-	import {
-		CHORES_DURATION_SECONDS,
-		formatTimer,
-		type ChoresCompletion,
-		type SaveState
-	} from '../chores';
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import { onDestroy, onMount, untrack } from 'svelte';
+import { BrushCleaning, Check, LoaderCircle, Pause, Play, RotateCcw, Square } from '@lucide/svelte';
+import { BottomActionButton, BottomActionGroup } from '$lib/components/ui/bottom-action-bar';
+import { Button } from '$lib/components/ui/button';
+import { spin } from '$lib/motion/gsap';
+import { getTrackerColors } from '$lib/trackers/registry';
+import {
+	CHORES_DURATION_SECONDS,
+	formatTimer,
+	type ChoresCompletion,
+	type SaveState
+} from '../chores';
+import { clearPausedSession, loadPausedSession, savePausedSession } from '$lib/routines/session';
 
-	type TimerStatus = 'idle' | 'running' | 'paused' | 'completed';
-	type Props = {
+type TimerStatus = 'idle' | 'running' | 'paused' | 'completed';
+type Props = {
+	localDate: string;
+	complete: boolean;
+	interactive: boolean;
+	saveState: SaveState;
+	oncomplete: (completion: ChoresCompletion) => void;
+	onretry: () => void;
+};
+
+let { localDate, complete, interactive, saveState, oncomplete, onretry }: Props = $props();
+const colors = getTrackerColors('chores');
+let status = $state<TimerStatus>(untrack(() => (complete ? 'completed' : 'idle')));
+let remainingSeconds = $state(untrack(() => (complete ? 0 : CHORES_DURATION_SECONDS)));
+let timerId: number | undefined;
+let deadline = 0;
+let startedAt = 0;
+
+const timerLabel = $derived(getTimerLabel(status));
+
+onDestroy(clearTimer);
+onMount(() => {
+	const recovered = loadPausedSession<{
 		localDate: string;
-		complete: boolean;
-		interactive: boolean;
-		saveState: SaveState;
-		oncomplete: (completion: ChoresCompletion) => void;
-		onretry: () => void;
-	};
-
-	let { localDate, complete, interactive, saveState, oncomplete, onretry }: Props = $props();
-	const colors = getTrackerColors('chores');
-	let status = $state<TimerStatus>(untrack(() => (complete ? 'completed' : 'idle')));
-	let remainingSeconds = $state(untrack(() => (complete ? 0 : CHORES_DURATION_SECONDS)));
-	let timerId: number | undefined;
-	let deadline = 0;
-	let startedAt = 0;
-
-	const timerLabel = $derived(getTimerLabel(status));
-
-	onDestroy(clearTimer);
-
-	function handlePrimaryAction() {
-		if (status === 'completed') resetTimer();
-		if (status === 'running') pauseTimer();
-		else startTimer();
-	}
-
-	function startTimer() {
-		if (status === 'idle') startedAt = Date.now();
-		deadline = Date.now() + remainingSeconds * 1000;
-		status = 'running';
-		timerId = window.setInterval(updateTimer, 250);
-	}
-
-	function pauseTimer() {
-		updateRemainingTime();
-		if (remainingSeconds === 0) return finishTimer();
-		clearTimer();
+		remainingSeconds: number;
+		startedAt: number;
+	}>('chores-session', isChoresSnapshot);
+	if (recovered?.localDate === localDate && status === 'idle') {
+		remainingSeconds = recovered.remainingSeconds;
+		startedAt = recovered.startedAt;
 		status = 'paused';
 	}
+	const onVisibilityChange = () => {
+		if (document.visibilityState === 'hidden' && status === 'running') pauseTimer(false);
+	};
+	document.addEventListener('visibilitychange', onVisibilityChange);
+	return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+});
 
-	function updateTimer() {
-		updateRemainingTime();
-		if (remainingSeconds === 0) finishTimer();
-	}
+function handlePrimaryAction() {
+	if (status === 'completed') resetTimer();
+	if (status === 'running') pauseTimer();
+	else startTimer();
+}
 
-	function updateRemainingTime() {
-		remainingSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-	}
+function startTimer() {
+	clearTimer();
+	if (status === 'idle') startedAt = Date.now();
+	deadline = Date.now() + remainingSeconds * 1000;
+	status = 'running';
+	timerId = window.setInterval(updateTimer, 250);
+}
 
-	function finishTimer() {
-		clearTimer();
-		status = 'completed';
-		oncomplete({ localDate, startedAt });
-	}
+function pauseTimer(allowCompletion = true) {
+	updateRemainingTime();
+	if (remainingSeconds === 0 && allowCompletion) return finishTimer();
+	clearTimer();
+	status = 'paused';
+	savePausedSession('chores-session', { localDate, remainingSeconds, startedAt });
+}
 
-	function stopTimer() {
-		clearTimer();
-		status = 'idle';
-		remainingSeconds = CHORES_DURATION_SECONDS;
-		startedAt = 0;
-	}
+function updateTimer() {
+	updateRemainingTime();
+	if (remainingSeconds === 0) finishTimer();
+}
 
-	function resetTimer() {
-		status = 'idle';
-		remainingSeconds = CHORES_DURATION_SECONDS;
-		startedAt = 0;
-	}
+function updateRemainingTime() {
+	remainingSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+}
 
-	function clearTimer() {
-		if (timerId) window.clearInterval(timerId);
-		timerId = undefined;
-	}
+function finishTimer() {
+	clearTimer();
+	status = 'completed';
+	clearPausedSession('chores-session');
+	oncomplete({ localDate, startedAt });
+}
 
-	function getTimerLabel(timerStatus: TimerStatus) {
-		if (timerStatus === 'running') return 'Pause timer';
-		if (timerStatus === 'paused') return 'Resume timer';
-		if (timerStatus === 'completed') return 'Start another 10 minutes';
-		return 'Start';
-	}
+function stopTimer() {
+	clearTimer();
+	status = 'idle';
+	remainingSeconds = CHORES_DURATION_SECONDS;
+	startedAt = 0;
+	clearPausedSession('chores-session');
+}
+
+function resetTimer() {
+	status = 'idle';
+	remainingSeconds = CHORES_DURATION_SECONDS;
+	startedAt = 0;
+	clearPausedSession('chores-session');
+}
+
+function clearTimer() {
+	if (timerId) window.clearInterval(timerId);
+	timerId = undefined;
+}
+
+function getTimerLabel(timerStatus: TimerStatus) {
+	if (timerStatus === 'running') return 'Pause timer';
+	if (timerStatus === 'paused') return 'Resume timer';
+	if (timerStatus === 'completed') return 'Start another 10 minutes';
+	return 'Start';
+}
+
+function isChoresSnapshot(
+	value: unknown
+): value is { localDate: string; remainingSeconds: number; startedAt: number } {
+	if (!value || typeof value !== 'object') return false;
+	const snapshot = value as Record<string, unknown>;
+	return (
+		typeof snapshot.localDate === 'string' &&
+		Number.isFinite(snapshot.remainingSeconds) &&
+		Number.isFinite(snapshot.startedAt)
+	);
+}
 </script>
 
 {#snippet actions()}
@@ -128,7 +160,7 @@
 		<p class="text-6xl font-semibold tracking-[-0.06em] tabular-nums sm:text-7xl">
 			{formatTimer(remainingSeconds)}
 		</p>
-		<div class="min-h-5 text-sm text-(--text)/56" aria-live="polite">
+		<div class="min-h-5 text-sm text-(--text-muted)" aria-live="polite">
 			{#if status === 'paused'}
 				Timer paused
 			{:else if saveState === 'saving'}
@@ -155,6 +187,6 @@
 	</div>
 </section>
 
-<BottomActionBar>
+<PageActionBar>
 	{@render actions()}
-</BottomActionBar>
+</PageActionBar>

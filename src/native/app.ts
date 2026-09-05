@@ -20,6 +20,8 @@ export async function getAppVersion() {
 
 export async function listenForResume(listener: () => void | Promise<void>) {
 	requireNativeAndroid();
-	const handle = await App.addListener('resume', () => void listener());
+	const handle = await App.addListener('resume', () => {
+		void Promise.resolve(listener()).catch(() => undefined);
+	});
 	return () => void handle.remove();
 }

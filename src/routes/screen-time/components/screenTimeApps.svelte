@@ -1,43 +1,43 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import { apiRequest } from '$lib/api';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { toast } from '$lib/components/ui/toast';
-	import { androidSyncCoordinator } from '$native/android-data';
-	import { isNativeAndroid } from '$native/platform';
-	import ScreenTimeAppItem from './screenTimeAppItem.svelte';
+import { invalidateAll } from '$app/navigation';
+import { apiRequest } from '$lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+import { toast } from '$lib/components/ui/toast';
+import { androidSyncCoordinator } from '$native/android-data';
+import { isNativeAndroid } from '$native/platform';
+import ScreenTimeAppItem from './screenTimeAppItem.svelte';
 
-	type App = { package: string; name: string; icon?: string };
-	type KnownApp = App & { tracked: boolean };
-	type AppUsage = App & { minutes: number };
-	type Props = { apps: AppUsage[]; knownApps: KnownApp[] };
+type App = { package: string; name: string; icon?: string };
+type KnownApp = App & { tracked: boolean };
+type AppUsage = App & { minutes: number };
+type Props = { apps: AppUsage[]; knownApps: KnownApp[] };
 
-	let { apps, knownApps }: Props = $props();
-	let pendingPackage = $state<string>();
-	const trackedApps = $derived(knownApps.filter((app) => app.tracked));
-	const untrackedApps = $derived(knownApps.filter((app) => !app.tracked));
-	const usageByPackage = $derived(new Map(apps.map((app) => [app.package, app.minutes])));
+let { apps, knownApps }: Props = $props();
+let pendingPackage = $state<string>();
+const trackedApps = $derived(knownApps.filter((app) => app.tracked));
+const untrackedApps = $derived(knownApps.filter((app) => !app.tracked));
+const usageByPackage = $derived(new Map(apps.map((app) => [app.package, app.minutes])));
 
-	async function setTracked(app: App, tracked: boolean) {
-		pendingPackage = app.package;
-		try {
-			await saveTrackedChoice(app.package, tracked);
-			if (isNativeAndroid()) await androidSyncCoordinator.sync(['sleep']);
-			await invalidateAll();
-			toast.success(tracked ? `${app.name} is now tracked.` : `${app.name} is no longer tracked.`);
-		} catch (cause) {
-			toast.error(cause instanceof Error ? cause.message : 'Could not update tracked apps.');
-		} finally {
-			pendingPackage = undefined;
-		}
+async function setTracked(app: App, tracked: boolean) {
+	pendingPackage = app.package;
+	try {
+		await saveTrackedChoice(app.package, tracked);
+		if (isNativeAndroid()) await androidSyncCoordinator.sync(['sleep']);
+		await invalidateAll();
+		toast.success(tracked ? `${app.name} is now tracked.` : `${app.name} is no longer tracked.`);
+	} catch (cause) {
+		toast.error(cause instanceof Error ? cause.message : 'Could not update tracked apps.');
+	} finally {
+		pendingPackage = undefined;
 	}
+}
 
-	function saveTrackedChoice(packageName: string, tracked: boolean) {
-		return apiRequest('/api/app/screen-time', {
-			method: 'PATCH',
-			body: JSON.stringify({ package: packageName, tracked })
-		});
-	}
+function saveTrackedChoice(packageName: string, tracked: boolean) {
+	return apiRequest('/api/app/screen-time', {
+		method: 'PATCH',
+		body: JSON.stringify({ package: packageName, tracked })
+	});
+}
 </script>
 
 <Card>
@@ -56,7 +56,7 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="text-sm leading-6 text-(--text)/56">Add apps below to begin measuring screen time.</p>
+			<p class="text-sm leading-6 text-(--text-muted)">Add apps below to begin measuring screen time.</p>
 		{/if}
 	</CardContent>
 </Card>
@@ -76,7 +76,7 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="text-sm leading-6 text-(--text)/56">No untracked apps were found.</p>
+			<p class="text-sm leading-6 text-(--text-muted)">No untracked apps were found.</p>
 		{/if}
 	</CardContent>
 </Card>

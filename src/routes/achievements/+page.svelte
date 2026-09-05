@@ -1,107 +1,107 @@
 <script lang="ts">
-	import { CircleCheck, LockKeyhole } from '@lucide/svelte';
-	import type { AchievementCategory, AchievementSummary } from '$lib/api-types';
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import TrackerSection from '$lib/components/trackerSection.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Progress } from '$lib/components/ui/progress';
-	import { achievementIcon } from '$lib/local/achievement-icons';
-	import { getTrackerColors, trackers } from '$lib/trackers/registry';
-	import type { PageProps } from './$types';
+import { CircleCheck, LockKeyhole } from '@lucide/svelte';
+import type { AchievementCategory, AchievementSummary } from '$lib/api-types';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
+import { Button } from '$lib/components/ui/button';
+import { Progress } from '$lib/components/ui/progress';
+import { achievementIcon } from '$lib/gamification/icons';
+import { getTrackerColors, trackers } from '$lib/trackers/registry';
+import type { PageProps } from './$types';
 
-	type AchievementFilter = 'all' | 'unlocked' | 'progress';
-	type AchievementSection = {
-		title: string;
-		description: string;
-		categories: AchievementCategory[];
-	};
+type AchievementFilter = 'all' | 'unlocked' | 'progress';
+type AchievementSection = {
+	title: string;
+	description: string;
+	categories: AchievementCategory[];
+};
 
-	let { data }: PageProps = $props();
-	const PAGE_SIZE = 24;
-	let filter = $state<AchievementFilter>('all');
-	let visibleCount = $state(PAGE_SIZE);
-	const colors = getTrackerColors('achievements');
-	const filters = [
-		{ id: 'all', label: 'All' },
-		{ id: 'unlocked', label: 'Unlocked' },
-		{ id: 'progress', label: 'In progress' }
-	] as const;
-	const sectionDefinitions: AchievementSection[] = [
-		{
-			title: 'Overall',
-			description: 'Glimmers, streaks, variety, and perfect days.',
-			categories: ['overall', 'score', 'streak']
-		},
-		{
-			title: 'Tracker milestones',
-			description: 'Six milestones for every tracker.',
-			categories: ['tracker-milestone']
-		},
-		{
-			title: 'Tracker specials',
-			description: 'Distinct challenges inside each tracker.',
-			categories: ['tracker-special']
-		},
-		{
-			title: 'Combinations',
-			description: 'Healthy actions that work especially well together.',
-			categories: ['combination']
-		},
-		{
-			title: 'Setup and connections',
-			description: 'Make the app yours and connect its tools.',
-			categories: ['event']
-		}
-	];
-	const filteredAchievements = $derived(data.achievements.filter(matchesFilter));
-	const visibleAchievements = $derived(filteredAchievements.slice(0, visibleCount));
-	const sections = $derived(
-		sectionDefinitions
-			.map((section) => ({
-				...section,
-				achievements: visibleAchievements.filter((achievement) =>
-					section.categories.includes(achievement.category)
-				)
-			}))
-			.filter(({ achievements }) => achievements.length)
-	);
-	const hasMore = $derived(visibleAchievements.length < filteredAchievements.length);
-
-	function selectFilter(nextFilter: AchievementFilter) {
-		filter = nextFilter;
-		visibleCount = PAGE_SIZE;
+let { data }: PageProps = $props();
+const PAGE_SIZE = 24;
+let filter = $state<AchievementFilter>('all');
+let visibleCount = $state(PAGE_SIZE);
+const colors = getTrackerColors('achievements');
+const filters = [
+	{ id: 'all', label: 'All' },
+	{ id: 'unlocked', label: 'Unlocked' },
+	{ id: 'progress', label: 'In progress' }
+] as const;
+const sectionDefinitions: AchievementSection[] = [
+	{
+		title: 'Overall',
+		description: 'Glimmers, streaks, variety, and perfect days.',
+		categories: ['overall', 'score', 'streak']
+	},
+	{
+		title: 'Tracker milestones',
+		description: 'Six milestones for every tracker.',
+		categories: ['tracker-milestone']
+	},
+	{
+		title: 'Tracker specials',
+		description: 'Distinct challenges inside each tracker.',
+		categories: ['tracker-special']
+	},
+	{
+		title: 'Combinations',
+		description: 'Healthy actions that work especially well together.',
+		categories: ['combination']
+	},
+	{
+		title: 'Setup and connections',
+		description: 'Make the app yours and connect its tools.',
+		categories: ['event']
 	}
+];
+const filteredAchievements = $derived(data.achievements.filter(matchesFilter));
+const visibleAchievements = $derived(filteredAchievements.slice(0, visibleCount));
+const sections = $derived(
+	sectionDefinitions
+		.map((section) => ({
+			...section,
+			achievements: visibleAchievements.filter((achievement) =>
+				section.categories.includes(achievement.category)
+			)
+		}))
+		.filter(({ achievements }) => achievements.length)
+);
+const hasMore = $derived(visibleAchievements.length < filteredAchievements.length);
 
-	function matchesFilter(achievement: AchievementSummary) {
-		if (filter === 'unlocked') return achievement.unlocked;
-		if (filter === 'progress') return !achievement.unlocked;
-		return true;
-	}
+function selectFilter(nextFilter: AchievementFilter) {
+	filter = nextFilter;
+	visibleCount = PAGE_SIZE;
+}
 
-	function achievementColor(achievement: AchievementSummary) {
-		return getTrackerColors(achievement.trackerId ?? 'achievements').primary;
-	}
+function matchesFilter(achievement: AchievementSummary) {
+	if (filter === 'unlocked') return achievement.unlocked;
+	if (filter === 'progress') return !achievement.unlocked;
+	return true;
+}
 
-	function trackerLabel(achievement: AchievementSummary) {
-		if (!achievement.trackerId) return '';
-		return trackers.find(({ id }) => id === achievement.trackerId)?.label ?? '';
-	}
+function achievementColor(achievement: AchievementSummary) {
+	return getTrackerColors(achievement.trackerId ?? 'achievements').primary;
+}
 
-	function progressLabel(achievement: AchievementSummary) {
-		const progress = Math.min(achievement.progress, achievement.target);
-		if (achievement.id === 'steps-double-goal') return `${progress.toFixed(1)}× / 2×`;
-		if (achievement.target >= 600 && achievement.id.includes('meditation')) {
-			return `${Math.floor(progress / 60).toLocaleString()} / ${(achievement.target / 60).toLocaleString()} min`;
-		}
-		if (achievement.id === 'breathing-one-hour-total') {
-			return `${Math.floor(progress / 60).toLocaleString()} / 60 min`;
-		}
-		return `${formatNumber(progress)} / ${formatNumber(achievement.target)}`;
-	}
+function trackerLabel(achievement: AchievementSummary) {
+	if (!achievement.trackerId) return '';
+	return trackers.find(({ id }) => id === achievement.trackerId)?.label ?? '';
+}
 
-	function formatNumber(value: number) {
-		return (Number.isInteger(value) ? value : Math.round(value * 10) / 10).toLocaleString();
+function progressLabel(achievement: AchievementSummary) {
+	const progress = Math.min(achievement.progress, achievement.target);
+	if (achievement.id === 'steps-double-goal') return `${progress.toFixed(1)}× / 2×`;
+	if (achievement.target >= 600 && achievement.id.includes('meditation')) {
+		return `${Math.floor(progress / 60).toLocaleString()} / ${(achievement.target / 60).toLocaleString()} min`;
 	}
+	if (achievement.id === 'breathing-one-hour-total') {
+		return `${Math.floor(progress / 60).toLocaleString()} / 60 min`;
+	}
+	return `${formatNumber(progress)} / ${formatNumber(achievement.target)}`;
+}
+
+function formatNumber(value: number) {
+	return (Number.isInteger(value) ? value : Math.round(value * 10) / 10).toLocaleString();
+}
 </script>
 
 <svelte:head>
@@ -111,7 +111,7 @@
 
 <TrackerPage class="max-w-(--app-compact-max-width)" contentClass="space-y-10">
 	<div class="flex flex-wrap items-center justify-between gap-4">
-		<p class="text-sm text-(--text)/56">
+		<p class="text-sm text-(--text-muted)">
 			<strong class="font-medium text-(--text)">{data.achievementCount}</strong> of
 			{data.achievementTotal} unlocked
 		</p>
@@ -156,7 +156,7 @@
 								{/if}
 							</div>
 							<span
-								class={`flex shrink-0 items-center gap-1.5 text-xs tabular-nums ${achievement.unlocked ? 'text-(--text)' : 'text-(--text)/48'}`}
+								class={`flex shrink-0 items-center gap-1.5 text-xs tabular-nums ${achievement.unlocked ? 'text-(--text)' : 'text-(--text-muted)'}`}
 							>
 								{#if achievement.unlocked}
 									<CircleCheck
@@ -168,7 +168,7 @@
 								{/if}
 							</span>
 						</div>
-						<p class="mt-1 text-sm leading-5 text-(--text)/56">{achievement.description}</p>
+						<p class="mt-1 text-sm leading-5 text-(--text-muted)">{achievement.description}</p>
 						{#if !achievement.unlocked}
 							<Progress
 								class="mt-3 h-1.5"
@@ -193,6 +193,6 @@
 	{/if}
 
 	{#if !sections.length}
-		<p class="py-10 text-center text-sm text-(--text)/56">No achievements match this filter.</p>
+		<p class="py-10 text-center text-sm text-(--text-muted)">No achievements match this filter.</p>
 	{/if}
 </TrackerPage>

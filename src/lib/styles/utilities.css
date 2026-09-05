@@ -1,0 +1,141 @@
+/* ----------------------------------------------------------------------------
+ * Utilities
+ * ------------------------------------------------------------------------- */
+@layer utilities {
+	.safe-area-padding-top {
+		padding-top: var(--app-safe-area-inset-top);
+	}
+
+	.app-gutter {
+		padding-inline-start: var(--app-inset-inline-start);
+		padding-inline-end: var(--app-inset-inline-end);
+	}
+
+	.tracker-fade {
+		background:
+			radial-gradient(
+				circle at 0% 0%,
+				color-mix(in srgb, var(--tracker-color-primary) 16%, var(--bg)),
+				transparent 44%
+			),
+			radial-gradient(
+				circle at 100% 0%,
+				color-mix(in srgb, var(--tracker-color-tertiary) 14%, var(--bg)),
+				transparent 48%
+			),
+			linear-gradient(
+				to bottom,
+				color-mix(in srgb, var(--tracker-color-middle) 12%, var(--bg)),
+				var(--bg) 60%
+			);
+	}
+
+	.link {
+		background-image: linear-gradient(currentcolor, currentcolor);
+		background-position: 0 100%;
+		background-repeat: no-repeat;
+		background-size: 0% 1px;
+		transition: background-size 0.2s ease;
+	}
+
+	.link:hover {
+		background-size: 100% 1px;
+	}
+}
+
+/* ----------------------------------------------------------------------------
+ * Shared component helpers (animations, stateful variants)
+ * ------------------------------------------------------------------------- */
+@theme inline {
+	--font-sans: "IBM Plex Sans Variable", sans-serif;
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+}
+
+@custom-variant data-open {
+	&:where([data-state="open"]),
+	&:where([data-open]:not([data-open="false"])) {
+		@slot;
+	}
+}
+
+@custom-variant data-closed {
+	&:where([data-state="closed"]),
+	&:where([data-closed]:not([data-closed="false"])) {
+		@slot;
+	}
+}
+
+@custom-variant data-checked {
+	&:where([data-state="checked"]),
+	&:where([data-checked]:not([data-checked="false"])) {
+		@slot;
+	}
+}
+
+@custom-variant data-unchecked {
+	&:where([data-state="unchecked"]),
+	&:where([data-unchecked]:not([data-unchecked="false"])) {
+		@slot;
+	}
+}
+
+@custom-variant data-disabled {
+	&:where([data-disabled="true"]),
+	&:where([data-disabled]:not([data-disabled="false"])) {
+		@slot;
+	}
+}
+
+@custom-variant data-active {
+	&:where([data-state="active"]),
+	&:where([data-active]:not([data-active="false"])) {
+		@slot;
+	}
+}
+
+@custom-variant data-horizontal {
+	&:where([data-orientation="horizontal"]) {
+		@slot;
+	}
+}
+
+@custom-variant data-vertical {
+	&:where([data-orientation="vertical"]) {
+		@slot;
+	}
+}
+
+@utility no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		/* biome-ignore lint/complexity/noImportantStyles: Reduced motion must override component animations. */
+		animation-duration: 0.01ms !important;
+		/* biome-ignore lint/complexity/noImportantStyles: Reduced motion must override component animations. */
+		animation-iteration-count: 1 !important;
+		/* biome-ignore lint/complexity/noImportantStyles: Reduced motion must override component transitions. */
+		transition-duration: 0.01ms !important;
+	}
+
+	#app-loading-spinner {
+		/* biome-ignore lint/complexity/noImportantStyles: Keep the loading indicator visible with reduced motion. */
+		animation-duration: 1.8s !important;
+	}
+}

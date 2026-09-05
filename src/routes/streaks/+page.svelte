@@ -1,13 +1,13 @@
 <script lang="ts">
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import TrackerProgressSummary from '$lib/components/trackerProgressSummary.svelte';
-	import { trackerIcons } from '$lib/trackers/icons';
-	import { getTrackerColors } from '$lib/trackers/registry';
-	import type { PageProps } from './$types';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import TrackerProgressSummary from '$lib/components/tracker/TrackerProgressSummary.svelte';
+import { trackerIcons } from '$lib/trackers/icons';
+import { getTrackerColors } from '$lib/trackers/registry';
+import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
-	const colors = getTrackerColors('streaks');
-	const nextDayMilestone = $derived(Math.max(5, Math.ceil((data.dayStreak.current + 1) / 5) * 5));
+let { data }: PageProps = $props();
+const colors = getTrackerColors('streaks');
+const nextDayMilestone = $derived(Math.max(5, Math.ceil((data.dayStreak.current + 1) / 5) * 5));
 </script>
 
 <svelte:head>
@@ -25,7 +25,7 @@
 			label="Day streak"
 			{colors}
 		/>
-		<p class="text-center text-sm text-(--text)/48 tabular-nums">Best {data.dayStreak.best}</p>
+		<p class="text-center text-sm text-(--text-muted) tabular-nums">Best {data.dayStreak.best}</p>
 	</div>
 
 	<section class="space-y-6" aria-label="Tracker streaks">
@@ -46,11 +46,11 @@
 				</strong>
 				<div class="min-w-0">
 					<h2 class="truncate text-sm font-medium">{streak.label}</h2>
-					<p class="mt-0.5 text-xs text-(--text)/48">Best {streak.best}</p>
+					<p class="mt-0.5 text-xs text-(--text-muted)">Best {streak.best}</p>
 				</div>
 			</div>
 		{:else}
-			<p class="text-sm text-(--text)/56">Choose at least one tracker in Profile.</p>
+			<p class="text-sm text-(--text-muted)">Choose at least one tracker in Profile.</p>
 		{/each}
 	</section>
 </TrackerPage>

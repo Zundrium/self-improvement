@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
+import { Form } from '$lib/components/ui/form';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { ArrowLeft } from '@lucide/svelte';
 import { apiRequest } from '$lib/api';
 import type { Reward } from '$lib/api-types';
-import TrackerPage from '$lib/components/trackerPage.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import { Button } from '$lib/components/ui/button';
 import { Card } from '$lib/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field';
@@ -50,7 +50,7 @@ async function saveReward(event: SubmitEvent) {
 		</Button>
 		<div>
 			<h2 class="text-xl font-medium tracking-[-0.03em]">Add reward</h2>
-			<p class="text-sm text-(--text)/48">Choose something you want to earn.</p>
+			<p class="text-sm text-(--text-muted)">Choose something you want to earn.</p>
 		</div>
 	</div>
 

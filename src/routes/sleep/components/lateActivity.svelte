@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { CircleAlert, Smartphone } from '@lucide/svelte';
-	import type { SleepAdherenceSummary } from '$lib/api-types';
-	import TrackerSection from '$lib/components/trackerSection.svelte';
-	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import { getTrackerColors } from '$lib/trackers/registry';
-	import { formatUsageSeconds } from '../sleep';
+import { CircleAlert, Smartphone } from '@lucide/svelte';
+import type { SleepAdherenceSummary } from '$lib/api-types';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
+import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
+import { Button } from '$lib/components/ui/button';
+import { getTrackerColors } from '$lib/trackers/registry';
+import { formatUsageSeconds } from '../sleep';
 
-	let { summary, setupRequired }: { summary: SleepAdherenceSummary; setupRequired: boolean } =
-		$props();
-	const colors = getTrackerColors('sleep');
+let { summary, setupRequired }: { summary: SleepAdherenceSummary; setupRequired: boolean } =
+	$props();
+const colors = getTrackerColors('sleep');
 </script>
 
 <TrackerSection
@@ -38,13 +38,13 @@
 					</span>
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-sm font-medium">{app.name}</p>
-						<p class="truncate text-xs text-(--text)/40">{app.package}</p>
+						<p class="truncate text-xs text-(--text-muted)">{app.package}</p>
 					</div>
 					<strong class="text-sm font-medium">{formatUsageSeconds(app.seconds)}</strong>
 				</div>
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm leading-6 text-(--text)/56">No selected-app activity recorded.</p>
+		<p class="text-sm leading-6 text-(--text-muted)">No selected-app activity recorded.</p>
 	{/if}
 </TrackerSection>

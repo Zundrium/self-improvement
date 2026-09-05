@@ -2,8 +2,10 @@ import { apiRequest } from '$lib/api';
 import type { ScreenTimeData } from '$lib/api-types';
 import type { PageLoad } from './$types';
 import { screenTimeDataWithAppIdentities } from './app-identities';
+import { registerLocalData } from '$lib/app/resources';
 
-export const load: PageLoad = async ({ url }) => {
+export const load: PageLoad = async ({ url, depends }) => {
+	registerLocalData(depends, 'screen-time');
 	const data = await apiRequest<ScreenTimeData>(apiPath(url));
 	return screenTimeDataWithAppIdentities(data);
 };

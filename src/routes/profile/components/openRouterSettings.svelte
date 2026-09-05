@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { KeyRound, Trash2 } from '@lucide/svelte';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
-	import { Input } from '$lib/components/ui/input';
-	import { Spinner } from '$lib/components/ui/spinner';
+import { KeyRound, Trash2 } from '@lucide/svelte';
+import { Badge } from '$lib/components/ui/badge';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+import { Input } from '$lib/components/ui/input';
+import { Spinner } from '$lib/components/ui/spinner';
 
-	type Props = {
-		apiKey: string;
-		configured: boolean;
-		loading: boolean;
-		busy: boolean;
-		onclear: () => void;
-	};
+type Props = {
+	apiKey: string;
+	configured: boolean;
+	loading: boolean;
+	busy: boolean;
+	onclear: () => void;
+};
 
-	let { apiKey = $bindable(), configured, loading, busy, onclear }: Props = $props();
+let { apiKey = $bindable(), configured, loading, busy, onclear }: Props = $props();
 </script>
 
 <Card>

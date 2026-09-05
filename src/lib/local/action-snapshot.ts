@@ -1,6 +1,6 @@
 import type { ActionSnapshot, TrackerActionStates } from '$lib/actions/contracts';
-import { defaultWorkoutSets, workoutSetDurations } from '../../routes/fitness/fitness';
-import { isStretchScheduled } from '../../routes/stretch/stretch';
+import { defaultWorkoutSets, workoutSetDurations } from './fitness/model';
+import { isStretchScheduled } from './stretch/model';
 import { fitnessProgram } from './fitness-program';
 import { sumEntries } from './nutrition';
 import type { LocalAppState } from './state';

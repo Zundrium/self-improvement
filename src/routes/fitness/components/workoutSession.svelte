@@ -2,13 +2,11 @@
 import type { AudioManager } from '$lib/audio/audio-manager';
 import GuidedRoutineRunner, {
 	type GuidedRoutineSounds
-} from '$lib/components/guidedRoutineRunner.svelte';
+} from '$lib/components/routines/GuidedRoutineRunner.svelte';
 import { apiRequest } from '$lib/api';
 import { toast } from '$lib/components/ui/toast';
-import type {
-	CadencedRepGuidedRoutineActivity,
-	GuidedRoutineActivity
-} from '$lib/components/guidedRoutine';
+import { Button } from '$lib/components/ui/button';
+import type { CadencedRepGuidedRoutineActivity, GuidedRoutineActivity } from '$lib/routines/model';
 import type { Workout, WorkoutActivity } from '../fitness';
 
 interface Props {
@@ -21,6 +19,8 @@ interface Props {
 }
 
 let { workout, audioManager, setCount, oncomplete, oncancel, onspeedchange }: Props = $props();
+let cadenceFailure = $state<{ activity: CadencedRepGuidedRoutineActivity; speedPercent: number }>();
+let savingCadence = $state(false);
 const activities = $derived(workout.activities.map(toGuidedRoutineActivity));
 
 const sounds: GuidedRoutineSounds = {
@@ -70,14 +70,20 @@ function handleCadenceChange(activity: CadencedRepGuidedRoutineActivity, speedPe
 async function saveCadence(activity: CadencedRepGuidedRoutineActivity, speedPercent: number) {
 	const workoutActivity = repActivityFor(activity.id);
 	if (!workoutActivity) return;
+	const submitted = speedPercent;
+	savingCadence = true;
+	cadenceFailure = undefined;
 	try {
 		await apiRequest(`/api/app/fitness/exercises/${workoutActivity.exerciseId}/speed`, {
 			method: 'PUT',
-			body: JSON.stringify({ speedPercent })
+			body: JSON.stringify({ speedPercent: submitted })
 		});
 		toast.success('Exercise speed updated.');
 	} catch (error) {
 		console.error('Exercise speed save failed:', error);
+		cadenceFailure = { activity, speedPercent: submitted };
+	} finally {
+		savingCadence = false;
 	}
 }
 
@@ -95,8 +101,16 @@ function repActivityFor(activityId: string | number) {
 	restBetweenSetsSeconds={workout.restBetweenSets}
 	{sounds}
 	activityLabel="Exercise"
+	sessionIdentity={`workout:${workout.id}:${setCount}:${workout.activities.map((activity) => `${activity.id}:${activity.type === 'reps' ? activity.speedPercent : ''}`).join('|')}`}
 	{oncomplete}
 	{oncancel}
 	oncadencechange={handleCadenceChange}
 	oncadencecommit={saveCadence}
 />
+
+{#if cadenceFailure}
+	<div class="fixed inset-x-4 bottom-24 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl bg-(--app-surface) p-3 text-sm shadow-lg" role="alert">
+		<span>Speed was not saved.</span>
+		<Button size="small" profile="highlighted" disabled={savingCadence} onclick={() => cadenceFailure && saveCadence(cadenceFailure.activity, cadenceFailure.speedPercent)}>Retry</Button>
+	</div>
+{/if}

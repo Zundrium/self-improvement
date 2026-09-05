@@ -131,6 +131,52 @@ describe('relational local app state', () => {
 		).toBe('data:image/jpeg;base64,YQ==');
 	});
 
+	it('preserves unresolved stored media during edits and refuses to export it', async () => {
+		const name = databaseName();
+		const database = new LocalAppDatabase(name);
+		const store = new LocalAppStore(database, null);
+		stores.push(store);
+		const state = nutritionState('data:image/jpeg;base64,aGVsbG8=');
+		await store.replaceState(state);
+		const original = await database.nutritionMedia.get('meal-meal');
+		await database.nutritionMedia.update('meal-meal', { blob: undefined });
+
+		await store.updateDomains(['nutrition'], (draft) => {
+			draft.nutrition.entries[0].notes = 'Metadata only';
+		});
+
+		const retained = await database.nutritionMedia.get('meal-meal');
+		expect(retained).toMatchObject({
+			relativePath: original?.relativePath,
+			byteSize: 5
+		});
+		await expect(store.exportState()).rejects.toThrow('nutrition photo could not be read');
+	});
+
+	it('rejects malformed nutrition image values instead of storing empty files', async () => {
+		const store = trackedStore(databaseName());
+		await expect(store.replaceState(nutritionState('not-an-image'))).rejects.toThrow(
+			'Nutrition images must be valid'
+		);
+	});
+
+	it('queues reads and exports behind an in-flight mutation', async () => {
+		const store = trackedStore(databaseName());
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => (release = resolve));
+		const update = store.updateDomains(['steps'], async (state) => {
+			await gate;
+			state.steps.dailyGoal = 9_000;
+		});
+		const read = store.readDomains(['steps']);
+		const exported = store.exportState();
+		release();
+
+		await update;
+		expect((await read).steps.dailyGoal).toBe(9_000);
+		expect((await exported).steps.dailyGoal).toBe(9_000);
+	});
+
 	it('stores native synchronization status in the database', async () => {
 		const store = trackedStore(databaseName());
 		const status = createEmptyStatus();
@@ -334,4 +380,20 @@ function trackedStore(name: string) {
 
 function databaseName() {
 	return `local-state-test-${crypto.randomUUID()}`;
+}
+
+function nutritionState(imageDataUrl: string) {
+	const state = createDefaultAppState(new Date('2026-09-05T12:00:00.000Z'));
+	const totals = { calories: 0, proteinG: 0, carbsG: 0, fatG: 0, count: 0 };
+	state.nutrition.entries.push({
+		id: 'entry',
+		date: '2026-09-05',
+		name: 'Meal',
+		notes: '',
+		createdAt: state.updatedAt,
+		thumbnail: '',
+		totals,
+		meals: [{ id: 'meal', name: 'Meal', imageDataUrl, ingredients: [], totals }]
+	});
+	return state;
 }

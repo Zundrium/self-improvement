@@ -1,3 +1,4 @@
+import { appMaintenance } from '$lib/app/maintenance';
 import { mobileRepository } from '$lib/api';
 import { localAppStore } from '$lib/local/state';
 import type { AppTrackerId } from '$lib/trackers/registry';
@@ -9,12 +10,20 @@ import { AndroidUsageAdapter } from './usage';
 
 export const androidHealth = new AndroidHealthAdapter();
 export const androidUsage = new AndroidUsageAdapter();
-export const androidSyncCoordinator = new SyncCoordinator(
+const coordinator = new SyncCoordinator(
 	mobileRepository,
 	createNativeTrackerJobs(androidHealth, androidUsage),
 	undefined,
 	loadEnabledNativeTrackers
 );
+
+export const androidSyncCoordinator = {
+	sync: (trackers: readonly TrackerId[], now?: Date) =>
+		appMaintenance.run(() => coordinator.sync(trackers, now)),
+	syncAll: () => appMaintenance.run(() => coordinator.syncAll()),
+	syncStale: (staleAfterMs?: number) =>
+		appMaintenance.run(() => coordinator.syncStale(staleAfterMs))
+};
 
 export async function loadEnabledNativeTrackers(): Promise<TrackerId[]> {
 	return enabledNativeTrackerIds(await localAppStore.readEnabledTrackerIds());

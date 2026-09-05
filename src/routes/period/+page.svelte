@@ -1,11 +1,11 @@
 <script lang="ts">
-	import TrackerColumns from '$lib/components/trackerColumns.svelte';
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import PeriodEntry from './components/periodEntry.svelte';
-	import PeriodInsights from './components/periodInsights.svelte';
-	import type { PageProps } from './$types';
+import TrackerColumns from '$lib/components/tracker/TrackerColumns.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import PeriodEntry from './components/periodEntry.svelte';
+import PeriodInsights from './components/periodInsights.svelte';
+import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
+let { data }: PageProps = $props();
 </script>
 
 <svelte:head>

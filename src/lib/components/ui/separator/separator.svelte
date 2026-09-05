@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { cn, type WithElementRef } from '$lib/utils.js';
-	import type { HTMLAttributes } from 'svelte/elements';
+import { cn, type WithElementRef } from '$lib/utils.js';
+import type { HTMLAttributes } from 'svelte/elements';
 
-	type Props = WithElementRef<HTMLAttributes<HTMLDivElement>> & {
-		orientation?: 'horizontal' | 'vertical';
-		decorative?: boolean;
-	};
+type Props = WithElementRef<HTMLAttributes<HTMLDivElement>> & {
+	orientation?: 'horizontal' | 'vertical';
+	decorative?: boolean;
+};
 
-	let {
-		ref = $bindable(null),
-		orientation = 'horizontal',
-		decorative = true,
-		class: className,
-		...restProps
-	}: Props = $props();
+let {
+	ref = $bindable(null),
+	orientation = 'horizontal',
+	decorative = true,
+	class: className,
+	...restProps
+}: Props = $props();
 </script>
 
 <div

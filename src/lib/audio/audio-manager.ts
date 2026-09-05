@@ -7,7 +7,7 @@ type LoopSound = {
 };
 
 type OneShot = {
-	finish: () => void;
+	finish: (completed: boolean) => void;
 	volume: number;
 };
 
@@ -17,6 +17,7 @@ export class AudioManager {
 	private preloaded = new Map<string, HTMLAudioElement>();
 	private volume = 0.7;
 	private muted = false;
+	private destroyed = false;
 	private unregisterVolume = audioVolumeState.register(this);
 
 	addLoop(id: string, url: string) {
@@ -27,6 +28,7 @@ export class AudioManager {
 	}
 
 	async toggleLoop(id: string) {
+		if (this.destroyed) return false;
 		const sound = this.loops.get(id);
 		if (!sound) return false;
 		return sound.active ? this.stopLoop(sound) : this.startLoop(sound);
@@ -36,15 +38,17 @@ export class AudioManager {
 		for (const url of urls) this.preloadAudio(url);
 	}
 
-	async play(url: string, volume = 1) {
+	async play(url: string, volume = 1): Promise<boolean> {
+		if (this.destroyed) return false;
 		const audio = this.createOneShot(url, volume);
 		const completion = this.trackOneShot(audio, volume);
 		try {
 			await audio.play();
-			await completion;
+			return await completion;
 		} catch (cause) {
 			this.finishOneShot(audio);
 			console.error(`Could not play ${url}:`, cause);
+			return false;
 		}
 	}
 
@@ -63,11 +67,13 @@ export class AudioManager {
 	stopAll() {
 		for (const audio of this.oneShots.keys()) {
 			audio.pause();
-			this.finishOneShot(audio);
+			this.finishOneShot(audio, false);
 		}
 	}
 
 	destroy() {
+		if (this.destroyed) return;
+		this.destroyed = true;
 		this.unregisterVolume();
 		this.stopAll();
 		for (const sound of this.loops.values()) this.destroyLoop(sound);
@@ -100,21 +106,23 @@ export class AudioManager {
 	}
 
 	private trackOneShot(audio: HTMLAudioElement, volume: number) {
-		return new Promise<void>((resolve) => {
-			const finish = () => {
-				audio.removeEventListener('ended', finish);
-				audio.removeEventListener('error', finish);
+		return new Promise<boolean>((resolve) => {
+			const finish = (completed: boolean) => {
+				audio.removeEventListener('ended', onEnded);
+				audio.removeEventListener('error', onError);
 				this.oneShots.delete(audio);
-				resolve();
+				resolve(completed);
 			};
+			const onEnded = () => finish(true);
+			const onError = () => finish(false);
 			this.oneShots.set(audio, { finish, volume: clamp(volume) });
-			audio.addEventListener('ended', finish, { once: true });
-			audio.addEventListener('error', finish, { once: true });
+			audio.addEventListener('ended', onEnded, { once: true });
+			audio.addEventListener('error', onError, { once: true });
 		});
 	}
 
-	private finishOneShot(audio: HTMLAudioElement) {
-		this.oneShots.get(audio)?.finish();
+	private finishOneShot(audio: HTMLAudioElement, completed = false) {
+		this.oneShots.get(audio)?.finish(completed);
 	}
 
 	private updateOneShots() {

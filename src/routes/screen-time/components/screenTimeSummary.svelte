@@ -1,10 +1,10 @@
 <script lang="ts">
-	import TrackerProgressSummary from '$lib/components/trackerProgressSummary.svelte';
-	import { getTrackerColors } from '$lib/trackers/registry';
-	import { formatScreenTime } from '../screen-time';
+import TrackerProgressSummary from '$lib/components/tracker/TrackerProgressSummary.svelte';
+import { getTrackerColors } from '$lib/trackers/registry';
+import { formatScreenTime } from '../screen-time';
 
-	let { totalMinutes, limit }: { totalMinutes: number; limit: number } = $props();
-	const colors = getTrackerColors('screen-time');
+let { totalMinutes, limit }: { totalMinutes: number; limit: number } = $props();
+const colors = getTrackerColors('screen-time');
 </script>
 
 <TrackerProgressSummary

@@ -1,40 +1,40 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { CircleCheck, CircleX, Droplet, Drumstick, Wheat } from '@lucide/svelte';
-	import type { NutritionLogData, NutritionTotals } from '$lib/api-types';
-	import MetricStat from '$lib/components/metricStat.svelte';
-	import TrackerProgressSummary from '$lib/components/trackerProgressSummary.svelte';
-	import { getTrackerColors } from '$lib/trackers/registry';
-	import { eatingWindowState } from './eatingWindow';
+import { onMount } from 'svelte';
+import { CircleCheck, CircleX, Droplet, Drumstick, Wheat } from '@lucide/svelte';
+import type { NutritionLogData, NutritionTotals } from '$lib/api-types';
+import MetricStat from '$lib/components/metrics/MetricStat.svelte';
+import TrackerProgressSummary from '$lib/components/tracker/TrackerProgressSummary.svelte';
+import { getTrackerColors } from '$lib/trackers/registry';
+import { eatingWindowState } from './eatingWindow';
 
-	type Props = {
-		totals: NutritionTotals;
-		goal: number;
-		date: string;
-		today: string;
-		eatingWindow: NutritionLogData['eatingWindow'];
+type Props = {
+	totals: NutritionTotals;
+	goal: number;
+	date: string;
+	today: string;
+	eatingWindow: NutritionLogData['eatingWindow'];
+};
+
+let { totals, goal, date, today, eatingWindow }: Props = $props();
+let now = $state(new Date());
+const colors = getTrackerColors('nutrition');
+const consumed = $derived(Math.round(totals.calories));
+const windowState = $derived(eatingWindow ? eatingWindowState(eatingWindow, now) : null);
+const showEatingWindow = $derived(Boolean(windowState) && date === today);
+
+onMount(() => {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const updateNow = () => {
+		now = new Date();
+		timer = setTimeout(updateNow, millisecondsUntilNextMinute(now));
 	};
+	updateNow();
+	return () => clearTimeout(timer);
+});
 
-	let { totals, goal, date, today, eatingWindow }: Props = $props();
-	let now = $state(new Date());
-	const colors = getTrackerColors('nutrition');
-	const consumed = $derived(Math.round(totals.calories));
-	const windowState = $derived(eatingWindow ? eatingWindowState(eatingWindow, now) : null);
-	const showEatingWindow = $derived(Boolean(windowState) && date === today);
-
-	onMount(() => {
-		let timer: ReturnType<typeof setTimeout> | undefined;
-		const updateNow = () => {
-			now = new Date();
-			timer = setTimeout(updateNow, millisecondsUntilNextMinute(now));
-		};
-		updateNow();
-		return () => clearTimeout(timer);
-	});
-
-	function millisecondsUntilNextMinute(date: Date) {
-		return 60_000 - date.getSeconds() * 1_000 - date.getMilliseconds();
-	}
+function millisecondsUntilNextMinute(date: Date) {
+	return 60_000 - date.getSeconds() * 1_000 - date.getMilliseconds();
+}
 </script>
 
 <section class="space-y-4 py-2" aria-label="Daily nutrition">

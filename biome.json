@@ -1,7 +1,15 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
 	"files": {
-		"includes": ["**/*.{js,ts,svelte}", "!!android", "!!dist-mobile", "!!.svelte-kit", "!!static"]
+		"includes": [
+			"**/*.{js,ts,svelte,css,json,jsonc}",
+			"!!android",
+			"!!dist-mobile",
+			"!!.svelte-kit",
+			"!!static",
+			"!!.vitest-attachments",
+			"!!tests/browser/__screenshots__"
+		]
 	},
 	"formatter": {
 		"enabled": true,
@@ -13,8 +21,8 @@
 		"rules": {
 			"preset": "recommended",
 			"correctness": {
-				"noUnusedImports": "off",
-				"noUnusedVariables": "off"
+				"noUnusedImports": "error",
+				"noUnusedVariables": "error"
 			},
 			"suspicious": {
 				"noAssignInExpressions": "off",
@@ -28,5 +36,23 @@
 			"quoteStyle": "single",
 			"trailingCommas": "none"
 		}
-	}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["**/*.svelte"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noUnusedImports": "off",
+						"noUnusedVariables": "off"
+					}
+				}
+			}
+		}
+	]
 }

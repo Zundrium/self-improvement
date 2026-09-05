@@ -1,3 +1,4 @@
+export { formatUsageSeconds, formatBedtime } from '$lib/trackers/formatting';
 import type { SleepAdherenceStatus } from '$lib/api-types';
 
 export const DEFAULT_BEDTIME = '22:30';
@@ -5,25 +6,11 @@ export const LATE_USAGE_LIMIT_SECONDS = 300;
 export const SLEEPING_MESSAGE = 'You should be sleeping :)';
 const MORNING_END_MINUTES = 6 * 60;
 
-export function formatUsageSeconds(seconds: number) {
-	const wholeSeconds = Math.max(0, Math.round(seconds));
-	if (wholeSeconds < 60) return `${wholeSeconds}s`;
-	const minutes = Math.floor(wholeSeconds / 60);
-	const remainingSeconds = wholeSeconds % 60;
-	return remainingSeconds ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
-}
-
 export function statusLabel(status: SleepAdherenceStatus, setupRequired = false) {
 	if (setupRequired) return 'Setup needed';
 	if (status === 'pass') return 'On time';
 	if (status === 'fail') return 'Missed';
 	return 'Pending';
-}
-
-export function formatBedtime(bedtime: string) {
-	const [hour, minute] = bedtime.split(':').map(Number);
-	const date = new Date(2000, 0, 1, hour, minute);
-	return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
 }
 
 export function isWithinSleepingWindow(bedtime: string, now = new Date()) {
@@ -68,7 +55,12 @@ function nextBedtime(bedtime: string, now: Date) {
 }
 
 function minutesFromLocalTime(date: Date) {
-	return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60 + date.getMilliseconds() / 60_000;
+	return (
+		date.getHours() * 60 +
+		date.getMinutes() +
+		date.getSeconds() / 60 +
+		date.getMilliseconds() / 60_000
+	);
 }
 
 function minutesFromTime(time: string) {

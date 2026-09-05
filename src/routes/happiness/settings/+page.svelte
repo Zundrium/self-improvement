@@ -1,39 +1,51 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
-	import { invalidateAll } from '$app/navigation';
-	import { untrack } from 'svelte';
-	import { toast } from '$lib/components/ui/toast';
-	import { apiRequest } from '$lib/api';
-	import type { HappinessSettingsData } from '$lib/api-types';
-	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Field, FieldLabel } from '$lib/components/ui/field';
-	import { happinessRatings, type HappinessRating } from '../happiness';
-	import type { PageProps } from './$types';
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import { Form } from '$lib/components/ui/form';
+import { APP_RESOURCES, refreshAppData } from '$lib/app/resources';
+import { untrack } from 'svelte';
+import { toast } from '$lib/components/ui/toast';
+import { apiRequest } from '$lib/api';
+import type { HappinessSettingsData } from '$lib/api-types';
+import SettingsSaveBar from '$lib/components/forms/SettingsSaveBar.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+import { Field, FieldLabel } from '$lib/components/ui/field';
+import { happinessRatings, type HappinessRating } from '../happiness';
+import type { PageProps } from './$types';
+import { guardUnsavedNavigation } from '$lib/forms/unsaved-navigation.svelte';
 
-	let { data }: PageProps = $props();
-	let defaultRating = $state<HappinessRating>(untrack(() => data.defaultRating));
-	let saving = $state(false);
+let { data }: PageProps = $props();
+let defaultRating = $state<HappinessRating>(untrack(() => data.defaultRating));
+let saving = $state(false);
+let savedDefaultRating = $state(untrack(() => data.defaultRating));
+const dirty = $derived(defaultRating !== savedDefaultRating);
+guardUnsavedNavigation(() => dirty && !saving);
+$effect(() => {
+	if (!dirty && !saving && data.defaultRating !== savedDefaultRating)
+		defaultRating = savedDefaultRating = data.defaultRating;
+});
 
-	async function saveSettings(event: SubmitEvent) {
-		event.preventDefault();
-		if (saving) return;
-		saving = true;
-		try {
-			await apiRequest<HappinessSettingsData>('/api/app/happiness/settings', {
-				method: 'PATCH',
-				body: JSON.stringify({ defaultRating })
-			});
-			toast.success('Happiness settings updated.');
-			await invalidateAll();
-		} catch (cause) {
-			toast.error(cause instanceof Error ? cause.message : 'Could not update happiness settings.');
-		} finally {
-			saving = false;
-		}
+async function saveSettings(event: SubmitEvent) {
+	event.preventDefault();
+	if (saving) return;
+	saving = true;
+	try {
+		await apiRequest<HappinessSettingsData>('/api/app/happiness/settings', {
+			method: 'PATCH',
+			body: JSON.stringify({ defaultRating })
+		});
+		savedDefaultRating = defaultRating;
+		toast.success('Happiness settings updated.');
+		await refreshAppData(APP_RESOURCES.bootstrap).catch(() =>
+			toast.error('Saved, but could not refresh the page.')
+		);
+	} catch (cause) {
+		toast.error(cause instanceof Error ? cause.message : 'Could not update happiness settings.');
+	} finally {
+		saving = false;
 	}
+}
 </script>
 
 <svelte:head><title>Happiness settings · Self Improvement</title></svelte:head>
@@ -66,4 +78,6 @@
 	</Card>
 </TrackerPage>
 
-<SettingsSaveBar form="happiness-settings" {saving} backHref="/happiness" />
+<PageActionBar mobileOnly={false}>
+<SettingsSaveBar form="happiness-settings" {saving} {dirty} backHref="/happiness" />
+</PageActionBar>

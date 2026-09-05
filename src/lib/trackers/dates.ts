@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { isValidCalendarDate } from '$lib/utils';
 
 export function isValidTimeZone(value: string) {
 	if (!value || value.length > 100) return false;
@@ -22,7 +22,7 @@ export function isLocalDayStart(instant: string, timeZone: string) {
 }
 
 export function isValidDateKey(value: string) {
-	return z.iso.date().safeParse(value).success;
+	return isValidCalendarDate(value);
 }
 
 export function dateKeysEndingAt(endDateKey: string, total: number) {

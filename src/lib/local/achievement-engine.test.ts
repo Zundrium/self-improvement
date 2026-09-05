@@ -315,7 +315,11 @@ describe('achievement engine', () => {
 		expect(recordAchievementUnlock(state, 'event-first-backup', unlockedAt)).toBe(false);
 		const data = buildGamification(state, new Date('2026-03-20T12:00:00.000Z'));
 
-		for (const id of ['event-first-reward', 'event-five-rewards', 'event-first-reward-redemption']) {
+		for (const id of [
+			'event-first-reward',
+			'event-five-rewards',
+			'event-first-reward-redemption'
+		]) {
 			expect(achievement(data, id).unlocked).toBe(true);
 		}
 		expect(achievement(data, 'event-first-backup')).toMatchObject({

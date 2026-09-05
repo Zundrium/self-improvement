@@ -1,10 +1,21 @@
 <script lang="ts" module>
-	import type { ButtonProps } from '$lib/components/ui/button';
-	import type { AlertDialog as AlertDialogTypes } from 'bits-ui';
+import type {
+	ButtonFormat,
+	ButtonSize,
+	ButtonTone,
+	ButtonColorProfile
+} from '$lib/components/ui/button';
+import type { GradientColors, InteractionScaleOptions } from '$lib/motion/gsap';
+import type { AlertDialog as AlertDialogTypes } from 'bits-ui';
 
-	export type AlertDialogCancelProps = Omit<AlertDialogTypes.CancelProps, 'child'> &
-		Partial<Pick<ButtonProps, 'profile' | 'tone' | 'format' | 'motionColors' | 'motionScale'>> &
-		Pick<ButtonProps, 'size'>;
+export type AlertDialogCancelProps = Omit<AlertDialogTypes.CancelProps, 'child'> & {
+	profile?: ButtonColorProfile;
+	tone?: ButtonTone;
+	format?: ButtonFormat;
+	size: ButtonSize;
+	motionColors?: GradientColors;
+	motionScale?: InteractionScaleOptions;
+};
 </script>
 
 <script lang="ts">

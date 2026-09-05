@@ -15,10 +15,14 @@ class AudioVolumeState {
 	hydrate() {
 		if (this.hydrated) return;
 		this.hydrated = true;
-		const storedVolume = localStorage.getItem(VOLUME_KEY);
-		const savedVolume = Number(storedVolume);
-		if (storedVolume !== null && Number.isFinite(savedVolume)) this.volume = clamp(savedVolume);
-		this.muted = localStorage.getItem(MUTED_KEY) === 'true';
+		try {
+			const storedVolume = localStorage.getItem(VOLUME_KEY);
+			const savedVolume = Number(storedVolume);
+			if (storedVolume !== null && Number.isFinite(savedVolume)) this.volume = clamp(savedVolume);
+			this.muted = localStorage.getItem(MUTED_KEY) === 'true';
+		} catch {
+			// Volume preferences are optional when browser storage is unavailable.
+		}
 		this.updateTargets();
 	}
 
@@ -31,14 +35,22 @@ class AudioVolumeState {
 
 	setVolume(volume: number) {
 		this.volume = clamp(volume);
-		localStorage.setItem(VOLUME_KEY, String(this.volume));
+		this.persist(VOLUME_KEY, String(this.volume));
 		this.updateTargets();
 	}
 
 	toggleMuted() {
 		this.muted = !this.muted;
-		localStorage.setItem(MUTED_KEY, String(this.muted));
+		this.persist(MUTED_KEY, String(this.muted));
 		this.updateTargets();
+	}
+
+	private persist(key: string, value: string) {
+		try {
+			localStorage.setItem(key, value);
+		} catch {
+			/* Keep the in-memory preference. */
+		}
 	}
 
 	private updateTargets() {

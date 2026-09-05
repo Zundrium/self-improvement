@@ -1,6 +1,7 @@
 import { localSecretStore } from '$lib/local/secrets';
 import mealAnalysisPromptTemplate from './prompts/meal-analysis.txt?raw';
 import mealRefinementPromptTemplate from './prompts/meal-refinement.txt?raw';
+import { withAbort } from '../workflow';
 
 export const OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite';
 export const MAX_MEAL_DESCRIPTION_LENGTH = 1000;
@@ -22,14 +23,15 @@ export type MealSource = { imageDataUrl: string; description: string };
 
 const ALLOWED_UNITS = new Set(['g', 'ml', 'oz', 'cup', 'tbsp', 'tsp', 'serving', 'piece']);
 
-export async function analyzeMeal(source: MealSource) {
+export async function analyzeMeal(source: MealSource, signal?: AbortSignal) {
 	const parsedSource = parseMealSource(source);
 	const content = modelSourceContent(parsedSource);
 	const raw = await requestMealCompletion(
 		mealAnalysisPromptTemplate,
 		content,
 		0.2,
-		'AI returned an empty response. Try a clearer photo or description.'
+		'AI returned an empty response. Try a clearer photo or description.',
+		signal
 	);
 	return validateAIResult(raw);
 }
@@ -37,7 +39,8 @@ export async function analyzeMeal(source: MealSource) {
 export async function refineMealEstimate(
 	source: MealSource,
 	currentEstimate: AIResult,
-	correction: string
+	correction: string,
+	signal?: AbortSignal
 ) {
 	const parsedSource = parseMealSource(source);
 	const cleanCorrection = correction.trim().slice(0, 500);
@@ -55,7 +58,8 @@ export async function refineMealEstimate(
 		mealRefinementPromptTemplate,
 		content,
 		0.1,
-		'AI returned an empty correction. Please try again.'
+		'AI returned an empty correction. Please try again.',
+		signal
 	);
 	return validateAIRefinement(raw);
 }
@@ -165,9 +169,10 @@ async function requestMealCompletion(
 	promptTemplate: string,
 	userContent: Array<Record<string, unknown>>,
 	temperature: number,
-	emptyMessage: string
+	emptyMessage: string,
+	signal?: AbortSignal
 ) {
-	const apiKey = await requireOpenRouterApiKey();
+	const apiKey = await requireOpenRouterApiKey(signal);
 	const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
 		method: 'POST',
 		headers: {
@@ -184,7 +189,8 @@ async function requestMealCompletion(
 			response_format: { type: 'json_object' },
 			max_tokens: 3000,
 			temperature
-		})
+		}),
+		signal
 	});
 	if (!response.ok) throw await openRouterError(response);
 	const result = (await response.json()) as {
@@ -197,8 +203,9 @@ async function requestMealCompletion(
 	return content;
 }
 
-async function requireOpenRouterApiKey() {
-	const apiKey = await localSecretStore.openRouterApiKey();
+async function requireOpenRouterApiKey(signal?: AbortSignal) {
+	const operation = localSecretStore.openRouterApiKey();
+	const apiKey = signal ? await withAbort(operation, signal) : await operation;
 	if (!apiKey) throw new Error('Add your OpenRouter API key in Profile settings.');
 	return apiKey;
 }

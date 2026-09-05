@@ -2,8 +2,8 @@
 import { untrack } from 'svelte';
 import { apiRequest } from '$lib/api';
 import type { StretchSession, StretchSettingsData } from '$lib/api-types';
-import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
-import TrackerPage from '$lib/components/trackerPage.svelte';
+import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import { toast } from '$lib/components/ui/toast';
 import type { StretchActivityId, StretchDifficulty } from '$lib/local/tracker-settings';
 import type { PageProps } from './$types';
@@ -20,9 +20,7 @@ let saveState = $state<SaveState>('idle');
 const completed = $derived(data.sessions.length > 0 || Boolean(savedSession));
 const interactive = $derived(data.date === data.today);
 const progressDays = $derived(
-	data.progressDays.map((day) =>
-		day.date === data.date && completed ? { ...day, value: 1 } : day
-	)
+	data.progressDays.map((day) => (day.date === data.date && completed ? { ...day, value: 1 } : day))
 );
 
 $effect(() => resetDate(data.date));

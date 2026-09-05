@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { ChevronsUpDown } from '@lucide/svelte';
-	import { Select as SelectPrimitive } from 'bits-ui';
-	import { cn, type WithoutChild } from '$lib/utils.js';
+import { ChevronsUpDown } from '@lucide/svelte';
+import { Select as SelectPrimitive } from 'bits-ui';
+import { cn, type WithoutChild } from '$lib/utils.js';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		children,
-		...restProps
-	}: WithoutChild<SelectPrimitive.TriggerProps> = $props();
+let {
+	ref = $bindable(null),
+	class: className,
+	children,
+	...restProps
+}: WithoutChild<SelectPrimitive.TriggerProps> = $props();
 </script>
 
 <SelectPrimitive.Trigger
@@ -21,5 +21,5 @@
 	{...restProps}
 >
 	{@render children?.()}
-	<ChevronsUpDown class="size-4 shrink-0 text-(--text)/40" aria-hidden="true" />
+	<ChevronsUpDown class="size-4 shrink-0 text-(--text-muted)" aria-hidden="true" />
 </SelectPrimitive.Trigger>

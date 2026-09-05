@@ -30,7 +30,10 @@ export function calculateTdee(
 }
 
 export function isEatingWindowOpen(schedule: EatingWindowSchedule, currentMinute: number) {
-	return currentMinute >= minutesFromTime(schedule.start) && currentMinute < minutesFromTime(schedule.end);
+	return (
+		currentMinute >= minutesFromTime(schedule.start) &&
+		currentMinute < minutesFromTime(schedule.end)
+	);
 }
 
 function minutesFromTime(time: string) {

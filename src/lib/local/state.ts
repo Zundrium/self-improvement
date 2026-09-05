@@ -14,6 +14,7 @@ import {
 	type NativeDatabaseConnection,
 	type NativeDatabaseConnectionFactory,
 	type NativeSQLiteConnectionOwner,
+	type RelationalRowReader,
 	type RelationalConnection
 } from './database/connection';
 import {
@@ -385,23 +386,93 @@ export class LocalAppStore {
 		return this.readDomains(ALL_LOCAL_DOMAINS);
 	}
 
-	async readDomains(domains: readonly LocalDomain[], nutritionMedia: NutritionMediaRead = 'full') {
-		await this.ensureInitialized();
-		return this.readDomainsNow(domains, nutritionMedia);
+	readDomains(domains: readonly LocalDomain[], nutritionMedia: NutritionMediaRead = 'full') {
+		return this.serialize(async () => {
+			await this.ensureInitialized();
+			return this.readDomainsNow(domains, nutritionMedia);
+		});
 	}
 
 	readDomainsWithoutMedia(domains: readonly LocalDomain[]) {
 		return this.readDomains(domains, 'none');
 	}
 
+	readNutritionEntry(entryId: string) {
+		return this.serialize(async () => {
+			await this.ensureInitialized();
+			const data = await this.connection.readSnapshot(DOMAIN_TABLES.nutrition, async (read) => {
+				const entries = await read('nutritionEntries', {
+					equals: { key: 'id', value: entryId }
+				});
+				return this.readNutritionSelection(read, entries, true);
+			});
+			return relationalDataToState(data, ['nutrition']);
+		});
+	}
+
+	readNutritionDay(localDate: string, progressDates: readonly string[]) {
+		return this.serialize(async () => {
+			await this.ensureInitialized();
+			const month = localDate.slice(0, 7);
+			const data = await this.connection.readSnapshot(DOMAIN_TABLES.nutrition, async (read) => {
+				const [monthEntries, progressEntries, monthFasting, progressFasting, profile] =
+					await Promise.all([
+						read('nutritionEntries', {
+							between: { key: 'localDate', lower: `${month}-01`, upper: `${month}-31` }
+						}),
+						read('nutritionEntries', {
+							anyOf: { key: 'localDate', values: [...progressDates] }
+						}),
+						read('nutritionFastingDates', {
+							between: { key: 'localDate', lower: `${month}-01`, upper: `${month}-31` }
+						}),
+						read('nutritionFastingDates', {
+							anyOf: { key: 'localDate', values: [...progressDates] }
+						}),
+						read('nutritionProfile', { equals: { key: 'id', value: 1 } })
+					]);
+				const entries = uniqueRows([...monthEntries, ...progressEntries], ({ id }) => id);
+				const selection = await this.readNutritionSelection(
+					read,
+					entries,
+					true,
+					entries.filter((entry) => entry.localDate === localDate).map(({ id }) => id)
+				);
+				return {
+					...selection,
+					nutritionProfile: profile,
+					nutritionFastingDates: uniqueRows(
+						[...monthFasting, ...progressFasting],
+						({ localDate }) => localDate
+					)
+				};
+			});
+			return relationalDataToState(data, ['nutrition']);
+		});
+	}
+
+	readNutritionFastingStatus(localDate: string) {
+		return this.serialize(async () => {
+			await this.ensureInitialized();
+			const rows = await this.connection.readRows('nutritionFastingDates', {
+				equals: { key: 'localDate', value: localDate }
+			});
+			return rows.length > 0;
+		});
+	}
+
 	async readProfileOverview() {
-		await this.ensureInitialized();
-		return this.readProjection(['profile', 'nutrition', 'rewards'], PROFILE_OVERVIEW_TABLES);
+		return this.serialize(async () => {
+			await this.ensureInitialized();
+			return this.readProjection(['profile', 'nutrition', 'rewards'], PROFILE_OVERVIEW_TABLES);
+		});
 	}
 
 	async readTrackerSettings(domain: LocalDomain) {
-		await this.ensureInitialized();
-		return this.readProjection([domain], trackerSettingsTables(domain));
+		return this.serialize(async () => {
+			await this.ensureInitialized();
+			return this.readProjection([domain], trackerSettingsTables(domain));
+		});
 	}
 
 	updateTrackerSettings(
@@ -424,14 +495,23 @@ export class LocalAppStore {
 	}
 
 	async readDailyProjection(includeProfile: boolean) {
-		await this.ensureInitialized();
-		const domains = includeProfile
-			? (['profile', ...trackerDomains()] as LocalDomain[])
-			: trackerDomains();
-		const tables: readonly TableName[] = includeProfile
-			? ['profile', 'enabledTrackers', ...DAILY_PROJECTION_TABLES]
-			: DAILY_PROJECTION_TABLES;
-		return this.readProjection(domains, tables);
+		return this.serialize(async () => {
+			await this.ensureInitialized();
+			const domains = includeProfile
+				? (['profile', ...trackerDomains()] as LocalDomain[])
+				: trackerDomains();
+			const tables: readonly TableName[] = includeProfile
+				? ['profile', 'enabledTrackers', ...DAILY_PROJECTION_TABLES]
+				: DAILY_PROJECTION_TABLES;
+			return this.readProjection(domains, tables);
+		});
+	}
+
+	readGamificationProjection() {
+		return this.serialize(async () => {
+			await this.ensureInitialized();
+			return this.readProjection(ALL_LOCAL_DOMAINS, GAMIFICATION_PROJECTION_TABLES, 'reference');
+		});
 	}
 
 	update(mutator: (state: LocalAppState) => void | Promise<void>) {
@@ -478,14 +558,21 @@ export class LocalAppStore {
 	}
 
 	exportState() {
-		return this.read();
+		return this.serialize(async () => {
+			await this.ensureInitialized();
+			const state = await this.readDomainsNow(ALL_LOCAL_DOMAINS);
+			assertResolvedBackupMedia(state);
+			return state;
+		});
 	}
 
 	replaceState(input: unknown) {
 		const state = validateLocalAppState(input);
 		return this.serialize(async () => {
 			await this.ensureInitialized();
-			await this.connection.write(stateToRelationalData(state, ALL_LOCAL_DOMAINS, true));
+			await this.connection.write(stateToRelationalData(state, ALL_LOCAL_DOMAINS, true), {
+				replaceMedia: true
+			});
 			return clone(state);
 		});
 	}
@@ -549,6 +636,36 @@ export class LocalAppStore {
 			loadMedia: nutritionMedia === 'full'
 		});
 		return validateLocalAppState(await relationalDataToState(data, domains));
+	}
+
+	private async readNutritionSelection(
+		read: RelationalRowReader,
+		entries: RelationalData['nutritionEntries'],
+		loadMedia: boolean,
+		childEntryIds: readonly string[] = entries.map(({ id }) => id)
+	) {
+		const meals = await read('nutritionMeals', {
+			anyOf: { key: 'entryId', values: [...childEntryIds] }
+		});
+		const mealIds = meals.map(({ id }) => id);
+		const [ingredients, media] = await Promise.all([
+			read('nutritionIngredients', {
+				anyOf: { key: 'mealId', values: mealIds }
+			}),
+			read(
+				'nutritionMedia',
+				{
+					anyOf: { key: 'id', values: meals.flatMap(({ mediaId }) => (mediaId ? [mediaId] : [])) }
+				},
+				{ loadMedia }
+			)
+		]);
+		return {
+			nutritionEntries: entries,
+			nutritionMeals: meals,
+			nutritionIngredients: ingredients,
+			nutritionMedia: media
+		};
 	}
 
 	private updateTableProjection(
@@ -690,10 +807,7 @@ function domainTables(domains: readonly LocalDomain[], includeNutritionMedia = t
 }
 
 function gamificationProjectionTables(writeDomains: readonly LocalDomain[]) {
-	const required = new Set([
-		...GAMIFICATION_PROJECTION_TABLES,
-		...domainTables(writeDomains)
-	]);
+	const required = new Set([...GAMIFICATION_PROJECTION_TABLES, ...domainTables(writeDomains)]);
 	return TABLE_ORDER.filter((table) => required.has(table));
 }
 
@@ -1166,9 +1280,20 @@ function mediaRow(
 	imageDataUrl: string,
 	createdAt: string
 ): RelationalRows['nutritionMedia'] {
+	const id = mealMediaId(mealId);
+	if (imageDataUrl === `stored-media:${id}`) {
+		return {
+			id,
+			mimeType: 'image/jpeg',
+			byteSize: 0,
+			relativePath: imageDataUrl,
+			createdAt,
+			blob: undefined
+		};
+	}
 	const parsed = parseDataUrl(imageDataUrl);
 	return {
-		id: mealMediaId(mealId),
+		id,
 		mimeType: parsed.type,
 		byteSize: parsed.blob.size,
 		relativePath: `nutrition/${mealMediaId(mealId)}-${mediaHash(imageDataUrl)}.${mediaExtension(parsed.type)}`,
@@ -1178,9 +1303,18 @@ function mediaRow(
 }
 function parseDataUrl(value: string) {
 	const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(value);
-	if (!match) return { type: 'image/jpeg', blob: new Blob([], { type: 'image/jpeg' }) };
+	if (!match) throw new Error('Nutrition images must be valid JPEG, PNG, or WebP data URLs.');
 	const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
 	return { type: match[1], blob: new Blob([bytes], { type: match[1] }) };
+}
+
+function assertResolvedBackupMedia(state: LocalAppState) {
+	for (const entry of state.nutrition.entries) {
+		for (const meal of entry.meals) {
+			if (meal.imageDataUrl.startsWith('stored-media:'))
+				throw new Error('A nutrition photo could not be read. Please retry the backup.');
+		}
+	}
 }
 async function mediaDataUrl(media: RelationalRows['nutritionMedia'] | undefined) {
 	if (!media) return '';
@@ -1216,6 +1350,10 @@ function matchingRewardId(state: LocalAppState, redemption: LocalAppState['redem
 function withoutId<T extends { id: number }>(value: T) {
 	const { id: _id, ...rest } = value;
 	return rest;
+}
+
+function uniqueRows<T>(rows: T[], key: (row: T) => string) {
+	return [...new Map(rows.map((row) => [key(row), row])).values()];
 }
 function profileCreatedAt(data: Partial<RelationalData>) {
 	const value = data.profile?.[0]?.createdAt;

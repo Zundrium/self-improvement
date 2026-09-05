@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { Check } from '@lucide/svelte';
-	import { Select as SelectPrimitive } from 'bits-ui';
-	import { cn, type WithoutChild } from '$lib/utils.js';
+import { Check } from '@lucide/svelte';
+import { Select as SelectPrimitive } from 'bits-ui';
+import { cn, type WithoutChild } from '$lib/utils.js';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		value,
-		label,
-		children: childrenProp,
-		...restProps
-	}: WithoutChild<SelectPrimitive.ItemProps> = $props();
+let {
+	ref = $bindable(null),
+	class: className,
+	value,
+	label,
+	children: childrenProp,
+	...restProps
+}: WithoutChild<SelectPrimitive.ItemProps> = $props();
 </script>
 
 <SelectPrimitive.Item

@@ -1,6 +1,6 @@
-import type { AchievementSummary } from '$lib/api-types';
+import type { AchievementSummary } from '$lib/local/gamification/model';
 import { appTrackers } from '$lib/trackers/registry';
-import { isStretchScheduled } from '../../routes/stretch/stretch';
+import { isStretchScheduled } from './stretch/model';
 import {
 	type AchievementDefinition,
 	achievementCatalog,

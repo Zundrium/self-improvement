@@ -1,23 +1,23 @@
 <script lang="ts">
-	import { ChevronDown } from '@lucide/svelte';
-	import { Accordion as AccordionPrimitive } from 'bits-ui';
-	import { cn, type WithoutChild } from '$lib/utils.js';
-	import { watchExpanded } from '$lib/motion/gsap';
+import { ChevronDown } from '@lucide/svelte';
+import { Accordion as AccordionPrimitive } from 'bits-ui';
+import { cn, type WithoutChild } from '$lib/utils.js';
+import { watchExpanded } from '$lib/motion/gsap';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		level = 3,
-		children,
-		...restProps
-	}: WithoutChild<AccordionPrimitive.TriggerProps> & {
-		level?: AccordionPrimitive.HeaderProps['level'];
-	} = $props();
+let {
+	ref = $bindable(null),
+	class: className,
+	level = 3,
+	children,
+	...restProps
+}: WithoutChild<AccordionPrimitive.TriggerProps> & {
+	level?: AccordionPrimitive.HeaderProps['level'];
+} = $props();
 
-	$effect(() => {
-		if (!ref) return;
-		return watchExpanded(ref);
-	});
+$effect(() => {
+	if (!ref) return;
+	return watchExpanded(ref);
+});
 </script>
 
 <AccordionPrimitive.Header {level} class="flex">
@@ -32,7 +32,7 @@
 	>
 		{@render children?.()}
 		<ChevronDown
-			class="size-4 shrink-0 text-(--text)/40"
+			class="size-4 shrink-0 text-(--text-muted)"
 			data-motion-chevron="true"
 			aria-hidden="true"
 		/>

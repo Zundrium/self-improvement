@@ -1,61 +1,61 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import { apiRequest } from '$lib/api';
-	import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import BreathingExercise from './components/breathingExercise.svelte';
-	import { type BreathingCompletion, type SaveState } from './breathing';
-	import type { PageProps } from './$types';
+import { untrack } from 'svelte';
+import { apiRequest } from '$lib/api';
+import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import BreathingExercise from './components/breathingExercise.svelte';
+import { type BreathingCompletion, type SaveState } from './breathing';
+import type { PageProps } from './$types';
 
-	type SavedExercise = BreathingCompletion & {
-		technique: '4-7-8' | '4-8';
-		durationSeconds: number;
-	};
+type SavedExercise = BreathingCompletion & {
+	technique: '4-7-8' | '4-8';
+	durationSeconds: number;
+};
 
-	let { data }: PageProps = $props();
-	const dateSelectorState = useDateSelectorState();
-	let loadedDate = $state(untrack(() => data.date));
-	let savedExercise = $state<SavedExercise>();
-	let pendingCompletion = $state<BreathingCompletion>();
-	let saveState = $state<SaveState>('idle');
-	const exerciseCompleted = $derived(Boolean(data.exercise || savedExercise));
-	const isToday = $derived(data.date === data.today);
-	const progressDays = $derived(
-		data.progressDays.map((day) =>
-			day.date === data.date && exerciseCompleted ? { ...day, value: 1 } : day
-		)
-	);
+let { data }: PageProps = $props();
+const dateSelectorState = useDateSelectorState();
+let loadedDate = $state(untrack(() => data.date));
+let savedExercise = $state<SavedExercise>();
+let pendingCompletion = $state<BreathingCompletion>();
+let saveState = $state<SaveState>('idle');
+const exerciseCompleted = $derived(Boolean(data.exercise || savedExercise));
+const isToday = $derived(data.date === data.today);
+const progressDays = $derived(
+	data.progressDays.map((day) =>
+		day.date === data.date && exerciseCompleted ? { ...day, value: 1 } : day
+	)
+);
 
-	$effect(() => {
-		if (data.date === loadedDate) return;
-		loadedDate = data.date;
-		savedExercise = undefined;
-		pendingCompletion = undefined;
-		saveState = 'idle';
+$effect(() => {
+	if (data.date === loadedDate) return;
+	loadedDate = data.date;
+	savedExercise = undefined;
+	pendingCompletion = undefined;
+	saveState = 'idle';
+});
+
+async function saveCompletion(completion: BreathingCompletion) {
+	pendingCompletion = completion;
+	saveState = 'saving';
+	try {
+		savedExercise = await postCompletion(completion);
+		dateSelectorState.mark(completion.localDate, true);
+		saveState = 'saved';
+	} catch {
+		saveState = 'error';
+	}
+}
+
+async function postCompletion(completion: BreathingCompletion) {
+	return apiRequest<SavedExercise>('/api/app/breathing', {
+		method: 'POST',
+		body: JSON.stringify(completion)
 	});
+}
 
-	async function saveCompletion(completion: BreathingCompletion) {
-		pendingCompletion = completion;
-		saveState = 'saving';
-		try {
-			savedExercise = await postCompletion(completion);
-			dateSelectorState.mark(completion.localDate, true);
-			saveState = 'saved';
-		} catch {
-			saveState = 'error';
-		}
-	}
-
-	async function postCompletion(completion: BreathingCompletion) {
-		return apiRequest<SavedExercise>('/api/app/breathing', {
-			method: 'POST',
-			body: JSON.stringify(completion)
-		});
-	}
-
-	function retryCompletion() {
-		if (pendingCompletion) void saveCompletion(pendingCompletion);
-	}
+function retryCompletion() {
+	if (pendingCompletion) void saveCompletion(pendingCompletion);
+}
 </script>
 
 <svelte:head>

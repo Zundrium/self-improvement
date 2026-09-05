@@ -19,6 +19,7 @@ import type {
 import { LocalAppService } from './service';
 import { createDefaultAppState, LocalAppDatabase, LocalAppStore } from './state';
 import { DEFAULT_STRETCH_DIFFICULTIES } from './tracker-settings';
+import { appActionCandidates } from '$lib/app/action-candidates';
 
 const stores: LocalAppStore[] = [];
 
@@ -31,7 +32,7 @@ describe('local app service', () => {
 		const now = new Date('2026-03-20T12:00:00.000Z');
 		const store = trackedStore();
 		await store.replaceState(createDefaultAppState(now));
-		const service = new LocalAppService(store, () => now);
+		const service = new LocalAppService(store, () => now, appActionCandidates);
 
 		const app = await service.request<AppBootstrapData>('/api/app/bootstrap');
 		await service.request('/api/app/happiness', {
@@ -94,9 +95,10 @@ describe('local app service', () => {
 		});
 		const gamification = await service.request<GamificationData>('/api/app/gamification');
 
-		expect(
-			gamification.achievements.find(({ id }) => id === 'event-first-backup')
-		).toMatchObject({ unlocked: true, unlockedAt: now.toISOString() });
+		expect(gamification.achievements.find(({ id }) => id === 'event-first-backup')).toMatchObject({
+			unlocked: true,
+			unlockedAt: now.toISOString()
+		});
 		await expect(
 			service.request('/api/app/achievements/unlock', {
 				method: 'POST',
@@ -336,7 +338,7 @@ describe('local app service', () => {
 			sourceTimestamp: `${date}T12:00:00.000Z`
 		}));
 		await store.replaceState(state);
-		const service = new LocalAppService(store, () => now);
+		const service = new LocalAppService(store, () => now, appActionCandidates);
 
 		const screenTime = await service.request<ScreenTimeData>('/api/app/screen-time');
 		const summary = await service.request<DaySummaryData>('/api/app/day-summary');
@@ -453,7 +455,7 @@ describe('local app service', () => {
 		const state = createDefaultAppState(now);
 		state.enabledTrackerIds = ['nutrition'];
 		await store.replaceState(state);
-		const service = new LocalAppService(store, () => now);
+		const service = new LocalAppService(store, () => now, appActionCandidates);
 
 		const feed = await service.request<ActionFeedData>('/api/app/action-feed');
 
@@ -477,7 +479,7 @@ describe('local app service', () => {
 		const state = createDefaultAppState(now);
 		state.enabledTrackerIds = ['fitness'];
 		await store.replaceState(state);
-		const service = new LocalAppService(store, () => now);
+		const service = new LocalAppService(store, () => now, appActionCandidates);
 
 		const feed = await service.request<ActionFeedData>('/api/app/action-feed');
 
@@ -496,7 +498,7 @@ describe('local app service', () => {
 		const state = createDefaultAppState(now);
 		state.enabledTrackerIds = ['meditation', 'breathing', 'happiness'];
 		await store.replaceState(state);
-		const service = new LocalAppService(store, () => now);
+		const service = new LocalAppService(store, () => now, appActionCandidates);
 
 		const feed = await service.request<ActionFeedData>('/api/app/action-feed');
 

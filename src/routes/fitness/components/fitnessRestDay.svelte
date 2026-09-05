@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Dumbbell } from '@lucide/svelte';
-	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
-	import { getTrackerColors, trackerGradient } from '$lib/trackers/registry';
+import { Dumbbell } from '@lucide/svelte';
+import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
+import { getTrackerColors, trackerGradient } from '$lib/trackers/registry';
 
-	const colors = getTrackerColors('fitness');
+const colors = getTrackerColors('fitness');
 </script>
 
 <Empty class="py-20">

@@ -1,30 +1,30 @@
 <script lang="ts">
-	import { page } from '$app/state';
-	import { Database, Settings2, ShieldCheck, SlidersHorizontal } from '@lucide/svelte';
-	import { untrack } from 'svelte';
-	import PermissionsHub from './components/permissionsHub.svelte';
-	import { Avatar } from '$lib/components/ui/avatar';
-	import type { TrackerId } from '$domain/model';
-	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent } from '$lib/components/ui/card';
-	import DataBackupCard from './components/dataBackupCard.svelte';
-	import GeneralSettings from './components/generalSettings.svelte';
-	import TrackerPreferences from './components/trackerPreferences.svelte';
-	import type { PageProps } from './$types';
+import { page } from '$app/state';
+import { Database, Settings2, ShieldCheck, SlidersHorizontal } from '@lucide/svelte';
+import { untrack } from 'svelte';
+import PermissionsHub from './components/permissionsHub.svelte';
+import { Avatar } from '$lib/components/ui/avatar';
+import type { TrackerId } from '$domain/model';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent } from '$lib/components/ui/card';
+import DataBackupCard from './components/dataBackupCard.svelte';
+import GeneralSettings from './components/generalSettings.svelte';
+import TrackerPreferences from './components/trackerPreferences.svelte';
+import type { PageProps } from './$types';
 
-	type ProfileTab = 'general' | 'trackers' | 'permissions' | 'data';
+type ProfileTab = 'general' | 'trackers' | 'permissions' | 'data';
 
-	let { data }: PageProps = $props();
-	let activeTab = $state<ProfileTab>(tabFromUrl(untrack(() => page.url.searchParams.get('tab'))));
+let { data }: PageProps = $props();
+let activeTab = $state<ProfileTab>(tabFromUrl(untrack(() => page.url.searchParams.get('tab'))));
 
-	function tabFromUrl(value: string | null): ProfileTab {
-		return value === 'trackers' || value === 'permissions' || value === 'data' ? value : 'general';
-	}
+function tabFromUrl(value: string | null): ProfileTab {
+	return value === 'trackers' || value === 'permissions' || value === 'data' ? value : 'general';
+}
 
-	function trackerFromUrl(value: string | null): TrackerId | undefined {
-		if (value === 'steps' || value === 'sleep') return value;
-		return value === 'screen-time' ? 'screenTime' : undefined;
-	}
+function trackerFromUrl(value: string | null): TrackerId | undefined {
+	if (value === 'steps' || value === 'sleep') return value;
+	return value === 'screen-time' ? 'screenTime' : undefined;
+}
 </script>
 
 <svelte:head><title>Settings · Self Improvement</title></svelte:head>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
+import { Form } from '$lib/components/ui/form';
 import {
 	ArrowLeft,
 	Camera,
@@ -9,6 +9,7 @@ import {
 	FileText,
 	Flame,
 	ImagePlus,
+	Plus,
 	RefreshCw,
 	Send,
 	SwitchCamera,
@@ -19,12 +20,9 @@ import { onDestroy, onMount, tick } from 'svelte';
 import { SvelteSet } from 'svelte/reactivity';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { apiRequest } from '$lib/api';
-import {
-	BottomActionBar,
-	BottomActionButton,
-	BottomActionGroup
-} from '$lib/components/ui/bottom-action-bar';
+import { localOperation } from '$lib/api';
+import { BottomActionButton, BottomActionGroup } from '$lib/components/ui/bottom-action-bar';
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
 import { Alert, AlertDescription } from '$lib/components/ui/alert';
 import { Badge } from '$lib/components/ui/badge';
 import { Button } from '$lib/components/ui/button';
@@ -33,7 +31,7 @@ import { Input } from '$lib/components/ui/input';
 import { Spinner } from '$lib/components/ui/spinner';
 import { Textarea } from '$lib/components/ui/textarea';
 import { toast } from '$lib/components/ui/toast';
-import WorkflowHeader from '$lib/components/workflowHeader.svelte';
+import WorkflowHeader from '$lib/components/forms/WorkflowHeader.svelte';
 import { MAX_NUTRITION_IMAGE_DATA_URL_LENGTH } from '$lib/local/nutrition';
 import { localSecretStore } from '$lib/local/secrets';
 import {
@@ -44,12 +42,18 @@ import {
 } from '../ai/meal-analysis';
 import type { PageProps } from './$types';
 import { cameraVideoConstraints, createCameraStartup, decodeGalleryImage } from './camera';
+import EntryEditor from '../components/entryEditor.svelte';
+import { draftFingerprint, newEntryDraft, snapshotDraft } from '../draft';
+import { RequestLifetime, requestError as describeRequestError, withAbort } from '../workflow';
+import { guardUnsavedNavigation } from '$lib/forms/unsaved-navigation.svelte';
 
 let { data }: PageProps = $props();
 
 type Phase =
 	| 'checking'
 	| 'setup'
+	| 'startup-error'
+	| 'manual'
 	| 'photo'
 	| 'description'
 	| 'analyzing'
@@ -57,7 +61,8 @@ type Phase =
 	| 'review'
 	| 'correction'
 	| 'refining'
-	| 'saving';
+	| 'saving'
+	| 'saved';
 type CameraState = 'opening' | 'ready' | 'error';
 type MealEstimate = AIResult;
 
@@ -81,6 +86,16 @@ let processingPhoto = $state(false);
 let cameraStartPending = $state(false);
 let stream: MediaStream | null = null;
 const cameraStartup = createCameraStartup();
+const remoteRequest = new RequestLifetime();
+const saveRequest = new RequestLifetime();
+const startupRequest = new RequestLifetime();
+let startupError = $state('');
+let savedDate = $state('');
+const initialManualDraft = newEntryDraft('');
+let manualDraft = $state(initialManualDraft);
+let manualBaseline = $state(snapshotDraft(initialManualDraft));
+const manualDirty = $derived(draftFingerprint(manualDraft) !== draftFingerprint(manualBaseline));
+guardUnsavedNavigation(() => phase === 'manual' && manualDirty);
 
 const totals = $derived.by(() => {
 	if (!estimate) return { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 };
@@ -94,10 +109,6 @@ const totals = $derived.by(() => {
 		{ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }
 	);
 });
-function api<T>(path: string, init?: RequestInit) {
-	return apiRequest<T>(path, init);
-}
-
 async function startCamera() {
 	if (phase !== 'photo') return;
 	if (!video) {
@@ -212,13 +223,18 @@ async function analyzeMeal() {
 	if (!selectedImage && mealDescription.length < 2) return;
 	requestError = '';
 	phase = 'analyzing';
+	const request = remoteRequest.begin();
 	try {
-		estimate = await requestMealAnalysis(mealSource());
+		const result = await requestMealAnalysis(mealSource(), request.signal);
+		if (!remoteRequest.isCurrent(request.id)) return;
+		estimate = result;
 		phase = 'review';
 	} catch (cause) {
-		requestError =
-			cause instanceof Error ? cause.message : 'Could not analyze this meal. Try again.';
+		if (!remoteRequest.isCurrent(request.id)) return;
+		requestError = requestErrorMessage(cause, 'Could not analyze this meal. Try again.');
 		phase = 'analysis-error';
+	} finally {
+		request.finish();
 	}
 }
 
@@ -259,16 +275,26 @@ async function submitCorrection(event: SubmitEvent) {
 	if (!estimate || cleanCorrection.length < 2 || phase !== 'correction') return;
 	requestError = '';
 	phase = 'refining';
+	const request = remoteRequest.begin();
 	try {
-		estimate = await refineMealEstimate(mealSource(), estimate, cleanCorrection);
+		const result = await refineMealEstimate(
+			mealSource(),
+			estimate,
+			cleanCorrection,
+			request.signal
+		);
+		if (!remoteRequest.isCurrent(request.id)) return;
+		estimate = result;
 		correction = '';
 		phase = 'review';
 	} catch (cause) {
-		requestError =
-			cause instanceof Error ? cause.message : 'Could not update the estimate. Try again.';
+		if (!remoteRequest.isCurrent(request.id)) return;
+		requestError = requestErrorMessage(cause, 'Could not update the estimate. Try again.');
 		phase = 'correction';
 		await tick();
 		correctionInput?.focus();
+	} finally {
+		request.finish();
 	}
 }
 
@@ -276,31 +302,79 @@ async function confirmMeal() {
 	if (!estimate || phase !== 'review') return;
 	requestError = '';
 	phase = 'saving';
+	const request = saveRequest.begin(30_000);
+	const submitted = {
+		date: data.date,
+		time: inputTime(new Date()),
+		name: estimate.mealName,
+		notes: '',
+		meals: [
+			{ name: estimate.mealName, imageDataUrl: selectedImage, ingredients: estimate.ingredients }
+		]
+	};
 	try {
-		const time = inputTime(new Date());
-		await api('/api/app/nutrition/entries', {
-			method: 'POST',
-			body: JSON.stringify({
-				date: data.date,
-				time,
-				timeZoneOffset: new Date(`${data.date}T${time}:00`).getTimezoneOffset(),
-				name: estimate.mealName,
-				notes: '',
-				meals: [
-					{
-						name: estimate.mealName,
-						imageDataUrl: selectedImage,
-						ingredients: estimate.ingredients
-					}
-				]
-			})
+		await localOperation('createNutritionEntry', {
+			...submitted,
+			timeZoneOffset: new Date(`${submitted.date}T${submitted.time}:00`).getTimezoneOffset()
 		});
+		if (!saveRequest.isCurrent(request.id)) return;
 		toast.success('Meal added to your log');
-		await goto(resolve('/nutrition/log/[date]', { date: data.date }));
+		savedDate = submitted.date;
+		phase = 'saved';
+		await openSavedLog();
 	} catch (cause) {
+		if (!saveRequest.isCurrent(request.id)) return;
+		if (phase === 'saved') return;
 		requestError = cause instanceof Error ? cause.message : 'Could not add this meal. Try again.';
 		phase = 'review';
+	} finally {
+		request.finish();
 	}
+}
+
+async function saveManualEntry(event: SubmitEvent) {
+	event.preventDefault();
+	if (phase !== 'manual') return;
+	const submitted = snapshotDraft(manualDraft);
+	const request = saveRequest.begin();
+	phase = 'saving';
+	requestError = '';
+	try {
+		await localOperation('createNutritionEntry', {
+			...submitted,
+			timeZoneOffset: new Date(`${submitted.date}T${submitted.time}:00`).getTimezoneOffset()
+		});
+		if (!saveRequest.isCurrent(request.id)) return;
+		toast.success('Meal added to your log');
+		savedDate = submitted.date;
+		phase = 'saved';
+		await openSavedLog();
+	} catch (cause) {
+		if (!saveRequest.isCurrent(request.id)) return;
+		if (phase === 'saved') return;
+		requestError = requestErrorMessage(cause, 'Could not add this meal. Try again.');
+		phase = 'manual';
+	} finally {
+		request.finish();
+	}
+}
+
+async function openSavedLog() {
+	requestError = '';
+	try {
+		await goto(resolve('/nutrition/log/[date]', { date: savedDate }));
+	} catch (cause) {
+		requestError = requestErrorMessage(cause, 'Meal saved. Could not open the food log.');
+	}
+}
+
+function openManualEntry() {
+	remoteRequest.cancel();
+	stopCamera();
+	manualDraft = newEntryDraft(data.date);
+	manualBaseline = snapshotDraft(manualDraft);
+	requestError = '';
+	phase = 'manual';
 }
 
 async function compressFile(file: File) {
@@ -367,13 +441,28 @@ function inputTime(value: Date) {
 }
 
 async function initialize() {
-	if (!(await localSecretStore.openRouterApiKey())) {
-		phase = 'setup';
-		return;
+	startupError = '';
+	phase = 'checking';
+	const request = startupRequest.begin(10_000);
+	try {
+		const apiKey = await withAbort(localSecretStore.openRouterApiKey(), request.signal);
+		if (!startupRequest.isCurrent(request.id)) return;
+		if (!apiKey) {
+			phase = 'setup';
+			return;
+		}
+		phase = 'photo';
+		cameraStartPending = true;
+	} catch (cause) {
+		if (!startupRequest.isCurrent(request.id)) return;
+		startupError = requestErrorMessage(cause, 'Could not check AI settings.');
+		phase = 'startup-error';
+	} finally {
+		request.finish();
 	}
-	phase = 'photo';
-	cameraStartPending = true;
 }
+
+const requestErrorMessage = describeRequestError;
 
 $effect(() => {
 	if (!cameraStartPending || phase !== 'photo' || !video) return;
@@ -382,7 +471,12 @@ $effect(() => {
 });
 
 onMount(() => void initialize());
-onDestroy(stopCamera);
+onDestroy(() => {
+	stopCamera();
+	remoteRequest.cancel();
+	saveRequest.cancel();
+	startupRequest.cancel();
+});
 </script>
 
 <svelte:head><title>Add a meal · Self Improvement</title></svelte:head>
@@ -418,11 +512,50 @@ onDestroy(stopCamera);
 				</span>
 				<div>
 					<h1 class="text-3xl font-medium tracking-[-0.055em]">Set up AI nutrition</h1>
-					<p class="mt-2 text-sm leading-6 text-(--text)/56">
+					<p class="mt-2 text-sm leading-6 text-(--text-muted)">
 						Add your OpenRouter API key before analyzing a meal.
 					</p>
 				</div>
-				<Button profile="highlighted" href="/profile?tab=general" size="large" class="w-full">Open profile settings</Button>
+				<div class="space-y-2">
+					<Button profile="highlighted" type="button" size="large" class="w-full" onclick={openManualEntry}>Add meal manually</Button>
+					<Button profile="plain" href="/profile?tab=general" size="large" class="w-full">Set up AI analysis</Button>
+				</div>
+			</div>
+		</section>
+	{:else if phase === 'startup-error'}
+		<WorkflowHeader title="Add a meal" />
+		<section class="app-gutter mx-auto flex min-h-0 w-full max-w-lg flex-1 items-center py-8">
+			<div class="w-full space-y-4">
+				<Alert variant="destructive"><AlertDescription>{startupError}</AlertDescription></Alert>
+				<Button profile="highlighted" size="large" class="w-full" onclick={initialize}>Retry AI setup</Button>
+				<Button profile="plain" size="large" class="w-full" onclick={openManualEntry}>Add meal manually</Button>
+			</div>
+		</section>
+	{:else if phase === 'saved'}
+		<WorkflowHeader title="Meal saved" />
+		<section class="app-gutter mx-auto flex min-h-0 w-full max-w-lg flex-1 items-center py-8 text-center">
+			<div class="w-full space-y-4">
+				<Check class="mx-auto size-10" />
+				<p>Your meal is safely in the food log.</p>
+				{#if requestError}<Alert variant="destructive"><AlertDescription>{requestError}</AlertDescription></Alert>{/if}
+				<Button profile="highlighted" size="large" class="w-full" onclick={openSavedLog}>Open food log</Button>
+			</div>
+		</section>
+	{:else if phase === 'manual'}
+		<WorkflowHeader title="Add meal manually" />
+		<section class="app-gutter min-h-0 flex-1 overflow-y-auto py-6">
+			<div class="mx-auto max-w-4xl">
+				<Form id="manual-entry" onsubmit={saveManualEntry}>
+					<EntryEditor
+						bind:date={manualDraft.date}
+						bind:time={manualDraft.time}
+						bind:name={manualDraft.name}
+						bind:notes={manualDraft.notes}
+						bind:meals={manualDraft.meals}
+						error={requestError}
+						aiRefinement={false}
+					/>
+				</Form>
 			</div>
 		</section>
 	{:else if phase === 'photo'}
@@ -495,7 +628,7 @@ onDestroy(stopCamera);
 						<h1 class="mt-4 text-3xl font-medium tracking-[-0.055em] sm:text-4xl">
 							Describe what you ate
 						</h1>
-						<p class="mt-2 text-sm leading-6 text-(--text)/56">
+						<p class="mt-2 text-sm leading-6 text-(--text-muted)">
 							Include portions, ingredients, drinks, sauces, and cooking fats when you know them.
 						</p>
 					</div>
@@ -504,7 +637,7 @@ onDestroy(stopCamera);
 						<Field>
 							<div class="flex items-end justify-between gap-3">
 								<FieldLabel for="meal-description">Meal description</FieldLabel>
-								<span class="text-xs text-(--text)/40 tabular-nums">
+								<span class="text-xs text-(--text-muted) tabular-nums">
 									{mealDescription.length}/{MAX_DESCRIPTION_LENGTH}
 								</span>
 							</div>
@@ -621,22 +754,22 @@ onDestroy(stopCamera);
 						<div class="flex min-w-0 flex-col items-center gap-1 text-center">
 							<Flame class="size-5 text-chart-4" aria-hidden="true" />
 							<strong class="text-sm tabular-nums">{Math.round(totals.calories)}</strong>
-							<span class="text-[0.68rem] text-(--text)/48">kcal</span>
+							<span class="text-[0.68rem] text-(--text-muted)">kcal</span>
 						</div>
 						<div class="flex min-w-0 flex-col items-center gap-1 text-center">
 							<Drumstick class="size-5 text-chart-2" aria-hidden="true" />
 							<strong class="text-sm tabular-nums">{totals.proteinG.toFixed(1)}g</strong>
-							<span class="text-[0.68rem] text-(--text)/48">protein</span>
+							<span class="text-[0.68rem] text-(--text-muted)">protein</span>
 						</div>
 						<div class="flex min-w-0 flex-col items-center gap-1 text-center">
 							<Wheat class="size-5 text-chart-1" aria-hidden="true" />
 							<strong class="text-sm tabular-nums">{totals.carbsG.toFixed(1)}g</strong>
-							<span class="text-[0.68rem] text-(--text)/48">carbs</span>
+							<span class="text-[0.68rem] text-(--text-muted)">carbs</span>
 						</div>
 						<div class="flex min-w-0 flex-col items-center gap-1 text-center">
 							<Droplet class="size-5 text-chart-3" aria-hidden="true" />
 							<strong class="text-sm tabular-nums">{totals.fatG.toFixed(1)}g</strong>
-							<span class="text-[0.68rem] text-(--text)/48">fat</span>
+							<span class="text-[0.68rem] text-(--text-muted)">fat</span>
 						</div>
 					</div>
 
@@ -649,7 +782,7 @@ onDestroy(stopCamera);
 							<Field>
 								<div class="flex items-end justify-between gap-3">
 									<FieldLabel for="meal-correction">What should we correct?</FieldLabel>
-									<span class="text-xs text-(--text)/40 tabular-nums">{correction.length}/500</span>
+									<span class="text-xs text-(--text-muted) tabular-nums">{correction.length}/500</span>
 								</div>
 								<Textarea
 									bind:ref={correctionInput}
@@ -684,8 +817,15 @@ onDestroy(stopCamera);
 	{/if}
 </main>
 
-{#if phase === 'photo'}
-	<BottomActionBar contentClass="max-w-lg" mobileOnly={false}>
+{#if phase === 'manual'}
+	<PageActionBar contentClass="max-w-4xl" mobileOnly={false}>
+		<BottomActionGroup>
+			<BottomActionButton href="/nutrition/log/{manualDraft.date}" format="icon" aria-label="Cancel"><X class="size-5" /></BottomActionButton>
+			<BottomActionButton form="manual-entry" type="submit" tone="primary"><Check class="mr-2 size-4" /> Save meal</BottomActionButton>
+		</BottomActionGroup>
+	</PageActionBar>
+{:else if phase === 'photo'}
+	<PageActionBar contentClass="max-w-lg" mobileOnly={false}>
 		<BottomActionGroup justify="center" aria-label="Camera controls">
 			<BottomActionButton
 				href="/nutrition/log/{data.date}"
@@ -727,10 +867,13 @@ onDestroy(stopCamera);
 			>
 				<FileText class="size-5" />
 			</BottomActionButton>
+			<BottomActionButton format="icon" onclick={openManualEntry} disabled={processingPhoto} aria-label="Add manually">
+				<Plus class="size-5" />
+			</BottomActionButton>
 		</BottomActionGroup>
-	</BottomActionBar>
+	</PageActionBar>
 {:else if phase === 'description'}
-	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
+	<PageActionBar contentClass="max-w-xl" mobileOnly={false}>
 		<BottomActionGroup justify="between">
 			<BottomActionButton
 				href="/nutrition/log/{data.date}"
@@ -748,9 +891,9 @@ onDestroy(stopCamera);
 				<Camera class="size-5" />
 			</BottomActionButton>
 		</BottomActionGroup>
-	</BottomActionBar>
+	</PageActionBar>
 {:else if phase === 'analyzing' || phase === 'refining' || phase === 'correction'}
-	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
+	<PageActionBar contentClass="max-w-xl" mobileOnly={false}>
 		<BottomActionGroup>
 			<BottomActionButton
 				href="/nutrition/log/{data.date}"
@@ -760,9 +903,9 @@ onDestroy(stopCamera);
 				<X class="size-5" />
 			</BottomActionButton>
 		</BottomActionGroup>
-	</BottomActionBar>
+	</PageActionBar>
 {:else if phase === 'analysis-error'}
-	<BottomActionBar contentClass="max-w-lg" mobileOnly={false}>
+	<PageActionBar contentClass="max-w-lg" mobileOnly={false}>
 		<BottomActionGroup>
 			<BottomActionButton
 				href="/nutrition/log/{data.date}"
@@ -782,9 +925,9 @@ onDestroy(stopCamera);
 				{/if}
 			</BottomActionButton>
 		</BottomActionGroup>
-	</BottomActionBar>
+	</PageActionBar>
 {:else if estimate && (phase === 'review' || phase === 'saving')}
-	<BottomActionBar contentClass="max-w-xl" mobileOnly={false}>
+	<PageActionBar contentClass="max-w-xl" mobileOnly={false}>
 		<BottomActionGroup aria-label="Confirm meal estimate">
 			<BottomActionButton
 				href="/nutrition/log/{data.date}"
@@ -813,5 +956,5 @@ onDestroy(stopCamera);
 				{/if}
 			</BottomActionButton>
 		</BottomActionGroup>
-	</BottomActionBar>
+	</PageActionBar>
 {/if}

@@ -1,23 +1,23 @@
 <script lang="ts">
-	import { Select as SelectPrimitive } from 'bits-ui';
-	import { cn, type WithoutChild } from '$lib/utils.js';
-	import { watchMotionState } from '$lib/motion/gsap';
+import { Select as SelectPrimitive } from 'bits-ui';
+import { cn, type WithoutChild } from '$lib/utils.js';
+import { watchMotionState } from '$lib/motion/gsap';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		sideOffset = 6,
-		portalProps,
-		children,
-		...restProps
-	}: WithoutChild<SelectPrimitive.ContentProps> & {
-		portalProps?: SelectPrimitive.PortalProps;
-	} = $props();
+let {
+	ref = $bindable(null),
+	class: className,
+	sideOffset = 6,
+	portalProps,
+	children,
+	...restProps
+}: WithoutChild<SelectPrimitive.ContentProps> & {
+	portalProps?: SelectPrimitive.PortalProps;
+} = $props();
 
-	$effect(() => {
-		if (!ref) return;
-		return watchMotionState(ref, 'menu');
-	});
+$effect(() => {
+	if (!ref) return;
+	return watchMotionState(ref, 'menu');
+});
 </script>
 
 <SelectPrimitive.Portal {...portalProps}>

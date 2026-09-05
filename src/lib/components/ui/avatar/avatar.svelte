@@ -1,32 +1,32 @@
 <script lang="ts">
-	import { User } from '@lucide/svelte';
-	import { cn, type WithElementRef } from '$lib/utils.js';
-	import type { HTMLAttributes } from 'svelte/elements';
+import { User } from '@lucide/svelte';
+import { cn, type WithElementRef } from '$lib/utils.js';
+import type { HTMLAttributes } from 'svelte/elements';
 
-	type Props = WithElementRef<HTMLAttributes<HTMLDivElement>> & {
-		src?: string;
-		alt?: string;
-		size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl';
-	};
+type Props = WithElementRef<HTMLAttributes<HTMLDivElement>> & {
+	src?: string;
+	alt?: string;
+	size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl';
+};
 
-	let {
-		ref = $bindable(null),
-		src,
-		alt = '',
-		size = 'default',
-		class: className,
-		...restProps
-	}: Props = $props();
+let {
+	ref = $bindable(null),
+	src,
+	alt = '',
+	size = 'default',
+	class: className,
+	...restProps
+}: Props = $props();
 
-	let imgError = $state(false);
+let imgError = $state(false);
 
-	const sizes = {
-		xs: 'size-5',
-		sm: 'size-7',
-		default: 'size-9',
-		lg: 'size-12',
-		xl: 'size-16'
-	};
+const sizes = {
+	xs: 'size-5',
+	sm: 'size-7',
+	default: 'size-9',
+	lg: 'size-12',
+	xl: 'size-16'
+};
 </script>
 
 <div
@@ -45,7 +45,7 @@
 			onerror={() => (imgError = true)}
 		/>
 	{:else}
-		<div class="flex size-full items-center justify-center text-(--text)/40">
+		<div class="flex size-full items-center justify-center text-(--text-muted)">
 			<User class="size-[55%]" aria-hidden="true" />
 		</div>
 	{/if}

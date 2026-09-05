@@ -1,58 +1,56 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import { apiRequest } from '$lib/api';
-	import type { ChoresSession } from '$lib/api-types';
-	import { useDateSelectorState } from '$lib/components/dateSelectorState.svelte';
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import ChoresTimer from './components/choresTimer.svelte';
-	import type { ChoresCompletion, SaveState } from './chores';
-	import type { PageProps } from './$types';
+import { untrack } from 'svelte';
+import { apiRequest } from '$lib/api';
+import type { ChoresSession } from '$lib/api-types';
+import { useDateSelectorState } from '$lib/components/tracker/date-selection-context.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import ChoresTimer from './components/choresTimer.svelte';
+import type { ChoresCompletion, SaveState } from './chores';
+import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
-	const dateSelectorState = useDateSelectorState();
-	let loadedDate = $state(untrack(() => data.date));
-	let savedSession = $state<ChoresSession>();
-	let pendingCompletion = $state<ChoresCompletion>();
-	let saveState = $state<SaveState>('idle');
+let { data }: PageProps = $props();
+const dateSelectorState = useDateSelectorState();
+let loadedDate = $state(untrack(() => data.date));
+let savedSession = $state<ChoresSession>();
+let pendingCompletion = $state<ChoresCompletion>();
+let saveState = $state<SaveState>('idle');
 
-	const isToday = $derived(data.date === data.today);
-	const completed = $derived(Boolean(data.session || savedSession));
-	const progressDays = $derived(
-		data.progressDays.map((day) =>
-			day.date === data.date && completed ? { ...day, value: 1 } : day
-		)
-	);
+const isToday = $derived(data.date === data.today);
+const completed = $derived(Boolean(data.session || savedSession));
+const progressDays = $derived(
+	data.progressDays.map((day) => (day.date === data.date && completed ? { ...day, value: 1 } : day))
+);
 
-	$effect(() => {
-		if (data.date === loadedDate) return;
-		loadedDate = data.date;
-		savedSession = undefined;
-		pendingCompletion = undefined;
-		saveState = 'idle';
+$effect(() => {
+	if (data.date === loadedDate) return;
+	loadedDate = data.date;
+	savedSession = undefined;
+	pendingCompletion = undefined;
+	saveState = 'idle';
+});
+
+async function saveCompletion(completion: ChoresCompletion) {
+	pendingCompletion = completion;
+	saveState = 'saving';
+	try {
+		savedSession = await postCompletion(completion);
+		dateSelectorState.mark(completion.localDate, true);
+		saveState = 'saved';
+	} catch {
+		saveState = 'error';
+	}
+}
+
+function postCompletion(completion: ChoresCompletion) {
+	return apiRequest<ChoresSession>('/api/app/chores', {
+		method: 'POST',
+		body: JSON.stringify(completion)
 	});
+}
 
-	async function saveCompletion(completion: ChoresCompletion) {
-		pendingCompletion = completion;
-		saveState = 'saving';
-		try {
-			savedSession = await postCompletion(completion);
-			dateSelectorState.mark(completion.localDate, true);
-			saveState = 'saved';
-		} catch {
-			saveState = 'error';
-		}
-	}
-
-	function postCompletion(completion: ChoresCompletion) {
-		return apiRequest<ChoresSession>('/api/app/chores', {
-			method: 'POST',
-			body: JSON.stringify(completion)
-		});
-	}
-
-	function retryCompletion() {
-		if (pendingCompletion) void saveCompletion(pendingCompletion);
-	}
+function retryCompletion() {
+	if (pendingCompletion) void saveCompletion(pendingCompletion);
+}
 </script>
 
 <svelte:head>

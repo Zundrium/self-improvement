@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { spin } from '$lib/motion/gsap';
-	import { cn, type WithElementRef } from '$lib/utils.js';
-	import type { HTMLAttributes } from 'svelte/elements';
+import { spin } from '$lib/motion/gsap';
+import { cn, type WithElementRef } from '$lib/utils.js';
+import type { HTMLAttributes } from 'svelte/elements';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		...restProps
-	}: WithElementRef<HTMLAttributes<HTMLDivElement>> = $props();
+let {
+	ref = $bindable(null),
+	class: className,
+	...restProps
+}: WithElementRef<HTMLAttributes<HTMLDivElement>> = $props();
 </script>
 
 <div

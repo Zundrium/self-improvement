@@ -4,8 +4,8 @@ import type {
 	NutritionMeal,
 	NutritionProfile,
 	NutritionTotals
-} from '$lib/api-types';
-import { type ActivityLevel, calculateTdee } from '../../routes/nutrition/nutrition';
+} from '$lib/app/model';
+import { type ActivityLevel, calculateTdee } from './nutrition/model';
 
 const EMPTY_TOTALS: NutritionTotals = { calories: 0, proteinG: 0, carbsG: 0, fatG: 0, count: 0 };
 const ACTIVITY_LEVELS = ['sedentary', 'light', 'moderate', 'active', 'very_active'] as const;

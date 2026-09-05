@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createDefaultAppState } from './state';
-import {
-	MAX_NUTRITION_IMAGE_DATA_URL_LENGTH,
-	createNutritionEntry
-} from './nutrition';
+import { MAX_NUTRITION_IMAGE_DATA_URL_LENGTH, createNutritionEntry } from './nutrition';
 
 const imagePrefix = 'data:image/jpeg;base64,';
 
@@ -13,7 +10,8 @@ function meal(imageDataUrl: string) {
 
 describe('nutrition image persistence', () => {
 	it('stores a photo once without duplicating it into the thumbnail payload', () => {
-		const imageDataUrl = imagePrefix + 'A'.repeat(MAX_NUTRITION_IMAGE_DATA_URL_LENGTH - imagePrefix.length);
+		const imageDataUrl =
+			imagePrefix + 'A'.repeat(MAX_NUTRITION_IMAGE_DATA_URL_LENGTH - imagePrefix.length);
 		const entry = createNutritionEntry({ date: '2026-03-20', meals: meal(imageDataUrl) });
 		const state = createDefaultAppState(new Date('2026-03-20T12:00:00.000Z'));
 		state.nutrition.entries.push(entry);

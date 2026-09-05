@@ -1,18 +1,15 @@
 import { apiRequest } from '$lib/api';
 import type { ActionFeedData } from '$lib/api-types';
-import { loadNativeActionFeedItems } from '$native/action-feed';
 import type { PageLoad } from './$types';
+import { APP_RESOURCES, registerResources } from '$lib/app/resources';
 
-export const load: PageLoad = async ({ parent, url }) => {
+export const load: PageLoad = async ({ parent, url, depends }) => {
+	registerResources(depends, APP_RESOURCES.local, APP_RESOURCES.actionFeed);
 	const date = url.searchParams.get('date');
 	const actionFeedPath = date
 		? `/api/app/action-feed?date=${encodeURIComponent(date)}`
 		: '/api/app/action-feed';
-	const [layoutData, actionFeed] = await Promise.all([
-		parent(),
-		apiRequest<ActionFeedData>(actionFeedPath)
-	]);
-	const trackerIds = layoutData.enabledTrackers.map(({ id }) => id);
-	const nativeItems = await loadNativeActionFeedItems(trackerIds).catch(() => []);
-	return { actionFeed, nativeItems };
+	const [, actionFeed] = await Promise.all([parent(), apiRequest<ActionFeedData>(actionFeedPath)]);
+	// Native maintenance (including update checks) must not delay the local action feed.
+	return { actionFeed, nativeItems: [] };
 };

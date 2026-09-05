@@ -1,4 +1,4 @@
-import type { AchievementCategory } from '$lib/api-types';
+import type { AchievementCategory } from '$lib/local/gamification/model';
 import { type AppTrackerId, appTrackers } from '$lib/trackers/registry';
 
 export const TRACKER_MILESTONE_TARGETS = [1, 5, 10, 20, 50, 100] as const;

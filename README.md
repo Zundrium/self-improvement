@@ -22,10 +22,10 @@ android/
   Google Drive SAF document-provider backups
 ```
 
-- `src/routes/` contains the app screens and tracker UI.
+- `src/routes/` contains tracker screens, their components and client workflows. Shared components are grouped by purpose under `src/lib/components/`; see [the architecture guide](docs/architecture.md).
 - `src/lib/local/` owns native SQLite state, the browser Dexie fallback, local mutations, native-data processing, gamification, and JSON backup validation.
 - `src/native/` owns Android lifecycle, Health Connect, Usage Access, notifications, signed app updates, file selection, and Google Drive backup integration.
-- `src/domain/` validates and transforms native tracker data before it is saved locally.
+- `src/domain/` defines provider transport contracts and pure sample transformations. Stored-payload validation and interpretation belong to `src/lib/local/native/`.
 - `static/` contains bundled fitness media and the privacy policy.
 - Root SvelteKit, Vite, TypeScript, and component configuration files configure the app.
 - `android/` contains the committed Capacitor Android project and native plugins.
@@ -33,7 +33,7 @@ android/
 
 ## Data and backups
 
-Tracker data and settings are stored in an on-device SQLite database on Android. Browser development retains a Dexie-backed IndexedDB fallback. Steps are read from Health Connect. Screen-time and bedtime-adherence data are read from Android Usage Access. Nutrition supports manual entry plus optional photo or description analysis through OpenRouter. The OpenRouter API key is stored separately and excluded from application backups.
+Tracker data and settings are stored in an on-device SQLite database on Android. Browser development retains a Dexie-backed IndexedDB fallback. Steps are read from Health Connect. Screen-time and bedtime-adherence data are read from Android Usage Access. Nutrition supports manual entry plus optional photo or description analysis through OpenRouter. The OpenRouter API key uses Android secure storage, with a separate Dexie store during browser development, and is excluded from application backups.
 
 Profile → Data supports:
 
@@ -43,11 +43,11 @@ Profile → Data supports:
 - one automatic backup per day when the app opens or resumes;
 - retention of the five newest exact `self-improvement-backup-*.json` files in that folder.
 
-Folder and file selection use the maintained `@capawesome/capacitor-file-picker` plugin. Google Drive access is handled by the installed Drive document provider. Tracker and backup data is never sent to a custom server. Backup rotation ignores unrelated files.
+Folder and file selection use the maintained `@capawesome/capacitor-file-picker` plugin. Google Drive access is handled by the installed Drive document provider. Tracker and backup data is never sent to a custom server. Backup rotation ignores unrelated files. JSON exports and restores share a 25 MiB limit; an oversized export fails before any file is reported as saved.
 
 ## Local setup
 
-Install Node.js 22 and dependencies:
+Install Node.js 22.13 or newer and dependencies:
 
 ```sh
 npm install
@@ -58,10 +58,13 @@ The development app is served at `http://localhost:5173`. Browser development us
 
 ## Android development
 
-Install Java 21 and Android Studio with Android platform 36, build tools, and platform tools.
+Install Java 21 and Android Studio with Android platform 36, build tools, and platform tools. Obtain local approval before the build or build-dependent mobile commands below.
 
 ```sh
-npm run mobile:check
+npm run check
+npm run lint
+npm run format:check
+npm run test
 npm run mobile:build
 npm run mobile:sync
 npm run mobile:android
@@ -76,11 +79,13 @@ The merged release manifest permits Internet for OpenRouter and signed GitHub up
 ```sh
 npm run check
 npm run lint
+npm run format:check
 npm run test
-npm run build
+npx playwright install chromium
+npm run test:browser
 ```
 
-Feature work must not run `npm run build` before local approval; the signed release workflow performs the release build.
+Do not run the production build before local approval; the signed release workflow performs it. Browser tests require Chromium to be installed once with the command above.
 
 ## Android releases
 

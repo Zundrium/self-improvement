@@ -1,66 +1,66 @@
 <script lang="ts">
-	import { Copy } from '@lucide/svelte';
-	import { onMount } from 'svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { toast } from '$lib/components/ui/toast';
-	import { appTrackers, type AppTrackerId } from '$lib/trackers/registry';
-	import { trackerIcons } from '$lib/trackers/icons';
+import { Copy } from '@lucide/svelte';
+import { onMount } from 'svelte';
+import { Button } from '$lib/components/ui/button';
+import { toast } from '$lib/components/ui/toast';
+import { appTrackers, type AppTrackerId } from '$lib/trackers/registry';
+import { trackerIcons } from '$lib/trackers/icons';
 
-	type Palette = [string, string, string];
-	const atmospheres = {
-		steps: 'Fresh momentum',
-		sleep: 'Deep twilight',
-		'screen-time': 'Electric focus',
-		fitness: 'Full intensity',
-		nutrition: 'Living harvest',
-		meditation: 'Inner cosmos',
-		breathing: 'Open air',
-		stretch: 'Golden flow',
-		chores: 'Bright reset',
-		happiness: 'Radiant joy',
-		period: 'Warm rhythm'
-	} satisfies Record<AppTrackerId, string>;
+type Palette = [string, string, string];
+const atmospheres = {
+	steps: 'Fresh momentum',
+	sleep: 'Deep twilight',
+	'screen-time': 'Electric focus',
+	fitness: 'Full intensity',
+	nutrition: 'Living harvest',
+	meditation: 'Inner cosmos',
+	breathing: 'Open air',
+	stretch: 'Golden flow',
+	chores: 'Bright reset',
+	happiness: 'Radiant joy',
+	period: 'Warm rhythm'
+} satisfies Record<AppTrackerId, string>;
 
-	let palettes: Record<AppTrackerId, Palette> = $state(
-		Object.fromEntries(
-			appTrackers.map((tracker) => [
-				tracker.id,
-				[tracker.colors.primary, tracker.colors.secondary, tracker.colors.tertiary]
-			])
-		) as Record<AppTrackerId, Palette>
-	);
+let palettes: Record<AppTrackerId, Palette> = $state(
+	Object.fromEntries(
+		appTrackers.map((tracker) => [
+			tracker.id,
+			[tracker.colors.primary, tracker.colors.secondary, tracker.colors.tertiary]
+		])
+	) as Record<AppTrackerId, Palette>
+);
 
-	onMount(() => {
-		const styles = getComputedStyle(document.documentElement);
-		palettes = Object.fromEntries(
-			appTrackers.map((tracker) => [
-				tracker.id,
-				(['primary', 'secondary', 'tertiary'] as const).map((tone) =>
-					styles.getPropertyValue(`--tracker-${tracker.id}-${tone}`).trim().toUpperCase()
-				) as Palette
-			])
-		) as Record<AppTrackerId, Palette>;
-	});
+onMount(() => {
+	const styles = getComputedStyle(document.documentElement);
+	palettes = Object.fromEntries(
+		appTrackers.map((tracker) => [
+			tracker.id,
+			(['primary', 'secondary', 'tertiary'] as const).map((tone) =>
+				styles.getPropertyValue(`--tracker-${tracker.id}-${tone}`).trim().toUpperCase()
+			) as Palette
+		])
+	) as Record<AppTrackerId, Palette>;
+});
 
-	function gradient(colors: Palette) {
-		return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 52%, ${colors[2]} 100%)`;
+function gradient(colors: Palette) {
+	return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 52%, ${colors[2]} 100%)`;
+}
+
+function updateColor(id: AppTrackerId, index: number, value: string) {
+	palettes[id][index] = value.toUpperCase();
+}
+
+async function copyGradients() {
+	const text = appTrackers
+		.map((tracker) => `${tracker.label}: ${palettes[tracker.id].join(' → ')}`)
+		.join('\n');
+	try {
+		await navigator.clipboard.writeText(text);
+		toast.success('Gradient colors copied.');
+	} catch {
+		toast.error('Gradient colors could not be copied.');
 	}
-
-	function updateColor(id: AppTrackerId, index: number, value: string) {
-		palettes[id][index] = value.toUpperCase();
-	}
-
-	async function copyGradients() {
-		const text = appTrackers
-			.map((tracker) => `${tracker.label}: ${palettes[tracker.id].join(' → ')}`)
-			.join('\n');
-		try {
-			await navigator.clipboard.writeText(text);
-			toast.success('Gradient colors copied.');
-		} catch {
-			toast.error('Gradient colors could not be copied.');
-		}
-	}
+}
 </script>
 
 <svelte:head>
@@ -75,14 +75,14 @@
 	<div class="mx-auto max-w-6xl">
 		<header class="max-w-2xl">
 			<div class="flex items-center justify-between gap-4">
-				<p class="text-xs font-medium tracking-[0.16em] text-(--text)/48 uppercase">Test page</p>
+				<p class="text-xs font-medium tracking-[0.16em] text-(--text-muted) uppercase">Test page</p>
 				<Button profile="plain" size="small" class="gap-2" onclick={copyGradients}>
 					<Copy class="size-3.5" />
 					Copy gradients
 				</Button>
 			</div>
 			<h1 class="mt-2 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Gradient lab</h1>
-			<p class="mt-3 text-base leading-7 text-(--text)/56">
+			<p class="mt-3 text-base leading-7 text-(--text-muted)">
 				A vibrant, three-color atmosphere for every tracker. Adjust any color to explore the
 				palette live.
 			</p>
@@ -128,3 +128,29 @@
 		</section>
 	</div>
 </main>
+
+<style>
+.gradient-atmosphere::before {
+	position: absolute;
+	inset: 0;
+	background:
+		radial-gradient(circle at 82% 0%, rgb(255 255 255 / 28%), transparent 42%),
+		linear-gradient(to top, rgb(0 0 0 / 18%), transparent 52%);
+	content: '';
+}
+
+.gradient-lab input[type='color'] {
+	border: 0;
+	padding: 0;
+}
+
+.gradient-lab input[type='color']::-webkit-color-swatch-wrapper {
+	padding: 0;
+}
+
+.gradient-lab input[type='color']::-webkit-color-swatch,
+.gradient-lab input[type='color']::-moz-color-swatch {
+	border: 0;
+	border-radius: 0.75rem;
+}
+</style>

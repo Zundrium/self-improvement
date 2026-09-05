@@ -1,8 +1,8 @@
 <script lang="ts" module>
-	import type { WithElementRef } from '$lib/utils.js';
-	import type { HTMLFormAttributes } from 'svelte/elements';
+import type { WithElementRef } from '$lib/utils.js';
+import type { HTMLFormAttributes } from 'svelte/elements';
 
-	export type FormProps = WithElementRef<HTMLFormAttributes, HTMLFormElement>;
+export type FormProps = WithElementRef<HTMLFormAttributes, HTMLFormElement>;
 </script>
 
 <script lang="ts">

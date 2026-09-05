@@ -1,54 +1,82 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
-	import { invalidateAll } from '$app/navigation';
-	import { untrack } from 'svelte';
-	import { toast } from '$lib/components/ui/toast';
-	import { apiRequest } from '$lib/api';
-	import type { NutritionProfile } from '$lib/api-types';
-	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { Field, FieldLabel } from '$lib/components/ui/field';
-	import { Input } from '$lib/components/ui/input';
-	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
+import { Form } from '$lib/components/ui/form';
+import { APP_RESOURCES, refreshAppData } from '$lib/app/resources';
+import { untrack } from 'svelte';
+import { toast } from '$lib/components/ui/toast';
+import { localOperation } from '$lib/api';
+import type { NutritionProfile } from '$lib/api-types';
+import SettingsSaveBar from '$lib/components/forms/SettingsSaveBar.svelte';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+import { Checkbox } from '$lib/components/ui/checkbox';
+import { Field, FieldLabel } from '$lib/components/ui/field';
+import { Input } from '$lib/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import { sameDraft, submittedSnapshot } from '$lib/forms/draft';
+import { guardUnsavedNavigation } from '$lib/forms/unsaved-navigation.svelte';
 
-	type Props = { profile: NutritionProfile | null; estimatedTdee: number | null };
-	let { profile, estimatedTdee }: Props = $props();
-	let gender = $state(untrack(() => profile?.gender ?? 'male'));
-	let activityLevel = $state(untrack(() => profile?.activityLevel ?? 'sedentary'));
-	let goalMode = $state(untrack(() => profile?.goalMode ?? 'estimated'));
-	let eatingWindowEnabled = $state(untrack(() => profile?.eatingWindowEnabled ?? false));
-	let eatingWindowStart = $state(untrack(() => profile?.eatingWindowStart ?? '12:00'));
-	let eatingWindowEnd = $state(untrack(() => profile?.eatingWindowEnd ?? '20:00'));
-	let saving = $state(false);
-	const activityLabel = $derived(
-		(
-			{
-				sedentary: 'Sedentary',
-				light: 'Light activity',
-				moderate: 'Moderate activity',
-				active: 'Active',
-				very_active: 'Very active'
-			} as Record<string, string>
-		)[activityLevel]
-	);
+type Props = { profile: NutritionProfile | null; estimatedTdee: number | null };
+let { profile, estimatedTdee }: Props = $props();
+let gender = $state(untrack(() => profile?.gender ?? 'male'));
+let activityLevel = $state(untrack(() => profile?.activityLevel ?? 'sedentary'));
+let goalMode = $state(untrack(() => profile?.goalMode ?? 'estimated'));
+let eatingWindowEnabled = $state(untrack(() => profile?.eatingWindowEnabled ?? false));
+let eatingWindowStart = $state(untrack(() => profile?.eatingWindowStart ?? '12:00'));
+let eatingWindowEnd = $state(untrack(() => profile?.eatingWindowEnd ?? '20:00'));
+let weightKg = $state(untrack(() => profile?.weightKg ?? 70));
+let heightCm = $state(untrack(() => profile?.heightCm ?? 170));
+let age = $state(untrack(() => profile?.age ?? 30));
+let customGoal = $state(untrack(() => profile?.dailyCalorieGoal ?? 2000));
+let saving = $state(false);
+let saved = $state(untrack(() => currentSettings()));
+const current = $derived(currentSettings());
+const dirty = $derived(!sameDraft(current, saved));
+guardUnsavedNavigation(() => dirty && !saving);
+const activityLabel = $derived(
+	(
+		{
+			sedentary: 'Sedentary',
+			light: 'Light activity',
+			moderate: 'Moderate activity',
+			active: 'Active',
+			very_active: 'Very active'
+		} as Record<string, string>
+	)[activityLevel]
+);
 
-	async function saveNutrition(event: SubmitEvent) {
-		event.preventDefault();
-		saving = true;
-		const fields = Object.fromEntries(new FormData(event.currentTarget as HTMLFormElement));
-		const form = { ...fields, eatingWindowEnabled, eatingWindowStart, eatingWindowEnd };
-		try {
-			await apiRequest('/api/app/profile', { method: 'PATCH', body: JSON.stringify(form) });
-			toast.success('Nutrition settings updated.');
-			await invalidateAll();
-		} catch (cause) {
-			toast.error(cause instanceof Error ? cause.message : 'Could not update nutrition settings.');
-		} finally {
-			saving = false;
-		}
+async function saveNutrition(event: SubmitEvent) {
+	event.preventDefault();
+	saving = true;
+	const submitted = submittedSnapshot(current);
+	try {
+		await localOperation('saveNutritionProfile', { mode: 'update', profile: submitted });
+		saved = submitted;
+		toast.success('Nutrition settings updated.');
+		await refreshAppData(APP_RESOURCES.bootstrap).catch(() =>
+			toast.error('Saved, but could not refresh the page.')
+		);
+	} catch (cause) {
+		toast.error(cause instanceof Error ? cause.message : 'Could not update nutrition settings.');
+	} finally {
+		saving = false;
 	}
+}
+
+function currentSettings() {
+	return {
+		weightKg: Number(weightKg),
+		heightCm: Number(heightCm),
+		age: Number(age),
+		gender,
+		activityLevel,
+		goalMode,
+		customGoal: Number(customGoal),
+		eatingWindowEnabled,
+		eatingWindowStart,
+		eatingWindowEnd
+	};
+}
 </script>
 
 {#if profile}
@@ -66,7 +94,7 @@
 						step="0.1"
 						min="20"
 						max="300"
-						value={profile.weightKg}
+						bind:value={weightKg}
 						required
 					/>
 				</Field>
@@ -80,7 +108,7 @@
 						step="0.1"
 						min="100"
 						max="250"
-						value={profile.heightCm}
+						bind:value={heightCm}
 						required
 					/>
 				</Field>
@@ -93,14 +121,14 @@
 						type="number"
 						min="10"
 						max="120"
-						value={profile.age}
+						bind:value={age}
 						required
 					/>
 				</Field>
 				<Field class="flex-row items-center justify-between gap-4">
-					<FieldLabel>Gender</FieldLabel>
+					<FieldLabel for="nutrition-gender">Gender</FieldLabel>
 					<Select type="single" name="gender" bind:value={gender}>
-						<SelectTrigger>{gender === 'male' ? 'Male' : 'Female'}</SelectTrigger>
+						<SelectTrigger id="nutrition-gender">{gender === 'male' ? 'Male' : 'Female'}</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="male">Male</SelectItem>
 							<SelectItem value="female">Female</SelectItem>
@@ -108,9 +136,9 @@
 					</Select>
 				</Field>
 				<Field class="flex-row items-center justify-between gap-4">
-					<FieldLabel>Activity level</FieldLabel>
+					<FieldLabel for="nutrition-activity">Activity level</FieldLabel>
 					<Select type="single" name="activityLevel" bind:value={activityLevel}>
-						<SelectTrigger>{activityLabel}</SelectTrigger>
+						<SelectTrigger id="nutrition-activity">{activityLabel}</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="sedentary">Sedentary</SelectItem>
 							<SelectItem value="light">Light activity</SelectItem>
@@ -131,9 +159,9 @@
 					<span class="tabular-nums">{estimatedTdee} kcal/day</span>
 				</div>
 				<Field class="flex-row items-center justify-between gap-4">
-					<FieldLabel>Goal calculation</FieldLabel>
+					<FieldLabel for="nutrition-goal-mode">Goal calculation</FieldLabel>
 					<Select type="single" name="goalMode" bind:value={goalMode}>
-						<SelectTrigger>
+						<SelectTrigger id="nutrition-goal-mode">
 							{goalMode === 'custom' ? 'Manual goal' : 'Use estimate'}
 						</SelectTrigger>
 						<SelectContent>
@@ -151,7 +179,7 @@
 						type="number"
 						min="500"
 						max="10000"
-						value={profile.dailyCalorieGoal}
+						bind:value={customGoal}
 						disabled={goalMode !== 'custom'}
 						required={goalMode === 'custom'}
 					/>
@@ -191,12 +219,9 @@
 			</CardContent>
 		</Card>
 	</Form>
-	<SettingsSaveBar
-		form="nutrition-settings"
-		{saving}
-		backHref="/nutrition/log/today"
-		contentClass="max-w-3xl"
-	/>
+	<PageActionBar mobileOnly={false} contentClass="max-w-3xl">
+		<SettingsSaveBar form="nutrition-settings" {saving} {dirty} backHref="/nutrition/log/today" />
+	</PageActionBar>
 {:else}
 	<Card>
 		<CardHeader><CardTitle>Nutrition goals</CardTitle></CardHeader>

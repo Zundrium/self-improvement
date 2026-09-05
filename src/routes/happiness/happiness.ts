@@ -31,13 +31,6 @@ const highReasonOptions = [
 	{ value: 'excellent_sleep', label: 'Excellent sleep' }
 ] as const;
 
-export const happinessRatings = [1, 2, 3, 4, 5] as const;
-export type HappinessRating = (typeof happinessRatings)[number];
-export type HappinessReason =
-	| (typeof lowReasonOptions)[number]['value']
-	| (typeof middleReasonOptions)[number]['value']
-	| (typeof highReasonOptions)[number]['value'];
-
 export function reasonOptionsForRating(rating: HappinessRating) {
 	if (rating <= 2) return lowReasonOptions;
 	if (rating === 3) return middleReasonOptions;
@@ -67,10 +60,17 @@ export function happinessLabel(rating: HappinessRating) {
 	return ['Very unhappy', 'Unhappy', 'Okay', 'Happy', 'Very happy'][rating - 1];
 }
 
-function isHappinessRating(value: number): value is HappinessRating {
-	return happinessRatings.includes(value as HappinessRating);
-}
-
 function isReasonForRating(value: string, rating: HappinessRating): value is HappinessReason {
 	return reasonOptionsForRating(rating).some((option) => option.value === value);
 }
+import {
+	isHappinessRating,
+	type HappinessRating,
+	type HappinessReason
+} from '$lib/local/happiness/model';
+
+export {
+	happinessRatings,
+	type HappinessRating,
+	type HappinessReason
+} from '$lib/local/happiness/model';

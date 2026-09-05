@@ -1,25 +1,25 @@
 <script lang="ts">
-	import type { HTMLInputAttributes, HTMLInputTypeAttribute } from 'svelte/elements';
-	import { cn, type WithElementRef } from '$lib/utils.js';
+import type { HTMLInputAttributes, HTMLInputTypeAttribute } from 'svelte/elements';
+import { cn, type WithElementRef } from '$lib/utils.js';
 
-	type InputType = Exclude<HTMLInputTypeAttribute, 'file'>;
+type InputType = Exclude<HTMLInputTypeAttribute, 'file'>;
 
-	type Props = WithElementRef<
-		Omit<HTMLInputAttributes, 'type'> &
-			({ type: 'file'; files?: FileList } | { type?: InputType; files?: undefined })
-	>;
+type Props = WithElementRef<
+	Omit<HTMLInputAttributes, 'type'> &
+		({ type: 'file'; files?: FileList } | { type?: InputType; files?: undefined })
+>;
 
-	let {
-		ref = $bindable(null),
-		value = $bindable(),
-		type,
-		files = $bindable(),
-		class: className,
-		...restProps
-	}: Props = $props();
+let {
+	ref = $bindable(null),
+	value = $bindable(),
+	type,
+	files = $bindable(),
+	class: className,
+	...restProps
+}: Props = $props();
 
-	const base =
-		'flex h-10 w-full min-w-0 rounded-3xl bg-(--text)/5 px-4 py-2 text-sm tracking-[-0.39px] outline-none placeholder:text-(--text)/40 hover:bg-(--text)/8 focus-visible:bg-(--text)/12 disabled:pointer-events-none disabled:opacity-50';
+const base =
+	'flex h-10 w-full min-w-0 rounded-3xl bg-(--text)/5 px-4 py-2 text-sm tracking-[-0.39px] outline-none placeholder:text-(--text-muted) hover:bg-(--text)/8 focus-visible:bg-(--text)/12 disabled:pointer-events-none disabled:opacity-50';
 </script>
 
 {#if type === 'file'}

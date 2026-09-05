@@ -1,7 +1,7 @@
-import type { GamificationData } from '$lib/api-types';
+import type { GamificationData } from '$lib/local/gamification/model';
 import { localDateForInstant } from '$lib/trackers/dates';
 import { type AppTrackerId, appTrackers } from '$lib/trackers/registry';
-import { isStretchScheduled } from '../../routes/stretch/stretch';
+import { isStretchScheduled } from './stretch/model';
 import { reconcileAchievementUnlocks } from './achievement-engine';
 import type { LocalAppState } from './state';
 

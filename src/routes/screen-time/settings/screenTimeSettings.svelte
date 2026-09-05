@@ -1,36 +1,49 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
-	import { invalidateAll } from '$app/navigation';
-	import { untrack } from 'svelte';
-	import { toast } from '$lib/components/ui/toast';
-	import { apiRequest } from '$lib/api';
-	import type { ScreenTimeSettingsData } from '$lib/api-types';
-	import SettingsSaveBar from '$lib/components/settingsSaveBar.svelte';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Field, FieldLabel } from '$lib/components/ui/field';
-	import { Input } from '$lib/components/ui/input';
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import { Form } from '$lib/components/ui/form';
+import { APP_RESOURCES, refreshAppData } from '$lib/app/resources';
+import { untrack } from 'svelte';
+import { toast } from '$lib/components/ui/toast';
+import { apiRequest } from '$lib/api';
+import type { ScreenTimeSettingsData } from '$lib/api-types';
+import SettingsSaveBar from '$lib/components/forms/SettingsSaveBar.svelte';
+import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+import { Field, FieldLabel } from '$lib/components/ui/field';
+import { Input } from '$lib/components/ui/input';
+import { guardUnsavedNavigation } from '$lib/forms/unsaved-navigation.svelte';
 
-	let { settings }: { settings: ScreenTimeSettingsData } = $props();
-	let dailyLimitMinutes = $state(untrack(() => settings.dailyLimitMinutes));
-	let saving = $state(false);
+let { settings }: { settings: ScreenTimeSettingsData } = $props();
+let dailyLimitMinutes = $state(untrack(() => settings.dailyLimitMinutes));
+let saving = $state(false);
+let savedDailyLimitMinutes = $state(untrack(() => settings.dailyLimitMinutes));
+const dirty = $derived(dailyLimitMinutes !== savedDailyLimitMinutes);
+guardUnsavedNavigation(() => dirty && !saving);
+$effect(() => {
+	if (!dirty && !saving && settings.dailyLimitMinutes !== savedDailyLimitMinutes)
+		dailyLimitMinutes = savedDailyLimitMinutes = settings.dailyLimitMinutes;
+});
 
-	async function saveSettings(event: SubmitEvent) {
-		event.preventDefault();
-		if (saving) return;
-		saving = true;
-		try {
-			await apiRequest<ScreenTimeSettingsData>('/api/app/screen-time/settings', {
-				method: 'PATCH',
-				body: JSON.stringify({ dailyLimitMinutes })
-			});
-			toast.success('Screen time settings updated.');
-			await invalidateAll();
-		} catch (cause) {
-			toast.error(cause instanceof Error ? cause.message : 'Could not update screen time settings.');
-		} finally {
-			saving = false;
-		}
+async function saveSettings(event: SubmitEvent) {
+	event.preventDefault();
+	if (saving) return;
+	saving = true;
+	const submitted = Number(dailyLimitMinutes);
+	try {
+		await apiRequest<ScreenTimeSettingsData>('/api/app/screen-time/settings', {
+			method: 'PATCH',
+			body: JSON.stringify({ dailyLimitMinutes: submitted })
+		});
+		savedDailyLimitMinutes = submitted;
+		toast.success('Screen time settings updated.');
+		await refreshAppData(APP_RESOURCES.bootstrap).catch(() =>
+			toast.error('Saved, but could not refresh the page.')
+		);
+	} catch (cause) {
+		toast.error(cause instanceof Error ? cause.message : 'Could not update screen time settings.');
+	} finally {
+		saving = false;
 	}
+}
 </script>
 
 <Card>
@@ -53,4 +66,6 @@
 	</CardContent>
 </Card>
 
-<SettingsSaveBar form="screen-time-settings" {saving} backHref="/screen-time" />
+<PageActionBar mobileOnly={false}>
+<SettingsSaveBar form="screen-time-settings" {saving} {dirty} backHref="/screen-time" />
+</PageActionBar>

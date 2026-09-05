@@ -1,0 +1,88 @@
+/* ----------------------------------------------------------------------------
+ * App and component styles
+ * ------------------------------------------------------------------------- */
+.sveltekit-body {
+	display: contents;
+}
+
+#app-loading-screen {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--bg);
+}
+
+#app-loading-content {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1.75rem;
+}
+
+#app-loading-logo {
+	width: 7rem;
+	height: 7rem;
+}
+
+#app-loading-spinner {
+	width: 1.75rem;
+	height: 1.75rem;
+	border: 3px solid rgb(109 40 217 / 18%);
+	border-top-color: #6d28d9;
+	border-right-color: #a21caf;
+	border-radius: 9999px;
+	animation: app-loading-spin 0.8s linear infinite;
+}
+
+@keyframes app-loading-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.bottom-action-button[data-action-format="text"][data-action-expand="true"] {
+	width: 100%;
+}
+
+.dynamic-background {
+	background: var(--dynamic-background);
+}
+
+.dynamic-color {
+	color: var(--dynamic-color);
+}
+
+.dynamic-color-surface {
+	background: color-mix(in srgb, var(--dynamic-color) 12%, transparent);
+}
+
+.action-card-icon {
+	color: color-mix(in srgb, var(--action-secondary) 50%, var(--app-white));
+}
+
+.tracker-section-title {
+	color: color-mix(in srgb, var(--tracker-section-color) 50%, var(--tracker-title-contrast));
+}
+
+.progress-indicator {
+	background: var(--progress-indicator-background, var(--text));
+}
+
+#app-loading-recovery {
+	max-width: 22rem;
+	padding: 1rem;
+	text-align: center;
+	color: var(--text);
+}
+
+#app-loading-retry {
+	margin-top: 1rem;
+	min-height: 3rem;
+	padding: 0.5rem 1.5rem;
+	border-radius: 1.5rem;
+	background: var(--text);
+	color: var(--bg);
+}

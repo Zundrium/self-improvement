@@ -1,16 +1,13 @@
 <script lang="ts">
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
 import { CalendarOff, Check, LoaderCircle, Play, RotateCcw } from '@lucide/svelte';
 import { onMount, untrack } from 'svelte';
 import { AudioManager } from '$lib/audio/audio-manager';
-import {
-	BottomActionBar,
-	BottomActionButton,
-	BottomActionGroup
-} from '$lib/components/ui/bottom-action-bar';
-import type { GuidedRoutineActivity } from '$lib/components/guidedRoutine';
+import { BottomActionButton, BottomActionGroup } from '$lib/components/ui/bottom-action-bar';
+import type { GuidedRoutineActivity } from '$lib/routines/model';
 import GuidedRoutineRunner, {
 	type GuidedRoutineSounds
-} from '$lib/components/guidedRoutineRunner.svelte';
+} from '$lib/components/routines/GuidedRoutineRunner.svelte';
 import {
 	STRETCH_ACTIVITY_IDS,
 	STRETCH_DIFFICULTIES_BY_ACTIVITY,
@@ -159,7 +156,8 @@ function completeRoutine() {
 {/snippet}
 
 {#if isSessionActive && audioManager}
-	<GuidedRoutineRunner
+		<GuidedRoutineRunner
+			sessionIdentity={`stretch:${localDate}:${holdSeconds}:${Object.entries(selectedDifficulties).map(([id, difficulty]) => `${id}:${difficulty}`).join('|')}`}
 		{activities}
 		{audioManager}
 		setCount={1}
@@ -183,7 +181,7 @@ function completeRoutine() {
 					style={`--dynamic-color: ${colors.primary}`}
 				/>
 				<h2 class="mt-5 text-2xl font-medium tracking-[-0.04em]">Weekend recovery</h2>
-				<p class="mt-2 max-w-sm text-sm leading-6 text-(--text)/56">
+				<p class="mt-2 max-w-sm text-sm leading-6 text-(--text-muted)">
 					The weekday routine resumes Monday.
 				</p>
 			</div>
@@ -205,7 +203,7 @@ function completeRoutine() {
 			<ol class="space-y-1">
 				{#each steps as step, index (step.id)}
 					<li class="flex items-center gap-3 rounded-2xl px-2 py-2 even:bg-(--text)/3">
-						<span class="w-5 shrink-0 text-center text-xs text-(--text)/40">{index + 1}</span>
+						<span class="w-5 shrink-0 text-center text-xs text-(--text-muted)">{index + 1}</span>
 						<div class="size-14 shrink-0 overflow-hidden rounded-2xl bg-(--text)/3">
 							<img
 								src={step.imageUrl}
@@ -217,9 +215,9 @@ function completeRoutine() {
 						</div>
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-sm font-medium">{step.name}</p>
-							<p class="mt-0.5 text-xs text-(--text)/48">{step.position}</p>
+							<p class="mt-0.5 text-xs text-(--text-muted)">{step.position}</p>
 						</div>
-						<p class="text-sm tabular-nums text-(--text)/48">
+						<p class="text-sm tabular-nums text-(--text-muted)">
 							{step.durationSeconds === null ? '10 reps' : `${step.sets} × ${step.durationSeconds}s`}
 						</p>
 					</li>
@@ -228,7 +226,7 @@ function completeRoutine() {
 		{/if}
 
 		{#if saveState !== 'idle'}
-			<div class="min-h-5 text-center text-sm text-(--text)/56" aria-live="polite">
+			<div class="min-h-5 text-center text-sm text-(--text-muted)" aria-live="polite">
 				{#if saveState === 'saving'}
 					<span class="inline-flex items-center gap-2">
 						<span class="inline-flex" use:spin><LoaderCircle class="size-4" /></span> Saving routine
@@ -249,6 +247,6 @@ function completeRoutine() {
 	</section>
 
 	{#if interactive}
-		<BottomActionBar>{@render actions()}</BottomActionBar>
+		<PageActionBar>{@render actions()}</PageActionBar>
 	{/if}
 {/if}

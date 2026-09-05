@@ -2,7 +2,7 @@ import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import { LocalAppService } from '../service';
 import { LocalAppDatabase, LocalAppStore, type NativeAppStateConnection } from '../state';
-import { SQLITE_SCHEMA_SQL } from './schema';
+import { readFileSync } from 'node:fs';
 
 const databases: LocalAppDatabase[] = [];
 
@@ -31,7 +31,7 @@ describe('native SQLite integration', () => {
 
 	it('migrates v2 databases and enables Chores without losing profile data', async () => {
 		const sqlite = new DatabaseSync(':memory:');
-		sqlite.exec(versionTwoSchema());
+		sqlite.exec(readFileSync(new URL('./fixtures/sqlite-v2.sql', import.meta.url), 'utf8'));
 		sqlite.exec(`
 			INSERT INTO profile (id, name, created_at)
 			VALUES (1, 'Existing user', '2026-03-20T12:00:00.000Z');
@@ -50,13 +50,6 @@ describe('native SQLite integration', () => {
 		sqlite.close();
 	});
 });
-
-function versionTwoSchema() {
-	return SQLITE_SCHEMA_SQL.replace(
-		'CREATE TABLE chores_sessions (local_date TEXT PRIMARY KEY, duration_seconds INTEGER NOT NULL, started_at INTEGER NOT NULL);\nCREATE INDEX chores_sessions_started_idx ON chores_sessions(started_at DESC);\n',
-		''
-	).replace('PRAGMA user_version = 3;', 'PRAGMA user_version = 2;');
-}
 
 function nativeConnection(database: DatabaseSync): NativeAppStateConnection {
 	return {

@@ -1,136 +1,140 @@
 <script lang="ts">
-	import { Check, Play, Square } from '@lucide/svelte';
-	import { onDestroy, untrack } from 'svelte';
-	import {
-		BottomActionBar,
-		BottomActionButton,
-		BottomActionGroup
-	} from '$lib/components/ui/bottom-action-bar';
-	import { Button } from '$lib/components/ui/button';
-	import { getTrackerColors, trackerGradient } from '$lib/trackers/registry';
-	import {
-		breathingDurationSeconds,
-		breathingStep,
-		formatTimer,
-		type BreathingCompletion,
-		type SaveState
-	} from '../breathing';
-	import {
-		breathingDisabledFade,
-		breathingEnter,
-		breathingHoldProgress,
-		breathingPhaseScale,
-		breathingPhaseText
-	} from '../breathingMotion';
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import { Check, Play, Square } from '@lucide/svelte';
+import { onDestroy, onMount, untrack } from 'svelte';
+import { BottomActionButton, BottomActionGroup } from '$lib/components/ui/bottom-action-bar';
+import { Button } from '$lib/components/ui/button';
+import { getTrackerColors, trackerGradient } from '$lib/trackers/registry';
+import {
+	breathingDurationSeconds,
+	breathingStep,
+	formatTimer,
+	type BreathingCompletion,
+	type SaveState
+} from '../breathing';
+import {
+	breathingDisabledFade,
+	breathingEnter,
+	breathingHoldProgress,
+	breathingPhaseScale,
+	breathingPhaseText
+} from '../breathingMotion';
 
-	type TimerStatus = 'idle' | 'running' | 'stopping' | 'completed';
-	type Props = {
-		localDate: string;
-		rounds: number;
-		includeHold: boolean;
-		saveState: SaveState;
-		complete?: boolean;
-		interactive?: boolean;
-		oncomplete: (completion: BreathingCompletion) => void;
-		onretry: () => void;
+type TimerStatus = 'idle' | 'running' | 'stopping' | 'completed';
+type Props = {
+	localDate: string;
+	rounds: number;
+	includeHold: boolean;
+	saveState: SaveState;
+	complete?: boolean;
+	interactive?: boolean;
+	oncomplete: (completion: BreathingCompletion) => void;
+	onretry: () => void;
+};
+
+let {
+	localDate,
+	rounds,
+	includeHold,
+	saveState,
+	complete = false,
+	interactive = true,
+	oncomplete,
+	onretry
+}: Props = $props();
+const colors = getTrackerColors('breathing');
+let loadedDate = $state(untrack(() => localDate));
+let loadedComplete = $state(untrack(() => complete));
+let status = $state<TimerStatus>(untrack(() => (complete ? 'completed' : 'idle')));
+let elapsedMilliseconds = $state(0);
+let startedAt = 0;
+let timerId: number | undefined;
+let resetTimerId: number | undefined;
+
+const durationSeconds = $derived(breathingDurationSeconds(includeHold, rounds));
+const durationMilliseconds = $derived(durationSeconds * 1000);
+const step = $derived(breathingStep(elapsedMilliseconds, includeHold, rounds));
+const remainingSeconds = $derived(
+	Math.max(0, durationSeconds - Math.floor(elapsedMilliseconds / 1000))
+);
+const displayedRemainingSeconds = $derived(status === 'completed' ? 0 : remainingSeconds);
+const actionsVisible = $derived(
+	(status === 'idle' && interactive) ||
+		status === 'running' ||
+		status === 'stopping' ||
+		saveState === 'error'
+);
+
+$effect(() => resetForDate(localDate, complete));
+onDestroy(clearTimers);
+onMount(() => {
+	const onVisibilityChange = () => {
+		if (document.visibilityState === 'hidden' && status === 'running') stopExercise();
 	};
+	document.addEventListener('visibilitychange', onVisibilityChange);
+	return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+});
 
-	let {
-		localDate,
-		rounds,
-		includeHold,
-		saveState,
-		complete = false,
-		interactive = true,
-		oncomplete,
-		onretry
-	}: Props = $props();
-	const colors = getTrackerColors('breathing');
-	let loadedDate = $state(untrack(() => localDate));
-	let loadedComplete = $state(untrack(() => complete));
-	let status = $state<TimerStatus>(untrack(() => (complete ? 'completed' : 'idle')));
-	let elapsedMilliseconds = $state(0);
-	let startedAt = 0;
-	let timerId: number | undefined;
-	let resetTimerId: number | undefined;
+function resetForDate(nextDate: string, isComplete: boolean) {
+	if (loadedDate === nextDate && loadedComplete === isComplete) return;
+	clearTimers();
+	loadedDate = nextDate;
+	loadedComplete = isComplete;
+	status = isComplete ? 'completed' : 'idle';
+	elapsedMilliseconds = isComplete ? durationMilliseconds : 0;
+	startedAt = 0;
+}
 
-	const durationSeconds = $derived(breathingDurationSeconds(includeHold, rounds));
-	const durationMilliseconds = $derived(durationSeconds * 1000);
-	const step = $derived(breathingStep(elapsedMilliseconds, includeHold, rounds));
-	const remainingSeconds = $derived(
-		Math.max(0, durationSeconds - Math.floor(elapsedMilliseconds / 1000))
-	);
-	const displayedRemainingSeconds = $derived(status === 'completed' ? 0 : remainingSeconds);
-	const actionsVisible = $derived(
-		(status === 'idle' && interactive) ||
-			status === 'running' ||
-			status === 'stopping' ||
-			saveState === 'error'
-	);
+function startExercise() {
+	startedAt = Date.now();
+	elapsedMilliseconds = 0;
+	status = 'running';
+	scheduleTimerUpdate();
+}
 
-	$effect(() => resetForDate(localDate, complete));
-	onDestroy(clearTimers);
+function updateTimer() {
+	elapsedMilliseconds = Math.min(durationMilliseconds, Date.now() - startedAt);
+	if (elapsedMilliseconds >= durationMilliseconds) return completeExercise();
+	scheduleTimerUpdate();
+}
 
-	function resetForDate(nextDate: string, isComplete: boolean) {
-		if (loadedDate === nextDate && loadedComplete === isComplete) return;
-		clearTimers();
-		loadedDate = nextDate;
-		loadedComplete = isComplete;
-		status = isComplete ? 'completed' : 'idle';
-		elapsedMilliseconds = isComplete ? durationMilliseconds : 0;
-		startedAt = 0;
-	}
+function scheduleTimerUpdate() {
+	if (timerId) window.clearTimeout(timerId);
+	const elapsedInSecond = elapsedMilliseconds % 1000;
+	timerId = window.setTimeout(updateTimer, Math.max(1, Math.ceil(1000 - elapsedInSecond)));
+}
 
-	function startExercise() {
-		startedAt = Date.now();
-		elapsedMilliseconds = 0;
-		status = 'running';
-		scheduleTimerUpdate();
-	}
+function completeExercise() {
+	clearTimer();
+	elapsedMilliseconds = durationMilliseconds;
+	status = 'completed';
+	oncomplete({ localDate, startedAt, includeHold });
+}
 
-	function updateTimer() {
-		elapsedMilliseconds = Math.min(durationMilliseconds, Date.now() - startedAt);
-		if (elapsedMilliseconds >= durationMilliseconds) return completeExercise();
-		scheduleTimerUpdate();
-	}
+function stopExercise() {
+	clearTimer();
+	status = 'stopping';
+	const resetDelay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1100;
+	resetTimerId = window.setTimeout(resetExercise, resetDelay);
+}
 
-	function scheduleTimerUpdate() {
-		if (timerId) window.clearTimeout(timerId);
-		const elapsedInSecond = elapsedMilliseconds % 1000;
-		timerId = window.setTimeout(updateTimer, Math.max(1, Math.ceil(1000 - elapsedInSecond)));
-	}
+function resetExercise() {
+	elapsedMilliseconds = 0;
+	startedAt = 0;
+	status = 'idle';
+	resetTimerId = undefined;
+}
 
-	function completeExercise() {
-		clearTimer();
-		elapsedMilliseconds = durationMilliseconds;
-		status = 'completed';
-		oncomplete({ localDate, startedAt, includeHold });
-	}
+function clearTimers() {
+	clearTimer();
+	if (resetTimerId) window.clearTimeout(resetTimerId);
+	resetTimerId = undefined;
+}
 
-	function stopExercise() {
-		clearTimer();
-		status = 'stopping';
-		const resetDelay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1100;
-		resetTimerId = window.setTimeout(resetExercise, resetDelay);
-	}
-
-	function resetExercise() {
-		elapsedMilliseconds = 0;
-		startedAt = 0;
-		status = 'idle';
-		resetTimerId = undefined;
-	}
-
-	function clearTimers() {
-		clearTimer();
-		if (resetTimerId) window.clearTimeout(resetTimerId);
-		resetTimerId = undefined;
-	}
-
-	function clearTimer() {
-		if (timerId) window.clearTimeout(timerId);
-		timerId = undefined;
-	}
+function clearTimer() {
+	if (timerId) window.clearTimeout(timerId);
+	timerId = undefined;
+}
 </script>
 
 {#snippet actions()}
@@ -215,7 +219,7 @@
 </section>
 
 {#if actionsVisible}
-	<BottomActionBar>
+	<PageActionBar>
 		{@render actions()}
-	</BottomActionBar>
+	</PageActionBar>
 {/if}

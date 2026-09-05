@@ -22,8 +22,20 @@
 			<div id="app-loading-content">
 				<img id="app-loading-logo" src="/app-icon.svg" alt="" />
 				<span id="app-loading-spinner" aria-hidden="true"></span>
+				<div id="app-loading-recovery" hidden>
+					<p>Startup is taking longer than expected. Your saved data has not been cleared.</p>
+					<button id="app-loading-retry" type="button">Reload app</button>
+				</div>
 			</div>
 		</div>
+		<script>
+			// Recovery must remain usable even when the application module or storage never settles.
+			document.getElementById('app-loading-retry').addEventListener('click', () => location.reload());
+			setTimeout(() => {
+				const recovery = document.getElementById('app-loading-recovery');
+				if (recovery) recovery.hidden = false;
+			}, 15000);
+		</script>
 		<div class="sveltekit-body">%sveltekit.body%</div>
 	</body>
 </html>

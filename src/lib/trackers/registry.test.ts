@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	appTrackers,
-	getTrackerColors,
-	getTrackerForPathname,
-	trackerGradient
-} from './registry';
+import { appTrackers, getTrackerColors, getTrackerForPathname, trackerGradient } from './registry';
 
 describe('tracker registry', () => {
 	it('resolves streak and achievement pages as trackers', () => {

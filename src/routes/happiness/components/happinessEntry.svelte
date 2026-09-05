@@ -1,16 +1,13 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import { Form } from '$lib/components/ui/form';
 import { Annoyed, ChevronLeft, Frown, Laugh, Meh, Smile } from '@lucide/svelte';
 import { tick, untrack } from 'svelte';
-import { invalidateAll } from '$app/navigation';
+import { APP_RESOURCES, refreshAppData } from '$lib/app/resources';
 import { apiRequest } from '$lib/api';
 import type { HappinessData } from '$lib/api-types';
 import { Alert, AlertDescription } from '$lib/components/ui/alert';
-import {
-	BottomActionBar,
-	BottomActionButton,
-	BottomActionGroup
-} from '$lib/components/ui/bottom-action-bar';
+import { BottomActionButton, BottomActionGroup } from '$lib/components/ui/bottom-action-bar';
 import { Button } from '$lib/components/ui/button';
 import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
 import { Slider } from '$lib/components/ui/slider';
@@ -23,6 +20,8 @@ import {
 	happinessRatings,
 	reasonOptionsForRating
 } from '../happiness';
+import { submittedSnapshot } from '$lib/forms/draft';
+import { guardUnsavedNavigation } from '$lib/forms/unsaved-navigation.svelte';
 
 let { data }: { data: HappinessData } = $props();
 const colors = getTrackerColors('happiness');
@@ -57,6 +56,7 @@ const dirty = $derived(
 	!hasSavedEntry || rating !== savedRating || reasonKey(selectedReasons) !== reasonKey(savedReasons)
 );
 const canSave = $derived(dirty && selectedReasons.length > 0);
+guardUnsavedNavigation(() => dirty && !saving);
 
 $effect(() => syncEntry(data));
 
@@ -73,6 +73,12 @@ function syncEntry(nextData: HappinessData) {
 	loadedDate = nextData.date;
 	loadedUpdatedAt = updatedAt;
 	loadedDefaultRating = defaultRating;
+	if (!dateChanged && dirty) {
+		hasSavedEntry = Boolean(nextData.entry);
+		savedRating = nextData.entry?.rating;
+		savedReasons = nextData.entry?.reasons ?? [];
+		return;
+	}
 	rating = nextData.entry?.rating ?? defaultRating;
 	selectedReasons = nextData.entry?.reasons ?? [];
 	markSaved(Boolean(nextData.entry));
@@ -117,13 +123,18 @@ async function saveEntry(event: SubmitEvent) {
 	if (!canSave || saving) return;
 	saving = true;
 	errorMessage = '';
+	const submitted = submittedSnapshot({ localDate: data.date, rating, reasons: selectedReasons });
 	try {
 		await apiRequest('/api/app/happiness', {
 			method: 'PUT',
-			body: JSON.stringify({ localDate: data.date, rating, reasons: selectedReasons })
+			body: JSON.stringify(submitted)
 		});
-		markSaved(true);
-		await invalidateAll();
+		hasSavedEntry = true;
+		savedRating = submitted.rating;
+		savedReasons = submitted.reasons;
+		await refreshAppData(APP_RESOURCES.bootstrap).catch(() => {
+			errorMessage = 'Saved, but could not refresh the page.';
+		});
 	} catch (cause) {
 		errorMessage = cause instanceof Error ? cause.message : 'Could not save your entry.';
 	} finally {
@@ -172,7 +183,7 @@ function reasonKey(reasons: string[]) {
 					onValueChange={chooseRating}
 				/>
 			</div>
-			<div class="flex w-full justify-between px-6 text-sm tabular-nums text-(--text)/40" aria-hidden="true">
+			<div class="flex w-full justify-between px-6 text-sm tabular-nums text-(--text-muted)" aria-hidden="true">
 				{#each happinessRatings as value (value)}<span class="flex w-0 justify-center">{value}</span>{/each}
 			</div>
 		</Field>
@@ -225,7 +236,7 @@ function reasonKey(reasons: string[]) {
 	{/if}
 </Form>
 
-<BottomActionBar contentClass="max-w-3xl" mobileOnly={false}>
+<PageActionBar contentClass="max-w-3xl" mobileOnly={false}>
 	<BottomActionGroup>
 		{#if step === 'feeling'}
 			<BottomActionButton type="button" tone="primary" onclick={continueToReasons}>
@@ -242,4 +253,23 @@ function reasonKey(reasons: string[]) {
 			</BottomActionButton>
 		{/if}
 	</BottomActionGroup>
-</BottomActionBar>
+</PageActionBar>
+
+<style>
+.happiness-slider :global([data-slot='slider']) {
+	min-height: 3.5rem;
+}
+
+.happiness-slider :global([data-slot='slider-track']) {
+	height: 1.25rem;
+}
+
+.happiness-slider :global([data-slot='slider-thumb']) {
+	height: 3rem;
+	width: 3rem;
+}
+
+.happiness-slider :global([data-slot='slider-range']) {
+	background: var(--happiness-slider-gradient);
+}
+</style>

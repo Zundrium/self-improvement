@@ -1,115 +1,132 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import { onMount } from 'svelte';
-	import { Cloud, Download, FolderOpen, RefreshCw, Upload } from '@lucide/svelte';
-	import { recordAchievementEvents } from '$lib/api';
-	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
-	import {
-		AlertDialog,
-		AlertDialogAction,
-		AlertDialogCancel,
-		AlertDialogContent,
-		AlertDialogDescription,
-		AlertDialogFooter,
-		AlertDialogHeader,
-		AlertDialogTitle
-	} from '$lib/components/ui/alert-dialog';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Spinner } from '$lib/components/ui/spinner';
-	import type { BackupEnvelope } from '$lib/local/backup';
-	import {
-		BackupCancelledError,
-		backUpNowToGoogleDrive,
-		chooseGoogleDriveFolder,
-		exportBackupFile,
-		getGoogleDriveBackupStatus,
-		pickBackupFile,
-		restoreBackup,
-		type GoogleDriveBackupStatus
-	} from '$native/google-drive-backup';
-	import { isNativeAndroid } from '$native/platform';
+import { APP_RESTORED_EVENT } from '$lib/app/restore';
+import { toast } from '$lib/components/ui/toast';
+import { invalidateAll } from '$app/navigation';
+import { onMount } from 'svelte';
+import { Cloud, Download, FolderOpen, RefreshCw, Upload } from '@lucide/svelte';
+import { recordAchievementEvents } from '$lib/api';
+import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle
+} from '$lib/components/ui/alert-dialog';
+import { Badge } from '$lib/components/ui/badge';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+import { Spinner } from '$lib/components/ui/spinner';
+import type { BackupEnvelope } from '$lib/local/backup';
+import {
+	BackupCancelledError,
+	backUpNowToGoogleDrive,
+	chooseGoogleDriveFolder,
+	exportBackupFile,
+	getGoogleDriveBackupStatus,
+	pickBackupFile,
+	restoreBackup,
+	type GoogleDriveBackupStatus
+} from '$native/google-drive-backup';
+import { isNativeAndroid } from '$native/platform';
 
-	const nativeAndroid = isNativeAndroid();
-	let status = $state<GoogleDriveBackupStatus>({ configured: false });
-	let pendingRestore = $state<BackupEnvelope | null>(null);
-	let restoreOpen = $state(false);
-	let busy = $state(false);
-	let message = $state('');
-	let failed = $state(false);
+const nativeAndroid = isNativeAndroid();
+let status = $state<GoogleDriveBackupStatus>({ configured: false });
+let pendingRestore = $state<BackupEnvelope | null>(null);
+let restoreOpen = $state(false);
+let busy = $state(false);
+let message = $state('');
+let failed = $state(false);
 
-	onMount(() => {
-		if (!nativeAndroid) return;
-		void loadStatus();
-	});
+onMount(() => {
+	if (!nativeAndroid) return;
+	void loadStatus();
+});
 
-	async function loadStatus() {
-		try {
-			status = await getGoogleDriveBackupStatus();
-			if (status.lastSuccessAt) await recordAchievementEvents('event-first-backup');
-		} catch {
-			message = 'Google Drive backup status could not be read.';
-			failed = true;
-		}
-	}
-
-	async function chooseFolder() {
-		await run(async () => {
-			status = await chooseGoogleDriveFolder();
-		}, 'Google Drive folder selected.');
-	}
-
-	async function backUpNow() {
-		await run(async () => {
-			status = await backUpNowToGoogleDrive();
-		}, 'Backup saved to Google Drive.');
-	}
-
-	async function exportFile() {
-		await run(exportBackupFile, 'Backup file exported.');
-	}
-
-	async function selectRestore() {
-		await run(async () => {
-			pendingRestore = await pickBackupFile();
-			restoreOpen = true;
-		});
-	}
-
-	async function confirmRestore() {
-		const backup = pendingRestore;
-		if (!backup) return;
-		await run(async () => {
-			await restoreBackup(backup);
-			pendingRestore = null;
-			await invalidateAll();
-		}, 'Backup restored.');
-	}
-
-	async function run(action: () => Promise<unknown>, successMessage = '') {
-		if (busy) return;
-		busy = true;
-		message = '';
-		failed = false;
-		try {
-			await action();
-			message = successMessage;
-		} catch (cause) {
-			if (!(cause instanceof BackupCancelledError)) showFailure(cause);
-		} finally {
-			busy = false;
-		}
-	}
-
-	function showFailure(cause: unknown) {
+async function loadStatus() {
+	try {
+		status = await getGoogleDriveBackupStatus();
+		if (status.lastSuccessAt) await recordAchievementEvents('event-first-backup');
+	} catch {
+		message = 'Google Drive backup status could not be read.';
 		failed = true;
-		message = cause instanceof Error ? cause.message : 'The backup action could not complete.';
 	}
+}
 
-	function dateLabel(value: string | undefined, fallback: string) {
-		return value ? new Date(value).toLocaleString() : fallback;
+async function chooseFolder() {
+	await run(async () => {
+		status = await chooseGoogleDriveFolder();
+	}, 'Google Drive folder selected.');
+}
+
+async function backUpNow() {
+	await run(async () => {
+		status = await backUpNowToGoogleDrive();
+	}, 'Backup saved to Google Drive.');
+}
+
+async function exportFile() {
+	await run(exportBackupFile, 'Backup file exported.');
+}
+
+async function selectRestore() {
+	await run(async () => {
+		pendingRestore = await pickBackupFile();
+		restoreOpen = true;
+	});
+}
+
+async function confirmRestore() {
+	const backup = pendingRestore;
+	if (!backup) return;
+	if (busy) return;
+	busy = true;
+	failed = false;
+	message = '';
+	try {
+		const result = await restoreBackup(backup);
+		pendingRestore = null;
+		message = result.warnings.join(' ') || 'Backup restored.';
+		try {
+			await invalidateAll();
+		} catch {
+			message = 'Backup restored. Reload the app to refresh the displayed data.';
+		}
+		toast.success(message);
+		window.dispatchEvent(new Event(APP_RESTORED_EVENT));
+	} catch (cause) {
+		showFailure(cause);
+	} finally {
+		busy = false;
 	}
+}
+
+async function run(action: () => Promise<unknown>, successMessage = '') {
+	if (busy) return;
+	busy = true;
+	message = '';
+	failed = false;
+	try {
+		await action();
+		message = successMessage;
+	} catch (cause) {
+		if (!(cause instanceof BackupCancelledError)) showFailure(cause);
+	} finally {
+		busy = false;
+	}
+}
+
+function showFailure(cause: unknown) {
+	failed = true;
+	message = cause instanceof Error ? cause.message : 'The backup action could not complete.';
+}
+
+function dateLabel(value: string | undefined, fallback: string) {
+	return value ? new Date(value).toLocaleString() : fallback;
+}
 </script>
 
 <Card>
@@ -140,7 +157,7 @@
 			<div class="flex items-start justify-between gap-4 py-3 first:pt-0">
 				<div>
 					<p class="text-sm font-medium">Google Drive destination</p>
-					<p class="text-xs text-(--text)/48">
+					<p class="text-xs text-(--text-muted)">
 						{nativeAndroid
 							? status.configured
 								? 'Folder access is saved on this device'
@@ -159,7 +176,7 @@
 			<div class="flex items-start justify-between gap-4 py-3">
 				<div>
 					<p class="text-sm font-medium">Daily automatic backup</p>
-					<p class="text-xs text-(--text)/48">
+					<p class="text-xs text-(--text-muted)">
 						{dateLabel(status.lastSuccessAt, 'No successful backup yet')}
 					</p>
 				</div>

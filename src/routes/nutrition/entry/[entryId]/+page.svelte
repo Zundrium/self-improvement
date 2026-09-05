@@ -1,101 +1,133 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { ChevronLeft, Save, Trash2 } from '@lucide/svelte';
-	import { onMount, untrack } from 'svelte';
-	import type { PageProps } from './$types';
-	import { apiRequest } from '$lib/api';
+import { Form } from '$lib/components/ui/form';
+import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
+import { ChevronLeft, Save, Trash2 } from '@lucide/svelte';
+import type { PageProps } from './$types';
+import { localOperation } from '$lib/api';
 
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import {
-		BottomActionBar,
-		BottomActionButton,
-		BottomActionGroup
-	} from '$lib/components/ui/bottom-action-bar';
-	import EntryEditor, { type EditableMeal } from '../../components/entryEditor.svelte';
-	import {
-		AlertDialog,
-		AlertDialogAction,
-		AlertDialogCancel,
-		AlertDialogContent,
-		AlertDialogDescription,
-		AlertDialogFooter,
-		AlertDialogHeader,
-		AlertDialogTitle,
-		AlertDialogTrigger
-	} from '$lib/components/ui/alert-dialog';
-	import { Button } from '$lib/components/ui/button';
-	import { toast } from '$lib/components/ui/toast';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import { BottomActionButton, BottomActionGroup } from '$lib/components/ui/bottom-action-bar';
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import EntryEditor from '../../components/entryEditor.svelte';
+import type { EditableMeal } from '../../draft';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger
+} from '$lib/components/ui/alert-dialog';
+import { Button } from '$lib/components/ui/button';
+import { toast } from '$lib/components/ui/toast';
+import { draftFingerprint, draftFromEntry, snapshotDraft, type EntryDraft } from '../../draft';
+import { onDestroy } from 'svelte';
+import { RequestLifetime } from '../../workflow';
+import { guardUnsavedNavigation } from '$lib/forms/unsaved-navigation.svelte';
 
-	let { data }: PageProps = $props();
-	const initial = untrack(() => data.entry);
-	let date = $state(initial.date);
-	let time = $state('');
-	let timeZoneOffset = $derived(time ? new Date(`${date}T${time}:00`).getTimezoneOffset() : 0);
-	let name = $state(initial.name);
-	let notes = $state(initial.notes);
-	let formError = $state('');
-	let deleteDialogOpen = $state(false);
-	let meals = $state<EditableMeal[]>(
-		initial.meals.map((meal) => ({
-			id: meal.id,
-			name: meal.name,
-			imageDataUrl: meal.imageDataUrl,
-			ingredients: meal.ingredients.map((item) => ({
-				id: item.id,
-				name: item.name,
-				quantity: item.quantity,
-				unit: item.unit,
-				calories: item.calories,
-				proteinG: item.proteinG,
-				carbsG: item.carbsG,
-				fatG: item.fatG,
-				notes: item.notes
-			}))
-		}))
-	);
+let { data }: PageProps = $props();
+let entityId = $state('');
+let date = $state('');
+let time = $state('');
+let name = $state('');
+let notes = $state('');
+let formError = $state('');
+let deleteDialogOpen = $state(false);
+let meals = $state<EditableMeal[]>([]);
+let saving = $state(false);
+let deleting = $state(false);
+let deleted = $state(false);
+const mutation = new RequestLifetime();
+let savedDraft = $state<EntryDraft | null>(null);
+const currentDraft = $derived({ date, time, name, notes, meals });
+const dirty = $derived(
+	savedDraft !== null && draftFingerprint(currentDraft) !== draftFingerprint(savedDraft)
+);
+guardUnsavedNavigation(() => dirty && !saving && !deleting);
 
-	onMount(() => {
-		time = inputTime(initial.createdAt);
-	});
+$effect(() => {
+	if (data.entry.id === entityId) return;
+	mutation.cancel();
+	const next = draftFromEntry(data.entry);
+	entityId = data.entry.id;
+	date = next.date;
+	time = next.time;
+	name = next.name;
+	notes = next.notes;
+	meals = next.meals;
+	savedDraft = snapshotDraft(next);
+	formError = '';
+	deleteDialogOpen = false;
+	saving = false;
+	deleting = false;
+	deleted = false;
+});
 
-	async function saveEntry(event: SubmitEvent) {
-		event.preventDefault();
-		formError = '';
-		try {
-			await apiRequest(`/api/app/nutrition/entry/${initial.id}`, {
-				method: 'PUT',
-				body: JSON.stringify({ date, time, timeZoneOffset, name, notes, meals })
-			});
-			toast.success('Meal updated.');
-			await goto(resolve('/nutrition/log/[date]', { date }));
-		} catch (cause) {
-			formError = cause instanceof Error ? cause.message : 'Could not save this meal.';
+async function saveEntry(event: SubmitEvent) {
+	event.preventDefault();
+	if (saving || deleting) return;
+	formError = '';
+	saving = true;
+	const submittedId = entityId;
+	const submitted = snapshotDraft({ date, time, name, notes, meals });
+	const request = mutation.begin(30_000);
+	try {
+		await localOperation('updateNutritionEntry', {
+			entryId: submittedId,
+			entry: {
+				...submitted,
+				timeZoneOffset: new Date(`${submitted.date}T${submitted.time}:00`).getTimezoneOffset()
+			}
+		});
+		if (entityId !== submittedId || !mutation.isCurrent(request.id)) return;
+		savedDraft = submitted;
+		toast.success('Meal updated.');
+		if (draftFingerprint(currentDraft) === draftFingerprint(submitted)) {
+			await goto(resolve('/nutrition/log/[date]', { date: submitted.date }));
 		}
+	} catch (cause) {
+		if (entityId !== submittedId || !mutation.isCurrent(request.id)) return;
+		formError = cause instanceof Error ? cause.message : 'Could not save this meal.';
+	} finally {
+		request.finish();
+		if (entityId === submittedId && mutation.isCurrent(request.id)) saving = false;
 	}
+}
 
-	function confirmDelete() {
-		deleteDialogOpen = false;
-		void deleteEntry();
-	}
+function confirmDelete() {
+	deleteDialogOpen = false;
+	void deleteEntry();
+}
 
-	async function deleteEntry() {
+async function deleteEntry() {
+	if (saving || deleting) return;
+	deleting = true;
+	const submittedId = entityId;
+	const request = mutation.begin(30_000);
+	try {
+		const result = await localOperation('deleteNutritionEntry', { entryId: submittedId });
+		if (entityId !== submittedId || !mutation.isCurrent(request.id)) return;
+		deleted = true;
+		toast.success('Meal deleted.');
 		try {
-			const result = await apiRequest<{ date: string }>(`/api/app/nutrition/entry/${initial.id}`, {
-				method: 'DELETE'
-			});
-			toast.success('Meal deleted.');
 			await goto(resolve('/nutrition/log/[date]', { date: result.date }));
-		} catch (cause) {
-			formError = cause instanceof Error ? cause.message : 'Could not delete this meal.';
+		} catch {
+			formError = 'Meal deleted. Could not return to the food log.';
 		}
+	} catch (cause) {
+		if (entityId !== submittedId || !mutation.isCurrent(request.id)) return;
+		formError = cause instanceof Error ? cause.message : 'Could not delete this meal.';
+	} finally {
+		request.finish();
+		if (entityId === submittedId && mutation.isCurrent(request.id)) deleting = false;
 	}
+}
 
-	function inputTime(value: Date | string) {
-		const dateValue = new Date(value);
-		return `${String(dateValue.getHours()).padStart(2, '0')}:${String(dateValue.getMinutes()).padStart(2, '0')}`;
-	}
+onDestroy(() => mutation.cancel());
 </script>
 
 <svelte:head><title>Edit meal · Self Improvement</title></svelte:head>
@@ -106,15 +138,15 @@
 	</Form>
 </TrackerPage>
 
-<BottomActionBar contentClass="max-w-4xl" mobileOnly={false}>
+<PageActionBar contentClass="max-w-4xl" mobileOnly={false}>
 	<BottomActionGroup>
 		<BottomActionButton href="/nutrition/log/{date}" format="icon" aria-label="Back to daily log">
 			<ChevronLeft class="size-5" />
 		</BottomActionButton>
-		<BottomActionButton form="save-entry" type="submit" tone="primary">
+		<BottomActionButton form="save-entry" type="submit" tone="primary" disabled={!dirty || saving || deleting || deleted}>
 			<Save class="mr-2 size-4" /> Save meal
 		</BottomActionButton>
-		<AlertDialog bind:open={deleteDialogOpen}>
+		{#if !deleted}<AlertDialog bind:open={deleteDialogOpen}>
 			<AlertDialogTrigger>
 				{#snippet child({ props })}<BottomActionButton
 						tone="destructive"
@@ -134,10 +166,10 @@
 						size="medium"
 						profile="plain"
 						tone="destructive"
-						onclick={confirmDelete}>Delete meal</AlertDialogAction
+						onclick={confirmDelete} disabled={saving || deleting}>Delete meal</AlertDialogAction
 					></AlertDialogFooter
 				>
 			</AlertDialogContent>
-		</AlertDialog>
+		</AlertDialog>{/if}
 	</BottomActionGroup>
-</BottomActionBar>
+</PageActionBar>

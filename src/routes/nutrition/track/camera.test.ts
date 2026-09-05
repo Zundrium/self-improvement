@@ -25,7 +25,8 @@ describe('nutrition camera constraints', () => {
 	});
 
 	it('falls back to an image element when the bitmap decoder rejects a gallery file', async () => {
-		const decodeBitmap = () => Promise.reject(new DOMException('The source image could not be decoded'));
+		const decodeBitmap = () =>
+			Promise.reject(new DOMException('The source image could not be decoded'));
 		const decodeImageElement = () => Promise.resolve('decoded');
 
 		await expect(decodeGalleryImage(decodeBitmap, decodeImageElement)).resolves.toBe('decoded');

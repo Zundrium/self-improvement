@@ -9,7 +9,7 @@ import {
 	Trash2,
 	Wheat
 } from '@lucide/svelte';
-import MetricStat from '$lib/components/metricStat.svelte';
+import MetricStat from '$lib/components/metrics/MetricStat.svelte';
 import {
 	Accordion,
 	AccordionContent,
@@ -25,25 +25,9 @@ import { Input } from '$lib/components/ui/input';
 import { Spinner } from '$lib/components/ui/spinner';
 import { Textarea } from '$lib/components/ui/textarea';
 import { refineMealEstimate } from '../ai/meal-analysis';
-
-export type EditableIngredient = {
-	id: string;
-	name: string;
-	quantity: number;
-	unit: string;
-	calories: number;
-	proteinG: number;
-	carbsG: number;
-	fatG: number;
-	notes: string;
-};
-
-export type EditableMeal = {
-	id: string;
-	name: string;
-	imageDataUrl: string;
-	ingredients: EditableIngredient[];
-};
+import { onDestroy } from 'svelte';
+import { RequestLifetime, requestError } from '../workflow';
+import type { EditableIngredient, EditableMeal } from '../draft';
 
 type RevisionMessage = { role: 'user' | 'assistant'; text: string };
 
@@ -54,6 +38,7 @@ type Props = {
 	notes?: string;
 	meals?: EditableMeal[];
 	error?: string;
+	aiRefinement?: boolean;
 };
 
 let {
@@ -62,13 +47,15 @@ let {
 	name = $bindable(''),
 	notes = $bindable(''),
 	meals = $bindable<EditableMeal[]>([]),
-	error = ''
+	error = '',
+	aiRefinement = true
 }: Props = $props();
 
 let revisionDrafts = $state<Record<string, string>>({});
 let revisionMessages = $state<Record<string, RevisionMessage[]>>({});
 let revisionErrors = $state<Record<string, string>>({});
 let refining = $state<Record<string, boolean>>({});
+const refinementRequests = new Map<string, RequestLifetime>();
 
 const mealsJson = $derived(JSON.stringify(meals));
 const totals = $derived(totalMeals(meals));
@@ -80,12 +67,17 @@ async function refineMeal(mealId: string) {
 
 	refining = { ...refining, [mealId]: true };
 	revisionErrors = { ...revisionErrors, [mealId]: '' };
+	const lifetime = refinementRequests.get(mealId) ?? new RequestLifetime();
+	refinementRequests.set(mealId, lifetime);
+	const request = lifetime.begin();
 	try {
 		const revision = await refineMealEstimate(
 			{ imageDataUrl: currentMeal.imageDataUrl, description: '' },
 			{ mealName: currentMeal.name, ingredients: currentMeal.ingredients },
-			correction
+			correction,
+			request.signal
 		);
+		if (!lifetime.isCurrent(request.id)) return;
 		const previousName = currentMeal.name;
 		meals = meals.map((meal) =>
 			meal.id === mealId
@@ -110,14 +102,18 @@ async function refineMeal(mealId: string) {
 		};
 		revisionDrafts = { ...revisionDrafts, [mealId]: '' };
 	} catch (cause) {
+		if (!lifetime.isCurrent(request.id)) return;
 		revisionErrors = {
 			...revisionErrors,
-			[mealId]: cause instanceof Error ? cause.message : 'Could not update the estimate.'
+			[mealId]: requestError(cause, 'Could not update the estimate.')
 		};
 	} finally {
-		refining = { ...refining, [mealId]: false };
+		request.finish();
+		if (lifetime.isCurrent(request.id)) refining = { ...refining, [mealId]: false };
 	}
 }
+
+onDestroy(() => refinementRequests.forEach((request) => request.cancel()));
 
 function addMeal() {
 	meals = [
@@ -201,7 +197,7 @@ function totalMeals(items: EditableMeal[]) {
 			<strong class="block text-5xl font-medium tracking-[-0.07em] tabular-nums sm:text-6xl"
 				>{Math.round(totals.calories)}</strong
 			>
-			<span class="mt-1 block text-sm text-(--text)/48">kcal</span>
+			<span class="mt-1 block text-sm text-(--text-muted)">kcal</span>
 		</div>
 		<div class="mx-auto grid w-full max-w-lg grid-cols-3 items-center">
 			<MetricStat
@@ -266,7 +262,7 @@ function totalMeals(items: EditableMeal[]) {
 					{:else}
 						<span
 							class="flex size-20 shrink-0 items-center justify-center rounded-3xl bg-(--text)/5 sm:size-24"
-							><Image class="size-6 text-(--text)/32" /></span
+							><Image class="size-6 text-(--text-muted)" /></span
 						>
 					{/if}
 					<div class="min-w-0 flex-1 space-y-3">
@@ -292,7 +288,7 @@ function totalMeals(items: EditableMeal[]) {
 						</div>
 					</div>
 				</div>
-				{#if meal.imageDataUrl}
+				{#if meal.imageDataUrl && aiRefinement}
 					<Card class="gap-4">
 						<div class="flex gap-3">
 							<span
@@ -368,7 +364,7 @@ function totalMeals(items: EditableMeal[]) {
 								<AccordionTrigger>
 									<span class="min-w-0 flex-1"
 										><span class="block truncate">{item.name || `Ingredient ${itemIndex + 1}`}</span
-										><span class="block text-xs font-normal text-(--text)/40"
+										><span class="block text-xs font-normal text-(--text-muted)"
 											>{item.quantity} {item.unit} · {item.calories} kcal</span
 										></span
 									>
@@ -376,13 +372,15 @@ function totalMeals(items: EditableMeal[]) {
 								<AccordionContent class="space-y-4">
 									<div class="grid gap-3 sm:grid-cols-[1fr_120px_140px_auto]">
 										<Field
-											><FieldLabel>Name</FieldLabel><Input
+											><FieldLabel for="ingredient-name-{item.id}">Name</FieldLabel><Input
+												id="ingredient-name-{item.id}"
 												bind:value={item.name}
 												placeholder="Chicken breast"
 											/></Field
 										>
 										<Field
-											><FieldLabel>Quantity</FieldLabel><Input
+											><FieldLabel for="ingredient-quantity-{item.id}">Quantity</FieldLabel><Input
+												id="ingredient-quantity-{item.id}"
 												type="number"
 												min="0"
 												step="0.1"
@@ -390,7 +388,8 @@ function totalMeals(items: EditableMeal[]) {
 											/></Field
 										>
 										<Field
-											><FieldLabel>Unit</FieldLabel><Input
+											><FieldLabel for="ingredient-unit-{item.id}">Unit</FieldLabel><Input
+												id="ingredient-unit-{item.id}"
 												bind:value={item.unit}
 												placeholder="serving"
 											/></Field
@@ -406,7 +405,8 @@ function totalMeals(items: EditableMeal[]) {
 									</div>
 									<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 										<Field
-											><FieldLabel>Calories</FieldLabel><Input
+											><FieldLabel for="ingredient-calories-{item.id}">Calories</FieldLabel><Input
+												id="ingredient-calories-{item.id}"
 												type="number"
 												min="0"
 												step="0.1"
@@ -414,7 +414,8 @@ function totalMeals(items: EditableMeal[]) {
 											/></Field
 										>
 										<Field
-											><FieldLabel>Protein (g)</FieldLabel><Input
+											><FieldLabel for="ingredient-protein-{item.id}">Protein (g)</FieldLabel><Input
+												id="ingredient-protein-{item.id}"
 												type="number"
 												min="0"
 												step="0.1"
@@ -422,7 +423,8 @@ function totalMeals(items: EditableMeal[]) {
 											/></Field
 										>
 										<Field
-											><FieldLabel>Carbs (g)</FieldLabel><Input
+											><FieldLabel for="ingredient-carbs-{item.id}">Carbs (g)</FieldLabel><Input
+												id="ingredient-carbs-{item.id}"
 												type="number"
 												min="0"
 												step="0.1"
@@ -430,7 +432,8 @@ function totalMeals(items: EditableMeal[]) {
 											/></Field
 										>
 										<Field
-											><FieldLabel>Fat (g)</FieldLabel><Input
+											><FieldLabel for="ingredient-fat-{item.id}">Fat (g)</FieldLabel><Input
+												id="ingredient-fat-{item.id}"
 												type="number"
 												min="0"
 												step="0.1"
@@ -439,7 +442,8 @@ function totalMeals(items: EditableMeal[]) {
 										>
 									</div>
 									<Field
-										><FieldLabel>Notes</FieldLabel><Input
+									><FieldLabel for="ingredient-notes-{item.id}">Notes</FieldLabel><Input
+										id="ingredient-notes-{item.id}"
 											bind:value={item.notes}
 											placeholder="Optional notes"
 										/></Field
@@ -449,7 +453,7 @@ function totalMeals(items: EditableMeal[]) {
 						{/each}
 					</Accordion>
 				{:else}
-					<p class="py-6 text-center text-sm text-(--text)/40">No ingredients yet.</p>
+					<p class="py-6 text-center text-sm text-(--text-muted)">No ingredients yet.</p>
 				{/if}
 			</div>
 			{#if mealIndex < meals.length - 1}<div class="h-4"></div>{/if}

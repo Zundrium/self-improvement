@@ -22,7 +22,9 @@
 		"cap:android:open": "npm run cap:sync && cap open android",
 		"mobile:sync": "npm run cap:sync",
 		"mobile:android": "npm run cap:android",
-		"mobile:android:open": "npm run cap:android:open"
+		"mobile:android:open": "npm run cap:android:open",
+		"test:browser": "vitest run --config vitest.browser.config.ts",
+		"format:check": "biome format ."
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.10",
@@ -33,10 +35,12 @@
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.0",
 		"@types/node": "^24",
+		"@vitest/browser-playwright": "^4.1.10",
 		"bits-ui": "^2.18.1",
 		"clsx": "^2.1.1",
 		"eruda": "^3.4.3",
 		"fake-indexeddb": "^6.2.5",
+		"playwright": "^1.63.0",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"tailwind-merge": "^3.6.0",
@@ -64,5 +68,8 @@
 		"gsap": "^3.15.0",
 		"mode-watcher": "^1.1.0",
 		"zod": "^4.4.3"
+	},
+	"engines": {
+		"node": ">=22.13.0"
 	}
 }

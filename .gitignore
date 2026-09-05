@@ -26,3 +26,8 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Browser test failure artifacts
+tests/browser/__screenshots__/
+
+.vitest-attachments/

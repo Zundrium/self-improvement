@@ -1,107 +1,99 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
-	import { invalidateAll } from '$app/navigation';
-	import { MoonStar, Plus } from '@lucide/svelte';
-	import { toast } from '$lib/components/ui/toast';
-	import { apiRequest } from '$lib/api';
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import {
-		BottomActionBar,
-		BottomActionButton,
-		BottomActionGroup
-	} from '$lib/components/ui/bottom-action-bar';
-	import {
-		AlertDialog,
-		AlertDialogAction,
-		AlertDialogCancel,
-		AlertDialogContent,
-		AlertDialogDescription,
-		AlertDialogFooter,
-		AlertDialogHeader,
-		AlertDialogTitle,
-		AlertDialogTrigger
-	} from '$lib/components/ui/alert-dialog';
-	import { Button } from '$lib/components/ui/button';
-	import {
-		Dialog,
-		DialogContent,
-		DialogDescription,
-		DialogFooter,
-		DialogHeader,
-		DialogTitle
-	} from '$lib/components/ui/dialog';
-	import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
-	import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
-	import { Input } from '$lib/components/ui/input';
-	import { Spinner } from '$lib/components/ui/spinner';
-	import { fullDateLabel, shortDateLabel } from '$lib/dateFormatting';
-	import { getTrackerColors } from '$lib/trackers/registry';
-	import FoodLog from './components/foodLog.svelte';
-	import NutritionSummary from './components/nutritionSummary.svelte';
-	import type { PageProps } from './$types';
+import { Form } from '$lib/components/ui/form';
+import { invalidateAll } from '$app/navigation';
+import { MoonStar, Plus } from '@lucide/svelte';
+import { toast } from '$lib/components/ui/toast';
+import { localOperation } from '$lib/api';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import { BottomActionButton, BottomActionGroup } from '$lib/components/ui/bottom-action-bar';
+import PageActionBar from '$lib/components/app/PageActionBar.svelte';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger
+} from '$lib/components/ui/alert-dialog';
+import { Button } from '$lib/components/ui/button';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from '$lib/components/ui/dialog';
+import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty';
+import { Field, FieldDescription, FieldLabel } from '$lib/components/ui/field';
+import { Input } from '$lib/components/ui/input';
+import { Spinner } from '$lib/components/ui/spinner';
+import { fullDateLabel, shortDateLabel } from '$lib/dateFormatting';
+import { getTrackerColors } from '$lib/trackers/registry';
+import FoodLog from './components/foodLog.svelte';
+import NutritionSummary from './components/nutritionSummary.svelte';
+import type { PageProps } from './$types';
 
-	const MAX_FASTING_DAYS = 30;
-	const colors = getTrackerColors('nutrition');
-	let { data }: PageProps = $props();
-	let markOpen = $state(false);
-	let days = $state(1);
-	let busy = $state(false);
-	let requestError = $state('');
-	const maxDays = $derived(daysThroughToday(data.date, data.today));
-	const lastFastingDate = $derived(addDays(data.date, Math.max(0, Number(days) - 1)));
+const MAX_FASTING_DAYS = 30;
+const colors = getTrackerColors('nutrition');
+let { data }: PageProps = $props();
+let markOpen = $state(false);
+let days = $state(1);
+let busy = $state(false);
+let requestError = $state('');
+const maxDays = $derived(daysThroughToday(data.date, data.today));
+const lastFastingDate = $derived(addDays(data.date, Math.max(0, Number(days) - 1)));
 
-	function openMarkDialog() {
-		if (data.entries.length) {
-			toast.error('Remove logged meals before marking a fast.');
-			return;
-		}
-		days = 1;
-		requestError = '';
-		markOpen = true;
+function openMarkDialog() {
+	if (data.entries.length) {
+		toast.error('Remove logged meals before marking a fast.');
+		return;
 	}
+	days = 1;
+	requestError = '';
+	markOpen = true;
+}
 
-	async function markFasting(event: SubmitEvent) {
-		event.preventDefault();
-		busy = true;
-		requestError = '';
-		try {
-			await apiRequest('/api/app/nutrition/fasting', {
-				method: 'POST',
-				body: JSON.stringify({ date: data.date, days: Number(days) })
-			});
-			markOpen = false;
-			toast.success(Number(days) === 1 ? 'Fasting day marked' : `${days} fasting days marked`);
-			await invalidateAll();
-		} catch (cause) {
-			requestError = cause instanceof Error ? cause.message : 'Could not mark these fasting days.';
-		} finally {
-			busy = false;
-		}
+async function markFasting(event: SubmitEvent) {
+	event.preventDefault();
+	busy = true;
+	requestError = '';
+	try {
+		await localOperation('markNutritionFasting', { date: data.date, days: Number(days) });
+		markOpen = false;
+		toast.success(Number(days) === 1 ? 'Fasting day marked' : `${days} fasting days marked`);
+		await invalidateAll();
+	} catch (cause) {
+		requestError = cause instanceof Error ? cause.message : 'Could not mark these fasting days.';
+	} finally {
+		busy = false;
 	}
+}
 
-	async function cancelFasting() {
-		busy = true;
-		try {
-			await apiRequest(`/api/app/nutrition/fasting/${data.date}`, { method: 'DELETE' });
-			toast.success('Fasting day cancelled');
-			await invalidateAll();
-		} catch (cause) {
-			toast.error(cause instanceof Error ? cause.message : 'Could not cancel this fasting day.');
-		} finally {
-			busy = false;
-		}
+async function cancelFasting() {
+	busy = true;
+	try {
+		await localOperation('cancelNutritionFasting', { date: data.date });
+		toast.success('Fasting day cancelled');
+		await invalidateAll();
+	} catch (cause) {
+		toast.error(cause instanceof Error ? cause.message : 'Could not cancel this fasting day.');
+	} finally {
+		busy = false;
 	}
+}
 
-	function daysThroughToday(date: string, today: string) {
-		const milliseconds = Date.parse(`${today}T00:00:00Z`) - Date.parse(`${date}T00:00:00Z`);
-		return Math.min(MAX_FASTING_DAYS, Math.floor(milliseconds / 86_400_000) + 1);
-	}
+function daysThroughToday(date: string, today: string) {
+	const milliseconds = Date.parse(`${today}T00:00:00Z`) - Date.parse(`${date}T00:00:00Z`);
+	return Math.min(MAX_FASTING_DAYS, Math.floor(milliseconds / 86_400_000) + 1);
+}
 
-	function addDays(date: string, offset: number) {
-		return new Date(Date.parse(`${date}T00:00:00Z`) + offset * 86_400_000)
-			.toISOString()
-			.slice(0, 10);
-	}
+function addDays(date: string, offset: number) {
+	return new Date(Date.parse(`${date}T00:00:00Z`) + offset * 86_400_000).toISOString().slice(0, 10);
+}
 </script>
 
 <svelte:head><title>{fullDateLabel(data.date)} · Self Improvement</title></svelte:head>
@@ -139,7 +131,7 @@
 	{/if}
 </TrackerPage>
 
-<BottomActionBar contentClass="max-w-5xl" mobileOnly={false}>
+<PageActionBar contentClass="max-w-5xl" mobileOnly={false}>
 	<BottomActionGroup>
 		{#if data.fasting}
 			<AlertDialog>
@@ -181,7 +173,7 @@
 			</BottomActionButton>
 		{/if}
 	</BottomActionGroup>
-</BottomActionBar>
+</PageActionBar>
 
 <Dialog bind:open={markOpen}>
 	<DialogContent>

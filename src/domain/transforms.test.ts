@@ -1,7 +1,7 @@
 import { CalendarDate } from '@internationalized/date';
 import { describe, expect, it } from 'vitest';
-import { parseScreenTimePayload } from '../routes/screen-time/screen-time';
-import { parseHealthConnectPayload } from '../routes/steps/steps';
+import { parseScreenTimePayload } from '$lib/local/native/screen-time';
+import { parseHealthConnectPayload } from '$lib/local/native/steps';
 import { toLocalDayRange } from './day-ranges';
 import { APP_PACKAGE, buildScreenTimePayload, type NativeUsageStats } from './screen-time';
 import { buildSleepPayload } from './sleep';

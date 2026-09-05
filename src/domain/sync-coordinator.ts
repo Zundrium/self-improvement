@@ -21,7 +21,8 @@ export interface TrackerJob {
 }
 
 export class SyncCoordinator {
-	private activeSync?: Promise<SyncReport>;
+	private activeSync?: Promise<void>;
+	private pending: SyncRequest[] = [];
 
 	constructor(
 		private readonly repository: MobileRepository,
@@ -37,35 +38,54 @@ export class SyncCoordinator {
 
 	syncStale(staleAfterMs = DEFAULT_STALE_AFTER_MS) {
 		const now = this.clock();
-		return this.startSync(async () => {
-			const [status, enabled] = await Promise.all([
-				this.repository.loadStatus(),
-				this.loadEnabledTrackers()
-			]);
-			return this.performSync(
-				filterEnabled(staleTrackerIds(status, now, staleAfterMs), enabled),
-				now
-			);
-		});
+		return Promise.all([this.repository.loadStatus(), this.loadEnabledTrackers()]).then(
+			([status, enabled]) =>
+				this.startSync(filterEnabled(staleTrackerIds(status, now, staleAfterMs), enabled), now)
+		);
 	}
 
 	sync(trackers: readonly TrackerId[], now = this.clock()) {
-		return this.startSync(async () => {
-			const enabled = await this.loadEnabledTrackers();
-			return this.performSync(filterEnabled(trackers, enabled), now);
+		return this.loadEnabledTrackers().then((enabled) =>
+			this.startSync(filterEnabled(trackers, enabled), now)
+		);
+	}
+
+	private startSync(trackers: TrackerId[], now: Date): Promise<SyncReport> {
+		if (!trackers.length) return Promise.resolve(emptyReport());
+		return new Promise<SyncReport>((resolve, reject) => {
+			this.pending.push({ trackers, now, resolve, reject });
+			if (!this.activeSync) {
+				this.activeSync = Promise.resolve()
+					.then(() => this.drainSyncQueue())
+					.finally(() => {
+						this.activeSync = undefined;
+						if (this.pending.length) {
+							this.activeSync = Promise.resolve()
+								.then(() => this.drainSyncQueue())
+								.finally(() => (this.activeSync = undefined));
+						}
+					});
+			}
 		});
 	}
 
-	private startSync(operation: () => Promise<SyncReport>) {
-		if (this.activeSync) return this.activeSync;
-		const sync = operation();
-		this.activeSync = sync;
-		void sync
-			.finally(() => {
-				if (this.activeSync === sync) this.activeSync = undefined;
-			})
-			.catch(() => undefined);
-		return sync;
+	private async drainSyncQueue() {
+		while (this.pending.length) {
+			const requests = this.pending.splice(0);
+			const trackers = [...new Set(requests.flatMap((request) => request.trackers))];
+			const now = requests[0].now;
+			try {
+				const report = await this.performSync(trackers, now);
+				for (const request of requests) {
+					const results = report.results.filter((result) =>
+						request.trackers.includes(result.tracker)
+					);
+					request.resolve({ overall: reportOverall(results), results });
+				}
+			} catch (cause) {
+				for (const request of requests) request.reject(cause);
+			}
+		}
 	}
 
 	private async performSync(trackers: TrackerId[], now: Date) {
@@ -99,6 +119,13 @@ export class SyncCoordinator {
 		}
 	}
 }
+
+type SyncRequest = {
+	trackers: TrackerId[];
+	now: Date;
+	resolve: (report: SyncReport) => void;
+	reject: (cause: unknown) => void;
+};
 
 function applyResults(
 	status: MobileSyncStatus,

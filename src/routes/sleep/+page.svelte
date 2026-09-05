@@ -1,13 +1,9 @@
 <script lang="ts">
 import { Moon } from '@lucide/svelte';
 import { onMount } from 'svelte';
-import TrackerPage from '$lib/components/trackerPage.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
 import { getTrackerColors } from '$lib/trackers/registry';
-import {
-	formatBedtime,
-	formatSleepTrackerMessage,
-	isWithinSleepingWindow
-} from './sleep';
+import { formatBedtime, formatSleepTrackerMessage, isWithinSleepingWindow } from './sleep';
 import type { PageProps } from './$types';
 
 let { data }: PageProps = $props();
@@ -47,7 +43,7 @@ onMount(() => {
 			{sleepMessage}
 		</p>
 		{#if !shouldBeSleeping}
-			<p class="mt-3 text-sm text-(--text)/48">until bedtime</p>
+			<p class="mt-3 text-sm text-(--text-muted)">until bedtime</p>
 		{/if}
 		<time class="mt-1 block text-sm font-medium tabular-nums" datetime={data.bedtime}>
 			{formatBedtime(data.bedtime)}

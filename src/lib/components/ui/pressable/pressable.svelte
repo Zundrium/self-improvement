@@ -8,13 +8,46 @@ import {
 	type InteractionScaleOptions
 } from '$lib/motion/gsap';
 import type { Action } from 'svelte/action';
-import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
+import type {
+	HTMLAnchorAttributes,
+	HTMLButtonAttributes,
+	MouseEventHandler,
+	KeyboardEventHandler
+} from 'svelte/elements';
 
-export type PressableProps = WithElementRef<HTMLButtonAttributes> &
-	WithElementRef<HTMLAnchorAttributes> & {
-		motionColors?: GradientColors;
-		motionScale?: InteractionScaleOptions;
+type ManagedProps =
+	| 'children'
+	| 'disabled'
+	| 'href'
+	| 'onclick'
+	| 'onauxclick'
+	| 'onkeydown'
+	| 'ref'
+	| 'type';
+
+type PressableSharedProps = WithElementRef<{
+	children?: HTMLButtonAttributes['children'];
+	disabled?: boolean;
+	motionColors?: GradientColors;
+	motionScale?: InteractionScaleOptions;
+	onclick?: MouseEventHandler<HTMLElement>;
+	onauxclick?: MouseEventHandler<HTMLElement>;
+	onkeydown?: KeyboardEventHandler<HTMLElement>;
+}>;
+
+export type PressableLinkProps = Omit<HTMLAnchorAttributes, ManagedProps> &
+	PressableSharedProps & {
+		href: string;
+		type?: HTMLAnchorAttributes['type'];
 	};
+
+export type PressableButtonProps = Omit<HTMLButtonAttributes, ManagedProps> &
+	PressableSharedProps & {
+		href?: undefined;
+		type?: HTMLButtonAttributes['type'];
+	};
+
+export type PressableProps = PressableLinkProps | PressableButtonProps;
 
 function resolveHref(href: string) {
 	return href.startsWith('/') ? resolve(href as '/') : href;
@@ -45,16 +78,40 @@ const optionalInteractionScale: Action<HTMLElement, InteractionScaleOptions | un
 		class: className,
 		ref = $bindable(null),
 		href = undefined,
-		type = 'button',
+		type,
 		disabled,
 		motionColors,
 		motionScale,
 		children,
+		onclick,
+		onauxclick,
+		onkeydown,
 		...restProps
 	}: PressableProps = $props();
 
+	const anchorProps = $derived(restProps as Omit<HTMLAnchorAttributes, ManagedProps>);
+	const buttonProps = $derived(restProps as Omit<HTMLButtonAttributes, ManagedProps>);
+	const buttonType = $derived(type as HTMLButtonAttributes['type']);
+
 	const baseClass =
-		'inline-flex cursor-pointer touch-manipulation outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-(--text)/20 disabled:pointer-events-none disabled:opacity-40';
+		'inline-flex cursor-pointer touch-manipulation outline-none transition-colors select-none focus-visible:ring-2 focus-visible:ring-(--focus-ring) focus-visible:ring-offset-2 focus-visible:ring-offset-(--bg) disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40';
+	function activate(event: MouseEvent & { currentTarget: HTMLElement }, handler: MouseEventHandler<HTMLElement> | null | undefined) {
+		if (disabled) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			return;
+		}
+		handler?.(event);
+	}
+
+	function keydown(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+		if (disabled) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			return;
+		}
+		onkeydown?.(event);
+	}
 </script>
 
 {#if href}
@@ -62,13 +119,16 @@ const optionalInteractionScale: Action<HTMLElement, InteractionScaleOptions | un
 		bind:this={ref}
 		data-slot="pressable"
 		class={cn(baseClass, className)}
-		href={disabled ? undefined : resolveHref(href)}
-		aria-disabled={disabled}
-		role={disabled ? 'link' : undefined}
-		tabindex={disabled ? -1 : undefined}
 		use:gradientColors={motionColors}
 		use:optionalInteractionScale={motionScale}
-		{...restProps}
+		{...anchorProps}
+		{type}
+		href={disabled ? undefined : resolveHref(href)}
+		aria-disabled={disabled || undefined}
+		tabindex={disabled ? -1 : anchorProps.tabindex}
+		onclick={(event) => activate(event, onclick)}
+		onauxclick={(event) => activate(event, onauxclick)}
+		onkeydown={keydown}
 	>
 		{@render children?.()}
 	</a>
@@ -77,11 +137,14 @@ const optionalInteractionScale: Action<HTMLElement, InteractionScaleOptions | un
 		bind:this={ref}
 		data-slot="pressable"
 		class={cn(baseClass, className)}
-		{type}
-		{disabled}
 		use:gradientColors={motionColors}
 		use:optionalInteractionScale={motionScale}
-		{...restProps}
+		{...buttonProps}
+		type={buttonType ?? 'button'}
+		{disabled}
+		onclick={(event) => activate(event, onclick)}
+		onauxclick={(event) => activate(event, onauxclick)}
+		onkeydown={keydown}
 	>
 		{@render children?.()}
 	</button>

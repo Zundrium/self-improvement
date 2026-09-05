@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { cn } from '$lib/utils.js';
-	import { DropdownMenu as DropdownMenuPrimitive } from 'bits-ui';
+import { cn } from '$lib/utils.js';
+import { DropdownMenu as DropdownMenuPrimitive } from 'bits-ui';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		variant = 'default',
-		...restProps
-	}: DropdownMenuPrimitive.ItemProps & {
-		variant?: 'default' | 'destructive';
-	} = $props();
+let {
+	ref = $bindable(null),
+	class: className,
+	variant = 'default',
+	...restProps
+}: DropdownMenuPrimitive.ItemProps & {
+	variant?: 'default' | 'destructive';
+} = $props();
 </script>
 
 <DropdownMenuPrimitive.Item

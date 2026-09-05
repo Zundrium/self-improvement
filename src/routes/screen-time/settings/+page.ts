@@ -2,8 +2,10 @@ import { apiRequest } from '$lib/api';
 import type { ScreenTimeData, ScreenTimeSettingsData } from '$lib/api-types';
 import type { PageLoad } from './$types';
 import { screenTimeDataWithAppIdentities } from '../app-identities';
+import { registerLocalData } from '$lib/app/resources';
 
-export const load: PageLoad = async ({ url }) => {
+export const load: PageLoad = async ({ url, depends }) => {
+	registerLocalData(depends, 'screen-time');
 	const [settings, screenTime] = await Promise.all([
 		apiRequest<ScreenTimeSettingsData>('/api/app/screen-time/settings'),
 		apiRequest<ScreenTimeData>(screenTimePath(url))

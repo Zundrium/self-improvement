@@ -1,22 +1,22 @@
 <script lang="ts">
-	import { Progress as ProgressPrimitive } from 'bits-ui';
-	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
-	import { linearProgress } from '$lib/motion/gsap';
+import { Progress as ProgressPrimitive } from 'bits-ui';
+import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
+import { linearProgress } from '$lib/motion/gsap';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		indicatorClass,
-		indicatorBackground,
-		animated = true,
-		max = 100,
-		value,
-		...restProps
-	}: WithoutChildrenOrChild<ProgressPrimitive.RootProps> & {
-		indicatorClass?: string;
-		indicatorBackground?: string;
-		animated?: boolean;
-	} = $props();
+let {
+	ref = $bindable(null),
+	class: className,
+	indicatorClass,
+	indicatorBackground,
+	animated = true,
+	max = 100,
+	value,
+	...restProps
+}: WithoutChildrenOrChild<ProgressPrimitive.RootProps> & {
+	indicatorClass?: string;
+	indicatorBackground?: string;
+	animated?: boolean;
+} = $props();
 </script>
 
 <ProgressPrimitive.Root

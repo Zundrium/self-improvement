@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import Dexie, { type EntityTable, type Table } from 'dexie';
+import Dexie, { type EntityTable, type IndexableType, type Table } from 'dexie';
 import { getTableName } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/sqlite-proxy';
 import type { AnySQLiteTable } from 'drizzle-orm/sqlite-core';
@@ -40,9 +40,28 @@ export interface RelationalConnection {
 		tables: readonly T[],
 		options?: { loadMedia?: boolean }
 	): Promise<Pick<RelationalData, T>>;
-	write(data: Partial<RelationalData>): Promise<void>;
+	readRows<T extends TableName>(
+		table: T,
+		query: RowQuery,
+		options?: { loadMedia?: boolean }
+	): Promise<RelationalData[T]>;
+	readSnapshot<T>(
+		tables: readonly TableName[],
+		operation: (read: RelationalRowReader) => Promise<T>
+	): Promise<T>;
+	write(data: Partial<RelationalData>, options?: { replaceMedia?: boolean }): Promise<void>;
 	deleteDatabase(): Promise<void>;
 }
+export type RelationalRowReader = <T extends TableName>(
+	table: T,
+	query: RowQuery,
+	options?: { loadMedia?: boolean }
+) => Promise<RelationalData[T]>;
+
+export type RowQuery =
+	| { equals: { key: string; value: unknown } }
+	| { anyOf: { key: string; values: unknown[] } }
+	| { between: { key: string; lower: unknown; upper: unknown } };
 
 type TypedTables = {
 	[K in TableName]: EntityTable<RelationalRows[K], keyof RelationalRows[K] & string>;
@@ -98,7 +117,9 @@ export class LocalAppDatabase extends Dexie {
 			.upgrade(async (transaction) => {
 				const enabledTrackers = transaction.table('enabledTrackers');
 				if (await enabledTrackers.get('chores')) return;
-				const rows = (await enabledTrackers.toArray()) as Array<{ position: number }>;
+				const rows = (await enabledTrackers.toArray()) as Array<{
+					position: number;
+				}>;
 				const position = Math.max(-1, ...rows.map((row) => row.position)) + 1;
 				await enabledTrackers.put({ trackerId: 'chores', position });
 			});
@@ -118,26 +139,30 @@ export class DexieRelationalConnection implements RelationalConnection {
 
 	async read<T extends TableName>(tables: readonly T[], options?: { loadMedia?: boolean }) {
 		const data = {} as Pick<RelationalData, T>;
-		await Promise.all(
-			tables.map(async (name) => {
-				const rows = (await this.database.table(name).toArray()) as RelationalData[typeof name];
-				const withoutMedia = (rows as RelationalData['nutritionMedia']).map(
-					({ blob: _blob, ...row }) => row
-				);
-				data[name] = (
-					name === 'nutritionMedia' && !options?.loadMedia ? withoutMedia : rows
-				) as RelationalData[typeof name];
-			})
-		);
+		const dexieTables = tables.map((name) => this.database.table(name));
+		await this.database.transaction('r', dexieTables, async () => {
+			await Promise.all(
+				tables.map(async (name) => {
+					const rows = (await this.database.table(name).toArray()) as RelationalData[typeof name];
+					const withoutMedia = (rows as RelationalData['nutritionMedia']).map(
+						({ blob: _blob, ...row }) => row
+					);
+					data[name] = (
+						name === 'nutritionMedia' && !options?.loadMedia ? withoutMedia : rows
+					) as RelationalData[typeof name];
+				})
+			);
+		});
 		return data;
 	}
 
-	async write(data: Partial<RelationalData>) {
+	async write(data: Partial<RelationalData>, _options?: { replaceMedia?: boolean }) {
 		const names = TABLE_ORDER.filter((name) => data[name] !== undefined);
 		if (!names.length) return;
 		const tables = names.map((name) => this.database.table(name));
 		await this.database.transaction('rw', tables, async () => {
 			const current = await this.read(names);
+			data = resolveStoredMediaReferences(data, current);
 			for (const name of names.toReversed())
 				await deleteRemovedRows(
 					this.database.table(name),
@@ -153,6 +178,40 @@ export class DexieRelationalConnection implements RelationalConnection {
 					requiredRows(data, name)
 				);
 		});
+	}
+
+	async readRows<T extends TableName>(
+		table: T,
+		query: RowQuery,
+		options?: { loadMedia?: boolean }
+	) {
+		return this.readSnapshot([table], (read) => read(table, query, options));
+	}
+
+	readSnapshot<T>(
+		tables: readonly TableName[],
+		operation: (read: RelationalRowReader) => Promise<T>
+	) {
+		return this.database.transaction(
+			'r',
+			tables.map((table) => this.database.table(table)),
+			() => operation((table, query, options) => this.readRowsNow(table, query, options))
+		);
+	}
+
+	private async readRowsNow<T extends TableName>(
+		table: T,
+		query: RowQuery,
+		options?: { loadMedia?: boolean }
+	) {
+		const rows = (await dexieQuery(
+			this.database.table(table),
+			query
+		).toArray()) as RelationalData[T];
+		if (table !== 'nutritionMedia' || options?.loadMedia) return rows;
+		return (rows as RelationalData['nutritionMedia']).map(
+			({ blob: _blob, ...row }) => row
+		) as RelationalData[T];
 	}
 
 	async deleteDatabase() {
@@ -181,15 +240,71 @@ export class NativeRelationalConnection implements RelationalConnection {
 
 	async read<T extends TableName>(tables: readonly T[], options?: { loadMedia?: boolean }) {
 		const connection = await this.connection();
-		const data = {} as Pick<RelationalData, T>;
-		for (const name of tables) data[name] = await this.readTable(connection, name);
-		if (options?.loadMedia && tables.includes('nutritionMedia' as T))
-			await loadNativeMedia(data as Partial<RelationalData>);
-		return data;
+		return serializeNativeOperation(connection, async () => {
+			const data = {} as Pick<RelationalData, T>;
+			await connection.beginTransaction();
+			try {
+				for (const name of tables) data[name] = await this.readTable(connection, name);
+				await connection.commitTransaction();
+			} catch (error) {
+				try {
+					await connection.rollbackTransaction();
+				} catch {}
+				throw error;
+			}
+			if (options?.loadMedia && tables.includes('nutritionMedia' as T))
+				await loadNativeMedia(data as Partial<RelationalData>);
+			return data;
+		});
 	}
 
-	async write(data: Partial<RelationalData>) {
+	async write(data: Partial<RelationalData>, options?: { replaceMedia?: boolean }) {
 		const connection = await this.connection();
+		return serializeNativeOperation(connection, () =>
+			this.writeNow(connection, data, options?.replaceMedia)
+		);
+	}
+
+	async readRows<T extends TableName>(
+		table: T,
+		query: RowQuery,
+		options?: { loadMedia?: boolean }
+	) {
+		return this.readSnapshot([table], (read) => read(table, query, options));
+	}
+
+	async readSnapshot<T>(
+		_tables: readonly TableName[],
+		operation: (read: RelationalRowReader) => Promise<T>
+	) {
+		const connection = await this.connection();
+		return serializeNativeOperation(connection, async () => {
+			await connection.beginTransaction();
+			try {
+				const result = await operation(async (table, query, options) => {
+					const rows = await this.readTableWhere(connection, table, query);
+					if (options?.loadMedia && table === 'nutritionMedia')
+						await loadNativeMedia({
+							nutritionMedia: rows as RelationalData['nutritionMedia']
+						});
+					return rows;
+				});
+				await connection.commitTransaction();
+				return result;
+			} catch (error) {
+				try {
+					await connection.rollbackTransaction();
+				} catch {}
+				throw error;
+			}
+		});
+	}
+
+	private async writeNow(
+		connection: NativeDatabaseConnection,
+		data: Partial<RelationalData>,
+		replaceMedia = false
+	) {
 		const names = TABLE_ORDER.filter((name) => data[name] !== undefined);
 		if (!names.length) return;
 		const current = {} as Partial<RelationalData>;
@@ -198,9 +313,14 @@ export class NativeRelationalConnection implements RelationalConnection {
 				connection,
 				name
 			);
-		const mediaStage = await stageNativeMedia(data.nutritionMedia, current.nutritionMedia);
-		await connection.beginTransaction();
+		data = resolveStoredMediaReferences(data, current);
+		const mediaStage = await stageNativeMedia(
+			data.nutritionMedia,
+			current.nutritionMedia,
+			replaceMedia
+		);
 		try {
+			await connection.beginTransaction();
 			for (const name of names.toReversed())
 				await this.deleteRemoved(
 					connection,
@@ -229,34 +349,35 @@ export class NativeRelationalConnection implements RelationalConnection {
 
 	async deleteDatabase() {
 		const connection = await this.connection();
-		try {
-			const media = await this.readTable(connection, 'nutritionMedia');
-			await Promise.all(media.map(({ relativePath }) => removeNativeFile(relativePath)));
-		} catch {}
-		await connection.delete();
+		await serializeNativeOperation(connection, async () => {
+			try {
+				const media = await this.readTable(connection, 'nutritionMedia');
+				await Promise.all(media.map(({ relativePath }) => removeNativeFile(relativePath)));
+			} catch {}
+			await connection.delete();
+		});
 		this.connectionPromise = undefined;
 		this.initialization = undefined;
 	}
 
 	private async initializeDatabase(defaults: RelationalData) {
 		const connection = await this.connection();
-		const version = Number(
-			(await connection.query('PRAGMA user_version;')).values?.[0]?.user_version
-		);
-		if (!Number.isInteger(version) || version < 0)
-			throw new Error('Invalid SQLite schema version.');
-		if (![0, 2, SQLITE_SCHEMA_VERSION].includes(version))
-			throw new Error(`Unsupported SQLite schema version: ${version}`);
-		if (version === 0) await this.runSchemaStatements(connection, SQLITE_SCHEMA_SQL);
-		if (version === 2) await this.runSchemaStatements(connection, SQLITE_V2_TO_V3_SQL);
-		const existing = (await connection.query('SELECT id FROM profile WHERE id = 1;')).values?.[0];
-		if (!existing) await this.write(defaults);
+		await serializeNativeOperation(connection, async () => {
+			const version = Number(
+				(await connection.query('PRAGMA user_version;')).values?.[0]?.user_version
+			);
+			if (!Number.isInteger(version) || version < 0)
+				throw new Error('Invalid SQLite schema version.');
+			if (![0, 2, SQLITE_SCHEMA_VERSION].includes(version))
+				throw new Error(`Unsupported SQLite schema version: ${version}`);
+			if (version === 0) await this.runSchemaStatements(connection, SQLITE_SCHEMA_SQL);
+			if (version === 2) await this.runSchemaStatements(connection, SQLITE_V2_TO_V3_SQL);
+			const existing = (await connection.query('SELECT id FROM profile WHERE id = 1;')).values?.[0];
+			if (!existing) await this.writeNow(connection, defaults);
+		});
 	}
 
-	private async runSchemaStatements(
-		connection: NativeDatabaseConnection,
-		statements: string
-	) {
+	private async runSchemaStatements(connection: NativeDatabaseConnection, statements: string) {
 		await connection.beginTransaction();
 		try {
 			await connection.execute(statements, false);
@@ -270,7 +391,12 @@ export class NativeRelationalConnection implements RelationalConnection {
 	}
 
 	private connection() {
-		this.connectionPromise ??= this.connectionFactory();
+		if (this.connectionPromise) return this.connectionPromise;
+		const connectionPromise = this.connectionFactory();
+		this.connectionPromise = connectionPromise;
+		void connectionPromise.catch(() => {
+			if (this.connectionPromise === connectionPromise) this.connectionPromise = undefined;
+		});
 		return this.connectionPromise;
 	}
 
@@ -279,6 +405,21 @@ export class NativeRelationalConnection implements RelationalConnection {
 		const generated = this.queryBuilder.select().from(table).toSQL();
 		const values = (await connection.query(generated.sql, generated.params)).values ?? [];
 		return values.map((value) => fromDatabaseRow(name, value)) as RelationalData[K];
+	}
+
+	private async readTableWhere<K extends TableName>(
+		connection: NativeDatabaseConnection,
+		name: K,
+		query: RowQuery
+	) {
+		const column = (TABLE_COLUMNS[name] as Record<string, string>)[queryKey(query)];
+		if (!column) throw new Error(`Unknown ${name} query column.`);
+		const { clause, values } = sqlQuery(query, column);
+		const tableName = getTableName(sqliteTables[name]);
+		const result =
+			(await connection.query(`SELECT * FROM "${tableName}" WHERE ${clause};`, values)).values ??
+			[];
+		return result.map((value) => fromDatabaseRow(name, value)) as RelationalData[K];
 	}
 
 	private async deleteRemoved<K extends TableName>(
@@ -306,6 +447,24 @@ export class NativeRelationalConnection implements RelationalConnection {
 			await connection.run(upsertStatement(name), databaseValues(name, row), false);
 		}
 	}
+}
+
+const nativeOperationQueues = new WeakMap<NativeDatabaseConnection, Promise<void>>();
+
+function serializeNativeOperation<T>(
+	connection: NativeDatabaseConnection,
+	operation: () => Promise<T>
+) {
+	const previous = nativeOperationQueues.get(connection) ?? Promise.resolve();
+	const result = previous.then(operation, operation);
+	nativeOperationQueues.set(
+		connection,
+		result.then(
+			() => undefined,
+			() => undefined
+		)
+	);
+	return result;
 }
 
 export function relationalConnection(
@@ -381,8 +540,12 @@ export function createNativeDatabaseConnectionAdapter(
 }
 
 async function createNativeDatabaseConnection(): Promise<NativeDatabaseConnection> {
-	const { CapacitorSQLite, SQLiteConnection } = await import('@capacitor-community/sqlite');
-	return openNativeDatabaseConnection(new SQLiteConnection(CapacitorSQLite));
+	const { openNativeSQLiteDatabase } = await import('$native/database');
+	const { sqlite, connection } = await openNativeSQLiteDatabase(
+		SQLITE_DATABASE_NAME,
+		SQLITE_SCHEMA_VERSION
+	);
+	return createNativeDatabaseConnectionAdapter(sqlite, connection);
 }
 
 export async function openNativeDatabaseConnection(
@@ -390,12 +553,20 @@ export async function openNativeDatabaseConnection(
 ): Promise<NativeDatabaseConnection> {
 	await sqlite.checkConnectionsConsistency?.();
 	const connection = await createNativeSQLiteConnection(sqlite);
-	await connection.open();
+	try {
+		await connection.open();
+	} catch (error) {
+		try {
+			await sqlite.closeConnection(SQLITE_DATABASE_NAME, false);
+		} catch {}
+		throw error;
+	}
 	return createNativeDatabaseConnectionAdapter(sqlite, connection);
 }
 
 async function createNativeSQLiteConnection(sqlite: NativeSQLiteConnectionOwner) {
-	if (!sqlite.createConnection) throw new Error('Native SQLite connection creation is unavailable.');
+	if (!sqlite.createConnection)
+		throw new Error('Native SQLite connection creation is unavailable.');
 	return sqlite.createConnection(
 		SQLITE_DATABASE_NAME,
 		false,
@@ -429,6 +600,57 @@ async function putChangedRows<K extends TableName>(
 		(row) => !rowsEqual(name, currentRows.get(rowKey(name, row)), row)
 	);
 	if (changed.length) await table.bulkPut(changed);
+}
+
+function resolveStoredMediaReferences(
+	data: Partial<RelationalData>,
+	current: Partial<RelationalData>
+) {
+	if (!data.nutritionMedia) return data;
+	const currentMedia = new Map((current.nutritionMedia ?? []).map((item) => [item.id, item]));
+	const nutritionMedia = data.nutritionMedia.map((item) => {
+		if (item.relativePath !== `stored-media:${item.id}`) return item;
+		const stored = currentMedia.get(item.id);
+		if (!stored) throw new Error(`Stored nutrition media ${item.id} could not be resolved.`);
+		return stored;
+	});
+	return { ...data, nutritionMedia };
+}
+
+function dexieQuery(table: Table, query: RowQuery) {
+	if ('equals' in query)
+		return table.where(query.equals.key).equals(query.equals.value as IndexableType);
+	if ('anyOf' in query)
+		return table.where(query.anyOf.key).anyOf(query.anyOf.values as IndexableType[]);
+	return table
+		.where(query.between.key)
+		.between(
+			query.between.lower as IndexableType,
+			query.between.upper as IndexableType,
+			true,
+			true
+		);
+}
+
+function queryKey(query: RowQuery) {
+	if ('equals' in query) return query.equals.key;
+	if ('anyOf' in query) return query.anyOf.key;
+	return query.between.key;
+}
+
+function sqlQuery(query: RowQuery, column: string) {
+	if ('equals' in query) return { clause: `"${column}" = ?`, values: [query.equals.value] };
+	if ('anyOf' in query) {
+		if (!query.anyOf.values.length) return { clause: '1 = 0', values: [] };
+		return {
+			clause: `"${column}" IN (${query.anyOf.values.map(() => '?').join(', ')})`,
+			values: query.anyOf.values
+		};
+	}
+	return {
+		clause: `"${column}" BETWEEN ? AND ?`,
+		values: [query.between.lower, query.between.upper]
+	};
 }
 
 function rowKey<K extends TableName>(name: K, row: RelationalRows[K]) {
@@ -527,48 +749,81 @@ async function loadNativeMedia(data: Partial<RelationalData>) {
 
 async function stageNativeMedia(
 	media: RelationalData['nutritionMedia'] | undefined,
-	current: RelationalData['nutritionMedia'] | undefined
+	current: RelationalData['nutritionMedia'] | undefined,
+	replaceExisting = false
 ) {
 	if (!media) return emptyMediaStage();
 	const { Directory, Filesystem } = await import('@capacitor/filesystem');
 	const existingPaths = new Set((current ?? []).map(({ relativePath }) => relativePath));
-	const staged = media.filter(
+	const candidates = media.filter(
 		(item): item is typeof item & { blob: Blob } =>
-			item.blob instanceof Blob && !existingPaths.has(item.relativePath)
+			item.blob instanceof Blob && (replaceExisting || !existingPaths.has(item.relativePath))
 	);
+	const operationId = crypto.randomUUID();
+	const staged = candidates.map((item, index) => ({
+		item,
+		temporaryPath: `${item.relativePath}.tmp-${operationId}-${index}`,
+		backupPath: `${item.relativePath}.bak-${operationId}-${index}`,
+		shouldSecureOriginal: existingPaths.has(item.relativePath),
+		originalSecured: false,
+		promoted: false
+	}));
 	const written: typeof staged = [];
 	try {
-		for (const item of staged) {
+		for (const entry of staged) {
 			await Filesystem.writeFile({
-				path: `${item.relativePath}.tmp`,
-				data: await blobBase64(item.blob),
+				path: entry.temporaryPath,
+				data: await blobBase64(entry.item.blob),
 				directory: Directory.Data,
 				recursive: true
 			});
-			written.push(item);
+			written.push(entry);
 		}
 	} catch (error) {
-		await Promise.all(written.map((item) => removeNativeFile(`${item.relativePath}.tmp`)));
+		await Promise.all(written.map((entry) => removeNativeFile(entry.temporaryPath)));
 		throw error;
 	}
-	const promoted: typeof staged = [];
 	return {
-		rollback: () =>
-			Promise.all([
-				...written.map((item) => removeNativeFile(`${item.relativePath}.tmp`)),
-				...promoted.map((item) => removeNativeFile(item.relativePath))
-			]).then(() => undefined),
+		rollback: async () => {
+			await Promise.all(written.map((entry) => removeNativeFile(entry.temporaryPath)));
+			for (const entry of written.toReversed()) {
+				if (entry.promoted) await deleteNativeFileIfPresent(entry.item.relativePath);
+				if (entry.originalSecured)
+					await Filesystem.rename({
+						from: entry.backupPath,
+						to: entry.item.relativePath,
+						directory: Directory.Data
+					});
+			}
+		},
 		promote: async () => {
-			for (const item of written) {
+			for (const entry of written) {
+				if (entry.shouldSecureOriginal) {
+					try {
+						await Filesystem.rename({
+							from: entry.item.relativePath,
+							to: entry.backupPath,
+							directory: Directory.Data
+						});
+						entry.originalSecured = true;
+					} catch (error) {
+						if (await nativeFileExists(entry.item.relativePath)) throw error;
+					}
+				}
 				await Filesystem.rename({
-					from: `${item.relativePath}.tmp`,
-					to: item.relativePath,
+					from: entry.temporaryPath,
+					to: entry.item.relativePath,
 					directory: Directory.Data
 				});
-				promoted.push(item);
+				entry.promoted = true;
 			}
 		},
 		cleanup: async (previous: RelationalData['nutritionMedia']) => {
+			await Promise.all(
+				written
+					.filter((entry) => entry.originalSecured)
+					.map((entry) => removeNativeFile(entry.backupPath))
+			);
 			const retained = new Set(media.map(({ relativePath }) => relativePath));
 			await Promise.all(
 				previous
@@ -577,6 +832,35 @@ async function stageNativeMedia(
 			);
 		}
 	};
+}
+
+async function nativeFileExists(path: string) {
+	const { Directory, Filesystem } = await import('@capacitor/filesystem');
+	try {
+		await Filesystem.stat({ path, directory: Directory.Data });
+		return true;
+	} catch (error) {
+		if (isMissingNativeFileError(error)) return false;
+		throw error;
+	}
+}
+
+async function deleteNativeFileIfPresent(path: string) {
+	const { Directory, Filesystem } = await import('@capacitor/filesystem');
+	try {
+		await Filesystem.deleteFile({ path, directory: Directory.Data });
+	} catch (error) {
+		if (!isMissingNativeFileError(error)) throw error;
+	}
+}
+
+function isMissingNativeFileError(error: unknown) {
+	return (
+		typeof error === 'object' &&
+		error !== null &&
+		'code' in error &&
+		error.code === 'OS-PLUG-FILE-0008'
+	);
 }
 
 function emptyMediaStage() {

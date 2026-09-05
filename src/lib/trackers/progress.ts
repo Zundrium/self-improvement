@@ -1,4 +1,4 @@
-import type { TrackerProgressDay } from '$lib/api-types';
+import type { TrackerProgressDay } from './model';
 import { dateKeysEndingAt } from './dates';
 
 export type TrackerProgressMode = 'line' | 'check';

@@ -1,18 +1,20 @@
 import { FilePicker, type PickedFile } from '@capawesome/capacitor-file-picker';
 import { registerPlugin } from '@capacitor/core';
+import { appMaintenance } from '$lib/app/maintenance';
+import { restoreApplication } from '$lib/app/restore';
+import { recordDiagnostic } from '$lib/app/diagnostics';
 import { recordAchievementEvents } from '$lib/api';
 import {
 	backupFileName,
+	BACKUP_MAX_BYTES,
 	createBackupEnvelope,
 	isAutomaticBackupDue,
 	parseBackupJson,
-	restoreBackupEnvelope,
+	serializeBackupEnvelope,
 	UnsupportedBackupVersionError,
 	type BackupEnvelope
 } from '$lib/local/backup';
 import { isNativeAndroid, requireNativeAndroid } from './platform';
-
-const MAX_IMPORT_BYTES = 25 * 1_024 * 1_024;
 
 export type GoogleDriveBackupStatus = {
 	configured: boolean;
@@ -36,6 +38,22 @@ interface AndroidBackupPlugin {
 const AndroidBackup = registerPlugin<AndroidBackupPlugin>('AndroidBackup');
 let scheduledBackup: Promise<void> | null = null;
 
+let backupQueue: Promise<unknown> = Promise.resolve();
+function queueBackup<T>(operation: () => Promise<T>): Promise<T> {
+	return appMaintenance.run(() => {
+		const result = backupQueue.then(operation, operation);
+		backupQueue = result.catch(() => undefined);
+		return result;
+	});
+}
+
+export function backUpNowToGoogleDrive() {
+	return queueBackup(backUpNow);
+}
+export function exportBackupFile() {
+	return queueBackup(exportFile);
+}
+
 export class BackupCancelledError extends Error {}
 export class InvalidBackupError extends Error {}
 
@@ -54,13 +72,13 @@ export async function getGoogleDriveBackupStatus() {
 	return AndroidBackup.getStatus();
 }
 
-export async function backUpNowToGoogleDrive() {
+async function backUpNow() {
 	requireNativeAndroid();
 	const status = await AndroidBackup.getStatus();
 	if (!status.configured) throw new Error('Choose a Google Drive folder first.');
 	try {
-		await writeGoogleDriveBackup();
-		return AndroidBackup.getStatus();
+		const result = await writeGoogleDriveBackup();
+		return { configured: true, lastSuccessAt: result.lastSuccessAt };
 	} catch (cause) {
 		await recordFailure(cause);
 		throw cause;
@@ -70,13 +88,13 @@ export async function backUpNowToGoogleDrive() {
 export function runScheduledGoogleDriveBackup() {
 	if (!isNativeAndroid()) return Promise.resolve();
 	if (scheduledBackup) return scheduledBackup;
-	scheduledBackup = runScheduledBackup().finally(() => (scheduledBackup = null));
+	scheduledBackup = queueBackup(runScheduledBackup).finally(() => (scheduledBackup = null));
 	return scheduledBackup;
 }
 
-export async function exportBackupFile() {
+async function exportFile() {
 	const envelope = await createBackupEnvelope();
-	const contents = JSON.stringify(envelope);
+	const contents = serializeBackupEnvelope(envelope);
 	if (isNativeAndroid()) return exportNativeFile(envelope, contents);
 	downloadBrowserFile(envelope, contents);
 }
@@ -97,7 +115,7 @@ export async function pickBackupFile() {
 }
 
 export function restoreBackup(envelope: BackupEnvelope) {
-	return restoreBackupEnvelope(envelope);
+	return restoreApplication(envelope);
 }
 
 async function runScheduledBackup() {
@@ -112,8 +130,9 @@ async function runScheduledBackup() {
 
 async function writeGoogleDriveBackup() {
 	const envelope = await createBackupEnvelope();
+	const contents = serializeBackupEnvelope(envelope);
 	const result = await AndroidBackup.writeBackup({
-		contents: JSON.stringify(envelope),
+		contents,
 		createdAt: envelope.createdAt
 	});
 	await recordAchievementEvents('event-first-backup');
@@ -140,7 +159,7 @@ function downloadBrowserFile(envelope: BackupEnvelope, contents: string) {
 }
 
 async function parsePickedFile(file: PickedFile) {
-	if (file.size > MAX_IMPORT_BYTES) throw new InvalidBackupError('The backup file is too large.');
+	if (file.size > BACKUP_MAX_BYTES) throw new InvalidBackupError('The backup file is too large.');
 	try {
 		return parseBackupJson(await pickedFileText(file));
 	} catch (cause) {
@@ -153,7 +172,7 @@ async function parsePickedFile(file: PickedFile) {
 async function pickedFileText(file: PickedFile) {
 	if (file.blob) return file.blob.text();
 	if (!file.path) throw new InvalidBackupError('The selected backup could not be read.');
-	return (await AndroidBackup.readFile({ uri: file.path, maxBytes: MAX_IMPORT_BYTES })).contents;
+	return (await AndroidBackup.readFile({ uri: file.path, maxBytes: BACKUP_MAX_BYTES })).contents;
 }
 
 function pickerError(cause: unknown) {
@@ -163,6 +182,7 @@ function pickerError(cause: unknown) {
 }
 
 async function recordFailure(cause: unknown) {
+	recordDiagnostic({ operation: 'backup', category: 'native', committed: false, retryable: true });
 	try {
 		await AndroidBackup.recordFailure({
 			failedAt: new Date().toISOString(),

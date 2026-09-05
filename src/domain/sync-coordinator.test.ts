@@ -141,19 +141,34 @@ describe('sync coordinator', () => {
 		expect(jobs.screenTime.process).not.toHaveBeenCalled();
 	});
 
-	it('coalesces overlapping sync requests before permissions or native collection', async () => {
+	it('handles successive requests after earlier reports resolve', async () => {
+		const jobs = successfulJobs();
+		const coordinator = new SyncCoordinator(new MemoryRepository(), jobs);
+		for (let index = 0; index < 20; index++) {
+			const report = await coordinator.sync(['steps']);
+			expect(report.results.map(({ tracker }) => tracker)).toEqual(['steps']);
+			await Promise.resolve();
+		}
+		expect(jobs.steps.collect).toHaveBeenCalledTimes(20);
+	}, 1_000);
+
+	it('coalesces overlapping sync requests into a follow-up batch without dropping trackers', async () => {
 		const repository = new MemoryRepository();
 		const jobs = successfulJobs();
+		let releaseSteps: (() => void) | undefined;
+		jobs.steps.collect = vi.fn(() => new Promise((resolve) => (releaseSteps = () => resolve({}))));
 		const coordinator = new SyncCoordinator(repository, jobs);
 
 		const first = coordinator.sync(['steps']);
+		await vi.waitFor(() => expect(jobs.steps.collect).toHaveBeenCalledOnce());
 		const overlapping = coordinator.sync(['sleep']);
+		releaseSteps?.();
 		const [firstReport, overlappingReport] = await Promise.all([first, overlapping]);
 
-		expect(firstReport).toEqual(overlappingReport);
 		expect(firstReport.results.map(({ tracker }) => tracker)).toEqual(['steps']);
+		expect(overlappingReport.results.map(({ tracker }) => tracker)).toEqual(['sleep']);
 		expect(jobs.steps.collect).toHaveBeenCalledTimes(1);
-		expect(jobs.sleep.collect).not.toHaveBeenCalled();
+		expect(jobs.sleep.collect).toHaveBeenCalledTimes(1);
 	});
 });
 

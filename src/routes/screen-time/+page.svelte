@@ -1,32 +1,32 @@
 <script lang="ts">
-	import { CircleAlert } from '@lucide/svelte';
-	import NativeDataHelpAlert from '$lib/components/nativeDataHelpAlert.svelte';
-	import TrackerHistory from '$lib/components/trackerHistory.svelte';
-	import TrackerPage from '$lib/components/trackerPage.svelte';
-	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
-	import { shortDayLabel } from '$lib/dateFormatting';
-	import { getTrackerColors } from '$lib/trackers/registry';
-	import ScreenTimeSummary from './components/screenTimeSummary.svelte';
-	import { formatScreenTime, hasTrackedApps } from './screen-time';
-	import type { PageProps } from './$types';
+import { CircleAlert } from '@lucide/svelte';
+import NativeDataHelpAlert from '$lib/components/tracker/NativeDataHelpAlert.svelte';
+import TrackerHistory from '$lib/components/tracker/TrackerHistory.svelte';
+import TrackerPage from '$lib/components/tracker/TrackerPage.svelte';
+import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
+import { Button } from '$lib/components/ui/button';
+import { shortDayLabel } from '$lib/dateFormatting';
+import { getTrackerColors } from '$lib/trackers/registry';
+import ScreenTimeSummary from './components/screenTimeSummary.svelte';
+import { formatScreenTime, hasTrackedApps } from './screen-time';
+import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
-	const colors = getTrackerColors('screen-time');
-	const lastProcessed = $derived(
-		data.connection?.lastReceivedAt
-			? new Date(data.connection.lastReceivedAt).toLocaleString()
-			: 'Not synced yet'
-	);
-	const history = $derived(
-		data.days.map((day) => ({
-			key: day.date,
-			label: shortDayLabel(day.date, data.today),
-			value: day.totalMinutes,
-			max: data.settings.dailyLimitMinutes,
-			displayValue: formatScreenTime(day.totalMinutes)
-		}))
-	);
+let { data }: PageProps = $props();
+const colors = getTrackerColors('screen-time');
+const lastProcessed = $derived(
+	data.connection?.lastReceivedAt
+		? new Date(data.connection.lastReceivedAt).toLocaleString()
+		: 'Not synced yet'
+);
+const history = $derived(
+	data.days.map((day) => ({
+		key: day.date,
+		label: shortDayLabel(day.date, data.today),
+		value: day.totalMinutes,
+		max: data.settings.dailyLimitMinutes,
+		displayValue: formatScreenTime(day.totalMinutes)
+	}))
+);
 </script>
 
 <svelte:head>

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { Form } from '$lib/components/ui/form';
+import { Form } from '$lib/components/ui/form';
 import { untrack } from 'svelte';
 import { Pencil, Plus, Trash2 } from '@lucide/svelte';
 import { apiRequest } from '$lib/api';
 import type { Reward } from '$lib/api-types';
-import GlimmerIcon from '$lib/components/glimmerIcon.svelte';
-import TrackerSection from '$lib/components/trackerSection.svelte';
+import GlimmerIcon from '$lib/components/gamification/GlimmerIcon.svelte';
+import TrackerSection from '$lib/components/tracker/TrackerSection.svelte';
 import { Button } from '$lib/components/ui/button';
 import {
 	Dialog,
@@ -95,7 +95,7 @@ async function deleteSelectedReward() {
 					<GlimmerIcon class="size-7" aria-hidden="true" />
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-sm font-medium">{reward.name}</p>
-						<p class="flex items-center gap-1.5 text-xs text-(--text)/48">
+						<p class="flex items-center gap-1.5 text-xs text-(--text-muted)">
 							<GlimmerIcon class="size-3.5" aria-hidden="true" />
 							{reward.price.toLocaleString()} Glimmers
 						</p>
@@ -122,7 +122,7 @@ async function deleteSelectedReward() {
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm leading-6 text-(--text)/56">Your shop does not have any rewards yet.</p>
+		<p class="text-sm leading-6 text-(--text-muted)">Your shop does not have any rewards yet.</p>
 	{/if}
 	<Button profile="highlighted" size="medium" href="/shop/rewards/new"><Plus class="mr-2 size-4" /> Add reward</Button>
 </TrackerSection>

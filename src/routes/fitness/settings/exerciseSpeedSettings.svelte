@@ -1,54 +1,50 @@
 <script lang="ts">
-	import { Search } from '@lucide/svelte';
-	import { untrack } from 'svelte';
-	import { apiRequest } from '$lib/api';
-	import type { ExerciseData } from '$lib/api-types';
-	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Input } from '$lib/components/ui/input';
-	import { Slider } from '$lib/components/ui/slider';
-	import { toast } from '$lib/components/ui/toast';
+import { Search } from '@lucide/svelte';
+import { untrack } from 'svelte';
+import { apiRequest } from '$lib/api';
+import type { ExerciseData } from '$lib/api-types';
+import { Alert, AlertDescription } from '$lib/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+import { Input } from '$lib/components/ui/input';
+import { Slider } from '$lib/components/ui/slider';
+import { toast } from '$lib/components/ui/toast';
 
-	let { exercises }: ExerciseData = $props();
-	let search = $state('');
-	let speeds = $state(
-		untrack(
-			() =>
-				Object.fromEntries(
-					exercises.map((exercise) => [exercise.id, exercise.speedPercent])
-				) as Record<number, number>
-		)
-	);
-	let savingId = $state<number | null>(null);
-	let errorMessage = $state('');
-	const filteredExercises = $derived(
-		exercises.filter((exercise) =>
-			exercise.name.toLowerCase().includes(search.trim().toLowerCase())
-		)
-	);
+let { exercises }: ExerciseData = $props();
+let search = $state('');
+let speeds = $state(
+	untrack(
+		() =>
+			Object.fromEntries(
+				exercises.map((exercise) => [exercise.id, exercise.speedPercent])
+			) as Record<number, number>
+	)
+);
+let savingId = $state<number | null>(null);
+let errorMessage = $state('');
+const filteredExercises = $derived(
+	exercises.filter((exercise) => exercise.name.toLowerCase().includes(search.trim().toLowerCase()))
+);
 
-	async function saveSpeed(exerciseId: number, speedPercent: number) {
-		speeds[exerciseId] = speedPercent;
-		if (
-			!(await persistSpeed(exerciseId, { method: 'PUT', body: JSON.stringify({ speedPercent }) }))
-		)
-			return;
-		toast.success('Exercise speed updated.');
+async function saveSpeed(exerciseId: number, speedPercent: number) {
+	speeds[exerciseId] = speedPercent;
+	if (!(await persistSpeed(exerciseId, { method: 'PUT', body: JSON.stringify({ speedPercent }) })))
+		return;
+	toast.success('Exercise speed updated.');
+}
+
+async function persistSpeed(exerciseId: number, request: RequestInit) {
+	errorMessage = '';
+	savingId = exerciseId;
+	try {
+		await apiRequest(`/api/app/fitness/exercises/${exerciseId}/speed`, request);
+		return true;
+	} catch {
+		errorMessage = 'The exercise speed could not be saved. Please try again.';
+		return false;
+	} finally {
+		savingId = null;
 	}
-
-	async function persistSpeed(exerciseId: number, request: RequestInit) {
-		errorMessage = '';
-		savingId = exerciseId;
-		try {
-			await apiRequest(`/api/app/fitness/exercises/${exerciseId}/speed`, request);
-			return true;
-		} catch {
-			errorMessage = 'The exercise speed could not be saved. Please try again.';
-			return false;
-		} finally {
-			savingId = null;
-		}
-	}
+}
 </script>
 
 <Card>
@@ -58,7 +54,7 @@
 	<CardContent class="gap-5">
 		<div class="relative">
 			<Search
-				class="pointer-events-none absolute top-1/2 left-4 z-10 size-4 -translate-y-1/2 text-(--text)/40"
+				class="pointer-events-none absolute top-1/2 left-4 z-10 size-4 -translate-y-1/2 text-(--text-muted)"
 			/>
 			<Input
 				bind:value={search}
@@ -89,7 +85,7 @@
 					</div>
 					<h2 class="truncate text-sm font-medium">{exercise.name}</h2>
 					<div class="col-span-2 flex min-w-0 items-center gap-3 sm:col-span-1">
-						<span class="shrink-0 text-xs font-medium text-(--text)/48">Speed</span>
+						<span class="shrink-0 text-xs font-medium text-(--text-muted)">Speed</span>
 						<Slider
 							type="single"
 							bind:value={speeds[exercise.id]}
@@ -109,7 +105,7 @@
 		</div>
 
 		{#if filteredExercises.length === 0}
-			<p class="py-8 text-center text-sm text-(--text)/56">No exercises match “{search}”.</p>
+			<p class="py-8 text-center text-sm text-(--text-muted)">No exercises match “{search}”.</p>
 		{/if}
 	</CardContent>
 </Card>
