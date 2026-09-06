@@ -179,7 +179,7 @@ function clearTimer() {
 
 	<div class="relative flex size-72 items-center justify-center sm:size-80">
 		<div
-			class="dynamic-background relative flex size-full items-center justify-center rounded-full text-(--app-on-color) shadow-lg shadow-(--app-shadow-color)/10 will-change-transform"
+			class="dynamic-background relative flex size-full items-center justify-center rounded-full text-(--app-black)/80 shadow-lg shadow-(--app-shadow-color)/10 will-change-transform"
 			style:--dynamic-background={trackerGradient(colors)}
 			data-breathing-visual
 			use:breathingPhaseScale={{
@@ -204,7 +204,7 @@ function clearTimer() {
 		</div>
 		{#if status !== 'completed'}
 			<p
-				class="pointer-events-none absolute inset-0 flex items-center justify-center text-3xl font-semibold text-(--app-on-color)"
+				class="pointer-events-none absolute inset-0 flex items-center justify-center text-3xl font-semibold text-(--app-black)/80"
 				aria-live="polite"
 				use:breathingPhaseText={status === 'running'}
 			>

@@ -16,6 +16,7 @@ afterEach(async () => {
 	for (const component of mounted.splice(0)) await unmount(component);
 	vi.restoreAllMocks();
 	document.body.innerHTML = '';
+	document.documentElement.classList.remove('dark');
 });
 
 function finishMotion(node: HTMLElement) {
@@ -75,6 +76,17 @@ async function spheres(reducedMotion = false) {
 }
 
 describe('breathing hold sphere', () => {
+	for (const dark of [false, true]) {
+		it(`uses dark text on the bright sphere in ${dark ? 'dark' : 'light'} mode`, async () => {
+			document.documentElement.classList.toggle('dark', dark);
+			const { outer } = await spheres();
+			const label = document.querySelector('[aria-live="polite"]');
+			if (!label) throw new Error('Missing phase label');
+			expect(getComputedStyle(label).color).toBe('oklab(0 0 0 / 0.8)');
+			expect(getComputedStyle(outer).color).toBe('oklab(0 0 0 / 0.8)');
+		});
+	}
+
 	for (const reduced of [false, true]) {
 		it(`matches the blue sphere at full hold and disappears on exhale (${reduced ? 'reduced' : 'animated'})`, async () => {
 			const { outer, inner, phase } = await spheres(reduced);
