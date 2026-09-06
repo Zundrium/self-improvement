@@ -190,7 +190,7 @@ function clearTimer() {
 			aria-hidden="true"
 		>
 			<div
-				class="absolute inset-[20%] rounded-full bg-(--app-white)/24 will-change-transform"
+				class="absolute inset-0 rounded-full bg-(--app-white)/24 will-change-transform"
 				data-breathing-hold-progress
 				use:breathingHoldProgress={{
 					phase: step.phase.id,

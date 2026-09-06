@@ -87,7 +87,6 @@ const actionColorStyle = $derived(
 
 <style>
 .action-card-container.settled :global(.action-card) {
-	background: color-mix(in srgb, var(--text) 6%, var(--bg-elevated));
 	color: var(--text-muted);
 }
 

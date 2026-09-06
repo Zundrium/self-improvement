@@ -37,6 +37,13 @@ describe('tracker status cards', () => {
 				await tick();
 				const link = document.querySelector('a');
 				if (!link) throw new Error('Missing tracker link');
+				const surface = document.createElement('div');
+				surface.style.backgroundColor = 'var(--bg-elevated)';
+				document.body.append(surface);
+				expect(getComputedStyle(link).backgroundColor).toBe(
+					getComputedStyle(surface).backgroundColor
+				);
+				surface.remove();
 				expect(link.getAttribute('href')).toBe('/steps');
 				link.focus();
 				expect(document.activeElement).toBe(link);
