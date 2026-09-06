@@ -40,6 +40,46 @@ export const screenTimeActionCandidates = [
 				action: { type: 'navigate', href: `/screen-time?date=${screenTime.date}` }
 			};
 		}
+	}),
+	defineActionCandidate({
+		id: 'screen-time.status',
+		trackerIds: ['screen-time'],
+		resolve(snapshot, environment) {
+			const screenTime = snapshot.trackers['screen-time'];
+			const remaining = screenTime.limitMinutes - screenTime.minutes;
+			const status = !screenTime.hasMeasurements
+				? 'actionable'
+				: remaining < 0
+					? 'attention'
+					: screenTime.date < environment.localDate
+						? 'complete'
+						: 'tracking';
+			return {
+				instanceId: screenTime.date,
+				fallback: true,
+				status,
+				priority: 'activity',
+				score: 1,
+				title: !screenTime.hasMeasurements
+					? 'No screen-time data yet'
+					: remaining > 60
+						? `${screenTime.minutes}m of screen time`
+						: limitTitle(remaining),
+				reason: !screenTime.hasMeasurements
+					? "Sync today's screen time"
+					: remaining > 0
+						? `${remaining}m of screen time remaining`
+						: remaining === 0
+							? 'Your daily limit has been reached'
+							: limitReason(remaining),
+				action: {
+					type: 'navigate',
+					href: !screenTime.hasMeasurements
+						? permissionsSettingsHref('screenTime')
+						: `/screen-time?date=${screenTime.date}`
+				}
+			};
+		}
 	})
 ];
 

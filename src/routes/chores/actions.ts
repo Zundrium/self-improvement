@@ -20,5 +20,24 @@ export const choresActionCandidates = [
 				action: { type: 'navigate', href: '/chores' }
 			};
 		}
+	}),
+	defineActionCandidate({
+		id: 'chores.status',
+		trackerIds: ['chores'],
+		resolve(snapshot) {
+			const chores = snapshot.trackers.chores;
+			return {
+				instanceId: chores.date,
+				fallback: true,
+				status: chores.completed ? 'complete' : 'actionable',
+				priority: 'activity',
+				score: 1,
+				title: chores.completed ? 'Daily reset complete' : 'Take 10 minutes to reset',
+				reason: chores.completed
+					? 'Your quick chore is done for today'
+					: `${CHORES_DURATION_SECONDS / 60} minutes for any quick chore`,
+				action: { type: 'navigate', href: `/chores?date=${chores.date}` }
+			};
+		}
 	})
 ];

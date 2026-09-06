@@ -75,7 +75,41 @@ describe('nutrition action candidates', () => {
 			expect(hasEatingWindowAction).toBe(false);
 		}
 	});
+
+	it('marks an exact calorie goal complete and an exceeded goal for attention', () => {
+		const atGoal = snapshot();
+		atGoal.trackers.nutrition.hasEntries = true;
+		atGoal.trackers.nutrition.calories = 2_000;
+		const overGoal = snapshot();
+		overGoal.trackers.nutrition.hasEntries = true;
+		overGoal.trackers.nutrition.calories = 2_001;
+
+		expect(status(atGoal)).toMatchObject({ status: 'complete', fallback: true, score: 1 });
+		expect(status(overGoal)).toMatchObject({ status: 'attention', fallback: true, score: 1 });
+	});
+
+	it('does not complete a fast with food entries and prompts logging without a goal', () => {
+		const fastingWithEntries = snapshot();
+		fastingWithEntries.trackers.nutrition.fasting = true;
+		fastingWithEntries.trackers.nutrition.hasEntries = true;
+		fastingWithEntries.trackers.nutrition.calories = 2_000;
+		const withoutGoal = snapshot();
+		withoutGoal.trackers.nutrition.hasEntries = true;
+		withoutGoal.trackers.nutrition.calorieGoal = null;
+
+		expect(status(fastingWithEntries)).toMatchObject({ status: 'tracking' });
+		expect(status(withoutGoal)).toMatchObject({
+			status: 'actionable',
+			title: 'Log a meal'
+		});
+	});
 });
+
+function status(snapshot: ActionSnapshot) {
+	const candidate = nutritionActionCandidates.find(({ id }) => id === 'nutrition.status');
+	if (!candidate) throw new Error('Nutrition status candidate is missing');
+	return candidate.resolve(snapshot, environment(12 * 60));
+}
 
 function selectedIds(localMinuteOfDay: number) {
 	return selectActionFeedItems(

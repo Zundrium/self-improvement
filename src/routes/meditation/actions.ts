@@ -46,5 +46,24 @@ export const meditationActionCandidates = [
 				action: { type: 'navigate', href: '/meditation' }
 			};
 		}
+	}),
+	defineActionCandidate({
+		id: 'meditation.status',
+		trackerIds: ['meditation'],
+		resolve(snapshot) {
+			const meditation = snapshot.trackers.meditation;
+			return {
+				instanceId: meditation.date,
+				fallback: true,
+				status: meditation.completed ? 'complete' : 'actionable',
+				priority: 'activity',
+				score: 1,
+				title: meditation.completed ? 'Meditation complete' : 'Meditate today',
+				reason: meditation.completed
+					? 'Your session is complete for today'
+					: `${DEFAULT_DURATION_SECONDS / 60} minutes to feel rested`,
+				action: { type: 'navigate', href: `/meditation?date=${meditation.date}` }
+			};
+		}
 	})
 ];

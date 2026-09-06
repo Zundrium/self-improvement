@@ -23,18 +23,19 @@ describe('stretch action candidates', () => {
 		});
 	});
 
-	it('does not suggest a completed routine', () => {
+	it('resolves completed routines as complete', () => {
 		const snapshot = buildSnapshot();
 		snapshot.trackers.stretch.completed = true;
 
-		expect(resolve(snapshot)).toBeNull();
+		expect(status(snapshot)).toMatchObject({ status: 'complete', fallback: true, score: 1 });
 	});
 
-	it('does not suggest a weekend routine', () => {
+	it('resolves unscheduled days as rest rather than complete', () => {
 		const snapshot = buildSnapshot();
 		snapshot.trackers.stretch.scheduled = false;
+		snapshot.trackers.stretch.completed = true;
 
-		expect(resolve(snapshot)).toBeNull();
+		expect(status(snapshot)).toMatchObject({ status: 'rest', title: 'Rest day' });
 	});
 
 	function buildSnapshot() {
@@ -44,5 +45,11 @@ describe('stretch action candidates', () => {
 
 	function resolve(snapshot: ActionSnapshot) {
 		return selectActionFeedItems(stretchActionCandidates, snapshot, environment)[0] ?? null;
+	}
+
+	function status(snapshot: ActionSnapshot) {
+		const candidate = stretchActionCandidates.find(({ id }) => id === 'stretch.status');
+		if (!candidate) throw new Error('Stretch status candidate is missing');
+		return candidate.resolve(snapshot, environment);
 	}
 });

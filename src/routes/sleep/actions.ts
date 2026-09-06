@@ -58,5 +58,34 @@ export const sleepActionCandidates = [
 				action: { type: 'navigate', href: '/sleep' }
 			};
 		}
+	}),
+	defineActionCandidate({
+		id: 'sleep.status',
+		trackerIds: ['sleep'],
+		resolve(snapshot) {
+			const sleep = snapshot.trackers.sleep;
+			const status =
+				sleep.status === 'pass' ? 'complete' : sleep.status === 'fail' ? 'attention' : 'tracking';
+			return {
+				instanceId: sleep.date,
+				fallback: true,
+				status,
+				priority: 'activity',
+				score: 1,
+				title:
+					sleep.status === 'pass'
+						? 'Bedtime goal met'
+						: sleep.status === 'fail'
+							? 'Bedtime goal missed'
+							: `Bedtime at ${sleep.bedtime}`,
+				reason:
+					sleep.status === 'pass'
+						? 'No selected-app activity after bedtime'
+						: sleep.status === 'fail'
+							? `${Math.ceil(sleep.lateUsageSeconds / 60)} min of activity after bedtime`
+							: 'Tracking selected-app activity after bedtime',
+				action: { type: 'navigate', href: `/sleep?date=${sleep.date}` }
+			};
+		}
 	})
 ];

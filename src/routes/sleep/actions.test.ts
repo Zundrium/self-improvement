@@ -24,4 +24,22 @@ describe('sleep action candidates', () => {
 			action: { href: '/screen-time' }
 		});
 	});
+
+	it.each([
+		['pass', 'complete'],
+		['pending', 'tracking'],
+		['fail', 'attention']
+	] as const)('maps %s sleep to %s status', (sleepStatus, status) => {
+		const state = createDefaultAppState(environment.now);
+		const snapshot = buildActionSnapshot(state, environment.localDate, environment.localDate);
+		snapshot.trackers.sleep.status = sleepStatus;
+		const candidate = sleepActionCandidates.find(({ id }) => id === 'sleep.status');
+		if (!candidate) throw new Error('Sleep status candidate is missing');
+
+		expect(candidate.resolve(snapshot, environment)).toMatchObject({
+			status,
+			fallback: true,
+			score: 1
+		});
+	});
 });

@@ -93,8 +93,89 @@ export const nutritionActionCandidates = [
 				action: { type: 'navigate', href: `/nutrition/log/${nutrition.date}` }
 			};
 		}
+	}),
+	defineActionCandidate({
+		id: 'nutrition.status',
+		trackerIds: ['nutrition'],
+		resolve(snapshot) {
+			const nutrition = snapshot.trackers.nutrition;
+			if (!nutrition.configured) {
+				return statusResolution(
+					nutrition.date,
+					'actionable',
+					'Set up your nutrition goals',
+					'Set your daily goals',
+					'/nutrition/onboarding'
+				);
+			}
+			if (nutrition.fasting) {
+				return statusResolution(
+					nutrition.date,
+					'tracking',
+					'Full-day fast marked',
+					nutrition.hasEntries ? 'Review food logged during your fast' : "Review today's fast",
+					`/nutrition/log/${nutrition.date}`
+				);
+			}
+			if (!nutrition.hasEntries || nutrition.calorieGoal === null) {
+				return statusResolution(
+					nutrition.date,
+					'actionable',
+					'Log a meal',
+					nutrition.calorieGoal === null
+						? 'Set a calorie goal, then log your meals'
+						: 'Add a meal to track your daily goal',
+					`/nutrition/track?date=${nutrition.date}`
+				);
+			}
+			const difference = nutrition.calories - nutrition.calorieGoal;
+			if (difference > 0) {
+				return statusResolution(
+					nutrition.date,
+					'attention',
+					`${difference.toLocaleString()} calories over your goal`,
+					`${nutrition.calories.toLocaleString()} of ${nutrition.calorieGoal.toLocaleString()} calories`,
+					`/nutrition/log/${nutrition.date}`
+				);
+			}
+			if (difference === 0) {
+				return statusResolution(
+					nutrition.date,
+					'complete',
+					'Calorie goal reached',
+					`${nutrition.calories.toLocaleString()} calories logged`,
+					`/nutrition/log/${nutrition.date}`
+				);
+			}
+			return statusResolution(
+				nutrition.date,
+				'actionable',
+				`${(-difference).toLocaleString()} calories left`,
+				`${nutrition.calories.toLocaleString()} of ${nutrition.calorieGoal.toLocaleString()} calories`,
+				`/nutrition/track?date=${nutrition.date}`
+			);
+		}
 	})
 ];
+
+function statusResolution(
+	date: string,
+	status: 'actionable' | 'complete' | 'attention' | 'tracking',
+	title: string,
+	reason: string,
+	href: string
+) {
+	return {
+		instanceId: date,
+		fallback: true,
+		status,
+		priority: 'activity' as const,
+		score: 1,
+		title,
+		reason,
+		action: { type: 'navigate' as const, href }
+	};
+}
 
 function minutesFromTime(time: string) {
 	const [hour, minute] = time.split(':').map(Number);

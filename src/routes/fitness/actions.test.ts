@@ -44,7 +44,7 @@ describe('fitness action candidates', () => {
 		});
 	});
 
-	it('returns no action for another date, completed workouts, or missing workout facts', () => {
+	it('always resolves a state fallback when no contextual workout is available', () => {
 		const otherDate = snapshot();
 		otherDate.date = '2026-04-09';
 		otherDate.trackers.fitness.date = '2026-04-09';
@@ -52,13 +52,26 @@ describe('fitness action candidates', () => {
 		completed.trackers.fitness.completed = true;
 		const missingSets = snapshot();
 		missingSets.trackers.fitness.sets = null;
-		for (const state of [otherDate, completed, missingSets]) {
-			expect(selectActionFeedItems(fitnessActionCandidates, state, environment(10 * 60))).toEqual(
-				[]
-			);
-		}
+
+		expect(status(otherDate)).toMatchObject({ status: 'actionable', fallback: true, score: 1 });
+		expect(status(completed)).toMatchObject({ status: 'complete', fallback: true, score: 1 });
+		expect(status(missingSets)).toMatchObject({ status: 'actionable', fallback: true, score: 1 });
+	});
+
+	it('marks unscheduled days as rest rather than complete', () => {
+		const restDay = snapshot();
+		restDay.trackers.fitness.scheduled = false;
+		restDay.trackers.fitness.completed = true;
+
+		expect(status(restDay)).toMatchObject({ status: 'rest', title: 'Rest day' });
 	});
 });
+
+function status(snapshot: ActionSnapshot) {
+	const candidate = fitnessActionCandidates.find(({ id }) => id === 'fitness.status');
+	if (!candidate) throw new Error('Fitness status candidate is missing');
+	return candidate.resolve(snapshot, environment(10 * 60));
+}
 
 function environment(localMinuteOfDay: number): ActionEnvironment {
 	return {

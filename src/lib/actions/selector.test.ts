@@ -5,6 +5,8 @@ import type {
 	ActionResolution,
 	ActionSnapshot
 } from './contracts';
+import { appActionCandidates } from '$lib/app/action-candidates';
+import { appTrackers, type AppTrackerId } from '$lib/trackers/registry';
 import { selectActionFeedItems } from './selector';
 
 const environment: ActionEnvironment = {
@@ -33,9 +35,9 @@ describe('action candidate selection', () => {
 
 	it('orders by priority before ordering equal priorities by descending score', () => {
 		const candidates = [
-			candidate('warning-low', { priority: 'warning', score: 20 }),
+			candidate('warning-low', { priority: 'warning', score: 20 }, 'sleep'),
 			candidate('warning-high', { priority: 'warning', score: 90 }),
-			candidate('blocking', { priority: 'blocking', score: 1 })
+			candidate('blocking', { priority: 'blocking', score: 1 }, 'fitness')
 		];
 
 		expect(selectedIds(candidates)).toEqual([
@@ -49,7 +51,7 @@ describe('action candidate selection', () => {
 		const candidates = [
 			candidate('long-workout', { goalId: 'daily-workout', score: 60 }),
 			candidate('quick-workout', { goalId: 'daily-workout', score: 90 }),
-			candidate('meditation', { score: 50 })
+			candidate('meditation', { score: 50 }, 'meditation')
 		];
 		const result = selectActionFeedItems(candidates, snapshot(), environment);
 
@@ -61,27 +63,27 @@ describe('action candidate selection', () => {
 	it('skips lower-ranked proposals that conflict with a selected proposal', () => {
 		const candidates = [
 			candidate('workout', { conflictKeys: ['physical-effort-now'], score: 90 }),
-			candidate('walk', { conflictKeys: ['physical-effort-now'], score: 80 }),
-			candidate('journal', { score: 70 })
+			candidate('walk', { conflictKeys: ['physical-effort-now'], score: 80 }, 'fitness'),
+			candidate('journal', { score: 70 }, 'happiness')
 		];
 
 		expect(selectedIds(candidates)).toEqual(['action:workout', 'action:journal']);
 	});
 
 	it('uses candidate IDs to break equal priority and score ties', () => {
-		const candidates = [candidate('z-candidate'), candidate('a-candidate')];
+		const candidates = [candidate('z-candidate', {}, 'sleep'), candidate('a-candidate')];
 
 		expect(selectedIds(candidates)).toEqual(['action:a-candidate', 'action:z-candidate']);
 	});
 
 	it('returns every proposal with a score above zero', () => {
 		const candidates = [
-			candidate('fourth', { score: 40 }),
+			candidate('fourth', { score: 40 }, 'sleep'),
 			candidate('zero', { score: 0 }),
-			candidate('second', { score: 80 }),
+			candidate('second', { score: 80 }, 'fitness'),
 			candidate('negative', { score: -1 }),
 			candidate('first', { score: 100 }),
-			candidate('third', { score: 60 })
+			candidate('third', { score: 60 }, 'meditation')
 		];
 
 		expect(selectedIds(candidates)).toEqual([
@@ -93,15 +95,70 @@ describe('action candidate selection', () => {
 	});
 });
 
-function candidate(id: string, overrides: Partial<ActionResolution> = {}): ActionCandidate {
+function candidate(
+	id: string,
+	overrides: Partial<ActionResolution> = {},
+	trackerId: AppTrackerId = 'steps'
+): ActionCandidate {
 	return {
 		id,
-		trackerIds: ['steps'],
-		requiredTrackerIds: ['steps'],
+		trackerIds: [trackerId],
+		requiredTrackerIds: [trackerId],
 		conditions: [],
 		resolve: () => ({ ...resolution(id), ...overrides })
 	};
 }
+
+describe('persistent tracker cards', () => {
+	it('selects exactly one card for each enabled tracker', () => {
+		const state = snapshot();
+		const items = selectActionFeedItems(appActionCandidates, state, environment);
+		expect(items.flatMap(({ trackerIds }) => trackerIds).toSorted()).toEqual(
+			state.enabledTrackerIds.toSorted()
+		);
+		expect(items.every(({ status }) => status !== undefined)).toBe(true);
+		expect(items.every((item) => !('fallback' in item))).toBe(true);
+	});
+
+	it('keeps completed and rest cards after actionable cards', () => {
+		const state = snapshot();
+		state.trackers.steps.steps = 5000;
+		state.trackers.fitness.completed = true;
+		state.trackers.stretch.scheduled = false;
+		const items = selectActionFeedItems(appActionCandidates, state, environment);
+		expect(items.find(({ trackerIds }) => trackerIds.includes('steps'))?.status).toBe('complete');
+		expect(items.find(({ trackerIds }) => trackerIds.includes('fitness'))?.status).toBe('complete');
+		expect(items.slice(-3).every(({ status }) => status === 'complete' || status === 'rest')).toBe(
+			true
+		);
+	});
+
+	it('shows excess calories instead of a meal prompt or checkmark', () => {
+		const state = snapshot(['nutrition']);
+		state.trackers.nutrition.calories = 2300;
+		state.trackers.nutrition.eatingWindow = { start: '08:00', end: '20:00' };
+		const items = selectActionFeedItems(appActionCandidates, state, environment);
+		expect(items).toHaveLength(1);
+		expect(items[0]).toMatchObject({
+			status: 'attention',
+			priority: 'warning',
+			title: '300 calories over your goal'
+		});
+	});
+
+	it('fills a tracker suppressed by a contextual conflict with its own status card', () => {
+		const items = selectActionFeedItems(
+			[
+				candidate('workout', { conflictKeys: ['effort'], score: 90 }, 'fitness'),
+				candidate('walk', { conflictKeys: ['effort'], score: 80 }),
+				candidate('steps-status', { fallback: true, status: 'actionable', score: 1 })
+			],
+			snapshot(),
+			environment
+		);
+		expect(items.map(({ id }) => id)).toEqual(['action:workout', 'action:steps-status']);
+	});
+});
 
 function resolution(id: string): ActionResolution {
 	return {
@@ -120,7 +177,7 @@ function selectedIds(candidates: ActionCandidate[]) {
 }
 
 function snapshot(
-	enabledTrackerIds: ActionSnapshot['enabledTrackerIds'] = ['steps']
+	enabledTrackerIds: ActionSnapshot['enabledTrackerIds'] = appTrackers.map(({ id }) => id)
 ): ActionSnapshot {
 	return {
 		date: '2026-04-10',

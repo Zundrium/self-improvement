@@ -19,5 +19,25 @@ export const happinessActionCandidates = [
 				action: { type: 'navigate', href: '/happiness' }
 			};
 		}
+	}),
+	defineActionCandidate({
+		id: 'happiness.status',
+		trackerIds: ['happiness'],
+		resolve(snapshot) {
+			const happiness = snapshot.trackers.happiness;
+			const complete = happiness.rating !== null;
+			return {
+				instanceId: happiness.date,
+				fallback: true,
+				status: complete ? 'complete' : 'actionable',
+				priority: 'activity',
+				score: 1,
+				title: complete ? 'Happiness check-in complete' : 'How are you feeling today?',
+				reason: complete
+					? `You rated today ${happiness.rating} out of 5`
+					: '15 seconds to check in with yourself',
+				action: { type: 'navigate', href: `/happiness?date=${happiness.date}` }
+			};
+		}
 	})
 ];

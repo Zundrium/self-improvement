@@ -17,16 +17,26 @@ describe('chores actions', () => {
 			snapshot(false),
 			environment
 		);
-		const complete = selectActionFeedItems(choresActionCandidates, snapshot(true), environment);
+		const completed = snapshot(true);
 
 		expect(incomplete).toMatchObject({
 			id: 'chores.daily-reset:2026-04-10',
 			title: 'Take 10 minutes to reset',
 			action: { type: 'navigate', href: '/chores' }
 		});
-		expect(complete).toEqual([]);
+		expect(status(completed)).toMatchObject({
+			status: 'complete',
+			fallback: true,
+			score: 1
+		});
 	});
 });
+
+function status(snapshot: ActionSnapshot) {
+	const candidate = choresActionCandidates.find(({ id }) => id === 'chores.status');
+	if (!candidate) throw new Error('Chores status candidate is missing');
+	return candidate.resolve(snapshot, environment);
+}
 
 function snapshot(completed: boolean): ActionSnapshot {
 	return {

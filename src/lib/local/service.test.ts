@@ -470,7 +470,13 @@ describe('local app service', () => {
 			current.nutrition.profile = nutritionProfile();
 		});
 		const configuredFeed = await service.request<ActionFeedData>('/api/app/action-feed');
-		expect(configuredFeed.items).toEqual([]);
+		expect(configuredFeed.items).toEqual([
+			expect.objectContaining({
+				id: 'nutrition.status:2026-03-10',
+				status: 'actionable',
+				title: 'Log a meal'
+			})
+		]);
 	});
 
 	it('builds the action feed from local tracker candidates', async () => {

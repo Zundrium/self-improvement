@@ -69,6 +69,31 @@ export const fitnessActionCandidates = [
 				Math.max(1, Math.ceil(fitness.sets / 2))
 			);
 		}
+	}),
+	defineActionCandidate({
+		id: 'fitness.status',
+		trackerIds: ['fitness'],
+		resolve(snapshot) {
+			const fitness = snapshot.trackers.fitness;
+			return {
+				instanceId: fitness.date,
+				fallback: true,
+				status: !fitness.scheduled ? 'rest' : fitness.completed ? 'complete' : 'actionable',
+				priority: 'activity',
+				score: 1,
+				title: !fitness.scheduled
+					? 'Rest day'
+					: fitness.completed
+						? 'Workout complete'
+						: "Today's workout is ready",
+				reason: !fitness.scheduled
+					? 'No workout is scheduled today'
+					: fitness.completed
+						? 'Nice work showing up today'
+						: 'Open your workout when you are ready',
+				action: { type: 'navigate', href: `/fitness?date=${fitness.date}` }
+			};
+		}
 	})
 ];
 

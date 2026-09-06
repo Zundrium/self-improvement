@@ -1,10 +1,10 @@
 <script lang="ts">
-import { ChevronRight, Download, LoaderCircle, RefreshCw, Shield } from '@lucide/svelte';
+import { Check, ChevronRight, Download, LoaderCircle, RefreshCw, Shield } from '@lucide/svelte';
 import type { ActionFeedItem } from '$lib/api-types';
 import { spin } from '$lib/motion/gsap';
 import { Pressable } from '$lib/components/ui/pressable/index';
 import { trackerIcons } from '$lib/trackers/icons';
-import { getTrackerColors } from '$lib/trackers/registry';
+import { appTrackers, getTrackerColors } from '$lib/trackers/registry';
 
 type Props = {
 	item: ActionFeedItem;
@@ -13,7 +13,10 @@ type Props = {
 };
 
 let { item, busy = false, onexecute }: Props = $props();
+const complete = $derived(item.status === 'complete');
+const settled = $derived(complete || item.status === 'rest');
 const trackerId = $derived(item.trackerIds[0]);
+const trackerLabel = $derived(appTrackers.find(({ id }) => id === trackerId)?.label);
 const TrackerIcon = $derived(trackerId ? trackerIcons[trackerId] : undefined);
 const trackerColors = $derived(trackerId ? getTrackerColors(trackerId) : undefined);
 const actionColorStyle = $derived(
@@ -38,6 +41,9 @@ const actionColorStyle = $derived(
 		{/if}
 	</span>
 	<span class="min-w-0 flex-1 text-left">
+		{#if trackerLabel && item.icon === 'tracker'}
+			<span class="mb-1 block text-xs leading-4 text-(--text-muted)">{trackerLabel}</span>
+		{/if}
 		<strong class="block text-sm leading-5 font-medium">{item.title}</strong>
 		{#if item.reason}
 			<span class="mt-1 block text-xs leading-4 text-(--text)/60">{item.reason}</span>
@@ -46,13 +52,15 @@ const actionColorStyle = $derived(
 	<span class="flex shrink-0 items-center text-(--text-muted)">
 		{#if busy}
 			<span class="inline-flex" use:spin><LoaderCircle class="size-5" /></span>
+		{:else if complete}
+			<Check class="size-6" aria-label="Completed" />
 		{:else}
 			<ChevronRight class="size-6" />
 		{/if}
 	</span>
 {/snippet}
 
-<div class="action-card-container">
+<div class="action-card-container" class:settled data-status={item.status}>
 	{#if item.action.type === 'navigate'}
 		<Pressable
 			href={item.action.href}
@@ -78,7 +86,16 @@ const actionColorStyle = $derived(
 </div>
 
 <style>
-.action-card-container :global(.action-card)::before {
+.action-card-container.settled :global(.action-card) {
+	background: color-mix(in srgb, var(--text) 6%, var(--bg-elevated));
+	color: var(--text-muted);
+}
+
+.action-card-container.settled .action-card-icon {
+	color: var(--text-muted);
+}
+
+.action-card-container:not(.settled) :global(.action-card)::before {
 	position: absolute;
 	inset-block: 0;
 	left: 0;

@@ -19,5 +19,24 @@ export const breathingActionCandidates = [
 				action: { type: 'navigate', href: '/breathing' }
 			};
 		}
+	}),
+	defineActionCandidate({
+		id: 'breathing.status',
+		trackerIds: ['breathing'],
+		resolve(snapshot) {
+			const breathing = snapshot.trackers.breathing;
+			return {
+				instanceId: breathing.date,
+				fallback: true,
+				status: breathing.completed ? 'complete' : 'actionable',
+				priority: 'activity',
+				score: 1,
+				title: breathing.completed ? 'Breathing exercise complete' : 'Take a breathing break',
+				reason: breathing.completed
+					? 'Your guided exercise is done for today'
+					: 'A guided exercise to feel at ease',
+				action: { type: 'navigate', href: `/breathing?date=${breathing.date}` }
+			};
+		}
 	})
 ];

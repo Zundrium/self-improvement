@@ -1,6 +1,7 @@
 import type { AppTrackerId } from '$lib/trackers/registry';
 
 export type ActionPriority = 'blocking' | 'warning' | 'activity';
+export type ActionStatus = 'actionable' | 'complete' | 'attention' | 'tracking' | 'rest';
 export type ActionIcon = 'tracker' | 'permission' | 'sync' | 'update';
 export type NavigateAction = { type: 'navigate'; href: string };
 export type ActionFeedCommand =
@@ -133,6 +134,9 @@ export type ActionCandidate = {
 
 export type ActionResolution = {
 	id: string;
+	/** Baseline status used when no contextual action is selected. */
+	fallback?: boolean;
+	status?: ActionStatus;
 	goalId?: string;
 	conflictKeys?: string[];
 	priority: ActionPriority;
@@ -155,6 +159,7 @@ export type ActionProposal = ActionResolution & {
 
 export type ActionFeedItem = {
 	id: string;
+	status?: ActionStatus;
 	trackerIds: AppTrackerId[];
 	priority: ActionPriority;
 	icon: ActionIcon;

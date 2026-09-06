@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Check } from '@lucide/svelte';
+import { LayoutGrid } from '@lucide/svelte';
 import type { ActionFeedItem } from '$lib/api-types';
 import { Empty, EmptyMedia, EmptyTitle } from '$lib/components/ui/empty/index';
 import { staggerChildren } from '$lib/motion/gsap';
@@ -16,7 +16,7 @@ let { items, busyActionId, onexecute }: Props = $props();
 
 <section aria-labelledby="action-feed-title" data-motion-item>
 	<h1 id="action-feed-title" class="mb-4 text-xl font-medium tracking-[-0.03em]">
-		Actions Left for Today
+		Today's overview
 	</h1>
 	{#if items.length}
 		<div class="grid gap-3" use:staggerChildren={{ delay: 0.18 }}>
@@ -27,9 +27,9 @@ let { items, busyActionId, onexecute }: Props = $props();
 	{:else}
 		<Empty class="bg-(--bg-elevated)">
 			<EmptyMedia class="bg-(--status-success)/10 text-(--status-success-soft-text)">
-				<Check />
+				<LayoutGrid />
 			</EmptyMedia>
-			<EmptyTitle>You're all caught up for today</EmptyTitle>
+			<EmptyTitle>Enable trackers in your profile to see their status</EmptyTitle>
 		</Empty>
 	{/if}
 </section>

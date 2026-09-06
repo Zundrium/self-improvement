@@ -11,6 +11,7 @@ function cssTrackerColors(id: string): TrackerColors {
 export const trackers = [
 	{
 		id: 'steps',
+		kind: 'passive',
 		label: 'Steps',
 		description: 'Daily steps and Health Connect history.',
 		href: '/steps',
@@ -21,6 +22,7 @@ export const trackers = [
 	},
 	{
 		id: 'sleep',
+		kind: 'passive',
 		label: 'Sleep',
 		description: 'Bedtime adherence from selected Android app activity.',
 		href: '/sleep',
@@ -31,6 +33,7 @@ export const trackers = [
 	},
 	{
 		id: 'screen-time',
+		kind: 'passive',
 		label: 'Screen time',
 		description: 'Daily Android usage and per-app screen-time history.',
 		href: '/screen-time',
@@ -41,6 +44,7 @@ export const trackers = [
 	},
 	{
 		id: 'fitness',
+		kind: 'active',
 		label: 'Fitness',
 		description: 'Workouts, progress, and exercise preferences.',
 		href: '/fitness',
@@ -51,6 +55,7 @@ export const trackers = [
 	},
 	{
 		id: 'nutrition',
+		kind: 'active',
 		label: 'Nutrition',
 		description: 'Meals, calories, and daily nutrition goals.',
 		href: '/nutrition/log/today',
@@ -61,6 +66,7 @@ export const trackers = [
 	},
 	{
 		id: 'meditation',
+		kind: 'active',
 		label: 'Meditation',
 		description: 'Timed sessions and meditation history.',
 		href: '/meditation',
@@ -71,6 +77,7 @@ export const trackers = [
 	},
 	{
 		id: 'breathing',
+		kind: 'active',
 		label: 'Breathing',
 		description: 'A guided daily 4-7-8 breathing exercise.',
 		href: '/breathing',
@@ -81,6 +88,7 @@ export const trackers = [
 	},
 	{
 		id: 'stretch',
+		kind: 'active',
 		label: 'Stretch',
 		description: 'Daily stretch holds and completion history.',
 		href: '/stretch',
@@ -92,6 +100,7 @@ export const trackers = [
 	},
 	{
 		id: 'chores',
+		kind: 'active',
 		label: 'Chores',
 		description: 'A daily 10-minute timer for tidying, laundry, or any quick chore.',
 		href: '/chores',
@@ -102,6 +111,7 @@ export const trackers = [
 	},
 	{
 		id: 'happiness',
+		kind: 'active',
 		label: 'Happiness',
 		description: 'Daily happiness levels and the reasons behind them.',
 		href: '/happiness',
@@ -112,6 +122,7 @@ export const trackers = [
 	},
 	{
 		id: 'period',
+		kind: 'active',
 		label: 'Period',
 		description: 'Menstruation flow, notes, and recent history.',
 		href: '/period',

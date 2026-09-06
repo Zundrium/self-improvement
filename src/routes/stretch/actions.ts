@@ -19,5 +19,30 @@ export const stretchActionCandidates = [
 				action: { type: 'navigate', href: '/stretch' }
 			};
 		}
+	}),
+	defineActionCandidate({
+		id: 'stretch.status',
+		trackerIds: ['stretch'],
+		resolve(snapshot) {
+			const stretch = snapshot.trackers.stretch;
+			return {
+				instanceId: stretch.date,
+				fallback: true,
+				status: !stretch.scheduled ? 'rest' : stretch.completed ? 'complete' : 'actionable',
+				priority: 'activity',
+				score: 1,
+				title: !stretch.scheduled
+					? 'Rest day'
+					: stretch.completed
+						? 'Stretch routine complete'
+						: 'Stretch routine ready',
+				reason: !stretch.scheduled
+					? 'No stretch routine is scheduled today'
+					: stretch.completed
+						? 'Your flexibility work is done for today'
+						: 'A short full-body flexibility routine',
+				action: { type: 'navigate', href: `/stretch?date=${stretch.date}` }
+			};
+		}
 	})
 ];
