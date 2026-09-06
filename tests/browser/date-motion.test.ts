@@ -62,6 +62,8 @@ describe('in-place date motion in Chromium', () => {
 			if (!section) throw new Error(`Missing ${label} section`);
 			expect(Number(getComputedStyle(section).opacity)).toBeLessThan(1);
 			expect(getComputedStyle(section).transform).toBe('none');
+			const fade = gsap.getTweensOf(section).find(({ vars }) => vars.opacity === 1);
+			expect(fade?.vars.duration).toBe(1);
 		}
 		expect(progress.getBoundingClientRect().x).toBeCloseTo(progressLeft, 3);
 		await expect.poll(calories).toBe('1,000');

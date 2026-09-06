@@ -30,7 +30,7 @@ export const dateSections: Action<HTMLElement, string | undefined> = (node, date
 					{ opacity: 0.65 },
 					{
 						opacity: 1,
-						duration: 0.45,
+						duration: 1,
 						stagger: 0.035,
 						ease: 'power3.out',
 						overwrite: 'auto',
